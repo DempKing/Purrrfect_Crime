@@ -1,12 +1,14 @@
 // Draws a heist: floors and overlays first, then walls, furniture and characters sorted by depth.
 // Placeholder art for now; generated sprites replace the character and prop drawing later.
 import { Container, Graphics } from 'pixi.js';
-import { DIRS, camerasActive, key, lasersActive, lightMap, lootAt, tileNow, type Guard, type State } from '../core/game';
+import { DIRS, camerasActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type State } from '../core/game';
 import type { Level, Point } from '../core/level';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
 
 const WALL_H = 84;
 const STUB_H = 12;
+/** How high the rafters are. */
+const RAFTER_Z = 92;
 
 const COL = {
   carpetA: 0x4a2a3c,
@@ -34,6 +36,7 @@ const COL = {
   duct: 0x5ec8ff,
   laser: 0xff2a2a,
   target: 0x5ef0ff,
+  beam: 0xd9a066,
 };
 
 /** Loot colours by index, so each piece reads differently on its stand. */
@@ -98,6 +101,8 @@ export class HeistView {
     if (this.light?.level !== level) this.light = { level, map: lightMap(level) };
     const light = this.light.map;
     const inVent = s.layer === 'vent';
+    const inRafters = s.layer === 'rafter';
+    const spots = spotlightsNow(level, s);
 
     // Floors, shaded by light, with the overlays painted on top of them.
     for (let y = 0; y < level.h; y++)
@@ -105,20 +110,22 @@ export class HeistView {
         const t = tileNow(level, s, x, y);
         if (t === 'wall' || t === 'pillar' || t === 'panel' || t === 'fuse') continue;
         const k = key(x, y);
-        const base = t === 'exit' ? COL.exit : t === 'marble' ? ((x + y) % 2 ? COL.marbleA : COL.marbleB) : (x + y) % 2 ? COL.carpetA : COL.carpetB;
+        const base = t === 'exit' ? COL.exit : t === 'marble' ? ((x + y) % 2 ? COL.marbleA : COL.marbleB) : t === 'squeaky' ? ((x + y) % 2 ? 0x7a5634 : 0x6e4c2d) : (x + y) % 2 ? COL.carpetA : COL.carpetB;
         this.diamond(f, x, y, 0.5, base, 1, COL.floorLine);
-        const l = light[y][x];
+        if (t === 'squeaky') this.planks(f, x, y);
+        const spotlit = spots.some((sp) => Math.hypot(x - sp.at.x, y - sp.at.y) <= sp.radius + 0.01);
+        const l = spotlit ? 2 : light[y][x];
         if (l === 0) this.diamond(f, x, y, 0.5, 0x05060c, 0.55);
-        else if (l === 2) this.diamond(f, x, y, 0.5, COL.lampGlow, 0.16);
+        else if (l === 2) this.diamond(f, x, y, 0.5, spotlit ? 0xfff6d8 : COL.lampGlow, spotlit ? 0.32 : 0.16);
         if (t === 'grate') this.grate(f, x, y);
-        if (inVent) this.diamond(f, x, y, 0.5, 0x02030a, 0.45);
+        if (inVent || inRafters) this.diamond(f, x, y, 0.5, 0x02030a, 0.45);
         if (ov.cameraVision.has(k)) this.diamond(f, x, y, 0.46, COL.camera, 0.3);
         if (ov.targets.has(k)) {
           this.diamond(f, x, y, 0.4, COL.target, 0.28 + Math.sin(this.time * 5) * 0.08);
           this.diamondOutline(f, x, y, COL.target, 1.5, 0.12, 0.8);
         }
         if (ov.vision.has(k)) this.diamond(f, x, y, 0.47, COL.vision, 0.32);
-        if (!inVent) {
+        if (!inVent && !inRafters) {
           if (ov.reach1.has(k)) this.diamond(f, x, y, 0.38, COL.reach1, 0.3);
           else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.38, COL.reach2, 0.26);
         }
@@ -131,6 +138,17 @@ export class HeistView {
           const k = key(x, y);
           this.diamond(f, x, y, 0.42, COL.duct, 0.18);
           this.diamondOutline(f, x, y, COL.duct, 1.5, 0.08, 0.6);
+          if (ov.reach1.has(k)) this.diamond(f, x, y, 0.3, COL.reach1, 0.45);
+          else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.3, COL.reach2, 0.4);
+        }
+    // Up in the rafters, the beams Leo can walk are drawn on the floor below like a plan.
+    if (inRafters)
+      for (let y = 0; y < level.h; y++)
+        for (let x = 0; x < level.w; x++) {
+          if (!level.rafters[y][x]) continue;
+          const k = key(x, y);
+          this.diamond(f, x, y, 0.42, COL.beam, 0.2);
+          this.diamondOutline(f, x, y, COL.beam, 1.5, 0.08, 0.6);
           if (ov.reach1.has(k)) this.diamond(f, x, y, 0.3, COL.reach1, 0.45);
           else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.3, COL.reach2, 0.4);
         }
@@ -162,7 +180,7 @@ export class HeistView {
         const k = key(x, y);
         if (t === 'wall' || t === 'pillar' || t === 'door' || t === 'panel' || t === 'fuse') {
           // Walls between the camera and Leo, the near outer walls, and every wall while Leo is in the vents drop to stubs.
-          const near = inVent || (Math.hypot(x + 0.5 - leo.x, y + 0.5 - leo.y) < 3.6 && d > leoDepth + 0.2) || this.nearOuterWall(level, x, y);
+          const near = inVent || inRafters || (Math.hypot(x + 0.5 - leo.x, y + 0.5 - leo.y) < 3.6 && d > leoDepth + 0.2) || this.nearOuterWall(level, x, y);
           const h = near ? STUB_H : t === 'pillar' ? WALL_H - 6 : WALL_H;
           const a = near ? 0.75 : 1;
           if (t === 'pillar') items.push({ depth: d, draw: (g) => this.prism(g, x + 0.22, y + 0.22, x + 0.78, y + 0.78, h, 0xe6e0d0, COL.pillar, 0x948f82, a) });
@@ -189,8 +207,21 @@ export class HeistView {
           items.push({ depth: d + 0.3, draw: (g) => this.laser(g, x, y, lasersOn) });
         } else if (t === 'exit') {
           items.push({ depth: d - 0.4, draw: (g) => this.exitSign(g, x, y) });
+        } else if (t === 'safe') {
+          const li = lootAt(level, x, y);
+          items.push({ depth: d, draw: (g) => this.safe(g, x, y, s.smashed.includes(k) || (li >= 0 && s.inventory.includes(li)), s.picks[k] ?? 0) });
+        } else if (t === 'seat') {
+          items.push({ depth: d, draw: (g) => this.prism(g, x + 0.08, y + 0.2, x + 0.92, y + 0.8, 20, 0x9c2a3a, 0x7a1f2c, 0x5e1722, 1) });
+        } else if (t === 'ladder') {
+          items.push({ depth: d + 0.2, draw: (g) => this.ladder(g, x, y) });
         }
+        // The rafters: beams high overhead, drawn faintly unless Leo is up there.
+        if (level.rafters[y][x]) items.push({ depth: d + 0.6, draw: (g) => this.beam(g, x, y, inRafters ? 0.95 : 0.35) });
       }
+    for (const sp of spots) {
+      const c = project(p, sp.at.x + 0.5, sp.at.y + 0.5);
+      this.fx.ellipse(c.x, c.y, ((sp.radius + 0.5) * TILE_W) / Math.SQRT2, ((sp.radius + 0.5) * TILE_H) / Math.SQRT2).fill({ color: 0xfff6d8, alpha: 0.1 });
+    }
     for (const c of s.cameras) {
       const facing = c.sweep[c.idx];
       items.push({ depth: project(p, c.at.x + 0.5, c.at.y + 0.5).depth + 0.4, draw: (g) => this.camera(g, c.at, facing, !camerasActive(s, c)) });
@@ -198,7 +229,7 @@ export class HeistView {
     items.push({
       depth: leoDepth + 0.05,
       draw: (g) => {
-        this.drawLeo(g, leo, s.inventory.length > 0, inVent);
+        this.drawLeo(g, leo, s.inventory.length > 0, inVent, inRafters ? RAFTER_Z - 6 : 0);
         if (s.napTurns > 0) this.zzz(g, leo);
       },
     });
@@ -367,6 +398,44 @@ export class HeistView {
     if (!off && Math.sin(this.time * 5) > 0) g.circle(sp.x - 5, sp.y - 2, 2).fill({ color: 0xff3b30 });
   }
 
+  private planks(g: Graphics, x: number, y: number): void {
+    for (const t of [0.33, 0.66]) {
+      const a = project(this.proj, x + t, y + 0.05);
+      const b = project(this.proj, x + t, y + 0.95);
+      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1, color: 0x3a2614, alpha: 0.8 });
+    }
+    const n = project(this.proj, x + 0.5, y + 0.5);
+    g.circle(n.x, n.y, 1.5).fill({ color: 0x2a1a0c });
+  }
+
+  private safe(g: Graphics, x: number, y: number, open: boolean, cracks: number): void {
+    this.prism(g, x + 0.12, y + 0.12, x + 0.88, y + 0.88, 44, 0x5a6070, 0x3e4452, 0x2e333e, 1);
+    const c = project(this.proj, x + 0.5, y + 0.5, 46);
+    g.circle(c.x, c.y, 8).fill({ color: open ? 0x1a1a1a : 0xc0c6d4 }).stroke({ width: 2, color: 0x20242c });
+    if (!open) {
+      const a = this.time * 0.6 + cracks;
+      g.moveTo(c.x, c.y).lineTo(c.x + Math.cos(a) * 6, c.y + Math.sin(a) * 6).stroke({ width: 2, color: 0x20242c });
+      for (let i = 0; i < cracks; i++) g.circle(c.x - 8 + i * 8, c.y + 13, 2).fill({ color: 0x6ee7a8 });
+    }
+  }
+
+  private ladder(g: Graphics, x: number, y: number): void {
+    for (const side of [0.3, 0.7]) {
+      const a = project(this.proj, x + side, y + 0.5, 0);
+      const b = project(this.proj, x + side, y + 0.5, RAFTER_Z);
+      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 3, color: 0x8a6a45 });
+    }
+    for (let z = 10; z < RAFTER_Z; z += 14) {
+      const a = project(this.proj, x + 0.3, y + 0.5, z);
+      const b = project(this.proj, x + 0.7, y + 0.5, z);
+      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 2, color: 0xa88458 });
+    }
+  }
+
+  private beam(g: Graphics, x: number, y: number, alpha: number): void {
+    this.prism(g, x + 0.3, y + 0.3, x + 0.7, y + 0.7, 6, 0x8a6a45, 0x6b4a2a, 0x553a20, alpha, RAFTER_Z - 8);
+  }
+
   /** The checkpoint: a chalk paw print on the floor, glowing once Leo has reached it. */
   private pawPrint(g: Graphics, at: Point, reached: boolean): void {
     const c = project(this.proj, at.x + 0.5, at.y + 0.5);
@@ -399,8 +468,8 @@ export class HeistView {
   }
 
   /** Leo Tuxedo, placeholder edition: black cat, white shirt front, red bow tie. */
-  private drawLeo(g: Graphics, a: Actor, hasLoot: boolean, inVent: boolean): void {
-    const s = project(this.proj, a.x, a.y);
+  private drawLeo(g: Graphics, a: Actor, hasLoot: boolean, inVent: boolean, lift = 0): void {
+    const s = project(this.proj, a.x, a.y, lift);
     const f = this.face(a);
     const front = f.y > -0.2;
     const by = s.y - a.bob;
@@ -452,9 +521,28 @@ export class HeistView {
     }
     g.ellipse(hx - 15, hy + 1, 5, 7).fill({ color: 0x9c7046 });
     g.ellipse(hx + 15, hy + 1, 5, 7).fill({ color: 0x9c7046 });
-    g.ellipse(hx, hy - 12, 15, 5).fill({ color: 0x1e2b52 });
-    g.rect(hx - 10, hy - 22, 20, 10).fill({ color: 0x24335f });
+    const captain = guard.kind === 'captain';
+    g.ellipse(hx, hy - 12, 15, 5).fill({ color: captain ? 0x15203f : 0x1e2b52 });
+    g.rect(hx - 10, hy - 22, 20, 10).fill({ color: captain ? 0x1a2650 : 0x24335f });
     g.circle(hx, hy - 17, 2.5).fill({ color: 0xf2c46b });
+    if (captain) {
+      // Gold braid on the cap and epaulettes.
+      g.rect(hx - 10, hy - 14, 20, 3).fill({ color: 0xf2c46b });
+      g.rect(s.x - 20, by - 36, 9, 4).fill({ color: 0xf2c46b });
+      g.rect(s.x + 11, by - 36, 9, 4).fill({ color: 0xf2c46b });
+    }
+    if (guard.kind === 'sniffer' && front) {
+      // A big wet nose, and the air it's sampling.
+      g.ellipse(hx + f.x * 10, hy + 4, 6, 4.5).fill({ color: 0x111111 });
+      const t = (this.time * 1.5) % 1;
+      for (const side of [-1, 1]) g.moveTo(hx + f.x * 10 + side * (8 + t * 8), hy - 2).quadraticCurveTo(hx + f.x * 10 + side * (12 + t * 8), hy + 4, hx + f.x * 10 + side * (8 + t * 8), hy + 10).stroke({ width: 1.5, color: 0xd8e4ff, alpha: 1 - t });
+    }
+    if (guard.asleep) {
+      // Eyes shut and snoring.
+      if (front) for (const side of [-6, 6]) g.moveTo(hx + f.x * 7 + side - 3, hy - 2).lineTo(hx + f.x * 7 + side + 3, hy - 2).stroke({ width: 2, color: 0x1a1a1a });
+      this.zzz(g, a);
+      return;
+    }
     if (guard.dazed > 0) {
       // Little stars circling a guard who just had Leo wriggle out of his paws.
       for (let i = 0; i < 3; i++) {

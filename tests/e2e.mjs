@@ -1,6 +1,7 @@
 // Plays the built game in headless Chromium, through the real UI: a new game, the tutorial with the
 // narrator, the calling card, paper and report, the narrator paying up, buying the lair, the black market,
-// the Night Gallery, a deliberate catch, and a reload to check the save. Screenshots every stage.
+// the Coin Museum, spending at the lair, a gadget and undo, the checkpoint and a deliberate catch, and a
+// reload to check the save. Screenshots every stage.
 // Usage: node tests/e2e.mjs [outDir]
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -56,6 +57,11 @@ function route(name) {
   const to = src.indexOf('];', from) + 1;
   return JSON.parse(src.slice(from, to).replace(/\{ a: '([a-z-]+)', x: (\d+), y: (\d+) \}/g, '{"a":"$1","x":$2,"y":$3}').replace(/,\s*\]/g, ']'));
 }
+/** The solver's flawless route for a level and difficulty, from src/levels/solutions.ts. */
+function solution(id, difficulty) {
+  const src = readFileSync(join(root, 'src', 'levels', 'solutions.ts'), 'utf8');
+  return JSON.parse(src.slice(src.indexOf('/* BEGIN */') + 11, src.indexOf('/* END */')))[id][difficulty];
+}
 async function playRoute(steps, shots = {}, each = async () => {}) {
   for (const [i, turnSteps] of steps.entries()) {
     const turn = await page.evaluate(() => window.__pc.state.turn);
@@ -108,17 +114,18 @@ await page.waitForSelector('.lair');
 await shot('11-lair.png');
 const afterLair = await page.evaluate(() => ({ catnip: window.__pc.profile.catnip, lair: window.__pc.profile.lairOwned, stash: window.__pc.profile.stash.length }));
 
-// --- The Night Gallery --------------------------------------------------------------------------------
+// --- The Coin Museum, the first heist on offer --------------------------------------------------------------
 await page.click('[data-job="1"]');
 await page.waitForSelector('.briefing');
 await shot('11b-briefing-no-table.png');
 await page.click('#go');
 await page.waitForTimeout(900);
-await playRoute(route('NIGHT_GALLERY_ROUTE'), { 13: '12-night-smash.png' });
-const nightEnd = await page.evaluate(() => ({ status: window.__pc.state.status, turn: window.__pc.state.turn }));
+const COIN = solution('l1-coin-museum', 'casual');
+await playRoute(COIN, { 3: '12-coin-vault.png' });
+const coinEnd = await page.evaluate(() => ({ status: window.__pc.state.status, turn: window.__pc.state.turn, seen: window.__pc.state.seen }));
 await page.waitForSelector('.paper', { timeout: 6000 });
 await page.waitForTimeout(1500);
-await shot('13-night-paper.png');
+await shot('13-coin-paper.png');
 await page.click('#paper-ok');
 await page.click('#report-ok');
 await page.click('[data-tab="market"]');
@@ -128,7 +135,8 @@ const sold = await page.evaluate(() => ({ catnip: window.__pc.profile.catnip, st
 await page.click('[data-tab="papers"]');
 await shot('15-front-pages.png');
 
-// --- Spend it: an attribute, a skill, two rooms -------------------------------------------------------
+// --- Spend it: an attribute, a skill, two rooms (with a little Catnip slipped in, so there's enough) ------
+await page.evaluate(() => { window.__pc.profile.catnip = 2000; });
 await page.click('[data-tab="leo"]');
 await page.click('[data-raise="pockets"]');
 await page.click('[data-learn="blend"]');
@@ -150,14 +158,13 @@ const kit = await page.evaluate(() => ({ spaces: window.__pc.state.perks.spaces,
 await page.click('[data-ability="bottle-cap"]');
 await page.waitForTimeout(300);
 await shot('19-aiming.png');
-await clickTile(4, 12);
+await clickTile(3, 13);
 const afterCap = await page.evaluate(() => ({ caps: window.__pc.state.charges['bottle-cap'], ap: window.__pc.state.ap }));
 await page.click('#undo');
 await page.waitForTimeout(200);
 const afterUndo = await page.evaluate(() => ({ caps: window.__pc.state.charges['bottle-cap'], ap: window.__pc.state.ap }));
-// The known route as far as the side gallery, where the checkpoint is.
-await playRoute(route('NIGHT_GALLERY_ROUTE').slice(0, 15));
-await action('pick-door', 17, 5); // open the side gallery's door, so the guards can get in
+// The flawless route as far as the passage into the vault, where the checkpoint is.
+await playRoute(COIN.slice(0, 4));
 const atCheckpoint = await page.evaluate(() => ({ checkpoint: window.__pc.checkpoint, turn: window.__pc.state.turn, inventory: window.__pc.state.inventory.length }));
 await shot('20-checkpoint.png');
 // Step into danger (a guard's view, a camera or a laser) until Leo is caught, by a guard or the lockdown.
@@ -199,7 +206,7 @@ await page.click('#go');
 await page.waitForTimeout(800);
 await shot('25-phone-heist.png');
 
-const results = { tutorialEnd, tips: [...tips], afterLair, nightEnd, sold, spent, kit, afterCap, afterUndo, atCheckpoint, caughtStatus, restored, reloaded };
+const results = { tutorialEnd, tips: [...tips], afterLair, coinEnd, sold, spent, kit, afterCap, afterUndo, atCheckpoint, caughtStatus, restored, reloaded };
 console.log(JSON.stringify(results, null, 1));
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors');
 await browser.close();
@@ -207,13 +214,13 @@ const ok =
   tutorialEnd === 'escaped' &&
   tips.has('done') &&
   afterLair.lair && afterLair.catnip === 0 && afterLair.stash === 0 &&
-  nightEnd.status === 'escaped' && nightEnd.turn === 24 &&
+  coinEnd.status === 'escaped' && !coinEnd.seen &&
   sold.stash === 0 && sold.catnip > 0 && sold.sold === sold.catnip &&
   spent.pockets === 1 && spent.skills.includes('blend') && spent.rooms.workshop === 1 && spent.rooms.planning === 1 &&
-  spent.catnip === sold.catnip - 150 - 300 - 300 - 400 &&
+  spent.catnip === 2000 - 150 - 300 - 300 - 400 &&
   kit.spaces === 7 && kit.blend && kit.caps === 1 &&
   afterCap.caps === 0 && afterCap.ap === 1 && afterUndo.caps === 1 && afterUndo.ap === 2 &&
-  atCheckpoint.checkpoint && caughtStatus === 'caught' &&
-  restored.status === 'playing' && restored.turn === 13 && restored.inventory === 0 && // Leo reached the paw print on turn 13, before stealing anything
+  atCheckpoint.checkpoint !== null && caughtStatus === 'caught' &&
+  restored.status === 'playing' && restored.turn === atCheckpoint.checkpoint && restored.inventory === 0 &&
   reloaded.heists === 2 && reloaded.papers === 2 && reloaded.catnip === spent.catnip && reloaded.skills === 1;
 process.exit(errors.length || !ok ? 1 : 0);

@@ -91,7 +91,7 @@ function slotSummary(p: Profile): string {
 export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void {
   const el = show(
     `<div class="card big title-card">
-      <div class="kicker">Prototype M3 · progression</div>
+      <div class="kicker">Prototype M4 · Old Town</div>
       <h1>Purrrfect Crime</h1>
       <p>Leo Tuxedo is new in town, sharply dressed and short of Catnip. The museums are full of treasures
         and the guards are half asleep. Time to make a name for himself.</p>
@@ -254,6 +254,7 @@ export function cityMap(p: Profile, onBuy: () => void): void {
 
 export interface LairCallbacks {
   jobs: LevelDef[];
+  districts: { id: string; name: string; levels: LevelDef[] }[];
   onHeist: (def: LevelDef) => void;
   onSell: (id: number) => void;
   onSellAll: () => void;
@@ -275,18 +276,25 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   const wanted = demand(p.day);
   const points = attributePoints(p);
 
-  const heists = cb.jobs
-    .map((def, i) => {
-      const rec = p.records[def.id];
-      const centre = def.loot.find((l) => def.map[l.at.y][l.at.x] === 'G');
-      return `<div class="job">
+  // A heist opens once the one before it is cleared; anything already cleared stays open.
+  const unlocked = (i: number) => i === 0 || !!p.records[cb.jobs[i].id] || !!p.records[cb.jobs[i - 1].id];
+  const job = (def: LevelDef) => {
+    const i = cb.jobs.indexOf(def);
+    const rec = p.records[def.id];
+    const centre = def.loot.find((l) => def.map[l.at.y][l.at.x] === 'G');
+    if (!unlocked(i))
+      return `<div class="job locked"><div><b>${esc(def.name)}</b> <span class="badge">locked</span><p class="small">Clear ${esc(cb.jobs[i - 1].name)} first.</p></div></div>`;
+    return `<div class="job">
         <div><b>${esc(def.name)}</b>${rec ? ' <span class="badge">cleared</span>' : ' <span class="badge new">new</span>'}
           <p class="small">${esc(def.objective)}</p>
-          <p class="small">${def.loot.length} pieces of loot${centre ? ` · centrepiece: ${esc(centre.name)}${rec?.centrepiece ? ' ✓' : ''}` : ''}${rec ? ` · best ${rec.bestTurns} turns${rec.flawless ? ' · flawless ✓' : ''}` : ''}</p>
+          <p class="small">${def.loot.length} piece${def.loot.length === 1 ? '' : 's'} of loot${centre ? ` · centrepiece: ${esc(centre.name)}${rec?.centrepiece ? ' ✓' : ''}` : ''}${rec ? ` · best ${rec.bestTurns} turns${rec.flawless ? ' · flawless ✓' : ''}` : ''}</p>
           ${rec ? '<p class="small warn">Replay: the loot is back on display, but the fences will call it hot and pay half.</p>' : ''}</div>
         <button class="primary" data-job="${i}">${rec ? 'Replay' : 'Plan the heist'}</button>
       </div>`;
-    })
+  };
+  const heists = cb.districts
+    .filter((d) => d.levels.some((l) => unlocked(cb.jobs.indexOf(l))))
+    .map((d) => `<h2 class="section district">${esc(d.name)}</h2>${d.levels.map(job).join('')}`)
     .join('');
 
   const attributes = ATTRIBUTES.map((a) => {
@@ -453,6 +461,8 @@ export function briefing(def: LevelDef, p: Profile, onStart: () => void, onBack:
       <h1>${esc(def.name)}</h1>
       <p>${esc(def.objective)}</p>
       <p class="small">${def.loot.length} pieces of loot · ${level.guards.length} guard${level.guards.length === 1 ? '' : 's'}${tier >= 2 ? ` · ${level.cameras.length} camera${level.cameras.length === 1 ? '' : 's'}` : ''}${rec ? ` · best ${rec.bestTurns} turns` : ''}</p>
+      ${def.tip ? `<p class="tip"><b>New here:</b> ${esc(def.tip)}</p>` : ''}
+      <p class="small"><b>On duty:</b> ${level.guards.map((g) => `${esc(g.name)}${g.kind && g.kind !== 'watch' ? ` (${{ sleepy: 'sleepy', captain: 'captain', sniffer: 'sniffer' }[g.kind]})` : ''}`).join(', ')}</p>
       ${plan}
       ${rumour}
       <div class="row-buttons"><button id="go" class="primary">Start the heist</button><button id="back">Back to the lair</button></div>

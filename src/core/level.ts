@@ -13,6 +13,10 @@ export type Tile =
   | 'laser' // floor crossed by a laser tripwire
   | 'panel' // camera control panel, on a wall
   | 'fuse' // fuse box for the lasers, on a wall
+  | 'squeaky' // a loose floorboard: loud underfoot
+  | 'safe' // a safe with loot inside: slow to crack, but silent
+  | 'ladder' // up to the rafters (Ceiling Climb)
+  | 'seat' // a row of theatre seats: low, so guards see over them, but in Leo's way
   | 'exit';
 
 export interface Point {
@@ -20,11 +24,24 @@ export interface Point {
   y: number;
 }
 
+/**
+ * watch: walks a route. sleepy: dozes at his post, wakes to noise. captain: sees further and calls nearby
+ * guards when he's suspicious. sniffer: short-sighted, but smells Leo through walls within 2 tiles.
+ */
+export type GuardKind = 'watch' | 'sleepy' | 'captain' | 'sniffer';
+
 export interface GuardDef {
   name: string;
+  kind?: GuardKind;
   start: Point;
-  /** Waypoints walked in a loop. */
+  /** Waypoints walked in a loop. A sleepy guard's post is his start; his route is ignored. */
   route: Point[];
+}
+
+/** A spotlight's lit circle moves one step along its path each turn, then loops. */
+export interface SpotlightDef {
+  path: Point[];
+  radius: number;
 }
 
 export interface CameraDef {
@@ -60,6 +77,7 @@ export interface Extras {
   cameras?: CameraDef[];
   lamps?: LampDef[];
   moonlight?: { x: number; y: number; w: number; h: number }[];
+  spotlights?: SpotlightDef[];
 }
 
 export interface LevelDef {
@@ -69,9 +87,12 @@ export interface LevelDef {
   /**
    * `#` wall · `.` floor · `,` marble (noisy) · `P` pillar · `D` display case · `G` centrepiece plinth ·
    * `L` lamp · `+` locked door · `V` vent grate · `x` laser · `C` camera panel · `F` fuse box ·
-   * `@` Leo's start · `E` exit
+   * `~` squeaky floorboard · `S` safe · `H` ladder to the rafters · `h` theatre seats · `@` Leo's start · `E` exit
    */
   map: string[];
+  /** The rafters, same size as the map: `=` beam, `H` the top of a ladder (must match an `H` on the map). */
+  rafters?: string[];
+  spotlights?: SpotlightDef[];
   /** The duct layer, same size as the map: `=` duct, `V` grate (must match a `V` on the map). */
   vents?: string[];
   /** 'lit' means the whole level is lit (no shadows); otherwise only lamps light it. */
@@ -84,6 +105,8 @@ export interface LevelDef {
   pulsingLasers?: boolean;
   guards: GuardDef[];
   loot: LootDef[];
+  /** What's new in this level, for the briefing. */
+  tip?: string;
   /** Base XP for a successful heist, and the turn count that earns a speed bonus. */
   xp?: number;
   par?: number;
@@ -105,6 +128,8 @@ export interface Level {
   h: number;
   tiles: Tile[][]; // tiles[y][x]
   ducts: boolean[][];
+  rafters: boolean[][];
+  spotlights: SpotlightDef[];
   start: Point;
   exit: Point;
   plinth: Point | null;
@@ -123,6 +148,10 @@ const LEGEND: Record<string, Tile> = {
   x: 'laser',
   C: 'panel',
   F: 'fuse',
+  '~': 'squeaky',
+  S: 'safe',
+  H: 'ladder',
+  h: 'seat',
   '@': 'floor',
   E: 'exit',
 };
@@ -135,9 +164,11 @@ export function parseLevel(def: LevelDef, difficulty: Difficulty = 'casual'): Le
   let plinth: Point | null = null;
   const tiles: Tile[][] = [];
   const ducts: boolean[][] = [];
+  const rafters: boolean[][] = [];
   for (let y = 0; y < h; y++) {
     const row: Tile[] = [];
     const drow: boolean[] = [];
+    const rrow: boolean[] = [];
     for (let x = 0; x < w; x++) {
       const ch = def.map[y][x] ?? '#';
       const t = LEGEND[ch];
@@ -150,14 +181,19 @@ export function parseLevel(def: LevelDef, difficulty: Difficulty = 'casual'): Le
       drow.push(v === '=' || v === 'V');
       if (v === 'V' && t !== 'grate') throw new Error(`${def.id}: vent grate at ${x},${y} has no V on the map`);
       if (t === 'grate' && v !== 'V') throw new Error(`${def.id}: grate at ${x},${y} is not on the duct map`);
+      const r = def.rafters?.[y]?.[x] ?? ' ';
+      rrow.push(r === '=' || r === 'H');
+      if (r === 'H' && t !== 'ladder') throw new Error(`${def.id}: ladder top at ${x},${y} has no H on the map`);
+      if (t === 'ladder' && r !== 'H') throw new Error(`${def.id}: ladder at ${x},${y} doesn't reach the rafters`);
     }
     tiles.push(row);
     ducts.push(drow);
+    rafters.push(rrow);
   }
   if (!start || !exit) throw new Error(`${def.id}: map needs @ and E`);
   for (const l of def.loot) {
     const t = tiles[l.at.y]?.[l.at.x];
-    if (t !== 'case' && t !== 'plinth') throw new Error(`${def.id}: loot "${l.name}" is not in a case or on the plinth`);
+    if (t !== 'case' && t !== 'plinth' && t !== 'safe') throw new Error(`${def.id}: loot "${l.name}" is not in a case, a safe or on the plinth`);
   }
   const tier = DIFFICULTIES.indexOf(difficulty);
   const extras = DIFFICULTIES.slice(1, tier + 1).map((d) => def.extras?.[d as Exclude<Difficulty, 'casual'>] ?? {});
@@ -168,6 +204,8 @@ export function parseLevel(def: LevelDef, difficulty: Difficulty = 'casual'): Le
     h,
     tiles,
     ducts,
+    rafters,
+    spotlights: [...(def.spotlights ?? []), ...extras.flatMap((e) => e.spotlights ?? [])],
     start,
     exit,
     plinth,
@@ -190,9 +228,13 @@ export function isDuct(level: Level, x: number, y: number): boolean {
   return !!level.ducts[y]?.[x];
 }
 
+export function isRafter(level: Level, x: number, y: number): boolean {
+  return !!level.rafters[y]?.[x];
+}
+
 /** Whether a tile blocks walking, given which doors are open and which cases are emptied. */
 export function blocksMove(t: Tile): boolean {
-  return t === 'wall' || t === 'pillar' || t === 'case' || t === 'plinth' || t === 'lamp' || t === 'door' || t === 'panel' || t === 'fuse';
+  return t === 'wall' || t === 'pillar' || t === 'case' || t === 'plinth' || t === 'lamp' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'safe' || t === 'seat';
 }
 
 /** Display cases, the plinth and lamps are low: guards see over them. Closed doors block sight. */

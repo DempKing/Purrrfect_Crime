@@ -402,6 +402,27 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | **Downtown** | The Grand Bank, Casino Royale-Paws, The Mint, The Museum of Modern Mischief, City Hall Treasury |
 | **Special** | NightClaw's challenge museum (*The Midnight Museum*), NightClaw's Lair |
 
+**Built so far (M4, Old Town):**
+
+| # | Level | What it introduces |
+| --- | --- | --- |
+| 0 | The Corner Gallery | The tutorial (§10). |
+| 1 | The Cobblestone Coin Museum | A sleepy guard at the ticket desk, creaky floorboards, a safe. |
+| 2 | The Clocktower Archive | A captain who whistles for help; rafters and ladders for Ceiling Climb. |
+| 3 | The Pawnbroker Penthouse | A sniffer who smells through walls; pulsing lasers. |
+| 4 | The Opera House Costume Vault | Spotlights that move every turn; theatre seats guards see over. |
+
+Each level opens when the one before it is cleared. Guard types as built: **sleepy** guards see
+nothing while dozing, wake to noise, look around and go back to their chair; **captains** see 25%
+further and call guards within 7 tiles when suspicious; **sniffers** see 60% as far but smell Leo
+within 2 tiles through walls (not in vents or rafters), and a second sniff is a catch. Creaky
+floorboards make a noise of 4; safes take three silent goes (two with Dexterity); dropping from the
+rafters makes a noise of 3, climbing down a ladder none.
+
+**Every level must be beatable flawlessly (never seen, no alarm) on every difficulty**, because the
+NightClaw Challenge asks for exactly that on Mastermind and Legendary. A solver (`npm run solve`) searches
+for such a route while a level is designed; the routes are saved and replayed by the tests.
+
 A level-design checklist for each map: readable sight lines, at least three valid routes to the
 centrepiece (floor, vents, high road), a "tempting greedy detour", a lit hall that has to be crossed or
 avoided, and an escape that changes once an alarm trips.

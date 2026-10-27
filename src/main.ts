@@ -18,7 +18,7 @@ import {
   guardView,
   key,
   leoReach,
-  lightAt,
+  lightNow,
   moveLeo,
   newHeist,
   pathTo,
@@ -32,7 +32,7 @@ import {
   type GuardStep,
   type State,
 } from './core/game';
-import { NIGHT_GALLERY } from './levels/prototype';
+import { ALL_LEVELS, DISTRICTS } from './levels';
 import { CORNER_GALLERY } from './levels/tutorial';
 import { buyLair, completeHeist, deleteSlot, loadSlot, loadSlots, narratorBuysTutorialLoot, newProfile, saveSlot, sell, type Profile } from './meta/profile';
 import { DIFFICULTY, learn, perksFor, raise, upgrade } from './meta/progression';
@@ -41,8 +41,8 @@ import * as screens from './ui/screens';
 import { HeistView, type Actor, type Overlay, type Ripple } from './render/view';
 import { project, unproject } from './render/iso';
 
-/** Heists on offer at the lair. The tutorial can be replayed like any other. */
-const JOBS: LevelDef[] = [CORNER_GALLERY, NIGHT_GALLERY];
+/** Heists on offer at the lair, in order. The tutorial can be replayed like any other. */
+const JOBS: LevelDef[] = ALL_LEVELS;
 
 let level: Level = parseLevel(CORNER_GALLERY);
 let state: State = newHeist(level);
@@ -231,13 +231,13 @@ function act(tile: Point): void {
   selected = null;
   version++;
   const segs: Segment[] = [];
-  const crawl = state.layer === 'vent' ? 1.4 : 1;
+  const crawl = state.layer === 'vent' ? 1.4 : 1; // beams are walked at the usual pace
   for (let i = 1; i < res.path.length; i++) {
     const p = res.path[i - 1];
     const q = res.path[i];
     segs.push({ who: 'leo', from: p, to: q, facing: faceToward(p, q), t: 0, dur: (p.x !== q.x && p.y !== q.y ? 0.17 : 0.12) * crawl });
   }
-  play(segs, afterLeoActs);
+  play(segs, () => afterLeoActs(res.path));
 }
 
 function runAction(a: Action): void {
@@ -299,10 +299,11 @@ let turnActed = false;
 const checkpointAllowed = () => DIFFICULTY[profile.difficulty].checkpoints && !tutorial;
 const undoAllowed = () => DIFFICULTY[profile.difficulty].undo;
 
-function checkCheckpoint(): void {
+/** Reaching the paw print (standing on it, or walking over it) saves a restart point where the move ends. */
+function checkCheckpoint(walked: Point[] = []): void {
   const cp = level.def.checkpoint;
   if (!cp || checkpoint || !checkpointAllowed() || state.status !== 'playing' || state.layer !== 'floor') return;
-  if (state.leo.x !== cp.x || state.leo.y !== cp.y) return;
+  if (![state.leo, ...walked].some((p) => p.x === cp.x && p.y === cp.y)) return;
   checkpoint = structuredClone(state);
   banner('Checkpoint');
   say('Checkpoint: Leo marks the floor with chalk. If he’s caught from here on, he can start again from this spot.');
@@ -348,10 +349,10 @@ function fromCheckpoint(): void {
   say('Back at the checkpoint.');
 }
 
-function afterLeoActs(): void {
+function afterLeoActs(walked: Point[] = []): void {
   spawnRipples();
   syncActors();
-  checkCheckpoint();
+  checkCheckpoint(walked);
   updateHud();
   if (state.log.length) say(state.log.join(' '));
   tutorialUpdate();
@@ -455,7 +456,7 @@ function cityMap(): void {
       [
         'It\'s yours. Leaky roof, boarded windows, one light bulb. Home sweet home.',
         'The back room has a door onto the black market: sell your loot there for Catnip. The fences pay better as you make a name for yourself.',
-        'Every heist makes the morning paper, and every paper keeps a tally of what you took. When you\'re ready, the City Museum\'s Night Gallery is waiting. Good luck, kid.',
+        'Every heist makes the morning paper, and every paper keeps a tally of what you took. Start small: the Cobblestone Coin Museum, here in Old Town. Good luck, kid.',
       ],
       'Enter the lair',
       () => showLair(),
@@ -469,6 +470,7 @@ function showLair(tab: screens.LairTab = 'heists'): void {
     profile,
     {
       jobs: JOBS,
+      districts: DISTRICTS,
       onHeist: (def) => screens.briefing(def, profile, () => startHeist(def), () => showLair()),
       onSell: (id) => {
         sell(profile, id);
@@ -579,9 +581,9 @@ function updateHud(): void {
   $('turn').textContent = String(state.turn);
   $('ap').innerHTML = Array.from({ length: AP_PER_TURN }, (_, i) => `<span class="pip ${i < state.ap ? 'on' : ''}"></span>`).join('');
   $('inventory').innerHTML = `Inventory <b>${inventoryUsed(level, state)}/${state.perks.spaces}</b> · ${money(inventoryValue(level, state))}`;
-  const l = state.layer === 'vent' ? -1 : lightAt(level, state.leo.x, state.leo.y);
+  const l = state.layer !== 'floor' ? -1 : lightNow(level, state, state.leo.x, state.leo.y);
   const li = $('light');
-  li.textContent = l < 0 ? 'In the vents' : LIGHT_NAMES[l];
+  li.textContent = l < 0 ? (state.layer === 'vent' ? 'In the vents' : 'In the rafters') : LIGHT_NAMES[l];
   li.className = `light l${l < 0 ? 'v' : l}`;
   const al = $('alarm');
   if (state.alarm !== null && state.status === 'playing') {
@@ -736,7 +738,7 @@ async function boot(): Promise<void> {
       return slot;
     },
     get checkpoint() {
-      return !!checkpoint;
+      return checkpoint ? checkpoint.turn : null;
     },
     get targeting() {
       return targeting;
