@@ -74,3 +74,15 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+      # Fetch the live page as a visitor would and make sure it's the built game, not the raw source.
+      - name: Check the live site
+        run: |
+          url="${{ steps.deployment.outputs.page_url }}"
+          for i in 1 2 3 4 5 6; do
+            curl -sL -H 'Cache-Control: no-cache' "$url?check=$GITHUB_SHA" -o page.html -w '%{http_code} %{size_download}\n' > status.txt || true
+            if grep -q 'pixi' page.html && ! grep -q '<!-- SCRIPT -->' page.html; then
+              echo "::notice::Live site OK: $url serves the built game ($(cat status.txt) bytes)."; exit 0
+            fi
+            sleep 20
+          done
+          echo "::warning::Live site check: $url answered $(cat status.txt) but doesn't look like the built game. First lines: $(head -c 300 page.html | tr '\n' ' ')"
