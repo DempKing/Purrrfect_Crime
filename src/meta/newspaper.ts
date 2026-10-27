@@ -1,5 +1,6 @@
 // The morning paper after each heist: a headline written for how it went, photos of the empty displays
 // with the estimated value of each piece, and side stories. Deterministic, so a day's paper never changes.
+import { the } from '../core/level';
 
 export interface Photo {
   name: string;
@@ -65,16 +66,16 @@ export function writePaper(f: HeistFacts): Paper {
   let subhead: string;
   if (f.rival && !f.rival.won) {
     headline = `${f.rival.name.toUpperCase()} BEATS TUXEDO CAT TO THE ${f.rival.prize.toUpperCase()}`;
-    subhead = `Two thieves in one night at ${f.place}. Only one of them got the ${f.rival.prize}.`;
+    subhead = `Two thieves in one night at ${f.place}. Only one of them got ${the(f.rival.prize)}.`;
   } else if (f.rival && f.rival.won) {
     headline = `TUXEDO CAT BEATS ${f.rival.name.toUpperCase()} TO THE ${f.rival.prize.toUpperCase()}`;
     subhead = `Witnesses describe a race through ${f.place}, and a calling card on the empty plinth.`;
   } else if (f.first) {
     headline = `NEW CAT IN TOWN: TUXEDO THIEF HITS ${PLACE}`;
-    subhead = `A calling card with a red bow tie was all the burglar left behind${centre ? `, on the plinth where the ${centre.name} used to sit` : ''}.`;
+    subhead = `A calling card with a red bow tie was all the burglar left behind${centre ? `, on the plinth where ${the(centre.name)} used to sit` : ''}.`;
   } else if (!f.seen && !f.alarm && centre) {
     headline = pick([`GHOST IN A TUXEDO: ${CENTRE} VANISHES FROM ${PLACE}`, `NOBODY SAW A THING: ${CENTRE} GONE`, `NOT A WHISKER OUT OF PLACE AT ${PLACE}`], seed);
-    subhead = `No alarm, no sighting, no clue, apart from the calling card where the ${centre.name} should be.`;
+    subhead = `No alarm, no sighting, no clue, apart from the calling card where ${the(centre.name)} should be.`;
   } else if (f.alarm) {
     headline = pick([`ALARMS BLARE AS TUXEDO CAT STRIKES ${PLACE}`, `SIRENS, SPOTLIGHTS AND STILL NO CAT AT ${PLACE}`, `LOCKDOWN TOO LATE AT ${PLACE}`], seed);
     subhead = `Police arrived to find the alarm ringing, the displays empty and a calling card by the door.`;
@@ -94,7 +95,7 @@ export function writePaper(f: HeistFacts): Paper {
     name: i.name,
     value: i.value,
     centrepiece: i.centrepiece,
-    caption: i.centrepiece ? `The ${i.name}'s plinth, with only a calling card left on it.` : pick([`The empty case where the ${i.name} stood.`, `Where the ${i.name} used to be.`, `Gone: the ${i.name}.`], hash(i.name) + seed),
+    caption: i.centrepiece ? `${the(i.name).replace(/^t/, 'T')}'s plinth, with only a calling card left on it.` : pick([`The empty case where ${the(i.name)} stood.`, `Where ${the(i.name)} used to be.`, `Gone: ${the(i.name)}.`], hash(i.name) + seed),
   }));
   const total = f.items.reduce((n, i) => n + i.value, 0);
 

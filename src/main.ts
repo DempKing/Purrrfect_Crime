@@ -4,7 +4,7 @@
 import { Application, Container } from 'pixi.js';
 // Lets PixiJS run on pages with a strict security policy (no eval), such as claude.ai artifacts.
 import 'pixi.js/unsafe-eval';
-import { parseLevel, type Level, type LevelDef, type Point } from './core/level';
+import { parseLevel, the, type Level, type LevelDef, type Point } from './core/level';
 import {
   actionsHere,
   moveAp,
@@ -578,17 +578,18 @@ function updateHud(): void {
           ? `${r.name} is coming tonight`
           : ''
       : r.phase === 'in'
-        ? `${r.name} is after the ${prize}!`
+        ? `${r.name} is after ${the(prize)}!`
         : r.phase === 'leaving'
-          ? `${r.name} has the ${prize} and is getting away`
+          ? `${r.name} has ${the(prize)} and is getting away`
           : state.rivalBeaten
             ? `You beat ${r.name} to it`
             : state.rivalLoot.length
-              ? `${r.name} got away with the ${prize}`
+              ? `${r.name} got away with ${the(prize)}`
               : `${r.name} has fled`;
+  const lock = level.def.timeLock && state.turn < level.def.timeLock ? `Time lock opens on turn ${level.def.timeLock}` : '';
   const tide = level.def.tide ? `${flooded(level, state) ? 'High' : 'Low'} tide · it turns in ${tideTurnsLeft(level, state)} turn${tideTurnsLeft(level, state) === 1 ? '' : 's'}` : '';
-  rl.textContent = [rivalText, tide].filter(Boolean).join(' · ');
-  rl.classList.toggle('hidden', !rivalText && !tide);
+  rl.textContent = [rivalText, tide, lock].filter(Boolean).join(' · ');
+  rl.classList.toggle('hidden', !rivalText && !tide && !lock);
   const hidden = hiddenAt(level, state, state.leo);
   const l = state.layer !== 'floor' || hidden ? -1 : lightNow(level, state, state.leo.x, state.leo.y);
   const li = $('light');

@@ -1,7 +1,7 @@
 // The screens between heists, built as plain DOM over the game canvas: the title and save slots,
 // the narrator, the calling card, the morning paper, the heist report, the city map, the lair and
 // the briefing before a heist.
-import { parseLevel, type LevelDef, type LootCategory } from '../core/level';
+import { parseLevel, the, type LevelDef, type LootCategory } from '../core/level';
 import { RIVALS, type RivalPlan } from '../core/game';
 import type { Paper } from '../meta/newspaper';
 import { LETTERS, delivery, hasLetter, type Letter } from '../meta/letters';
@@ -92,7 +92,7 @@ function slotSummary(p: Profile): string {
 export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void {
   const el = show(
     `<div class="card big title-card">
-      <div class="kicker">Prototype M4 · Harbour</div>
+      <div class="kicker">Prototype M4 · Downtown</div>
       <h1>Purrrfect Crime</h1>
       <p>Leo Tuxedo is new in town, sharply dressed and short of Catnip. The museums are full of treasures
         and the guards are half asleep. Time to make a name for himself.</p>
@@ -299,8 +299,8 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
         <div><b>${esc(def.name)}</b>${rec ? ' <span class="badge">cleared</span>' : ' <span class="badge new">new</span>'}
           <p class="small">${esc(def.objective)}</p>
           <p class="small">${def.loot.length} piece${def.loot.length === 1 ? '' : 's'} of loot${centre ? ` · centrepiece: ${esc(centre.name)}${rec?.centrepiece ? ' ✓' : ''}` : ''}${rec ? ` · best ${rec.bestTurns} turns${rec.flawless ? ' · flawless ✓' : ''}` : ''}</p>
-          ${rec?.lostTo ? `<p class="small rival-line">${esc(RIVALS[rec.lostTo].name)} got away with the ${esc(centre?.name ?? 'centrepiece')}. Replay to steal it yourself.</p>` : ''}
-          ${p.rivals[def.id] && p.rooms.planning >= 1 ? `<p class="small rival-line">Rumour: ${esc(RIVALS[p.rivals[def.id]!.id].name)} is after the ${esc(centre?.name ?? 'centrepiece')}.</p>` : ''}
+          ${rec?.lostTo ? `<p class="small rival-line">${esc(RIVALS[rec.lostTo].name)} got away with ${the(esc(centre?.name ?? 'centrepiece'))}. Replay to steal it yourself.</p>` : ''}
+          ${p.rivals[def.id] && p.rooms.planning >= 1 ? `<p class="small rival-line">Rumour: ${esc(RIVALS[p.rivals[def.id]!.id].name)} is after ${the(esc(centre?.name ?? 'centrepiece'))}.</p>` : ''}
           ${rec ? '<p class="small warn">Replay: the loot is back on display, but the fences will call it hot and pay half.</p>' : ''}</div>
         <button class="primary" data-job="${i}">${rec ? 'Replay' : 'Plan the heist'}</button>
       </div>`;
@@ -308,7 +308,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   const campaign = cb.jobs.slice(1).filter((d) => !d.challenge);
   const flawless = campaign.filter((d) => p.records[d.id]?.flawless).length;
   const challenge = hasLetter(p, 3)
-    ? `<div class="card challenge"><b>The NightClaw Challenge</b> ${pips(flawless, campaign.length)}<p class="small">${flawless} of ${campaign.length} centrepieces taken in a flawless heist (never seen, no alarms). NightClaw wants every one.${campaign.length < 25 ? ' More of the city opens in later builds.' : ''}</p></div>`
+    ? `<div class="card challenge"><b>The NightClaw Challenge</b> ${pips(flawless, campaign.length)}<p class="small">${flawless} of ${campaign.length} centrepieces taken in a flawless heist (never seen, no alarms). NightClaw wants every one.</p></div>`
     : '';
   const heists = challenge + cb.districts
     .filter((d) => d.levels.some((l) => unlocked(cb.jobs.indexOf(l))))
@@ -459,7 +459,7 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
         const fill =
           t === 'wall' || t === 'panel' || t === 'fuse'
             ? '#3b4366'
-            : ({ pillar: '#59608a', stack: '#86643a', exit: '#2f7d5b', door: '#8a6a45', marble: '#2a3150', keydoor: '#8a93a8', vault: '#c0c6d4', glass: '#5b88a8', kennel: '#9c4a2a', desk: '#7a5634', keycard: '#5ef0ff', crate: '#a07a48', tidal: '#9a8056', switch: '#e6e0d0', gap: def.gaps === 'water' ? '#0f2a44' : '#06070d', wire: def.gaps === 'water' ? '#0f2a44' : '#06070d' } as Record<string, string>)[t] ?? '#1f2540';
+            : ({ pillar: '#59608a', stack: '#86643a', exit: '#2f7d5b', door: '#8a6a45', marble: '#2a3150', keydoor: '#8a93a8', vault: '#c0c6d4', glass: '#5b88a8', kennel: '#9c4a2a', desk: '#7a5634', keycard: '#5ef0ff', crate: '#a07a48', tidal: '#9a8056', switch: '#e6e0d0', 'belt-e': '#3a3c44', 'belt-w': '#3a3c44', paint: '#e0314b', gap: def.gaps === 'water' ? '#0f2a44' : '#06070d', wire: def.gaps === 'water' ? '#0f2a44' : '#06070d' } as Record<string, string>)[t] ?? '#1f2540';
         cells.push(`<rect x="${x * S}" y="${y * S}" width="${S}" height="${S}" fill="${fill}"/>`);
         if (level.ducts[y][x]) cells.push(`<rect x="${x * S + 5}" y="${y * S + 5}" width="6" height="6" fill="#5ec8ff" opacity="0.5"/>`);
         if (t === 'wire') cells.push(`<line x1="${x * S}" y1="${y * S + 8}" x2="${x * S + S}" y2="${y * S + 8}" stroke="#c8ccd8" stroke-width="1.5"/>`);
@@ -487,7 +487,7 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
     tier < 1
       ? ''
       : rival
-        ? `<p class="rumour"><b>Rumour board:</b> word is ${esc(RIVALS[rival.id].name)} has an eye on the ${esc(centre)} tonight.${tier >= 2 && entrance ? ` They’ll come in on turn ${rival.arrive}, by the spot marked R.` : ' A better Planning Table would tell you when, and where they’ll come in.'} Get it first.</p>`
+        ? `<p class="rumour"><b>Rumour board:</b> word is ${esc(RIVALS[rival.id].name)} has an eye on ${the(esc(centre))} tonight.${tier >= 2 && entrance ? ` They’ll come in on turn ${rival.arrive}, by the spot marked R.` : ' A better Planning Table would tell you when, and where they’ll come in.'} Get it first.</p>`
         : '<p class="small"><b>Rumour board:</b> no rival thieves are after this one.</p>';
   const plan = tier
     ? `<svg class="plan" viewBox="0 0 ${level.w * S} ${level.h * S}">${cells.join('')}${marks.join('')}</svg>
@@ -500,7 +500,7 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
       <p>${esc(def.objective)}</p>
       <p class="small">${def.loot.length} pieces of loot · ${level.guards.length} guard${level.guards.length === 1 ? '' : 's'}${tier >= 2 ? ` · ${level.cameras.length} camera${level.cameras.length === 1 ? '' : 's'}` : ''}${rec ? ` · best ${rec.bestTurns} turns` : ''}</p>
       ${def.tip ? `<p class="tip"><b>New here:</b> ${esc(def.tip)}</p>` : ''}
-      <p class="small"><b>On duty:</b> ${level.guards.map((g) => `${esc(g.name)}${g.kind && g.kind !== 'watch' ? ` (${{ sleepy: 'sleepy', captain: 'captain', sniffer: 'sniffer' }[g.kind]})` : ''}`).join(', ')}</p>
+      <p class="small"><b>On duty:</b> ${level.guards.map((g) => `${esc(g.name)}${g.kind && g.kind !== 'watch' ? ` (${{ sleepy: 'sleepy', captain: 'captain', sniffer: 'sniffer', robo: 'Robo-Guard' }[g.kind]})` : ''}`).join(', ')}</p>
       ${plan}
       ${rumour}
       <div class="row-buttons"><button id="go" class="primary">Start the heist</button><button id="back">Back to the lair</button></div>

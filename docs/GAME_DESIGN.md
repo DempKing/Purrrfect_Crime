@@ -112,7 +112,7 @@ silhouette and behaviour:
 | **Sleepy Guard** | Stationary and dozing; wakes to noise. Snores, so you can hear him in the dark. |
 | **Sniffer Guard** | Short sight, but smells Leo through walls within 2 tiles (scent trail). Vents block scent. |
 | **Captain Guard** | Longer sight, and calls the other guards when Searching. |
-| **Robo-Guard** (late game) | Doesn't sleep or get distracted; scans for heat. Can be powered down at a fuse box. |
+| **Robo-Guard** (late game) | Doesn't sleep or get distracted; scans for heat. Can be powered down at a fuse box. As built (Downtown): sees Leo 4 tiles off in a cone in any light (Stealth still helps, Blend doesn't); deaf to noise; ignores decoys, paw prints and empty cases; doesn't answer a captain's whistle. Seen within 2 tiles is a catch, further off the alarm. Off while the lasers are off (fuse box, Fuse Kit, EMP Collar). |
 
 Distractions work on guards: a thrown bottle cap, a squeaky toy, a fake treat. Each guard type reacts
 differently.
@@ -143,6 +143,10 @@ differently.
 | **The tide** (Harbour) | Tidal sand is dry for a few turns, then under water for as many. Caught on it when the tide comes in, Leo is washed onto the nearest dry tile with a splash (noise 4). |
 | **The fish market** (Harbour) | So smelly that sniffers can't smell a cat on it. |
 | **Light switches** (Harbour) | Put a room's lamps out (silent, 1 action point). The nearest guard on his rounds heads for the switch, and any guard who passes it puts the lights back on. |
+| **Slot machines** (Downtown) | So loud that no guard hears what Leo does among them. A thrown bottle cap still carries. |
+| **Conveyor belts** (Downtown) | Carry Leo one tile along at the end of every turn he ends on one, if the way is clear. |
+| **Wet paint** (Downtown) | Leo leaves paw prints for his next four steps; a guard who sees one goes to follow it. They dry in four turns. |
+| **Time lock** (Downtown) | A vault's dials won't turn before a set turn, combination or not. |
 | **Vault doors** (late game) | Several steps: a code found somewhere in the level plus timed dials. As built: search the desk with the combination (1 action point), then two silent turns of the dials. |
 
 ### 5.1 Air ducts
@@ -406,7 +410,7 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | **Downtown** | The Grand Bank, Casino Royale-Paws, The Mint, The Museum of Modern Mischief, City Hall Treasury |
 | **Special** | NightClaw's challenge museum (*The Midnight Museum*), NightClaw's Lair |
 
-**Built so far (M4: Old Town, Museum Mile, The Heights, Harbour and the challenge museum):**
+**Built (M4, complete): all five districts and the challenge museum:**
 
 | # | Level | What it introduces |
 | --- | --- | --- |
@@ -430,9 +434,14 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | 17 | The Shipwreck Museum | The tide, round a wreck on a sandbank in a sea cave. |
 | 18 | The Fish Market Bank | Sniffers everywhere, except on the fish market floor; a vault. |
 | 19 | The Aquarium Gala | Light switches, a great glass tank, and a camera that's blind in the dark. |
+| 20 | The Grand Bank | Robo-Guards, and the fuse box that powers them down. |
+| 21 | Casino Royale-Paws | A bright, loud slot-machine floor where nobody hears Leo. |
+| 22 | The Mint | Wide conveyor belts across the production floor. |
+| 23 | The Museum of Modern Mischief | Wet paint and paw prints; the Whoopee Cushion Floor. |
+| 24 | City Hall Treasury | A time-locked vault, with everything Downtown has besides. |
 | NC | The Midnight Museum | NightClaw's challenge (opened by Letter 2): every mechanic so far, in one building. |
 
-Guards who hear a noise from something they can't stand on (a kennel, a case, a crate) go to the open
+Guards standing still at a post still notice empty displays, decoy cards and paw prints. Guards who hear a noise from something they can't stand on (a kennel, a case, a crate) go to the open
 tile beside it nearest them. Each level opens when the one before it is cleared. Guard types as built: **sleepy** guards see
 nothing while dozing, wake to noise, look around and go back to their chair; **captains** see 25%
 further and call guards within 7 tiles when suspicious; **sniffers** see 60% as far but smell Leo
