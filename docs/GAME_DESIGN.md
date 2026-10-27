@@ -23,7 +23,7 @@ the original pitch is kept word for word in [ORIGINAL_BRIEF.md](ORIGINAL_BRIEF.m
    cases, gilded frames. You should want to steal everything you see.
 3. **A greedy risk curve.** The safe route grabs a little. The best loot sits behind the best security.
    How much you take is up to you.
-4. **A cartoon caper with style.** Animated cats, bulldog guards, rival thieves with personality, and a
+4. **A cartoon caper with style.** Animated cats, bulldog-faced guards, rival thieves with personality, and a
    newspaper headline after every job.
 
 ## 2. Core loop
@@ -101,24 +101,26 @@ the original pitch is kept word for word in [ORIGINAL_BRIEF.md](ORIGINAL_BRIEF.m
   partial in Dim light, faster in Lit. If the meter fills, Leo is caught; if Leo breaks line of sight
   first, the guard drops to Searching.
 
-### 4.3 Guards are bulldogs
+### 4.3 Guards
 
-The bulldogs come in several types, each with a clear silhouette and behaviour:
+The security staff are **Guards**. That's what the game calls them everywhere: the HUD, help, messages
+and the newspaper. They're drawn as bulldogs, and they come in several types, each with a clear
+silhouette and behaviour:
 
 | Type | Behaviour |
 | --- | --- |
-| **Night Watch Bulldog** | Standard patrol, torch cone. |
-| **Sleepy Bulldog** | Stationary and dozing; wakes to noise. Snores, so you can hear him in the dark. |
-| **Sniffer Bulldog** | Short sight, but smells Leo through walls within 2 tiles (scent trail). Vents block scent. |
-| **Captain Bulldog** | Longer sight, and calls the other guards when Searching. |
-| **Robo-Bulldog** (late game) | Doesn't sleep or get distracted; scans for heat. Can be powered down at a fuse box. |
+| **Night Watch Guard** | Standard patrol, torch cone. |
+| **Sleepy Guard** | Stationary and dozing; wakes to noise. Snores, so you can hear him in the dark. |
+| **Sniffer Guard** | Short sight, but smells Leo through walls within 2 tiles (scent trail). Vents block scent. |
+| **Captain Guard** | Longer sight, and calls the other guards when Searching. |
+| **Robo-Guard** (late game) | Doesn't sleep or get distracted; scans for heat. Can be powered down at a fuse box. |
 
-Distractions work on bulldogs: a thrown bottle cap, a squeaky toy, a fake treat. Each guard type reacts
+Distractions work on guards: a thrown bottle cap, a squeaky toy, a fake treat. Each guard type reacts
 differently.
 
 ### 4.4 Getting caught
 
-- Caught means **restart the level**. There's a short comic "busted" sting first (the bulldog grins, Leo
+- Caught means **restart the level**. There's a short comic "busted" sting first (the guard grins, Leo
   sighs).
 - **Checkpoints:** on the two easier difficulties (Casual and Professional) every level has **one
   checkpoint**. It's a fixed, authored spot about halfway through, usually just before the room with the
@@ -171,7 +173,7 @@ centrepiece as Leo** that night. They don't fight Leo; it's a race for the prize
 
 - The rival enters on a set turn and follows their own route toward the centrepiece, taking turns after
   the guards. The rival's path and their progress toward the prize are shown on screen.
-- Rivals are subject to the guards too: a bulldog who spots a rival raises the alert, which can work for
+- Rivals are subject to the guards too: a guard who spots a rival raises the alert, which can work for
   or against Leo.
 - **If Leo takes the centrepiece first**, the rival flees with a parting line, and the newspaper reports
   that Leo beat them to it.
@@ -196,9 +198,10 @@ lost), and achievements for beating each one.
 - **Loot** ranges from small items on shelves (coins, figurines) to cased artefacts, paintings and the
   level's **centrepiece**, its most valuable and best-protected item. Each level has **6–12 stealable
   pieces**.
-- Loot has **weight**. Leo's Carry capacity limits how much he can take at once. Some levels have **stash
+- Loot takes up **inventory space**: small pieces take 1 space, bigger ones 2 or 3. Leo starts with
+  **6 inventory spaces**, which limits how much he can take at once. Some levels have **stash
   points** (a window ledge, an accomplice's drop chute) for a second run.
-- **Selling:** after a heist the loot goes to your inventory. At the black market:
+- **Selling:** after a heist the loot goes to the stash in Leo's lair. At the black market:
   - Each item has a **base value**. The fence's price is `base × (0.55 + 0.02 × level, capped at 0.95) ×
     market demand`.
   - **Demand** rotates per category (paintings, jewels, artefacts, curiosities): "This week's buyers want
@@ -229,7 +232,7 @@ lost), and achievements for beating each one.
 | **Stealth** | Smaller sight profile, slower detection meter fill. |
 | **Quiet Paws** | Less noise from every action. |
 | **Dexterity** | Lockpicking and safe-cracking difficulty, interact AP refunds. |
-| **Carry** | Loot weight capacity. |
+| **Pockets** | Extra inventory spaces. |
 | **Perception** | Spots traps and pressure plates, longer hover preview of guard routes. |
 
 ### 7.3 Skills (Catnip + level requirement)
@@ -333,7 +336,7 @@ Short, clear prompts that each wait for the player to do the thing:
 6. **Cameras:** time a move between sweeps.
 7. **Vents:** climb in, crawl past a laser hallway, climb out.
 8. **Lockpicking:** open a display case (spends 1 AP).
-9. **Loot and weight:** pick two small items and the tutorial centrepiece.
+9. **Loot and inventory space:** pick two small items and the tutorial centrepiece.
 10. **Escape:** reach the exit, the calling card is left, and the first newspaper appears.
 
 Each step can be repeated, and a "Tutorial hints" setting stays on for the first few heists.
@@ -375,7 +378,7 @@ avoided, and an escape that changes once an alarm trips.
 ## 12. Art and audio direction
 
 - **Art:** expressive 2D cartoon (a mix of Disney-era noir and *Sly Cooper*). Leo has a crisp tux, bow tie
-  and swagger; a 4-direction rig to match the four camera angles. Bulldogs are chunky, sleepy and
+  and swagger; a 4-direction rig to match the four camera angles. The guards are chunky bulldogs, sleepy and
   menacing in turn.
   - Nighttime palette: indigo shadows, moonlight cyan, warm gold lamplight, ruby and emerald gem glints.
   - Displays get small shine animations; stolen items leave an obvious empty plinth.
@@ -400,7 +403,7 @@ Sprites will be generated. To make them fit together in game, every sprite shoul
 | Group | Sprites | Animations (frames, at 12 fps) |
 | --- | --- | --- |
 | **Leo Tuxedo** | 4 directions | idle 6, walk 8, sneak 8, dash 6, crawl (vent) 8, pick lock 6, grab loot 6, hide 4, leave calling card 10, caught 8, victory pose 10 |
-| **Bulldog guards** (5 types) | 4 directions each | idle 6, walk 8, look around 8, suspicious "?" 4, alert "!" 4, run 6, sleep (Sleepy) 6, sniff (Sniffer) 6, catch 8 |
+| **Guards** (5 types, drawn as bulldogs) | 4 directions each | idle 6, walk 8, look around 8, suspicious "?" 4, alert "!" 4, run 6, sleep (Sleepy) 6, sniff (Sniffer) 6, catch 8 |
 | **Rivals** (4) | 4 directions each | idle 6, walk 8, sneak 8, grab 6, flee 6, taunt 8 |
 | **NightClaw** | 4 directions | idle 6, stalk 8, turn 4, reveal pose 10, retire 10 |
 | **Narrator** | portrait | 3 expressions for the tutorial and the opening |
@@ -414,7 +417,7 @@ All files are named `group_name_direction_animation_frame.png` (for example `leo
 stored in [`art/`](../art/) (see its README for how to upload them). A build script packs them into
 sprite sheets.
 - **Audio:** sneaky jazz (upright bass, brushed drums) that adds layers as suspicion rises, and switches to
-  a big-band chase stinger when an alarm trips. Footstep sounds change with the floor type; bulldog snores
+  a big-band chase stinger when an alarm trips. Footstep sounds change with the floor type; guard snores
   and grumbles; the newspaper's spinning-press whoosh.
 
 ## 13. Tech plan
@@ -448,10 +451,10 @@ sprite sheets.
 | # | Milestone | Contents |
 | --- | --- | --- |
 | **M0** | Grey-box prototype | One flat test map, iso grid, 4-way rotation, AP movement, one guard with sight and patrol, caught = restart. Proves the core turn loop is fun. |
-| **M1** | Stealth sandbox | Light map, noise, alert states, cameras, lasers, vents, lockpicking, loot and carry weight, escape. |
+| **M1** | Stealth sandbox | Light map, noise, alert states, cameras, lasers, vents, lockpicking, loot and inventory space, escape. |
 | **M2** | Vertical slice | Tutorial level with final art direction, narrator, calling card + newspaper, black market, Catnip, XP, the lair purchase. |
 | **M3** | Progression | Attributes, all three skill trees, lair upgrades and the Intel reveal, difficulty tiers, saves. |
-| **M4** | Content | Levels 1–25, rivals, bulldog types, letters 1–2 and the challenge museum. |
+| **M4** | Content | Levels 1–25, rivals, guard types, letters 1–2 and the challenge museum. |
 | **M5** | Endgame | NightClaw Challenge tracking, Letter 4, NightClaw's Lair, ending, credits, post-game. |
 | **M6** | Ship | Steam (achievements, cloud saves), settings, accessibility, balance pass with the solver bot, polish. |
 

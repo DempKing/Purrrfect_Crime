@@ -17,7 +17,7 @@ renamed when they're wired into the game.
 ## Folders
 
 ```
-art/characters/   Leo, bulldog guards, rivals, NightClaw, narrator
+art/characters/   Leo, the guards (bulldogs), rivals, NightClaw, narrator
 art/tiles/        floors and walls, by district
 art/props/        display cases, plinths, paintings, furniture
 art/loot/         item icons, in-world sprites, newspaper photos

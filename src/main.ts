@@ -1,4 +1,4 @@
-// Prototype M1: the stealth sandbox. Light and shadow, noise, cameras, lasers, locks, vents and a bag that fills up.
+// Prototype M1: the stealth sandbox. Light and shadow, noise, cameras, lasers, locks, vents and an inventory that fills up.
 import { Application, Container } from 'pixi.js';
 // Lets PixiJS run on pages with a strict security policy (no eval), such as claude.ai artifacts.
 import 'pixi.js/unsafe-eval';
@@ -6,8 +6,8 @@ import { parseLevel, type Level, type Point } from './core/level';
 import {
   actionsHere,
   apCost,
-  bagValue,
-  bagWeight,
+  inventoryValue,
+  inventoryUsed,
   cameraView,
   danger,
   doAction,
@@ -22,7 +22,7 @@ import {
   pathTo,
   planGuards,
   AP_PER_TURN,
-  CARRY,
+  INVENTORY_SPACES,
   MOVE_PER_AP,
   type Action,
   type GuardStep,
@@ -197,7 +197,7 @@ function afterLeoActs(): void {
 function doEndTurn(): void {
   if (busy || state.status !== 'playing') return;
   selected = null;
-  banner('Bulldogs’ turn');
+  banner('Guards’ turn');
   const before = state.guards.map((g) => ({ x: g.x, y: g.y }));
   const steps: GuardStep[] = endTurn(level, state);
   noisesSeen = 0;
@@ -272,7 +272,7 @@ const LIGHT_NAMES = ['In shadow', 'Dim light', 'In the light'];
 function updateHud(): void {
   $('turn').textContent = String(state.turn);
   $('ap').innerHTML = Array.from({ length: AP_PER_TURN }, (_, i) => `<span class="pip ${i < state.ap ? 'on' : ''}"></span>`).join('');
-  $('bag').innerHTML = `Bag <b>${bagWeight(level, state)}/${CARRY}</b> · ${money(bagValue(level, state))}`;
+  $('inventory').innerHTML = `Inventory <b>${inventoryUsed(level, state)}/${INVENTORY_SPACES}</b> · ${money(inventoryValue(level, state))}`;
   const l = state.layer === 'vent' ? -1 : lightAt(level, state.leo.x, state.leo.y);
   const li = $('light');
   li.textContent = l < 0 ? 'In the vents' : LIGHT_NAMES[l];
@@ -302,7 +302,7 @@ function updateHud(): void {
 }
 
 function caught(): void {
-  $('caught-who').textContent = state.caughtBy ?? 'A bulldog';
+  $('caught-who').textContent = state.caughtBy ?? 'A guard';
   $('caught-why').textContent = state.caughtWhy ? `${state.caughtWhy}.` : '';
   setTimeout(() => show('caught'), 600);
 }
@@ -310,9 +310,9 @@ function caught(): void {
 function escaped(): void {
   $('escaped-turns').textContent = String(state.turn);
   $('escaped-kicker').textContent = state.alarm !== null ? 'Out with the sirens behind him' : 'Clean getaway';
-  const items = state.bag.map((i) => level.def.loot[i]);
-  $('haul').innerHTML = items.map((l) => `<li>${l.name} <span>${money(l.value)}</span></li>`).join('') + `<li class="total">Total <span>${money(bagValue(level, state))}</span></li>`;
-  const left = level.def.loot.filter((_, i) => !state.bag.includes(i));
+  const items = state.inventory.map((i) => level.def.loot[i]);
+  $('haul').innerHTML = items.map((l) => `<li>${l.name} <span>${money(l.value)}</span></li>`).join('') + `<li class="total">Total <span>${money(inventoryValue(level, state))}</span></li>`;
+  const left = level.def.loot.filter((_, i) => !state.inventory.includes(i));
   $('left-behind').textContent = left.length ? `Left behind: ${left.map((l) => l.name).join(', ')}.` : 'Leo cleaned the place out.';
   setTimeout(() => show('escaped'), 300);
 }
@@ -349,7 +349,7 @@ async function boot(): Promise<void> {
     const b = document.createElement('button');
     b.className = `level${i === 0 ? ' primary' : ''}`;
     b.id = `level-${i}`;
-    b.innerHTML = `<b>${def.name}</b><span>${i === 0 ? 'M1 stealth sandbox: night, cameras, lasers, vents' : 'M0 warm-up: one bulldog, lights on'}</span>`;
+    b.innerHTML = `<b>${def.name}</b><span>${i === 0 ? 'M1 stealth sandbox: night, cameras, lasers, vents' : 'M0 warm-up: one guard, lights on'}</span>`;
     b.addEventListener('click', () => {
       loadLevel(i);
       hide('intro');
