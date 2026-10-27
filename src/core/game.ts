@@ -17,7 +17,7 @@ export const SIGHT_RANGE = { lit: 6, dim: 4, dark: 1.5 };
 export const LOOK_TURNS = 2;
 /** Turns from an alarm to lockdown. */
 export const ALARM_TURNS = 5;
-export const CARRY = 6;
+export const INVENTORY_SPACES = 6;
 export const NOISE = { marble: 2, dash: 4, pick: 1, smash: 6 };
 /** Picks needed to open a lock. */
 export const LOCK_PICKS = 2;
@@ -78,7 +78,7 @@ export interface State {
   status: Status;
   caughtBy: string | null;
   caughtWhy: string | null;
-  bag: number[]; // indexes into level.def.loot
+  inventory: number[]; // indexes into level.def.loot
   smashed: string[]; // cases whose glass is broken
   openDoors: string[];
   picks: Record<string, number>; // lock progress per tile
@@ -114,7 +114,7 @@ export function newHeist(level: Level): State {
     status: 'playing',
     caughtBy: null,
     caughtWhy: null,
-    bag: [],
+    inventory: [],
     smashed: [],
     openDoors: [],
     picks: {},
@@ -139,12 +139,12 @@ export function lootAt(level: Level, x: number, y: number): number {
   return level.def.loot.findIndex((l) => l.at.x === x && l.at.y === y);
 }
 
-export function bagWeight(level: Level, s: State): number {
-  return s.bag.reduce((w, i) => w + level.def.loot[i].weight, 0);
+export function inventoryUsed(level: Level, s: State): number {
+  return s.inventory.reduce((n, i) => n + level.def.loot[i].space, 0);
 }
 
-export function bagValue(level: Level, s: State): number {
-  return s.bag.reduce((v, i) => v + level.def.loot[i].value, 0);
+export function inventoryValue(level: Level, s: State): number {
+  return s.inventory.reduce((v, i) => v + level.def.loot[i].value, 0);
 }
 
 export function lasersActive(level: Level, s: State): boolean {
@@ -444,7 +444,7 @@ export function moveLeo(level: Level, s: State, to: Point): MoveResult {
     makeNoise(level, s, s.leo, NOISE.dash);
     s.log.push('Dashing makes noise.');
   }
-  if (s.layer === 'floor' && s.bag.length && s.leo.x === level.exit.x && s.leo.y === level.exit.y) s.status = 'escaped';
+  if (s.layer === 'floor' && s.inventory.length && s.leo.x === level.exit.x && s.leo.y === level.exit.y) s.status = 'escaped';
   return { ok: true, path: walked };
 }
 
@@ -483,17 +483,17 @@ export function actionsHere(level: Level, s: State): Action[] {
         const li = lootAt(level, x, y);
         const loot = li >= 0 ? level.def.loot[li] : null;
         const k = key(x, y);
-        const taken = li >= 0 && s.bag.includes(li);
-        const tooHeavy = loot && bagWeight(level, s) + loot.weight > CARRY ? `Too heavy: the bag holds ${CARRY}.` : undefined;
+        const taken = li >= 0 && s.inventory.includes(li);
+        const noRoom = loot && inventoryUsed(level, s) + loot.space > INVENTORY_SPACES ? `No room: the inventory has ${INVENTORY_SPACES} spaces.` : undefined;
         if (t === 'case' && loot && !taken) {
-          if (s.smashed.includes(k)) out.push({ kind: 'take', at: p, label: `Take the ${loot.name}`, ap: 1, noise: 0, blocked: tooHeavy });
+          if (s.smashed.includes(k)) out.push({ kind: 'take', at: p, label: `Take the ${loot.name}`, ap: 1, noise: 0, blocked: noRoom });
           else {
             const done = s.picks[k] ?? 0;
-            out.push({ kind: 'pick-case', at: p, label: `Pick the case lock (${done}/${LOCK_PICKS})`, ap: 1, noise: NOISE.pick, blocked: tooHeavy });
-            out.push({ kind: 'smash-case', at: p, label: `Smash the glass and grab the ${loot.name}`, ap: 1, noise: NOISE.smash, blocked: tooHeavy });
+            out.push({ kind: 'pick-case', at: p, label: `Pick the case lock (${done}/${LOCK_PICKS})`, ap: 1, noise: NOISE.pick, blocked: noRoom });
+            out.push({ kind: 'smash-case', at: p, label: `Smash the glass and grab the ${loot.name}`, ap: 1, noise: NOISE.smash, blocked: noRoom });
           }
         }
-        if (t === 'plinth' && loot && !taken) out.push({ kind: 'take', at: p, label: `Take ${loot.name}`, ap: 1, noise: 0, blocked: tooHeavy });
+        if (t === 'plinth' && loot && !taken) out.push({ kind: 'take', at: p, label: `Take ${loot.name}`, ap: 1, noise: 0, blocked: noRoom });
         if (t === 'door' && near4(L, p)) out.push({ kind: 'pick-door', at: p, label: `Pick the door lock (${s.picks[k] ?? 0}/${LOCK_PICKS})`, ap: 1, noise: NOISE.pick });
         if (t === 'panel' && !s.camerasOff) out.push({ kind: 'panel', at: p, label: s.alarm !== null ? 'Shut off the cameras and the alarm' : 'Shut off the cameras', ap: 1, noise: 0 });
         if (t === 'fuse' && !s.lasersOff) out.push({ kind: 'fuse', at: p, label: 'Cut the power to the lasers', ap: 1, noise: 0 });
@@ -505,7 +505,7 @@ export function actionsHere(level: Level, s: State): Action[] {
 
 function take(level: Level, s: State, at: Point): void {
   const li = lootAt(level, at.x, at.y);
-  s.bag.push(li);
+  s.inventory.push(li);
   s.log.push(`Got the ${level.def.loot[li].name}.`);
 }
 
@@ -574,7 +574,7 @@ export function steal(level: Level, s: State): boolean {
 
 /** Tiles that show a theft: broken or emptied cases and an empty plinth. */
 function disturbances(level: Level, s: State): Point[] {
-  return s.bag.map((i) => level.def.loot[i].at).concat(s.smashed.filter((k) => !s.bag.some((i) => key(level.def.loot[i].at.x, level.def.loot[i].at.y) === k)).map((k) => {
+  return s.inventory.map((i) => level.def.loot[i].at).concat(s.smashed.filter((k) => !s.inventory.some((i) => key(level.def.loot[i].at.x, level.def.loot[i].at.y) === k)).map((k) => {
     const [x, y] = k.split(',').map(Number);
     return { x, y };
   }));

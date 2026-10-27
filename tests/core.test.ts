@@ -6,7 +6,7 @@ import {
   ALARM_TURNS,
   actionsHere,
   apCost,
-  bagWeight,
+  inventoryUsed,
   canSteal,
   doAction,
   endTurn,
@@ -85,7 +85,7 @@ test('stealing needs Leo next to the plinth, and escaping needs loot', () => {
   assert.equal(canSteal(grey, s), false);
   s.leo = { x: 11, y: 6 };
   assert.ok(steal(grey, s));
-  assert.deepEqual(s.bag, [0]);
+  assert.deepEqual(s.inventory, [0]);
   const t = quiet(grey);
   t.leo = { x: 17, y: 8 };
   moveLeo(grey, t, { x: 18, y: 8 });
@@ -191,27 +191,27 @@ test('cameras raise the alarm when they see Leo', () => {
   assert.ok(s.alarm !== null);
 });
 
-// --- locks, glass, vents, carrying ------------------------------------------------------------
+// --- locks, glass, vents, inventory ----------------------------------------------------------
 
 test('a case takes two quiet picks, or one loud smash', () => {
   const s = quiet();
   s.leo = { x: 10, y: 7 };
   assert.ok(doAction(night, s, 'pick-case', { x: 10, y: 6 }));
-  assert.equal(s.bag.length, 0);
+  assert.equal(s.inventory.length, 0);
   assert.ok(doAction(night, s, 'pick-case', { x: 10, y: 6 }));
-  assert.equal(s.bag.length, 1);
+  assert.equal(s.inventory.length, 1);
   const t = quiet();
   t.leo = { x: 13, y: 7 };
   assert.ok(doAction(night, t, 'smash-case', { x: 13, y: 6 }));
-  assert.equal(t.bag.length, 1);
+  assert.equal(t.inventory.length, 1);
   assert.ok(t.noises.some((n) => n.r === 6));
 });
 
-test('the bag holds six: heavy loot has to be left behind', () => {
+test('the inventory has six spaces: big loot has to be left behind', () => {
   const s = quiet();
-  s.bag = [0, 3]; // Night Opal (3) + Golden Yarn Ball (2)
+  s.inventory = [0, 3]; // Night Opal (3) + Golden Yarn Ball (2)
   s.leo = { x: 19, y: 6 };
-  assert.equal(bagWeight(night, s), 5);
+  assert.equal(inventoryUsed(night, s), 5);
   const smash = actionsHere(night, s).find((a) => a.kind === 'smash-case');
   assert.ok(smash?.blocked, 'the Jade Fish (2) would not fit');
 });
@@ -258,7 +258,7 @@ test('a guard who finds an empty display raises the alarm', () => {
   const s = newHeist(night);
   s.cameras = [];
   s.guards = s.guards.slice(0, 1);
-  s.bag = [1];
+  s.inventory = [1];
   s.smashed = ['10,6'];
   s.leo = { x: 2, y: 14 };
   for (let i = 0; i < 6 && s.alarm === null; i++) endTurn(night, s);
@@ -287,5 +287,5 @@ test('the Night Gallery can be beaten: the known route escapes with the Night Op
     endTurn(night, s);
   }
   assert.equal(s.status, 'escaped', `ended ${s.status}: ${s.caughtBy} ${s.caughtWhy}`);
-  assert.ok(s.bag.includes(0), 'with the Night Opal');
+  assert.ok(s.inventory.includes(0), 'with the Night Opal');
 });

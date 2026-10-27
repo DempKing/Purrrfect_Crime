@@ -43,7 +43,7 @@ export interface LootDef {
   at: Point; // a case or the plinth
   name: string;
   value: number;
-  weight: number;
+  space: number; // inventory spaces it takes up
 }
 
 export interface LevelDef {

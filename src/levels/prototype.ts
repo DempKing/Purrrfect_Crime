@@ -1,7 +1,7 @@
 // Test levels for the prototype milestones.
 import type { LevelDef } from '../core/level';
 
-/** M0 warm-up: two rooms, one bulldog, one prize, everything lit. */
+/** M0 warm-up: two rooms, one guard, one prize, everything lit. */
 export const GREY_GALLERY: LevelDef = {
   id: 'm0-grey-gallery',
   name: 'The Grey Gallery',
@@ -33,14 +33,14 @@ export const GREY_GALLERY: LevelDef = {
       ],
     },
   ],
-  loot: [{ at: { x: 11, y: 5 }, name: 'Moonstone', value: 5000, weight: 2 }],
+  loot: [{ at: { x: 11, y: 5 }, name: 'Moonstone', value: 5000, space: 2 }],
 };
 
-/** M1 stealth sandbox: light and shadow, noise, cameras, lasers, locks, vents and a bag that fills up. */
+/** M1 stealth sandbox: light and shadow, noise, cameras, lasers, locks, vents and an inventory that fills up. */
 export const NIGHT_GALLERY: LevelDef = {
   id: 'm1-night-gallery',
   name: 'The Night Gallery',
-  objective: 'Steal what you can carry, ideally the Night Opal, and get out the exit before anyone raises the alarm.',
+  objective: 'Steal what fits in your inventory, ideally the Night Opal, and get out the exit before anyone raises the alarm.',
   ambient: 'dark',
   map: [
     '##C#####################',
@@ -116,13 +116,13 @@ export const NIGHT_GALLERY: LevelDef = {
     },
   ],
   loot: [
-    { at: { x: 11, y: 2 }, name: 'Night Opal', value: 12000, weight: 3 },
-    { at: { x: 10, y: 6 }, name: 'Gilded Sardine Tin', value: 1500, weight: 1 },
-    { at: { x: 13, y: 6 }, name: 'Porcelain Mouse', value: 2200, weight: 1 },
-    { at: { x: 11, y: 10 }, name: 'Golden Yarn Ball', value: 3000, weight: 2 },
-    { at: { x: 19, y: 2 }, name: 'Ruby Collar', value: 4500, weight: 1 },
-    { at: { x: 21, y: 2 }, name: 'Antique Pocket Watch', value: 2800, weight: 1 },
-    { at: { x: 20, y: 6 }, name: 'Jade Fish', value: 3500, weight: 2 },
+    { at: { x: 11, y: 2 }, name: 'Night Opal', value: 12000, space: 3 },
+    { at: { x: 10, y: 6 }, name: 'Gilded Sardine Tin', value: 1500, space: 1 },
+    { at: { x: 13, y: 6 }, name: 'Porcelain Mouse', value: 2200, space: 1 },
+    { at: { x: 11, y: 10 }, name: 'Golden Yarn Ball', value: 3000, space: 2 },
+    { at: { x: 19, y: 2 }, name: 'Ruby Collar', value: 4500, space: 1 },
+    { at: { x: 21, y: 2 }, name: 'Antique Pocket Watch', value: 2800, space: 1 },
+    { at: { x: 20, y: 6 }, name: 'Jade Fish', value: 3500, space: 2 },
   ],
 };
 

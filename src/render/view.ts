@@ -165,12 +165,12 @@ export class HeistView {
             });
         } else if (t === 'case') {
           const li = lootAt(level, x, y);
-          const taken = li >= 0 && s.bag.includes(li);
+          const taken = li >= 0 && s.inventory.includes(li);
           const broken = s.smashed.includes(k);
           items.push({ depth: d, draw: (g) => this.displayCase(g, x, y, li, taken, broken) });
         } else if (t === 'plinth') {
           const li = lootAt(level, x, y);
-          items.push({ depth: d, draw: (g) => this.plinth(g, x, y, li >= 0 && !s.bag.includes(li)) });
+          items.push({ depth: d, draw: (g) => this.plinth(g, x, y, li >= 0 && !s.inventory.includes(li)) });
         } else if (t === 'lamp') {
           items.push({ depth: d, draw: (g) => this.lamp(g, x, y) });
         } else if (t === 'laser') {
@@ -183,9 +183,9 @@ export class HeistView {
       const facing = c.sweep[c.idx];
       items.push({ depth: project(p, c.at.x + 0.5, c.at.y + 0.5).depth + 0.4, draw: (g) => this.camera(g, c.at, facing, s.camerasOff) });
     }
-    items.push({ depth: leoDepth + 0.05, draw: (g) => this.drawLeo(g, leo, s.bag.length > 0, inVent) });
+    items.push({ depth: leoDepth + 0.05, draw: (g) => this.drawLeo(g, leo, s.inventory.length > 0, inVent) });
     guards.forEach((a, i) =>
-      items.push({ depth: project(p, a.x, a.y).depth + 0.05, draw: (g) => this.drawBulldog(g, a, s.guards[i], s.status === 'caught' && s.caughtBy === s.guards[i].name) }),
+      items.push({ depth: project(p, a.x, a.y).depth + 0.05, draw: (g) => this.drawGuard(g, a, s.guards[i], s.status === 'caught' && s.caughtBy === s.guards[i].name) }),
     );
     items.sort((a, b) => a.depth - b.depth);
     for (const it of items) it.draw(o);
@@ -377,8 +377,8 @@ export class HeistView {
     }
   }
 
-  /** A night-watch bulldog: stocky, tan, peaked cap, torch. Shows ? when suspicious, ! when searching. */
-  private drawBulldog(g: Graphics, a: Actor, guard: Guard, grinning: boolean): void {
+  /** A guard (drawn as a bulldog): stocky, tan, peaked cap, torch. Shows ? when suspicious, ! when searching. */
+  private drawGuard(g: Graphics, a: Actor, guard: Guard, grinning: boolean): void {
     const s = project(this.proj, a.x, a.y);
     const f = this.face(a);
     const front = f.y > -0.2;

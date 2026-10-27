@@ -18,7 +18,7 @@
         <span class="ap-label">AP <span id="ap"></span></span>
         <span id="light" class="light l0">In shadow</span>
       </div>
-      <div class="small" id="bag"></div>
+      <div class="small" id="inventory"></div>
     </div>
     <div class="buttons">
       <button id="rotate-left" title="Turn the camera (Q)">⟲ Q</button>
@@ -41,15 +41,15 @@
     <b>How to play</b>
     <ul>
       <li><b>Move:</b> click a tile. Blue costs 1 action point, yellow costs both (a loud dash). On a phone, tap once to preview and again to move.</li>
-      <li><b>Path colours:</b> white is safe, yellow means a bulldog will notice something and come to look, red means caught or alarm.</li>
-      <li><b>Shadows hide you.</b> Bulldogs see 6 tiles into lamplight, 4 into moonlight and barely past their nose in the dark. Being right next to one, or standing in lamplight in front of one, gets you caught.</li>
-      <li><b>Red</b> is what the bulldogs see, <b>purple</b> is what the cameras see. Orange dots are where the bulldogs walk next.</li>
-      <li><b>Noise:</b> marble floors, dashing, picking locks and (loudest) smashing glass. Bulldogs who hear it come to check.</li>
+      <li><b>Path colours:</b> white is safe, yellow means a guard will notice something and come to look, red means caught or alarm.</li>
+      <li><b>Shadows hide you.</b> Guards see 6 tiles into lamplight, 4 into moonlight and barely past their nose in the dark. Being right next to one, or standing in lamplight in front of one, gets you caught.</li>
+      <li><b>Red</b> is what the guards see, <b>purple</b> is what the cameras see. Orange dots are where the guards walk next.</li>
+      <li><b>Noise:</b> marble floors, dashing, picking locks and (loudest) smashing glass. Guards who hear it come to check.</li>
       <li><b>Steal:</b> next to a case, pick its lock (quiet, two goes) or smash it (one go, very loud). Use the buttons at the bottom, keys 1–9, or click the case.</li>
       <li><b>Security:</b> the camera panel shuts off the cameras and the alarm; the fuse box shuts off the lasers. A camera sighting, a broken laser or a guard finding an empty case starts a 5-turn lockdown countdown.</li>
       <li><b>Vents:</b> step onto a grate and climb in. Nobody sees you in the ducts, but crawling is slow.</li>
-      <li><b>Carry:</b> the bag holds 6. Heavy pieces fill it fast.</li>
-      <li><b>Escape:</b> walk onto the green exit with something in the bag.</li>
+      <li><b>Inventory:</b> 6 spaces. Bigger pieces take up more of them.</li>
+      <li><b>Escape:</b> walk onto the green exit with something in your inventory.</li>
     </ul>
   </aside>
 
@@ -57,8 +57,8 @@
     <div class="card big">
       <div class="kicker">Prototype M1 · stealth sandbox</div>
       <h1>Purrrfect Crime</h1>
-      <p>Night has fallen on the city museum. <b>Leo Tuxedo</b> has a bag, a set of lock picks and one rule:
-        don't get seen. <b>Brutus</b> and <b>Bruno</b> are on the night watch.</p>
+      <p>Night has fallen on the city museum. <b>Leo Tuxedo</b> has a set of lock picks, room for a few treasures and one rule:
+        don't get seen. <b>Brutus</b> and <b>Bruno</b> are the guards on the night watch.</p>
       <ul class="small">
         <li><span class="chip blue">blue</span> 1 action point, <span class="chip yellow">yellow</span> 2. Paths turn <span class="chip yellow">yellow</span> where you'd be noticed and <span class="chip red">red</span> where you'd be caught.</li>
         <li>Stay in shadow, mind the marble, pick locks rather than smash glass, and use the vents.</li>
@@ -74,7 +74,7 @@
       <div class="kicker">Busted!</div>
       <h1><span id="caught-who">Brutus</span> got Leo.</h1>
       <p id="caught-why"></p>
-      <p class="small">The bulldog grins. Leo sighs. Back to the start.</p>
+      <p class="small">The guard grins. Leo sighs. Back to the start.</p>
       <div class="row-buttons">
         <button id="again" class="primary">Try again (R)</button>
         <button id="levels2">Levels</button>
