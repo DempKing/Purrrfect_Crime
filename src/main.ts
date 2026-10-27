@@ -1,13 +1,14 @@
-// Prototype M1: the stealth sandbox. Light and shadow, noise, cameras, lasers, locks, vents and an inventory that fills up.
+// Prototype M2: the vertical slice. The tutorial with its narrator, then the calling card, the morning paper,
+// the heist report, the city map and the lair with its black market. The heist itself is the M1 sandbox.
 import { Application, Container } from 'pixi.js';
 // Lets PixiJS run on pages with a strict security policy (no eval), such as claude.ai artifacts.
 import 'pixi.js/unsafe-eval';
-import { parseLevel, type Level, type Point } from './core/level';
+import { parseLevel, type Level, type LevelDef, type Point } from './core/level';
 import {
   actionsHere,
   apCost,
-  inventoryValue,
   inventoryUsed,
+  inventoryValue,
   cameraView,
   danger,
   doAction,
@@ -23,18 +24,53 @@ import {
   planGuards,
   AP_PER_TURN,
   INVENTORY_SPACES,
-  MOVE_PER_AP,
   type Action,
   type GuardStep,
   type State,
 } from './core/game';
-import { LEVELS } from './levels/prototype';
+import { NIGHT_GALLERY } from './levels/prototype';
+import { CORNER_GALLERY } from './levels/tutorial';
+import { buyLair, completeHeist, loadProfile, narratorBuysTutorialLoot, newProfile, saveProfile, sell, type Profile } from './meta/profile';
+import { TUTORIAL, advance, type TutorialEvents } from './meta/tutorial';
+import * as screens from './ui/screens';
 import { HeistView, type Actor, type Overlay, type Ripple } from './render/view';
 import { project, unproject } from './render/iso';
 
-let levelIndex = 0;
-let level: Level = parseLevel(LEVELS[0]);
+/** Heists on offer at the lair. The tutorial can be replayed like any other. */
+const JOBS: LevelDef[] = [CORNER_GALLERY, NIGHT_GALLERY];
+
+let level: Level = parseLevel(CORNER_GALLERY);
 let state: State = newHeist(level);
+let inHeist = false;
+
+// --- the save ---------------------------------------------------------------------------------
+
+function storage(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+let profile: Profile = loadProfile(storage()) ?? newProfile();
+const persist = () => saveProfile(storage(), profile);
+
+// --- the narrator's tutorial ------------------------------------------------------------------
+
+let tutorial: { step: number; ev: TutorialEvents; hidden: boolean } | null = null;
+
+function tutorialUpdate(): void {
+  const box = $('narrator');
+  if (!tutorial || !inHeist) return box.classList.add('hidden');
+  tutorial.step = advance(state, tutorial.ev, tutorial.step);
+  const step = TUTORIAL[tutorial.step];
+  if (!step || state.status !== 'playing') return box.classList.add('hidden');
+  box.classList.remove('hidden');
+  box.classList.toggle('collapsed', tutorial.hidden);
+  $('narrator-text').textContent = step.text;
+  $('narrator-count').textContent = `Tip ${tutorial.step + 1} of ${TUTORIAL.length}`;
+  $('narrator-ok').classList.toggle('hidden', !step.optional);
+}
 
 const $ = (id: string) => document.getElementById(id)!;
 const money = (n: number) => `$${n.toLocaleString('en-US')}`;
@@ -82,6 +118,10 @@ const view = new HeistView();
 
 function turnCamera(dir: 1 | -1): void {
   targetAngle += (dir * Math.PI) / 2;
+  if (tutorial) {
+    tutorial.ev.rotated = true;
+    tutorialUpdate();
+  }
 }
 
 // --- input and preview ------------------------------------------------------------------------
@@ -159,8 +199,14 @@ function act(tile: Point): void {
   const a = clickAction(tile);
   if (a) return runAction(a);
   state.log = [];
+  const apBefore = state.ap;
   const res = moveLeo(level, state, tile);
   if (!res.ok) return say(res.reason ?? '');
+  if (tutorial) {
+    tutorial.ev.moved = true;
+    if (apBefore - state.ap === 2) tutorial.ev.dashed = true;
+    if (state.layer === 'floor' && res.path.some((p) => level.tiles[p.y][p.x] === 'marble')) tutorial.ev.onMarble = true;
+  }
   selected = null;
   version++;
   const segs: Segment[] = [];
@@ -189,6 +235,7 @@ function afterLeoActs(): void {
   syncActors();
   updateHud();
   if (state.log.length) say(state.log.join(' '));
+  tutorialUpdate();
   if (state.status === 'caught') return caught();
   if (state.status === 'escaped') return escaped();
   if (state.ap <= 0) setTimeout(() => !busy && state.status === 'playing' && state.ap <= 0 && doEndTurn(), 450);
@@ -214,18 +261,119 @@ function doEndTurn(): void {
     syncActors();
     updateHud();
     if (state.log.length) say(state.log.join(' '));
+    tutorialUpdate();
     if (state.status === 'caught') return caught();
     banner(state.alarm !== null ? `Alarm! ${state.alarm} turns` : 'Your turn');
   });
 }
 
-function loadLevel(i: number): void {
-  levelIndex = i;
-  level = parseLevel(LEVELS[i]);
+function startHeist(def: LevelDef): void {
+  level = parseLevel(def);
   view.proj.cx = level.w / 2;
   view.proj.cy = level.h / 2;
   $('level-name').textContent = level.def.name;
+  tutorial = def.id === CORNER_GALLERY.id && !profile.tutorialDone ? { step: 0, ev: { moved: false, dashed: false, rotated: false, onMarble: false }, hidden: false } : null;
+  screens.hideScreens();
+  inHeist = true;
+  document.body.classList.remove('meta');
   restart();
+}
+
+/** Leaves the heist for the screens between heists. */
+function leaveHeist(): void {
+  inHeist = false;
+  queue = [];
+  busy = false;
+  hide('caught');
+  hide('help');
+  $('narrator').classList.add('hidden');
+  document.body.classList.add('meta');
+}
+
+// --- between heists ---------------------------------------------------------------------------
+
+function goOn(): void {
+  leaveHeist();
+  if (!profile.tutorialDone) return startHeist(CORNER_GALLERY);
+  if (!profile.narratorPaid) return narratorPays();
+  if (!profile.lairOwned) return cityMap();
+  showLair();
+}
+
+function narratorPays(): void {
+  leaveHeist();
+  screens.narratorScene(
+    [
+      'Not bad for a first night, kid. Not bad at all.',
+      'Now, nobody in this city will touch loot from a cat they\'ve never heard of. So I\'ll buy the lot myself: the pearl, the brooch and the mouse. Call it an investment.',
+      'Here: <b>500 Catnip</b>. Don\'t spend it on sardines.',
+      'One more thing. A thief needs a headquarters, somewhere to plan, to stash the goods and to meet the right people. I know just the place.',
+    ],
+    'Show me',
+    () => {
+      narratorBuysTutorialLoot(profile, CORNER_GALLERY.id);
+      persist();
+      cityMap();
+    },
+  );
+}
+
+function cityMap(): void {
+  leaveHeist();
+  screens.cityMap(profile, () => {
+    if (!buyLair(profile)) return;
+    persist();
+    screens.narratorScene(
+      [
+        'It\'s yours. Leaky roof, boarded windows, one light bulb. Home sweet home.',
+        'The back room has a door onto the black market: sell your loot there for Catnip. The fences pay better as you make a name for yourself.',
+        'Every heist makes the morning paper, and every paper keeps a tally of what you took. When you\'re ready, the City Museum\'s Night Gallery is waiting. Good luck, kid.',
+      ],
+      'Enter the lair',
+      () => showLair(),
+    );
+  });
+}
+
+function showLair(tab: screens.LairTab = 'heists'): void {
+  leaveHeist();
+  screens.lair(
+    profile,
+    {
+      jobs: JOBS,
+      onHeist: (def) => startHeist(def),
+      onSell: (id) => {
+        sell(profile, id);
+        persist();
+        showLair('market');
+      },
+      onSellAll: () => {
+        for (const s of [...profile.stash]) sell(profile, s.id);
+        persist();
+        showLair('market');
+      },
+      onPaper: (i) => screens.newspaper(profile.papers[i], false, () => showLair('papers'), 'Back to the lair'),
+    },
+    tab,
+  );
+}
+
+function quit(): void {
+  if (!profile.lairOwned) return showTitle();
+  showLair();
+}
+
+function showTitle(): void {
+  leaveHeist();
+  screens.titleScreen(
+    !!loadProfile(storage()),
+    () => {
+      profile = newProfile();
+      persist();
+      startHeist(CORNER_GALLERY);
+    },
+    goOn,
+  );
 }
 
 function restart(): void {
@@ -239,10 +387,11 @@ function restart(): void {
   version++;
   syncActors();
   hide('caught');
-  hide('escaped');
   updateHud();
   banner('Your turn');
   say(level.def.objective);
+  if (tutorial) tutorial.ev = { moved: false, dashed: false, rotated: tutorial.ev.rotated, onMarble: false };
+  tutorialUpdate();
 }
 
 // --- HUD --------------------------------------------------------------------------------------
@@ -308,15 +457,19 @@ function caught(): void {
 }
 
 function escaped(): void {
-  $('escaped-turns').textContent = String(state.turn);
-  $('escaped-kicker').textContent = state.alarm !== null ? 'Out with the sirens behind him' : 'Clean getaway';
-  const items = state.inventory.map((i) => level.def.loot[i]);
-  $('haul').innerHTML = items.map((l) => `<li>${l.name} <span>${money(l.value)}</span></li>`).join('') + `<li class="total">Total <span>${money(inventoryValue(level, state))}</span></li>`;
-  const left = level.def.loot.filter((_, i) => !state.inventory.includes(i));
-  $('left-behind').textContent = left.length ? `Left behind: ${left.map((l) => l.name).join(', ')}.` : 'Leo cleaned the place out.';
-  setTimeout(() => show('escaped'), 300);
+  const done = state;
+  setTimeout(() => {
+    if (state !== done) return;
+    leaveHeist();
+    screens.callingCard(() => {
+      const report = completeHeist(profile, level, done);
+      if (tutorial) profile.tutorialDone = true;
+      tutorial = null;
+      persist();
+      screens.newspaper(report.paper, true, () => screens.heistReport(report, profile, goOn));
+    });
+  }, 500);
 }
-
 // --- boot -------------------------------------------------------------------------------------
 
 const app = new Application();
@@ -344,40 +497,28 @@ async function boot(): Promise<void> {
     act(t);
   });
 
-  const levelList = $('level-list');
-  LEVELS.forEach((def, i) => {
-    const b = document.createElement('button');
-    b.className = `level${i === 0 ? ' primary' : ''}`;
-    b.id = `level-${i}`;
-    b.innerHTML = `<b>${def.name}</b><span>${i === 0 ? 'M1 stealth sandbox: night, cameras, lasers, vents' : 'M0 warm-up: one guard, lights on'}</span>`;
-    b.addEventListener('click', () => {
-      loadLevel(i);
-      hide('intro');
-    });
-    levelList.appendChild(b);
-  });
 
   $('rotate-left').addEventListener('click', () => turnCamera(1));
   $('rotate-right').addEventListener('click', () => turnCamera(-1));
   $('end').addEventListener('click', doEndTurn);
   $('restart').addEventListener('click', restart);
   $('again').addEventListener('click', restart);
-  $('again2').addEventListener('click', restart);
-  for (const id of ['levels', 'levels2', 'levels3'])
-    $(id).addEventListener('click', () => {
-      hide('caught');
-      hide('escaped');
-      show('intro');
-    });
+  $('quit').addEventListener('click', quit);
+  $('quit2').addEventListener('click', quit);
+  $('narrator-face').innerHTML = screens.NARRATOR_SVG;
+  $('narrator-ok').addEventListener('click', () => {
+    if (!tutorial) return;
+    tutorial.step++;
+    tutorialUpdate();
+  });
+  $('narrator-hide').addEventListener('click', () => {
+    if (!tutorial) return;
+    tutorial.hidden = !tutorial.hidden;
+    tutorialUpdate();
+  });
   $('help-toggle').addEventListener('click', () => $('help').classList.toggle('hidden'));
   window.addEventListener('keydown', (e) => {
-    if (!$('intro').classList.contains('hidden')) {
-      if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault();
-        ($('level-0') as HTMLButtonElement).click();
-      }
-      return;
-    }
+    if (!inHeist) return;
     if (e.key === 'q' || e.key === 'Q') turnCamera(1);
     else if (e.key === 'e' || e.key === 'E') turnCamera(-1);
     else if (e.key === ' ' || e.key === 'Enter') {
@@ -397,10 +538,16 @@ async function boot(): Promise<void> {
     get busy() {
       return busy;
     },
-    get level() {
-      return levelIndex;
+    get profile() {
+      return profile;
     },
-    loadLevel,
+    get inHeist() {
+      return inHeist;
+    },
+    get tutorialStep() {
+      return tutorial ? TUTORIAL[tutorial.step]?.id ?? 'done' : null;
+    },
+    startHeist: (id: string) => startHeist(JOBS.find((j) => j.id === id)!),
     screenOf: (x: number, y: number) => world.toGlobal(project(view.proj, x + 0.5, y + 0.5)),
     /** A tile Leo can reach this turn where he'd be caught or set off the alarm. */
     dangerTile: () => {
@@ -412,8 +559,7 @@ async function boot(): Promise<void> {
     },
   };
 
-  loadLevel(0);
-  say(`Each action point moves Leo up to ${MOVE_PER_AP} tiles (blue). Spend both to dash further (yellow), but dashing is loud.`);
+  showTitle();
 
   app.ticker.add((tk) => {
     const dt = Math.min(0.05, tk.deltaMS / 1000);
@@ -441,6 +587,7 @@ async function boot(): Promise<void> {
     } else leo.bob = Math.sin(view.time * 3) * 0.8 + 0.8;
     for (const r of ripples) r.t += dt / 0.9;
     ripples = ripples.filter((r) => r.t < 1);
+    if (!inHeist) return;
     fit();
     view.draw(level, state, overlay(), leo, guards, ripples);
   });
@@ -450,8 +597,10 @@ async function boot(): Promise<void> {
 function fit(): void {
   const w = app.screen.width;
   const h = app.screen.height;
-  const top = 104;
-  const bottom = 96;
+  // Leave room for the HUD on top and the narrator, actions and message underneath.
+  const top = Math.max(80, (document.querySelector('.hud') as HTMLElement).getBoundingClientRect().bottom + 8);
+  const foot = (document.querySelector('.bottom') as HTMLElement).getBoundingClientRect();
+  const bottom = Math.max(60, h - foot.top + 8);
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const [x, y] of [[0, 0], [level.w, 0], [level.w, level.h], [0, level.h]]) {
     for (const z of [0, 90]) {

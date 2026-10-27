@@ -33,7 +33,7 @@ export const GREY_GALLERY: LevelDef = {
       ],
     },
   ],
-  loot: [{ at: { x: 11, y: 5 }, name: 'Moonstone', value: 5000, space: 2 }],
+  loot: [{ at: { x: 11, y: 5 }, name: 'Moonstone', value: 5000, space: 2, category: 'jewel' }],
 };
 
 /** M1 stealth sandbox: light and shadow, noise, cameras, lasers, locks, vents and an inventory that fills up. */
@@ -42,6 +42,8 @@ export const NIGHT_GALLERY: LevelDef = {
   name: 'The Night Gallery',
   objective: 'Steal what fits in your inventory, ideally the Night Opal, and get out the exit before anyone raises the alarm.',
   ambient: 'dark',
+  xp: 150,
+  par: 30,
   map: [
     '##C#####################',
     '#.....#..........#.....#',
@@ -116,13 +118,13 @@ export const NIGHT_GALLERY: LevelDef = {
     },
   ],
   loot: [
-    { at: { x: 11, y: 2 }, name: 'Night Opal', value: 12000, space: 3 },
-    { at: { x: 10, y: 6 }, name: 'Gilded Sardine Tin', value: 1500, space: 1 },
-    { at: { x: 13, y: 6 }, name: 'Porcelain Mouse', value: 2200, space: 1 },
-    { at: { x: 11, y: 10 }, name: 'Golden Yarn Ball', value: 3000, space: 2 },
-    { at: { x: 19, y: 2 }, name: 'Ruby Collar', value: 4500, space: 1 },
-    { at: { x: 21, y: 2 }, name: 'Antique Pocket Watch', value: 2800, space: 1 },
-    { at: { x: 20, y: 6 }, name: 'Jade Fish', value: 3500, space: 2 },
+    { at: { x: 11, y: 2 }, name: 'Night Opal', value: 12000, space: 3, category: 'jewel' },
+    { at: { x: 10, y: 6 }, name: 'Gilded Sardine Tin', value: 1500, space: 1, category: 'curiosity' },
+    { at: { x: 13, y: 6 }, name: 'Porcelain Mouse', value: 2200, space: 1, category: 'artefact' },
+    { at: { x: 11, y: 10 }, name: 'Golden Yarn Ball', value: 3000, space: 2, category: 'curiosity' },
+    { at: { x: 19, y: 2 }, name: 'Ruby Collar', value: 4500, space: 1, category: 'jewel' },
+    { at: { x: 21, y: 2 }, name: 'Antique Pocket Watch', value: 2800, space: 1, category: 'artefact' },
+    { at: { x: 20, y: 6 }, name: 'Jade Fish', value: 3500, space: 2, category: 'artefact' },
   ],
 };
 

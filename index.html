@@ -6,12 +6,12 @@
   <title>Purrrfect Crime — Prototype</title>
   <!-- STYLES -->
 </head>
-<body>
+<body class="meta">
   <div id="stage"></div>
 
   <header class="hud">
     <div class="card status">
-      <div class="title">Purrrfect Crime <span class="tag">prototype M1</span></div>
+      <div class="title">Purrrfect Crime <span class="tag">prototype M2</span></div>
       <div class="small" id="level-name"></div>
       <div class="row">
         <span>Turn <b id="turn">1</b></span>
@@ -25,7 +25,7 @@
       <button id="rotate-right" title="Turn the camera (E)">E ⟳</button>
       <button id="end" class="primary" title="End your turn (Space)">End turn</button>
       <button id="restart" title="Restart the level (R)">Restart</button>
-      <button id="levels" title="Choose a level">Levels</button>
+      <button id="quit" title="Leave the heist">Quit</button>
       <button id="help-toggle" title="How to play">?</button>
     </div>
   </header>
@@ -33,6 +33,14 @@
   <div id="alarm" class="alarm hidden"></div>
   <div id="banner"></div>
   <footer class="bottom">
+    <div id="narrator" class="narrator card hidden">
+      <div class="narrator-face" id="narrator-face"></div>
+      <div class="narrator-body">
+        <div class="narrator-top"><span class="kicker">The narrator</span><span class="small" id="narrator-count"></span></div>
+        <p id="narrator-text"></p>
+        <div class="row-buttons"><button id="narrator-ok" class="primary">Got it</button><button id="narrator-hide">Hide tips</button></div>
+      </div>
+    </div>
     <div id="actions" class="actions hidden"></div>
     <div class="message" id="message"></div>
   </footer>
@@ -53,21 +61,6 @@
     </ul>
   </aside>
 
-  <div id="intro" class="overlay">
-    <div class="card big">
-      <div class="kicker">Prototype M1 · stealth sandbox</div>
-      <h1>Purrrfect Crime</h1>
-      <p>Night has fallen on the city museum. <b>Leo Tuxedo</b> has a set of lock picks, room for a few treasures and one rule:
-        don't get seen. <b>Brutus</b> and <b>Bruno</b> are the guards on the night watch.</p>
-      <ul class="small">
-        <li><span class="chip blue">blue</span> 1 action point, <span class="chip yellow">yellow</span> 2. Paths turn <span class="chip yellow">yellow</span> where you'd be noticed and <span class="chip red">red</span> where you'd be caught.</li>
-        <li>Stay in shadow, mind the marble, pick locks rather than smash glass, and use the vents.</li>
-        <li>Q / E turn the camera · Space ends your turn · 1–9 actions · R restarts · ? for help.</li>
-      </ul>
-      <div id="level-list" class="level-list"></div>
-      <p class="small">Placeholder art throughout. Generated sprites replace it later.</p>
-    </div>
-  </div>
 
   <div id="caught" class="overlay hidden">
     <div class="card big caught">
@@ -77,24 +70,12 @@
       <p class="small">The guard grins. Leo sighs. Back to the start.</p>
       <div class="row-buttons">
         <button id="again" class="primary">Try again (R)</button>
-        <button id="levels2">Levels</button>
+        <button id="quit2">Quit</button>
       </div>
     </div>
   </div>
 
-  <div id="escaped" class="overlay hidden">
-    <div class="card big won">
-      <div class="kicker" id="escaped-kicker">Clean getaway</div>
-      <h1>Leo slipped out in <b id="escaped-turns">0</b> turns.</h1>
-      <ul id="haul" class="haul"></ul>
-      <p class="small" id="left-behind"></p>
-      <p class="small">The calling card, newspaper, black market and lair come in later milestones.</p>
-      <div class="row-buttons">
-        <button id="again2" class="primary">Play again</button>
-        <button id="levels3">Levels</button>
-      </div>
-    </div>
-  </div>
+  <div id="screens" class="hidden"></div>
 
   <!-- SCRIPT -->
 </body>

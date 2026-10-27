@@ -85,6 +85,9 @@ export interface State {
   camerasOff: boolean;
   lasersOff: boolean;
   alarm: number | null; // turns to lockdown
+  /** For the stealth bonuses and the newspaper: was Leo ever glimpsed or filmed, did an alarm ever go off. */
+  seen: boolean;
+  alarmRaised: boolean;
   noises: Noise[]; // made this turn, for drawing
   log: string[]; // what just happened, for the HUD
 }
@@ -121,6 +124,8 @@ export function newHeist(level: Level): State {
     camerasOff: false,
     lasersOff: false,
     alarm: null,
+    seen: false,
+    alarmRaised: false,
     noises: [],
     log: [],
   };
@@ -343,6 +348,7 @@ function catchLeo(s: State, by: string, why: string): void {
 
 /** A guard sees Leo at p. Returns true if that ended the heist. */
 function spotted(level: Level, s: State, g: Guard, p: Point): boolean {
+  s.seen = true;
   const close = Math.hypot(p.x - g.x, p.y - g.y) <= 2;
   if (g.mode === 'searching' || g.meter >= 1 || close || lightAt(level, p.x, p.y) === 2) {
     catchLeo(s, g.name, close ? 'right in front of him' : lightAt(level, p.x, p.y) === 2 ? 'in the light' : 'a second time');
@@ -358,6 +364,7 @@ function spotted(level: Level, s: State, g: Guard, p: Point): boolean {
 }
 
 export function triggerAlarm(s: State, p: Point, why: string): void {
+  s.alarmRaised = true;
   if (s.alarm === null) {
     s.alarm = ALARM_TURNS;
     s.log.push(`Alarm! ${why}. Lockdown in ${ALARM_TURNS} turns.`);
@@ -375,7 +382,11 @@ function checkExposure(level: Level, s: State, p: Point): void {
   for (const g of s.guards) {
     if (guardSees(level, s, g, p.x, p.y) && spotted(level, s, g, p)) return;
   }
-  for (const c of s.cameras) if (cameraSees(level, s, c, p.x, p.y)) triggerAlarm(s, p, 'A camera caught Leo on film');
+  for (const c of s.cameras)
+    if (cameraSees(level, s, c, p.x, p.y)) {
+      s.seen = true;
+      triggerAlarm(s, p, 'A camera caught Leo on film');
+    }
 }
 
 /** Sound carries this many tiles through open floor (walls and closed doors stop it). */
