@@ -616,4 +616,12 @@ function fit(): void {
   world.position.set(w / 2 - ((x0 + x1) / 2) * scale, top + (h - top - bottom) / 2 - ((y0 + y1) / 2) * scale);
 }
 
-void boot();
+boot().catch((e: unknown) => {
+  // Without this, a device that can't start the graphics would just show a blank page.
+  console.error(e);
+  const box = document.getElementById('screens')!;
+  box.classList.remove('hidden');
+  box.innerHTML = `<div class="screen overlay"><div class="card big"><div class="kicker">Something went wrong</div>
+    <h1>The game couldn't start.</h1><p>Your browser couldn't start the graphics. Try another browser, or turn on hardware acceleration.</p>
+    <p class="small">${String((e as Error)?.message ?? e).replace(/[<>&]/g, '')}</p></div></div>`;
+});
