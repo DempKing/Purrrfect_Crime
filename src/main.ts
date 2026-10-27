@@ -1,5 +1,7 @@
 // Prototype M0: one grey-box level, a rotating isometric camera, action points, one bulldog.
 import { Application, Container } from 'pixi.js';
+// Lets PixiJS run on pages with a strict security policy (no eval), such as claude.ai artifacts.
+import 'pixi.js/unsafe-eval';
 import { parseLevel, type Point } from './core/level';
 import {
   apCost,
