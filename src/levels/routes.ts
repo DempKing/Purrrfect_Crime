@@ -30,3 +30,23 @@ export const NIGHT_GALLERY_ROUTE: RouteStep[][] = [
   [[22, 13]],
   [[23, 13]],
 ];
+
+// The tutorial, played the way the narrator teaches it: follow Gus into the hall, wait in the dark along
+// the far wall while he walks back, cross the marble, slip down the corridor while the camera looks
+// away, crawl under the laser hallway, pick one case, smash the other, take the pearl and leave.
+export const CORNER_GALLERY_ROUTE: RouteStep[][] = [
+  [[6, 3]],
+  [[10, 4]],
+  [[14, 4]],
+  [[18, 4]],
+  [],
+  [[17, 8]],
+  [[15, 11], { a: 'enter-vent', x: 15, y: 11 }],
+  [[11, 11]],
+  [[7, 11]],
+  [{ a: 'exit-vent', x: 7, y: 11 }, [6, 8]],
+  [{ a: 'pick-case', x: 6, y: 7 }, { a: 'pick-case', x: 6, y: 7 }],
+  [[3, 8], { a: 'smash-case', x: 2, y: 7 }],
+  [{ a: 'take', x: 4, y: 9 }, [1, 10]],
+  [[0, 11]],
+];

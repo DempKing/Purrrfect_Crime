@@ -202,8 +202,8 @@ lost), and achievements for beating each one.
   **6 inventory spaces**, which limits how much he can take at once. Some levels have **stash
   points** (a window ledge, an accomplice's drop chute) for a second run.
 - **Selling:** after a heist the loot goes to the stash in Leo's lair. At the black market:
-  - Each item has a **base value**. The fence's price is `base × (0.55 + 0.02 × level, capped at 0.95) ×
-    market demand`.
+  - Each item has a **base value**, the newspaper's estimate in dollars. The fence pays one Catnip per $10
+    of it, minus his cut: `base ÷ 10 × (0.55 + 0.02 × level, capped at 0.95) × market demand`.
   - **Demand** rotates per category (paintings, jewels, artefacts, curiosities): "This week's buyers want
     jewels, +25%".
   - Higher levels unlock **better fences** and special buyers (a collector who pays ×1.5 for one listed

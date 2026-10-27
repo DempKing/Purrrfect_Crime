@@ -39,11 +39,15 @@ export interface LampDef {
   radius: number;
 }
 
+/** What kind of buyer wants it: the black market's demand rotates between these. */
+export type LootCategory = 'painting' | 'jewel' | 'artefact' | 'curiosity';
+
 export interface LootDef {
   at: Point; // a case or the plinth
   name: string;
-  value: number;
+  value: number; // the newspaper's estimate, in dollars
   space: number; // inventory spaces it takes up
+  category: LootCategory;
 }
 
 export interface LevelDef {
@@ -68,6 +72,9 @@ export interface LevelDef {
   pulsingLasers?: boolean;
   guards: GuardDef[];
   loot: LootDef[];
+  /** Base XP for a successful heist, and the turn count that earns a speed bonus. */
+  xp?: number;
+  par?: number;
 }
 
 export interface Level {
