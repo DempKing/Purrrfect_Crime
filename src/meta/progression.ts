@@ -1,8 +1,7 @@
-// Leo's progression: levels, attributes, the three skill trees, the lair's rooms and the difficulty.
+// Leo's progression: levels, attributes, the three skill trees, and the lair's rooms.
 // Everything here is data plus small pure functions; perksFor() turns a profile into what Leo brings
 // into a heist.
 import { BASE_PERKS, type Ability, type Perks } from '../core/game';
-import type { Difficulty } from '../core/level';
 import type { Profile } from './profile';
 
 // --- XP and levels ---------------------------------------------------------------------------
@@ -26,26 +25,6 @@ export function playerLevel(xp: number): number {
   while (l < LEVEL_CAP && xp >= xpForLevel(l + 1)) l++;
   return l;
 }
-
-// --- Difficulty ------------------------------------------------------------------------------
-
-export interface DifficultyInfo {
-  id: Difficulty;
-  name: string;
-  blurb: string;
-  /** Loot value and XP. */
-  mult: number;
-  checkpoints: boolean;
-  undo: boolean;
-  nineLives: boolean;
-}
-
-export const DIFFICULTY: Record<Difficulty, DifficultyInfo> = {
-  casual: { id: 'casual', name: 'Casual', blurb: 'The base security. A checkpoint in every level, and you can undo your turn.', mult: 1, checkpoints: true, undo: true, nineLives: true },
-  professional: { id: 'professional', name: 'Professional', blurb: 'More guards and cameras. Checkpoints and undo. Loot and XP ×1.4.', mult: 1.4, checkpoints: true, undo: true, nineLives: true },
-  mastermind: { id: 'mastermind', name: 'Mastermind', blurb: 'More again, and cameras on the vent exits. No checkpoints, no undo. Loot and XP ×1.9.', mult: 1.9, checkpoints: false, undo: false, nineLives: true },
-  legendary: { id: 'legendary', name: 'Legendary', blurb: 'Everything, and Nine Lives won’t save you. No checkpoints, no undo. Loot and XP ×2.5.', mult: 2.5, checkpoints: false, undo: false, nineLives: false },
-};
 
 // --- Attributes ------------------------------------------------------------------------------
 
@@ -114,7 +93,7 @@ export type SkillId =
   | 'ceiling-climb'
   | 'tightrope'
   | 'cat-nap'
-  | 'nine-lives';
+  | 'second-wind';
 
 export interface SkillInfo {
   id: SkillId;
@@ -149,7 +128,7 @@ export const SKILLS: SkillInfo[] = [
   { id: 'ceiling-climb', tree: 'acrobat', name: 'Ceiling Climb', text: 'Climb the ladders into the rafters and walk the beams where nobody looks. Drop down anywhere (thump), or climb down a ladder quietly.', level: 6, cost: 800, requires: 'pounce' },
   { id: 'tightrope', tree: 'acrobat', name: 'Tightrope', text: 'Cross gaps on wires and beams.', level: 9, cost: 1100, requires: 'pounce', later: 'Arrives with the rooftop levels.' },
   { id: 'cat-nap', tree: 'acrobat', name: 'Cat Nap', text: 'Once a heist, curl up in a shadow: for two turns no guard notices Leo unless they trip over him.', level: 15, cost: 2200, requires: 'pounce' },
-  { id: 'nine-lives', tree: 'acrobat', name: 'Nine Lives', text: 'Once a heist, getting caught doesn’t count: Leo wriggles free (or jams the lockdown for three more turns). Not on Legendary.', level: 25, cost: 4000, requires: 'cat-nap' },
+  { id: 'second-wind', tree: 'acrobat', name: 'Second Wind', text: 'Once a heist, after spending an action point, catch your breath: one more action point this turn.', level: 25, cost: 4000, requires: 'cat-nap' },
 ];
 
 export const skillInfo = (id: SkillId) => SKILLS.find((s) => s.id === id)!;
@@ -265,7 +244,7 @@ export function lairCondition(p: Profile): number {
 
 // --- Into a heist ------------------------------------------------------------------------------
 
-/** What Leo's attributes, skills, lair and difficulty bring to a heist. */
+/** What Leo's attributes, skills and lair bring to a heist. */
 export function perksFor(p: Profile): Perks {
   const a = p.attributes;
   const has = (id: SkillId) => p.skills.includes(id);
@@ -281,6 +260,7 @@ export function perksFor(p: Profile): Perks {
   if (has('emp-collar')) charges.emp = 1 + spare;
   if (has('pounce')) charges.pounce = 99;
   if (has('cat-nap')) charges['cat-nap'] = 1 + spare;
+  if (has('second-wind')) charges['second-wind'] = 1 + spare;
   return {
     ...BASE_PERKS,
     movePerAp: BASE_PERKS.movePerAp + agilityMoves,
@@ -297,7 +277,6 @@ export function perksFor(p: Profile): Perks {
     ghostStep: has('ghost-step'),
     vanish: has('vanish'),
     laserMirror: has('laser-mirror'),
-    nineLives: has('nine-lives') && DIFFICULTY[p.difficulty].nineLives,
     ceilingClimb: has('ceiling-climb'),
     charges,
   };

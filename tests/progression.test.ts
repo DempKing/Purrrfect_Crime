@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseLevel, DIFFICULTIES, type Difficulty, type Level } from '../src/core/level';
+import { parseLevel, type Level } from '../src/core/level';
 import {
   BASE_PERKS,
   abilities,
@@ -23,7 +23,7 @@ import {
 } from '../src/core/game';
 import { CORNER_GALLERY } from '../src/levels/tutorial';
 import { NIGHT_GALLERY } from '../src/levels/prototype';
-import { NIGHT_GALLERY_ANY_ROUTE, NIGHT_GALLERY_ROUTE, type RouteStep } from '../src/levels/routes';
+import { NIGHT_GALLERY_ROUTE, type RouteStep } from '../src/levels/routes';
 import { collectorWants, completeHeist, newProfile, priceOf, type Profile } from '../src/meta/profile';
 import {
   ATTRIBUTES,
@@ -56,7 +56,7 @@ function play(level: Level, route: RouteStep[][]): State {
   for (const turn of route) {
     for (const st of turn) {
       const ok = Array.isArray(st) ? moveLeo(level, s, { x: st[0], y: st[1] }).ok : doAction(level, s, st.a as never, { x: st.x, y: st.y });
-      assert.ok(ok, `${level.difficulty}: step ${JSON.stringify(st)} failed on turn ${s.turn}`);
+      assert.ok(ok, `step ${JSON.stringify(st)} failed on turn ${s.turn}`);
       if (s.status !== 'playing') break;
     }
     if (s.status !== 'playing') break;
@@ -65,38 +65,14 @@ function play(level: Level, route: RouteStep[][]): State {
   return s;
 }
 
-// --- difficulty ---------------------------------------------------------------------------------
-
-test('each difficulty adds the easier ones’ security and its own', () => {
-  const counts = DIFFICULTIES.map((d) => {
-    const l = parseLevel(NIGHT_GALLERY, d);
-    return [l.guards.length, l.cameras.length, l.moonlight.length];
-  });
-  assert.deepEqual(counts, [
-    [2, 2, 2],
-    [3, 3, 2],
-    [3, 4, 3],
-    [4, 4, 3],
-  ]);
-  assert.equal(parseLevel(CORNER_GALLERY, 'legendary').guards.length, 1, 'the tutorial is the same on every difficulty');
+test('the Night Gallery, with all its guards, can still be beaten', () => {
+  const s = play(night, NIGHT_GALLERY_ROUTE);
+  assert.equal(s.status, 'escaped', `${s.caughtBy} ${s.caughtWhy}`);
+  assert.ok(s.inventory.includes(0), 'with the Night Opal');
 });
 
-test('the Night Gallery can be beaten on every difficulty', () => {
-  for (const d of DIFFICULTIES) {
-    const s = play(parseLevel(NIGHT_GALLERY, d), NIGHT_GALLERY_ANY_ROUTE);
-    assert.equal(s.status, 'escaped', `${d}: ${s.caughtBy} ${s.caughtWhy}`);
-    assert.ok(s.inventory.includes(0), `${d}: with the Night Opal`);
-  }
-});
-
-test('Mastermind’s camera on the office vent catches the easy-difficulty route', () => {
-  const s = play(parseLevel(NIGHT_GALLERY, 'mastermind'), NIGHT_GALLERY_ROUTE);
-  assert.ok(s.seen);
-});
-
-test('levels reject guards walking through walls and checkpoints in walls', () => {
-  assert.throws(() => parseLevel({ ...CORNER_GALLERY, extras: { professional: { guards: [{ name: 'X', start: { x: 0, y: 0 }, route: [{ x: 1, y: 1 }] }] } } }, 'professional'), /in a wall/);
-  assert.throws(() => parseLevel({ ...CORNER_GALLERY, checkpoint: { x: 0, y: 0 } }), /checkpoint/);
+test('levels reject guards walking through walls', () => {
+  assert.throws(() => parseLevel({ ...CORNER_GALLERY, guards: [{ name: 'X', start: { x: 0, y: 0 }, route: [{ x: 1, y: 1 }] }] }), /in a wall/);
 });
 
 // --- attributes, as perks ---------------------------------------------------------------------------
@@ -185,21 +161,15 @@ test('Vanish: the first glimpse doesn’t count', () => {
   assert.equal(s.guards[0].mode, 'patrol');
 });
 
-test('Nine Lives: the first catch doesn’t count; Leo stops, and the guard is dazed for a turn', () => {
-  const s = newHeist(night, { ...BASE_PERKS, nineLives: true });
-  s.guards = [{ ...s.guards[0], x: 11, y: 12, facing: 0 }];
-  s.cameras = [];
-  s.leo = { x: 14, y: 12 };
-  moveLeo(night, s, { x: 12, y: 12 }); // right in front of him
-  assert.equal(s.status, 'playing');
-  assert.deepEqual(s.leo, { x: 13, y: 12 }, 'stopped where he was grabbed');
-  assert.equal(s.guards[0].dazed, 1);
-  const before = { x: s.guards[0].x, y: s.guards[0].y };
-  endTurn(night, s);
-  assert.deepEqual({ x: s.guards[0].x, y: s.guards[0].y }, before, 'the dazed guard skips his turn');
-  assert.equal(s.status, 'playing');
-  moveLeo(night, s, { x: 12, y: 12 });
-  assert.equal(s.status, 'caught', 'only once a heist');
+test('Second Wind: once a heist, one more action point after spending one', () => {
+  const s = quiet(night, { charges: { 'second-wind': 1 } });
+  s.leo = { x: 8, y: 12 };
+  assert.match(abilities(night, s)[0].blocked!, /spent a point/);
+  moveLeo(night, s, { x: 10, y: 12 });
+  assert.equal(s.ap, 1);
+  assert.ok(useAbility(night, s, 'second-wind'));
+  assert.equal(s.ap, 2);
+  assert.equal(s.charges['second-wind'], 0);
 });
 
 test('a bottle cap draws a guard to where it lands', () => {
@@ -342,17 +312,14 @@ test('skills need their level, the one before them in the tree, and Catnip', () 
   assert.ok(perksFor(p).blend);
 });
 
-test('skills and the Workshop become charges for the heist; Nine Lives is off on Legendary', () => {
+test('skills and the Workshop become charges for the heist', () => {
   const p = richProfile(30);
   for (const s of SKILLS) if (!s.later) assert.ok(learn(p, s.id), s.id);
   upgrade(p, 'workshop');
   upgrade(p, 'workshop');
   upgrade(p, 'workshop');
   const c = perksFor(p).charges;
-  assert.deepEqual(c, { 'bottle-cap': 3, 'decoy-card': 2, smoke: 2, 'camera-loop': 2, 'fuse-kit': 2, emp: 2, pounce: 99, 'cat-nap': 2 });
-  assert.equal(perksFor(p).nineLives, true);
-  p.difficulty = 'legendary';
-  assert.equal(perksFor(p).nineLives, false);
+  assert.deepEqual(c, { 'bottle-cap': 3, 'decoy-card': 2, smoke: 2, 'camera-loop': 2, 'fuse-kit': 2, emp: 2, pounce: 99, 'cat-nap': 2, 'second-wind': 2 });
 });
 
 test('lair rooms: three tiers, each costs more; the Mailbox has one', () => {
@@ -379,19 +346,13 @@ test('the Fence’s Office pays more, and a collector pays half again for one it
   assert.deepEqual(prices.filter((n) => n === Math.round(100 * 0.57 * 1.1 * 1.5)).length, 1);
 });
 
-test('harder difficulties make loot worth more and pay more XP; the Trophy Room adds fame', () => {
-  const easy = completeHeist(newProfile('casual'), night, play(night, NIGHT_GALLERY_ROUTE));
-  const pro = newProfile('professional');
-  pro.rooms.trophy = 2;
-  const proLevel = parseLevel(NIGHT_GALLERY, 'professional');
-  const hard = completeHeist(pro, proLevel, play(proLevel, NIGHT_GALLERY_ROUTE));
-  assert.equal(hard.total, Math.round(12000 * 1.4) + Math.round(4500 * 1.4) + Math.round(2800 * 1.4));
-  assert.ok(hard.xp.some((l) => l.label.startsWith('Professional')));
-  assert.ok(hard.xp.some((l) => l.label.startsWith('Fame')));
-  assert.ok(hard.xpTotal > easy.xpTotal * 1.4);
-  assert.ok(hard.paper.photos.every((ph, i) => ph.value > easy.paper.photos[i].value));
-});
-
-test('every difficulty name parses', () => {
-  for (const d of DIFFICULTIES as Difficulty[]) assert.ok(parseLevel(NIGHT_GALLERY, d));
+test('the Trophy Room adds fame to the XP', () => {
+  const plain = completeHeist(newProfile(), night, play(night, NIGHT_GALLERY_ROUTE));
+  const famous = newProfile();
+  famous.rooms.trophy = 2;
+  const r = completeHeist(famous, night, play(night, NIGHT_GALLERY_ROUTE));
+  const fame = r.xp.find((l) => l.label.startsWith('Fame'));
+  assert.ok(fame);
+  assert.equal(r.xpTotal, plain.xpTotal + fame.amount);
+  assert.equal(fame.amount, Math.round(plain.xpTotal * 0.1));
 });

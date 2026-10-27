@@ -1,5 +1,5 @@
-// Prototype M3: progression. Save slots and a difficulty per game; Leo's attributes, skills and gadgets in the
-// heist; the lair's rooms; the briefing; checkpoints and undo on the easier difficulties. Built on the M2 slice
+// Prototype M4: content. One mode, the hardest: no checkpoints, no undo. Save slots; Leo's attributes, skills
+// and gadgets in the heist; the lair's rooms; the briefing; rival thieves. Built on the M2 slice
 // (tutorial, narrator, paper, black market) and the M1 sandbox.
 import { Application, Container } from 'pixi.js';
 // Lets PixiJS run on pages with a strict security policy (no eval), such as claude.ai artifacts.
@@ -27,15 +27,18 @@ import {
   abilities,
   abilityTargets,
   useAbility,
+  planRival,
+  motionTrip,
   type Ability,
+  type RivalPlan,
   type Action,
   type GuardStep,
   type State,
 } from './core/game';
 import { ALL_LEVELS, DISTRICTS } from './levels';
 import { CORNER_GALLERY } from './levels/tutorial';
-import { buyLair, completeHeist, deleteSlot, loadSlot, loadSlots, narratorBuysTutorialLoot, newProfile, saveSlot, sell, type Profile } from './meta/profile';
-import { DIFFICULTY, learn, perksFor, raise, upgrade } from './meta/progression';
+import { buyLair, rivalFor, completeHeist, deleteSlot, loadSlot, loadSlots, narratorBuysTutorialLoot, newProfile, saveSlot, sell, type Profile } from './meta/profile';
+import { learn, perksFor, raise, upgrade } from './meta/progression';
 import { TUTORIAL, advance, type TutorialEvents } from './meta/tutorial';
 import * as screens from './ui/screens';
 import { HeistView, type Actor, type Overlay, type Ripple } from './render/view';
@@ -85,10 +88,16 @@ const money = (n: number) => `$${n.toLocaleString('en-US')}`;
 
 const leo: Actor = { x: 0, y: 0, facing: 0, bob: 0 };
 let guards: Actor[] = [];
+const rival: Actor = { x: 0, y: 0, facing: 0, bob: 0 };
 function syncActors(): void {
   leo.x = state.leo.x + 0.5;
   leo.y = state.leo.y + 0.5;
   guards = state.guards.map((g) => ({ x: g.x + 0.5, y: g.y + 0.5, facing: g.facing, bob: 0 }));
+  if (state.rival) {
+    rival.x = state.rival.x + 0.5;
+    rival.y = state.rival.y + 0.5;
+    rival.facing = state.rival.facing;
+  }
 }
 
 interface Segment {
@@ -136,7 +145,7 @@ function turnCamera(dir: 1 | -1): void {
 let hover: Point | null = null;
 let selected: Point | null = null; // touch: first tap previews, second tap confirms
 let version = 0;
-let cache: { v: number; reach: ReturnType<typeof leoReach>; vision: Set<string>; cameraVision: Set<string>; footprints: Point[] } | null = null;
+let cache: { v: number; reach: ReturnType<typeof leoReach>; vision: Set<string>; cameraVision: Set<string>; footprints: Point[]; rivalPath: Point[] } | null = null;
 
 function computed() {
   if (!cache || cache.v !== version) {
@@ -145,7 +154,7 @@ function computed() {
     const cameraVision = new Set<string>();
     if (!state.camerasOff) for (const c of state.cameras) for (const k of cameraView(level, state, c)) cameraVision.add(k);
     const footprints = planGuards(level, state).flat();
-    cache = { v: version, reach: leoReach(level, state), vision, cameraVision, footprints };
+    cache = { v: version, reach: leoReach(level, state), vision, cameraVision, footprints, rivalPath: planRival(level, state) };
   }
   return cache;
 }
@@ -155,11 +164,10 @@ function overlay(): Overlay {
   const reach1 = new Set<string>();
   const reach2 = new Set<string>();
   const live = state.status === 'playing' && !busy;
-  const cp = checkpointAllowed() ? level.def.checkpoint ?? null : null;
   if (targeting && live) {
     const targets = abilityTargets(level, state, targeting);
     const target = selected ?? hover;
-    return { reach1, reach2, vision: c.vision, cameraVision: c.cameraVision, footprints: c.footprints, path: [], pathDanger: new Map(), hover: target && targets.has(key(target.x, target.y)) ? target : null, targets, checkpoint: cp, checkpointReached: !!checkpoint };
+    return { reach1, reach2, vision: c.vision, cameraVision: c.cameraVision, footprints: c.footprints, path: [], pathDanger: new Map(), hover: target && targets.has(key(target.x, target.y)) ? target : null, targets, rivalPath: c.rivalPath };
   }
   if (live)
     for (const [k, cost] of c.reach.cost) {
@@ -178,6 +186,9 @@ function overlay(): Overlay {
       const d = danger(level, state, p);
       if (d) pathDanger.set(key(p.x, p.y), d);
     }
+    // Two steps inside a motion-sensor zone in one move trips it.
+    const trip = motionTrip(level, state, path);
+    if (trip > 0) for (const p of path.slice(trip)) pathDanger.set(key(p.x, p.y), 2);
   }
   const actionable = target && live && clickAction(target);
   return {
@@ -190,8 +201,7 @@ function overlay(): Overlay {
     pathDanger,
     hover: target && (path.length > 1 || actionable) ? target : null,
     targets: new Set(),
-    checkpoint: cp,
-    checkpointReached: !!checkpoint,
+    rivalPath: state.status === 'playing' ? c.rivalPath : [],
   };
 }
 
@@ -222,7 +232,6 @@ function act(tile: Point): void {
   const apBefore = state.ap;
   const res = moveLeo(level, state, tile);
   if (!res.ok) return say(res.reason ?? '');
-  turnActed = true;
   if (tutorial) {
     tutorial.ev.moved = true;
     if (apBefore - state.ap === 2) tutorial.ev.dashed = true;
@@ -237,7 +246,7 @@ function act(tile: Point): void {
     const q = res.path[i];
     segs.push({ who: 'leo', from: p, to: q, facing: faceToward(p, q), t: 0, dur: (p.x !== q.x && p.y !== q.y ? 0.17 : 0.12) * crawl });
   }
-  play(segs, () => afterLeoActs(res.path));
+  play(segs, afterLeoActs);
 }
 
 function runAction(a: Action): void {
@@ -245,7 +254,6 @@ function runAction(a: Action): void {
   if (a.blocked) return say(a.blocked);
   state.log = [];
   if (!doAction(level, state, a.kind, a.at)) return say('Leo can’t do that right now.');
-  turnActed = true;
   selected = null;
   version++;
   afterLeoActs();
@@ -283,7 +291,6 @@ function runAbility(kind: Ability, at?: Point): void {
     updateHud();
     return say('Leo can’t do that right now.');
   }
-  turnActed = true;
   selected = null;
   version++;
   if (kind === 'pounce') return play([{ who: 'leo', from, to: { ...state.leo }, facing: faceToward(from, state.leo), t: 0, dur: 0.35, leap: true }], afterLeoActs);
@@ -291,68 +298,9 @@ function runAbility(kind: Ability, at?: Point): void {
   if (at) leo.facing = faceToward(state.leo, at);
 }
 
-// --- checkpoints and undo (Casual and Professional) ------------------------------------------------
-
-let checkpoint: State | null = null;
-let turnStart: State | null = null;
-let turnActed = false;
-const checkpointAllowed = () => DIFFICULTY[profile.difficulty].checkpoints && !tutorial;
-const undoAllowed = () => DIFFICULTY[profile.difficulty].undo;
-
-/** Reaching the paw print (standing on it, or walking over it) saves a restart point where the move ends. */
-function checkCheckpoint(walked: Point[] = []): void {
-  const cp = level.def.checkpoint;
-  if (!cp || checkpoint || !checkpointAllowed() || state.status !== 'playing' || state.layer !== 'floor') return;
-  if (![state.leo, ...walked].some((p) => p.x === cp.x && p.y === cp.y)) return;
-  checkpoint = structuredClone(state);
-  banner('Checkpoint');
-  say('Checkpoint: Leo marks the floor with chalk. If he’s caught from here on, he can start again from this spot.');
-}
-
-function beginTurn(): void {
-  turnStart = structuredClone(state);
-  turnActed = false;
-}
-
-function undo(): void {
-  if (busy || !turnStart || !turnActed || !undoAllowed()) return;
-  if (checkpoint && checkpoint.turn === turnStart.turn) checkpoint = null;
-  state = structuredClone(turnStart);
-  turnActed = false;
-  targeting = null;
-  ripples = [];
-  noisesSeen = state.noises.length;
-  selected = null;
-  version++;
-  syncActors();
-  updateHud();
-  say('Undone. The turn starts again.');
-  tutorialUpdate();
-}
-
-function fromCheckpoint(): void {
-  if (!checkpoint) return;
-  state = structuredClone(checkpoint);
-  queue = [];
-  busy = false;
-  afterAnim = null;
-  targeting = null;
-  selected = null;
-  ripples = [];
-  noisesSeen = state.noises.length;
-  version++;
-  syncActors();
-  hide('caught');
-  beginTurn();
-  updateHud();
-  banner('Your turn');
-  say('Back at the checkpoint.');
-}
-
-function afterLeoActs(walked: Point[] = []): void {
+function afterLeoActs(): void {
   spawnRipples();
   syncActors();
-  checkCheckpoint(walked);
   updateHud();
   if (state.log.length) say(state.log.join(' '));
   tutorialUpdate();
@@ -370,7 +318,15 @@ function doEndTurn(): void {
   noisesSeen = 0;
   version++;
   const last = before.map((p) => ({ ...p }));
+  let rivalAt = { x: rival.x - 0.5, y: rival.y - 0.5 };
   const segs: Segment[] = steps.map((s) => {
+    if (s.guard === -1) {
+      // The rival's first step is their arrival: they appear there, rather than walking in from nowhere.
+      const from = rivalWasIn ? rivalAt : { x: s.to.x, y: s.to.y };
+      rivalWasIn = true;
+      rivalAt = { x: s.to.x, y: s.to.y };
+      return { who: -1, from, to: { x: s.to.x, y: s.to.y }, facing: s.to.facing, t: 0, dur: 0.16 };
+    }
     const from = last[s.guard];
     last[s.guard] = { x: s.to.x, y: s.to.y };
     return { who: s.guard, from, to: { x: s.to.x, y: s.to.y }, facing: s.to.facing, t: 0, dur: 0.22 };
@@ -383,7 +339,6 @@ function doEndTurn(): void {
     if (state.log.length) say(state.log.join(' '));
     tutorialUpdate();
     if (state.status === 'caught') return caught();
-    beginTurn();
     updateHud();
     // Still asleep after a Cat Nap: the guards go again.
     if (state.ap <= 0) {
@@ -395,11 +350,24 @@ function doEndTurn(): void {
   });
 }
 
+/** Tonight's rival for a heist: never in the tutorial; otherwise rolled once and kept until it's played. */
+function rivalPlanFor(def: LevelDef): RivalPlan | null {
+  if (def.id === CORNER_GALLERY.id) return null;
+  const district = DISTRICTS.findIndex((d) => d.levels.includes(def));
+  const plan = rivalFor(profile, def, Math.max(0, district));
+  persist();
+  return plan;
+}
+
+let rivalPlan: RivalPlan | null = null;
+let rivalWasIn = false;
+
 function startHeist(def: LevelDef): void {
-  level = parseLevel(def, profile.difficulty);
+  rivalPlan = rivalPlanFor(def);
+  level = parseLevel(def);
   view.proj.cx = level.w / 2;
   view.proj.cy = level.h / 2;
-  $('level-name').textContent = `${level.def.name} · ${DIFFICULTY[profile.difficulty].name}`;
+  $('level-name').textContent = level.def.name;
   tutorial = def.id === CORNER_GALLERY.id && !profile.tutorialDone ? { step: 0, ev: { moved: false, dashed: false, rotated: false, onMarble: false }, hidden: false } : null;
   screens.hideScreens();
   inHeist = true;
@@ -471,7 +439,7 @@ function showLair(tab: screens.LairTab = 'heists'): void {
     {
       jobs: JOBS,
       districts: DISTRICTS,
-      onHeist: (def) => screens.briefing(def, profile, () => startHeist(def), () => showLair()),
+      onHeist: (def) => screens.briefing(def, profile, rivalPlanFor(def), () => startHeist(def), () => showLair()),
       onSell: (id) => {
         sell(profile, id);
         persist();
@@ -519,9 +487,9 @@ function showTitle(): void {
       profile = p;
       goOn();
     },
-    onNew: (i, difficulty) => {
+    onNew: (i) => {
       slot = i;
-      profile = newProfile(difficulty);
+      profile = newProfile();
       persist();
       startHeist(CORNER_GALLERY);
     },
@@ -533,10 +501,9 @@ function showTitle(): void {
 }
 
 function restart(): void {
-  state = newHeist(level, perksFor(profile));
-  checkpoint = null;
+  state = newHeist(level, perksFor(profile), rivalPlan);
+  rivalWasIn = false;
   targeting = null;
-  beginTurn();
   queue = [];
   busy = false;
   afterAnim = null;
@@ -581,6 +548,29 @@ function updateHud(): void {
   $('turn').textContent = String(state.turn);
   $('ap').innerHTML = Array.from({ length: AP_PER_TURN }, (_, i) => `<span class="pip ${i < state.ap ? 'on' : ''}"></span>`).join('');
   $('inventory').innerHTML = `Inventory <b>${inventoryUsed(level, state)}/${state.perks.spaces}</b> · ${money(inventoryValue(level, state))}`;
+  // The race, if there is one. Before they arrive, only a good Planning Table says when.
+  const r = state.rival;
+  const rl = $('rival');
+  const prize = level.def.loot.find((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y)?.name ?? 'prize';
+  const rivalText = !r
+    ? ''
+    : r.phase === 'waiting'
+      ? profile.rooms.planning >= 2
+        ? `${r.name} arrives on turn ${r.arrive}`
+        : profile.rooms.planning >= 1
+          ? `${r.name} is coming tonight`
+          : ''
+      : r.phase === 'in'
+        ? `${r.name} is after the ${prize}!`
+        : r.phase === 'leaving'
+          ? `${r.name} has the ${prize} and is getting away`
+          : state.rivalBeaten
+            ? `You beat ${r.name} to it`
+            : state.rivalLoot.length
+              ? `${r.name} got away with the ${prize}`
+              : `${r.name} has fled`;
+  rl.textContent = rivalText;
+  rl.classList.toggle('hidden', !rivalText);
   const l = state.layer !== 'floor' ? -1 : lightNow(level, state, state.leo.x, state.leo.y);
   const li = $('light');
   li.textContent = l < 0 ? (state.layer === 'vent' ? 'In the vents' : 'In the rafters') : LIGHT_NAMES[l];
@@ -591,9 +581,6 @@ function updateHud(): void {
     show('alarm');
   } else hide('alarm');
   ($('end') as HTMLButtonElement).disabled = busy || state.status !== 'playing';
-  const undoBtn = $('undo') as HTMLButtonElement;
-  undoBtn.classList.toggle('hidden', !undoAllowed());
-  undoBtn.disabled = busy || !turnActed || state.status !== 'playing';
 
   // Gadgets and active skills, with what's left of each.
   const ab = $('abilities');
@@ -631,9 +618,6 @@ function updateHud(): void {
 function caught(): void {
   $('caught-who').textContent = state.caughtBy ?? 'A guard';
   $('caught-why').textContent = state.caughtWhy ? `${state.caughtWhy}.` : '';
-  $('from-checkpoint').classList.toggle('hidden', !checkpoint);
-  $('again').textContent = checkpoint ? 'From the start' : 'Try again (R)';
-  $('again').classList.toggle('primary', !checkpoint);
   setTimeout(() => show('caught'), 600);
 }
 
@@ -684,8 +668,6 @@ async function boot(): Promise<void> {
   $('end').addEventListener('click', doEndTurn);
   $('restart').addEventListener('click', restart);
   $('again').addEventListener('click', restart);
-  $('from-checkpoint').addEventListener('click', fromCheckpoint);
-  $('undo').addEventListener('click', undo);
   $('quit').addEventListener('click', quit);
   $('quit2').addEventListener('click', quit);
   $('narrator-face').innerHTML = screens.NARRATOR_SVG;
@@ -712,7 +694,7 @@ async function boot(): Promise<void> {
     else if (e.key === 'Escape') {
       selected = null;
       if (targeting) cancelTargeting();
-    } else if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey || !e.shiftKey)) undo();
+    }
     else if (/^[1-9]$/.test(e.key)) ($('actions').children[Number(e.key) - 1] as HTMLButtonElement | undefined)?.click();
   });
 
@@ -736,9 +718,6 @@ async function boot(): Promise<void> {
     startHeist: (id: string) => startHeist(JOBS.find((j) => j.id === id)!),
     get slot() {
       return slot;
-    },
-    get checkpoint() {
-      return checkpoint ? checkpoint.turn : null;
     },
     get targeting() {
       return targeting;
@@ -764,7 +743,7 @@ async function boot(): Promise<void> {
       const seg = queue[0];
       seg.t += dt / seg.dur;
       const k = Math.min(1, seg.t);
-      const a = seg.who === 'leo' ? leo : guards[seg.who];
+      const a = seg.who === 'leo' ? leo : seg.who === -1 ? rival : guards[seg.who];
       a.x = seg.from.x + 0.5 + (seg.to.x - seg.from.x) * k;
       a.y = seg.from.y + 0.5 + (seg.to.y - seg.from.y) * k;
       a.facing = seg.facing;
@@ -784,7 +763,7 @@ async function boot(): Promise<void> {
     ripples = ripples.filter((r) => r.t < 1);
     if (!inHeist) return;
     fit();
-    view.draw(level, state, overlay(), leo, guards, ripples);
+    view.draw(level, state, overlay(), leo, guards, ripples, rival);
   });
 }
 

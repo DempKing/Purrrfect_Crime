@@ -26,8 +26,6 @@ await page.waitForTimeout(400);
 const shot = (name) => page.screenshot({ path: join(out, name) });
 await shot('01-title.png');
 await page.click('[data-new="0"]');
-await shot('01b-difficulty.png');
-await page.click('[data-difficulty="casual"]');
 await page.waitForTimeout(900);
 
 const idle = () => page.waitForFunction(() => !window.__pc.busy, null, { timeout: 15000 }).then(() => page.waitForTimeout(200));
@@ -57,10 +55,10 @@ function route(name) {
   const to = src.indexOf('];', from) + 1;
   return JSON.parse(src.slice(from, to).replace(/\{ a: '([a-z-]+)', x: (\d+), y: (\d+) \}/g, '{"a":"$1","x":$2,"y":$3}').replace(/,\s*\]/g, ']'));
 }
-/** The solver's flawless route for a level and difficulty, from src/levels/solutions.ts. */
-function solution(id, difficulty) {
+/** The solver's flawless route for a level, from src/levels/solutions.ts. */
+function solution(id) {
   const src = readFileSync(join(root, 'src', 'levels', 'solutions.ts'), 'utf8');
-  return JSON.parse(src.slice(src.indexOf('/* BEGIN */') + 11, src.indexOf('/* END */')))[id][difficulty];
+  return JSON.parse(src.slice(src.indexOf('/* BEGIN */') + 11, src.indexOf('/* END */')))[id];
 }
 async function playRoute(steps, shots = {}, each = async () => {}) {
   for (const [i, turnSteps] of steps.entries()) {
@@ -120,7 +118,7 @@ await page.waitForSelector('.briefing');
 await shot('11b-briefing-no-table.png');
 await page.click('#go');
 await page.waitForTimeout(900);
-const COIN = solution('l1-coin-museum', 'casual');
+const COIN = solution('l1-coin-museum');
 await playRoute(COIN, { 3: '12-coin-vault.png' });
 const coinEnd = await page.evaluate(() => ({ status: window.__pc.state.status, turn: window.__pc.state.turn, seen: window.__pc.state.seen }));
 await page.waitForSelector('.paper', { timeout: 6000 });
@@ -147,7 +145,7 @@ await page.click('[data-upgrade="planning"]');
 await shot('17-lair-rooms.png');
 const spent = await page.evaluate(() => ({ catnip: window.__pc.profile.catnip, pockets: window.__pc.profile.attributes.pockets, skills: window.__pc.profile.skills, rooms: window.__pc.profile.rooms }));
 
-// --- Replay with the new kit: a bottle cap and undo, the checkpoint, caught, back to the checkpoint -------
+// --- Replay with the new kit: a bottle cap, then get caught on purpose ---------------------------------------
 await page.click('[data-tab="heists"]');
 await page.click('[data-job="1"]');
 await page.waitForSelector('.briefing .plan');
@@ -160,14 +158,7 @@ await page.waitForTimeout(300);
 await shot('19-aiming.png');
 await clickTile(3, 13);
 const afterCap = await page.evaluate(() => ({ caps: window.__pc.state.charges['bottle-cap'], ap: window.__pc.state.ap }));
-await page.click('#undo');
-await page.waitForTimeout(200);
-const afterUndo = await page.evaluate(() => ({ caps: window.__pc.state.charges['bottle-cap'], ap: window.__pc.state.ap }));
-// The flawless route as far as the passage into the vault, where the checkpoint is.
-await playRoute(COIN.slice(0, 4));
-const atCheckpoint = await page.evaluate(() => ({ checkpoint: window.__pc.checkpoint, turn: window.__pc.state.turn, inventory: window.__pc.state.inventory.length }));
-await shot('20-checkpoint.png');
-// Step into danger (a guard's view, a camera or a laser) until Leo is caught, by a guard or the lockdown.
+// Step into danger (a guard's view, a camera, a plate) until Leo is caught, by a guard or the lockdown.
 for (let i = 0; i < 40 && (await page.evaluate(() => window.__pc.state.status)) === 'playing'; i++) {
   const t = await page.evaluate(() => window.__pc.dangerTile());
   if (t) await clickTile(t.x, t.y);
@@ -177,11 +168,22 @@ for (let i = 0; i < 40 && (await page.evaluate(() => window.__pc.state.status)) 
 }
 await page.waitForTimeout(1200);
 const caughtStatus = await page.evaluate(() => window.__pc.state.status);
-await shot('21-caught.png');
-await page.click('#from-checkpoint');
+await shot('20-caught.png');
+await page.click('#quit2');
+await page.waitForSelector('.lair');
+
+// --- A rival: Luna Luck is after the Double Doubloon tonight -----------------------------------------------
+await page.evaluate(() => { window.__pc.profile.rivals['l1-coin-museum'] = { id: 'luna', arrive: 2, entrance: 0 }; window.__pc.profile.rooms.planning = 2; });
+await page.click('[data-job="1"]');
+await page.waitForSelector('.briefing .rumour');
+await shot('21-briefing-rival.png');
+await page.click('#go');
+await page.waitForTimeout(600);
+await playRoute(COIN.slice(0, 4));
 await page.waitForTimeout(400);
-const restored = await page.evaluate(() => ({ status: window.__pc.state.status, turn: window.__pc.state.turn, inventory: window.__pc.state.inventory.length }));
-await page.click('#quit');
+const race = await page.evaluate(() => ({ status: window.__pc.state.status, phase: window.__pc.state.rival?.phase, hud: document.getElementById('rival').textContent }));
+await shot('22-rival.png');
+await page.click(race.status === 'playing' ? '#quit' : '#quit2');
 await page.waitForSelector('.lair');
 
 // --- Save & quit, then continue from the title ----------------------------------------------------------
@@ -206,7 +208,7 @@ await page.click('#go');
 await page.waitForTimeout(800);
 await shot('25-phone-heist.png');
 
-const results = { tutorialEnd, tips: [...tips], afterLair, coinEnd, sold, spent, kit, afterCap, afterUndo, atCheckpoint, caughtStatus, restored, reloaded };
+const results = { tutorialEnd, tips: [...tips], afterLair, coinEnd, sold, spent, kit, afterCap, caughtStatus, race, reloaded };
 console.log(JSON.stringify(results, null, 1));
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors');
 await browser.close();
@@ -219,8 +221,7 @@ const ok =
   spent.pockets === 1 && spent.skills.includes('blend') && spent.rooms.workshop === 1 && spent.rooms.planning === 1 &&
   spent.catnip === 2000 - 150 - 300 - 300 - 400 &&
   kit.spaces === 7 && kit.blend && kit.caps === 1 &&
-  afterCap.caps === 0 && afterCap.ap === 1 && afterUndo.caps === 1 && afterUndo.ap === 2 &&
-  atCheckpoint.checkpoint !== null && caughtStatus === 'caught' &&
-  restored.status === 'playing' && restored.turn === atCheckpoint.checkpoint && restored.inventory === 0 &&
+  afterCap.caps === 0 && afterCap.ap === 1 && caughtStatus === 'caught' &&
+  race.status === 'playing' && (race.phase === 'in' || race.phase === 'leaving' || race.phase === 'gone') && /Luna Luck/.test(race.hud) &&
   reloaded.heists === 2 && reloaded.papers === 2 && reloaded.catnip === spent.catnip && reloaded.skills === 1;
 process.exit(errors.length || !ok ? 1 : 0);

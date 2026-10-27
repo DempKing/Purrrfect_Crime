@@ -90,10 +90,13 @@ export const NIGHT_GALLERY: LevelDef = {
   moonlight: [
     { x: 18, y: 1, w: 5, h: 4 },
     { x: 12, y: 12, w: 7, h: 4 },
+    { x: 1, y: 1, w: 5, h: 4 },
   ],
   cameras: [
     { at: { x: 14, y: 1 }, sweep: [3, 2], range: 5 },
     { at: { x: 22, y: 12 }, sweep: [3, 4], range: 5 },
+    { at: { x: 12, y: 11 }, sweep: [1, 2], range: 5 },
+    { at: { x: 4, y: 1 }, sweep: [2, 0], range: 4 },
   ],
   guards: [
     {
@@ -116,25 +119,9 @@ export const NIGHT_GALLERY: LevelDef = {
         { x: 8, y: 13 },
       ],
     },
+    { name: 'Biff', start: { x: 2, y: 9 }, route: [{ x: 4, y: 9 }, { x: 4, y: 10 }, { x: 2, y: 10 }, { x: 2, y: 9 }] },
+    { name: 'Rocco', start: { x: 12, y: 6 }, route: [{ x: 12, y: 9 }, { x: 14, y: 9 }, { x: 14, y: 6 }, { x: 12, y: 6 }] },
   ],
-  // Just inside the side gallery, after the vents.
-  checkpoint: { x: 20, y: 3 },
-  extras: {
-    // Biff minds the fuse box in the west wing, and a camera watches the moonlit end of the bottom hall.
-    professional: {
-      guards: [{ name: 'Biff', start: { x: 2, y: 9 }, route: [{ x: 4, y: 9 }, { x: 4, y: 10 }, { x: 2, y: 10 }, { x: 2, y: 9 }] }],
-      cameras: [{ at: { x: 12, y: 11 }, sweep: [1, 2], range: 5 }],
-    },
-    // The security office gets a moonlit window and a camera on its vent grate.
-    mastermind: {
-      moonlight: [{ x: 1, y: 1, w: 5, h: 4 }],
-      cameras: [{ at: { x: 4, y: 1 }, sweep: [2, 0], range: 4 }],
-    },
-    // Rocco circles the middle of the marble hall, between the cases.
-    legendary: {
-      guards: [{ name: 'Rocco', start: { x: 12, y: 6 }, route: [{ x: 12, y: 9 }, { x: 14, y: 9 }, { x: 14, y: 6 }, { x: 12, y: 6 }] }],
-    },
-  },
   loot: [
     { at: { x: 11, y: 2 }, name: 'Night Opal', value: 12000, space: 3, category: 'jewel' },
     { at: { x: 10, y: 6 }, name: 'Gilded Sardine Tin', value: 1500, space: 1, category: 'curiosity' },

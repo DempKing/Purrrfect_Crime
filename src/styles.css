@@ -230,3 +230,5 @@ h2.section { font-size: 1.1em; margin: 18px 0 6px; color: var(--gold); }
 .job.locked { opacity: 0.55; }
 h2.section.district:first-child { margin-top: 0; }
 .tip { background: rgba(94, 240, 255, 0.08); border-left: 3px solid #5ef0ff; padding: 6px 10px; border-radius: 4px; font-size: 0.92em; }
+.rival-line { color: #d8a8ff; }
+.rumour { background: rgba(176, 92, 255, 0.12); border-left: 3px solid #b05cff; padding: 6px 10px; border-radius: 4px; font-size: 0.92em; }

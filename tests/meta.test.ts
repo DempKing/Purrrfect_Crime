@@ -198,11 +198,10 @@ function memoryStore() {
 
 test('three save slots: save, load, and a broken or missing slot loads as nothing', () => {
   const m = memoryStore();
-  const p = newProfile('mastermind');
+  const p = newProfile();
   p.catnip = 1234;
   saveSlot(m, 1, p);
   assert.equal(loadSlot(m, 1)?.catnip, 1234);
-  assert.equal(loadSlot(m, 1)?.difficulty, 'mastermind');
   assert.equal(loadSlot(m, 0), null);
   m.store.set('purrrfect-crime-slot-3', '{not json');
   assert.equal(loadSlot(m, 2), null);
@@ -210,18 +209,27 @@ test('three save slots: save, load, and a broken or missing slot loads as nothin
   saveSlot({ setItem: () => { throw new Error('full'); } }, 0, p);
 });
 
-test('an M2 save moves into the first empty slot as a Casual game, with no attributes, skills or rooms', () => {
+test('an M2 save moves into the first empty slot, with no attributes, skills or rooms', () => {
   const m = memoryStore();
-  saveSlot(m, 0, newProfile('legendary'));
+  const first = newProfile();
+  first.catnip = 5;
+  saveSlot(m, 0, first);
   m.store.set('purrrfect-crime-save-v1', JSON.stringify({ version: 1, day: 5, catnip: 777, xp: 900, tutorialDone: true, narratorPaid: true, lairOwned: true, stash: [], nextId: 9, heists: 4, soldTotal: 300, records: {}, papers: [] }));
   const slots = loadSlots(m);
-  assert.equal(slots[0]?.difficulty, 'legendary');
+  assert.equal(slots[0]?.catnip, 5);
   assert.equal(slots[1]?.catnip, 777);
-  assert.equal(slots[1]?.difficulty, 'casual');
   assert.equal(slots[1]?.version, 2);
   assert.deepEqual(slots[1]?.skills, []);
   assert.equal(slots[1]?.rooms.planning, 0);
   assert.equal(m.store.has('purrrfect-crime-save-v1'), false);
+});
+
+test('an M3 save loses its difficulty, and Nine Lives becomes Second Wind', async () => {
+  const { upgradeProfile } = await import('../src/meta/profile');
+  const p = upgradeProfile({ ...newProfile(), difficulty: 'casual', skills: ['pounce', 'cat-nap', 'nine-lives'] });
+  assert.ok(p);
+  assert.equal('difficulty' in p, false);
+  assert.deepEqual(p.skills, ['pounce', 'cat-nap', 'second-wind']);
 });
 
 test('every paper has text in every story, whatever the day', async () => {
@@ -232,4 +240,64 @@ test('every paper has text in every story, whatever the day', async () => {
         const paper = writePaper({ day, levelId: `l${day % 7}`, place: 'Somewhere', items: [{ name: 'Thing', value: 100, centrepiece: day % 2 === 0 }], centrepieceName: 'Thing', guards: ['Gus'], seen, alarm, turns: day % 30, first: day === 1, replay: day % 5 === 0 });
         for (const t of [paper.headline, paper.subhead, ...paper.stories.flatMap((s) => [s.title, s.body]), ...paper.photos.map((p) => p.caption)]) assert.equal(typeof t, 'string');
       }
+});
+
+// --- rivals --------------------------------------------------------------------------------------------
+
+test('rivals: none for the first three heists, then a roll that sticks until the heist is played', async () => {
+  const { rivalChance, rivalFor } = await import('../src/meta/profile');
+  const { NATURAL_HISTORY } = await import('../src/levels/museummile');
+  const p = newProfile();
+  p.tutorialDone = true;
+  p.heists = 3; // the tutorial and two more
+  assert.equal(rivalChance(p, 0), 0);
+  assert.equal(rivalFor(p, NATURAL_HISTORY, 1), null);
+  p.heists = 4;
+  delete p.rivals[NATURAL_HISTORY.id];
+  assert.equal(rivalChance(p, 0), 0.2);
+  assert.equal(rivalChance(p, 4), 0.35);
+  // Over many days, about a quarter of rolls bring a rival, never the last one met, arriving on turns 3-7.
+  let found = 0;
+  for (let day = 1; day <= 400; day++) {
+    p.day = day;
+    p.lastRival = 'luna';
+    delete p.rivals[NATURAL_HISTORY.id];
+    const r = rivalFor(p, NATURAL_HISTORY, 1);
+    assert.deepEqual(rivalFor(p, NATURAL_HISTORY, 1), r, 'asking again gives the same answer');
+    if (!r) continue;
+    found++;
+    assert.notEqual(r.id, 'luna');
+    assert.ok(r.arrive >= 3 && r.arrive <= 7);
+    assert.ok(r.entrance < NATURAL_HISTORY.rivalEntrances!.length);
+  }
+  assert.ok(found > 60 && found < 140, `${found} rivals in 400 rolls`);
+  assert.equal(rivalFor({ ...newProfile(), heists: 10, tutorialDone: true }, CORNER_GALLERY, 0), null, 'not in the tutorial (no way in)');
+});
+
+test('a rival who wins: the level remembers, the record counts it, the paper says so', () => {
+  const p = newProfile();
+  const s = play(corner, CORNER_GALLERY_ROUTE);
+  // Pretend Luna was in tonight and got the pearl first, leaving Leo the small pieces.
+  s.rival = { id: 'luna', name: 'Luna Luck', x: 0, y: 0, facing: 0, arrive: 3, entrance: { x: 0, y: 0 }, phase: 'gone', prize: true, alarmed: false };
+  s.inventory = s.inventory.filter((i) => i !== 0);
+  s.rivalLoot = [0];
+  p.rivals[CORNER_GALLERY.id] = { id: 'luna', arrive: 3, entrance: 0 };
+  const r = completeHeist(p, corner, s);
+  assert.deepEqual(r.rival, { id: 'luna', won: false });
+  assert.equal(p.records[CORNER_GALLERY.id].lostTo, 'luna');
+  assert.deepEqual(p.rivalRecord.luna, { won: 0, lost: 1 });
+  assert.equal(p.lastRival, 'luna');
+  assert.equal(CORNER_GALLERY.id in p.rivals, false, 'a fresh roll next time');
+  assert.match(r.paper.headline, /LUNA LUCK BEATS TUXEDO CAT/);
+});
+
+test('beating a rival to it pays a bonus and makes the headline', () => {
+  const p = newProfile();
+  const s = play(corner, CORNER_GALLERY_ROUTE);
+  s.rival = { id: 'paws', name: 'Professor Paws', x: 0, y: 0, facing: 0, arrive: 3, entrance: { x: 0, y: 0 }, phase: 'gone', prize: false, alarmed: false };
+  s.rivalBeaten = true;
+  const r = completeHeist(p, corner, s);
+  assert.ok(r.xp.some((l) => l.label === 'Beat Professor Paws to it'));
+  assert.match(r.paper.headline, /TUXEDO CAT BEATS PROFESSOR PAWS/);
+  assert.deepEqual(p.rivalRecord.paws, { won: 1, lost: 0 });
 });

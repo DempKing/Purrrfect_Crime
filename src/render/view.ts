@@ -1,7 +1,7 @@
 // Draws a heist: floors and overlays first, then walls, furniture and characters sorted by depth.
 // Placeholder art for now; generated sprites replace the character and prop drawing later.
 import { Container, Graphics } from 'pixi.js';
-import { DIRS, camerasActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type State } from '../core/game';
+import { DIRS, RIVALS, camerasActive, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
 import type { Level, Point } from '../core/level';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
 
@@ -36,7 +36,17 @@ const COL = {
   duct: 0x5ec8ff,
   laser: 0xff2a2a,
   target: 0x5ef0ff,
+  rival: 0xb05cff,
+  motion: 0xff6a6a,
   beam: 0xd9a066,
+};
+
+/** Placeholder looks for the four rivals until their sprites arrive. */
+const RIVAL_LOOKS: Record<RivalId, { fur: number; patch?: number; eyes: number; mask: number }> = {
+  mittens: { fur: 0xf2f0ea, patch: 0xd9822b, eyes: 0x5fbf5f, mask: 0x1b1b22 },
+  luna: { fur: 0x9aa3b5, eyes: 0x8ec5ff, mask: 0x3a2a5a },
+  sammy: { fur: 0xd9822b, patch: 0xf5e6c8, eyes: 0xe9d36b, mask: 0x1b1b22 },
+  paws: { fur: 0x7a5a3a, patch: 0xc8a882, eyes: 0x2a1a0c, mask: 0x4a2a1a },
 };
 
 /** Loot colours by index, so each piece reads differently on its stand. */
@@ -48,15 +58,14 @@ export interface Overlay {
   vision: Set<string>;
   cameraVision: Set<string>;
   footprints: Point[];
+  /** Where the rival is heading next turn. */
+  rivalPath: Point[];
   path: Point[];
   /** 1 noticed, 2 caught or alarm, per tile on the path. */
   pathDanger: Map<string, number>;
   hover: Point | null;
   /** Where the gadget or skill being aimed can go. */
   targets: Set<string>;
-  /** The chalk paw print, when this difficulty has checkpoints, and whether Leo has reached it. */
-  checkpoint: Point | null;
-  checkpointReached: boolean;
 }
 
 export interface Actor {
@@ -91,7 +100,7 @@ export class HeistView {
     this.root.addChild(this.floor, this.objects, this.fx);
   }
 
-  draw(level: Level, s: State, ov: Overlay, leo: Actor, guards: Actor[], ripples: Ripple[]): void {
+  draw(level: Level, s: State, ov: Overlay, leo: Actor, guards: Actor[], ripples: Ripple[], rival?: Actor): void {
     const p = this.proj;
     const f = this.floor;
     const o = this.objects;
@@ -113,11 +122,13 @@ export class HeistView {
         const base = t === 'exit' ? COL.exit : t === 'marble' ? ((x + y) % 2 ? COL.marbleA : COL.marbleB) : t === 'squeaky' ? ((x + y) % 2 ? 0x7a5634 : 0x6e4c2d) : (x + y) % 2 ? COL.carpetA : COL.carpetB;
         this.diamond(f, x, y, 0.5, base, 1, COL.floorLine);
         if (t === 'squeaky') this.planks(f, x, y);
+        if (t === 'plate') this.plate(f, x, y);
         const spotlit = spots.some((sp) => Math.hypot(x - sp.at.x, y - sp.at.y) <= sp.radius + 0.01);
         const l = spotlit ? 2 : light[y][x];
         if (l === 0) this.diamond(f, x, y, 0.5, 0x05060c, 0.55);
         else if (l === 2) this.diamond(f, x, y, 0.5, spotlit ? 0xfff6d8 : COL.lampGlow, spotlit ? 0.32 : 0.16);
         if (t === 'grate') this.grate(f, x, y);
+        if (level.motion[y][x] && sensorsActive(s)) this.diamondOutline(f, x, y, COL.motion, 1, 0.1, 0.35 + Math.sin(this.time * 3) * 0.1);
         if (inVent || inRafters) this.diamond(f, x, y, 0.5, 0x02030a, 0.45);
         if (ov.cameraVision.has(k)) this.diamond(f, x, y, 0.46, COL.camera, 0.3);
         if (ov.targets.has(k)) {
@@ -152,11 +163,15 @@ export class HeistView {
           if (ov.reach1.has(k)) this.diamond(f, x, y, 0.3, COL.reach1, 0.45);
           else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.3, COL.reach2, 0.4);
         }
-    if (ov.checkpoint) this.pawPrint(f, ov.checkpoint, ov.checkpointReached);
     for (const d of s.decoys) this.decoyCard(f, d);
     for (const fp of ov.footprints) {
       const sp = project(p, fp.x + 0.5, fp.y + 0.5);
       f.circle(sp.x, sp.y, 4).fill({ color: COL.step, alpha: 0.75 });
+    }
+    for (const fp of ov.rivalPath) {
+      const sp = project(p, fp.x + 0.5, fp.y + 0.5);
+      f.circle(sp.x - 3, sp.y, 3).fill({ color: COL.rival, alpha: 0.85 });
+      f.circle(sp.x + 3, sp.y - 2, 3).fill({ color: COL.rival, alpha: 0.85 });
     }
     for (let i = 1; i < ov.path.length; i++) {
       const a = project(p, ov.path[i - 1].x + 0.5, ov.path[i - 1].y + 0.5);
@@ -195,12 +210,12 @@ export class HeistView {
             });
         } else if (t === 'case') {
           const li = lootAt(level, x, y);
-          const taken = li >= 0 && s.inventory.includes(li);
+          const taken = li >= 0 && (s.inventory.includes(li) || s.rivalLoot.includes(li));
           const broken = s.smashed.includes(k);
           items.push({ depth: d, draw: (g) => this.displayCase(g, x, y, li, taken, broken) });
         } else if (t === 'plinth') {
           const li = lootAt(level, x, y);
-          items.push({ depth: d, draw: (g) => this.plinth(g, x, y, li >= 0 && !s.inventory.includes(li)) });
+          items.push({ depth: d, draw: (g) => this.plinth(g, x, y, li >= 0 && !s.inventory.includes(li) && !s.rivalLoot.includes(li), s.rivalLoot.includes(li)) });
         } else if (t === 'lamp') {
           items.push({ depth: d, draw: (g) => this.lamp(g, x, y) });
         } else if (t === 'laser') {
@@ -233,6 +248,9 @@ export class HeistView {
         if (s.napTurns > 0) this.zzz(g, leo);
       },
     });
+    const r = s.rival;
+    if (rival && r && (r.phase === 'in' || r.phase === 'leaving'))
+      items.push({ depth: project(p, rival.x, rival.y).depth + 0.05, draw: (g) => this.drawRival(g, rival, r.id, r.prize) });
     guards.forEach((a, i) =>
       items.push({ depth: project(p, a.x, a.y).depth + 0.05, draw: (g) => this.drawGuard(g, a, s.guards[i], s.status === 'caught' && s.caughtBy === s.guards[i].name) }),
     );
@@ -344,13 +362,16 @@ export class HeistView {
     } else this.prism(g, x + 0.16, y + 0.16, x + 0.84, y + 0.84, 30, COL.caseGlass, COL.caseGlass, COL.caseGlass, 0.2, 22);
   }
 
-  private plinth(g: Graphics, x: number, y: number, hasGem: boolean): void {
+  private plinth(g: Graphics, x: number, y: number, hasGem: boolean, rivalTook = false): void {
     this.prism(g, x + 0.18, y + 0.18, x + 0.82, y + 0.82, 34, 0xf3eee0, COL.plinth, 0xa9a392, 1);
     const sp = project(this.proj, x + 0.5, y + 0.5, 50);
     if (hasGem) {
       const hue = [0x9fe8ff, 0xff9ff3, 0xb6ffb0, 0xffe39f][Math.floor(this.time * 2) % 4];
       g.circle(sp.x, sp.y, 20).fill({ color: hue, alpha: 0.2 });
       g.poly([sp.x, sp.y - 13, sp.x + 9, sp.y, sp.x, sp.y + 9, sp.x - 9, sp.y]).fill({ color: hue }).stroke({ width: 1.5, color: 0xffffff });
+    } else if (rivalTook) {
+      // Nothing but dust where the prize was.
+      g.ellipse(sp.x, sp.y + 3, 9, 4).fill({ color: 0x8a8578, alpha: 0.6 });
     } else {
       // Leo's calling card on the empty plinth.
       g.roundRect(sp.x - 9, sp.y - 2, 18, 11, 2).fill({ color: 0xf5f5f5 }).stroke({ width: 1, color: 0x222222 });
@@ -398,6 +419,13 @@ export class HeistView {
     if (!off && Math.sin(this.time * 5) > 0) g.circle(sp.x - 5, sp.y - 2, 2).fill({ color: 0xff3b30 });
   }
 
+  /** A pressure plate: a raised metal square with a seam round it. */
+  private plate(g: Graphics, x: number, y: number): void {
+    this.diamond(g, x, y, 0.36, 0x6a7080, 1);
+    this.diamondOutline(g, x, y, 0x2a2e38, 1.5, 0.16, 0.9);
+    this.diamond(g, x, y, 0.22, 0x8a90a0, 1);
+  }
+
   private planks(g: Graphics, x: number, y: number): void {
     for (const t of [0.33, 0.66]) {
       const a = project(this.proj, x + t, y + 0.05);
@@ -434,15 +462,6 @@ export class HeistView {
 
   private beam(g: Graphics, x: number, y: number, alpha: number): void {
     this.prism(g, x + 0.3, y + 0.3, x + 0.7, y + 0.7, 6, 0x8a6a45, 0x6b4a2a, 0x553a20, alpha, RAFTER_Z - 8);
-  }
-
-  /** The checkpoint: a chalk paw print on the floor, glowing once Leo has reached it. */
-  private pawPrint(g: Graphics, at: Point, reached: boolean): void {
-    const c = project(this.proj, at.x + 0.5, at.y + 0.5);
-    const col = reached ? 0x9ff0c8 : 0xe8e4d8;
-    const alpha = reached ? 0.95 : 0.6;
-    g.ellipse(c.x, c.y + 3, 9, 5).fill({ color: col, alpha });
-    for (const [dx, dy] of [[-10, -4], [-4, -9], [4, -9], [10, -4]]) g.ellipse(c.x + dx, c.y + dy, 3.2, 2.2).fill({ color: col, alpha });
   }
 
   private decoyCard(g: Graphics, at: Point): void {
@@ -499,6 +518,34 @@ export class HeistView {
     }
   }
 
+  /** A rival thief: a cat in their own colours, with a name tag, and the prize if they've got it. */
+  private drawRival(g: Graphics, a: Actor, id: RivalId, prize: boolean): void {
+    const look = RIVAL_LOOKS[id];
+    const s = project(this.proj, a.x, a.y);
+    const f = this.face(a);
+    const front = f.y > -0.2;
+    const by = s.y - a.bob;
+    g.ellipse(s.x, s.y, 17, 8).fill({ color: 0x000000, alpha: 0.35 });
+    g.moveTo(s.x - f.x * 10, by - 14).bezierCurveTo(s.x - f.x * 30, by - 20, s.x - f.x * 26, by - 46, s.x - f.x * 16, by - 50).stroke({ width: 5, color: look.fur, cap: 'round' });
+    g.ellipse(s.x, by - 22, 13, 18).fill({ color: look.fur }).stroke({ width: 2, color: 0x000000 });
+    if (look.patch) g.ellipse(s.x + 4, by - 26, 6, 8).fill({ color: look.patch });
+    const hx = s.x + f.x * 3;
+    const hy = by - 46;
+    g.poly([hx - 11, hy - 6, hx - 8, hy - 19, hx - 2, hy - 9]).fill({ color: look.fur }).stroke({ width: 2, color: 0x000000 });
+    g.poly([hx + 11, hy - 6, hx + 8, hy - 19, hx + 2, hy - 9]).fill({ color: look.fur }).stroke({ width: 2, color: 0x000000 });
+    g.circle(hx, hy, 11).fill({ color: look.fur }).stroke({ width: 2, color: 0x000000 });
+    if (front) {
+      g.circle(hx + f.x * 6 - 5, hy - 2, 2.2).fill({ color: look.eyes });
+      g.circle(hx + f.x * 6 + 5, hy - 2, 2.2).fill({ color: look.eyes });
+      if (id === 'paws') g.circle(hx + f.x * 6 - 5, hy - 2, 4.5).stroke({ width: 1.5, color: 0xd9b36c }).circle(hx + f.x * 6 + 5, hy - 2, 4.5).stroke({ width: 1.5, color: 0xd9b36c });
+      g.rect(hx - 9, hy + 4, 18, 4).fill({ color: look.mask });
+    }
+    if (prize) g.circle(s.x - f.x * 12, by - 24, 8).fill({ color: 0x3a2a4a }).stroke({ width: 2, color: COL.rival });
+    // Name tag.
+    const name = RIVALS[id].name;
+    g.roundRect(hx - name.length * 2.6, hy - 36, name.length * 5.2, 12, 4).fill({ color: COL.rival, alpha: 0.85 });
+  }
+
   /** A guard (drawn as a bulldog): stocky, tan, peaked cap, torch. Shows ? when suspicious, ! when searching. */
   private drawGuard(g: Graphics, a: Actor, guard: Guard, grinning: boolean): void {
     const s = project(this.proj, a.x, a.y);
@@ -541,14 +588,6 @@ export class HeistView {
       // Eyes shut and snoring.
       if (front) for (const side of [-6, 6]) g.moveTo(hx + f.x * 7 + side - 3, hy - 2).lineTo(hx + f.x * 7 + side + 3, hy - 2).stroke({ width: 2, color: 0x1a1a1a });
       this.zzz(g, a);
-      return;
-    }
-    if (guard.dazed > 0) {
-      // Little stars circling a guard who just had Leo wriggle out of his paws.
-      for (let i = 0; i < 3; i++) {
-        const a = this.time * 4 + (i * Math.PI * 2) / 3;
-        g.star(hx + Math.cos(a) * 16, hy - 26 + Math.sin(a) * 5, 5, 5, 2).fill({ color: 0xffe066 });
-      }
       return;
     }
     const mark = grinning || guard.mode === 'searching' ? '!' : guard.mode === 'suspicious' ? '?' : '';

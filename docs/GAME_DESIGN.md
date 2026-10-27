@@ -71,8 +71,7 @@ the original pitch is kept word for word in [ORIGINAL_BRIEF.md](ORIGINAL_BRIEF.m
   option to skip.
 - **Overwatch-style stealth:** guard sight is checked *during* their move as well as at the end, so a
   guard who walks past an open doorway sees through it.
-- **Undo:** one undo per turn for a move that hasn't revealed anything new (an XCOM-like safety net).
-  Available on Casual and Professional only.
+- **No undo.** A move is final, so the path preview above is the safety net.
 
 ## 4. Stealth and detection
 
@@ -122,13 +121,8 @@ differently.
 
 - Caught means **restart the level**. There's a short comic "busted" sting first (the guard grins, Leo
   sighs).
-- **Checkpoints:** on the two easier difficulties (Casual and Professional) every level has **one
-  checkpoint**. It's a fixed, authored spot about halfway through, usually just before the room with the
-  centrepiece, marked on the map by a chalk paw print. Reaching it saves Leo's position, the loot he's
-  carrying and the state of the level. Being caught after that restarts from the checkpoint instead of
-  the entrance. Mastermind and Legendary have no checkpoints.
-- Without a checkpoint, anything stolen on a failed attempt is lost. What carries over is your *knowledge*
-  of the level.
+- **No checkpoints.** Being caught always restarts from the entrance, and anything stolen on the failed
+  attempt is lost. What carries over is your *knowledge* of the level.
 
 ## 5. Security measures
 
@@ -136,8 +130,8 @@ differently.
 | --- | --- |
 | **Security camera** (fixed / sweeping / motion-triggered) | Stay outside the cone, shut it off at the control room, put a loop on its feed (skill), or time your moves to its sweep. |
 | **Laser grid** (static / pulsing / moving) | Time your moves, jump through a gap (skill), or cut it at a fuse box. |
-| **Pressure plates** | Seen with Intel or Keen Eye; step over them or jam them. |
-| **Motion sensors** | Move only 1 tile per turn while inside their zone, or move during the Slow Steps skill. |
+| **Pressure plates** | Raised metal squares: stepping on one sets off the alarm. Walk around them or Pounce over them. |
+| **Motion sensors** | A zone (red grid) where moving two or more tiles in one move sets off the alarm, so cross it a tile at a time. The fuse box turns them off. |
 | **Locked doors / display cases / safes** | Lockpicking with a tiered difficulty, keycards found on the map, glass cutter (skill), safe-cracking minigame. |
 | **Alarm panels** | Once an alarm trips, a countdown runs until the level locks down. Disarm the panel or escape before it ends. |
 | **Spotlights and searchlights** | Moving light sources that sweep areas on a timer. |
@@ -193,6 +187,14 @@ centrepiece as Leo** that night. They don't fight Leo; it's a race for the prize
 Each rival has a short comic exchange the first time Leo meets them, a rivalry record (races won and
 lost), and achievements for beating each one.
 
+**As built (M4):** the chance is 0% for the first three heists after the tutorial, then 20% + 5% per
+district (capped at 35%), worked out from the save so it can't be rerolled. A rival arrives between turns
+3 and 7 through one of the level's rival entrances, moves after the guards, and their next steps show as
+purple footprints. Mittens sets off an alarm away from her route once she's in (an alarm Leo didn't cause
+doesn't spoil a flawless heist); Luna is never spotted by guards; Sammy swipes loot from any open case he
+passes; Paws blinds the cameras he passes and relocks doors behind him. Beating a rival is worth +75 XP
+and a headline; the Leo tab keeps the rivalry record.
+
 ## 6. Loot, the black market and Catnip
 
 - **Loot** ranges from small items on shelves (coins, figurines) to cased artefacts, paintings and the
@@ -220,7 +222,7 @@ lost), and achievements for beating each one.
 ### 7.1 Experience and levels
 
 - XP for a successful heist: base by heist + bonuses for stealth (never seen, no alarms), loot value, the
-  centrepiece, speed (turn count) and difficulty multiplier.
+  centrepiece, speed (turn count) and beating a rival to the prize.
 - **Level cap 30.** Each level gives +1 attribute point and improves black-market prices. Some skills and
   levels need a minimum player level.
 
@@ -236,7 +238,7 @@ Scratching Tower's discount.
 | **Quiet Paws** | 5 | Every noise Leo makes is 12% smaller per rank. |
 | **Dexterity** | 3 | Cases open in one go; doors in one go; picking makes no sound. |
 | **Pockets** | 4 | +1 inventory space per rank. |
-| **Perception** | 2 | Guard footprints show one more turn ahead per rank. (Traps and pressure plates arrive with M4.) |
+| **Perception** | 2 | Guard footprints show one more turn ahead per rank. |
 
 ### 7.3 Skills (Catnip + level requirement)
 
@@ -249,8 +251,8 @@ Pounce). Once-a-heist skills get a second charge from the Workshop's third tier.
 - **Tech:** *Camera Loop* (loop a camera for 3 turns), *Laser Mirror*, *Keycard Clone*, *Fuse Kit*,
   *EMP Collar* (lvl 18: disables every device in a radius for 1 turn).
 - **Acrobat:** *Pounce* (jump 2 tiles), *Ceiling Climb* (crawl along rafters as a second route),
-  *Tightrope* (cross gaps), *Cat Nap* (lvl 15: wait out a guard's whole route while hidden), *Nine Lives*
-  (lvl 25: survive being caught once per heist; not on Legendary).
+  *Tightrope* (cross gaps), *Cat Nap* (lvl 15: wait out a guard's whole route while hidden), *Second Wind*
+  (lvl 25: one extra action point once per heist).
 
 As built in M3:
 
@@ -270,7 +272,7 @@ As built in M3:
 | Ceiling Climb | 6 | 800 | Locked until the levels with rafters (M4). |
 | Tightrope | 9 | 1,100 | Locked until the rooftop levels (M4). |
 | Cat Nap | 15 | 2,200 | Once a heist: guards can't notice Leo for two of their turns (unless they walk into him). |
-| Nine Lives | 25 | 4,000 | Once a heist, a catch doesn't count: Leo stops and the guard is dazed for a turn; a lockdown gets three more turns. Not on Legendary. |
+| Second Wind | 25 | 4,000 | Once a heist, with 1 action point or fewer left: free, +1 action point this turn. (It replaced Nine Lives when the game went to one mode, where a catch is always a catch.) |
 
 ## 8. The lair
 
@@ -329,8 +331,7 @@ Then the story runs in order:
    has been searching a long time for his equal. He sets **the NightClaw Challenge**:
    - Finish **every level** (25 at launch).
    - Steal each level's **centrepiece**.
-   - On Mastermind and Legendary, every centrepiece has to be stolen in a **flawless** heist: never
-     detected, no alarms and no checkpoint used. A centrepiece stolen in a messy heist still counts for
+   - Every centrepiece has to be stolen in a **flawless** heist: never detected and no alarms. A centrepiece stolen in a messy heist still counts for
      the level, but that level has to be replayed flawlessly to tick it off the challenge.
 2. When the challenge is done, **Letter 4** arrives at the lair: an invitation to NightClaw's secret lair for a final
    test, to steal his *prized possession*. The letter doesn't say what it is.
@@ -377,21 +378,10 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 - Every level is **at night** and **grand**: high ceilings, chandeliers, display halls, gardens, roofs.
 - Each level has **6–12 pieces of loot**, a **centrepiece**, **2+ entry points**, **2+ exits**, a **vent
   network** and at least one **optional room** with a secret (a safe, a hidden gallery).
-- **Difficulty is chosen once, when starting a new game**, and applies to every level in that save:
-  *Casual / Professional / Mastermind / Legendary*. It can't be changed later, so it is shown clearly on
-  the new-game screen. Each save keeps its own difficulty.
-
-| | Casual | Professional | Mastermind | Legendary |
-| --- | --- | --- | --- | --- |
-| Security | Base layout | + guards and cameras | + more guards, cameras covering vent exits, traps | Everything, tighter timings |
-| Checkpoint per level | Yes | Yes | No | No |
-| Undo per turn | Yes | Yes | No | No |
-| NightClaw Challenge | Steal every centrepiece | Steal every centrepiece | Steal every centrepiece flawlessly | Steal every centrepiece flawlessly |
-| Loot value and XP | ×1 | ×1.4 | ×1.9 | ×2.5 |
-
-  The extra guards, cameras and traps on harder difficulties are **placed by hand per level**, not at
-  random, so every difficulty still reads fairly. Each level keeps a known winning route that the tests
-  play on every difficulty. The tutorial is the same on all four.
+- **There is one mode, and it's the hardest one** (what was planned as *Legendary*): every level is
+  designed with its full security, there are no checkpoints and no undo, and the NightClaw Challenge asks
+  for every centrepiece to be stolen flawlessly. Loot and XP aren't multiplied. Every level is designed
+  and tested for this mode only.
 
 | District | Levels (working names) |
 | --- | --- |
@@ -402,7 +392,7 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | **Downtown** | The Grand Bank, Casino Royale-Paws, The Mint, The Museum of Modern Mischief, City Hall Treasury |
 | **Special** | NightClaw's challenge museum (*The Midnight Museum*), NightClaw's Lair |
 
-**Built so far (M4, Old Town):**
+**Built so far (M4: Old Town and Museum Mile):**
 
 | # | Level | What it introduces |
 | --- | --- | --- |
@@ -411,6 +401,11 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | 2 | The Clocktower Archive | A captain who whistles for help; rafters and ladders for Ceiling Climb. |
 | 3 | The Pawnbroker Penthouse | A sniffer who smells through walls; pulsing lasers. |
 | 4 | The Opera House Costume Vault | Spotlights that move every turn; theatre seats guards see over. |
+| 5 | The Natural History Museum | Museum Mile's dim halls (only the marked shadows are dark); pressure plates. |
+| 6 | The Egyptian Wing | Motion sensors in the tomb corridor, turned off at the fuse box. |
+| 7 | The Modern Art Atrium | A marble atrium where every step is heard, under a circling spotlight. |
+| 8 | The Gem & Mineral Hall | A vault with lasers and motion sensors, both on one fuse box beside a sleeping guard. |
+| 9 | The Planetarium | A dim dome with two spotlights sweeping opposite ways and five guards. |
 
 Each level opens when the one before it is cleared. Guard types as built: **sleepy** guards see
 nothing while dozing, wake to noise, look around and go back to their chair; **captains** see 25%
@@ -419,8 +414,8 @@ within 2 tiles through walls (not in vents or rafters), and a second sniff is a 
 floorboards make a noise of 4; safes take three silent goes (two with Dexterity); dropping from the
 rafters makes a noise of 3, climbing down a ladder none.
 
-**Every level must be beatable flawlessly (never seen, no alarm) on every difficulty**, because the
-NightClaw Challenge asks for exactly that on Mastermind and Legendary. A solver (`npm run solve`) searches
+**Every level must be beatable flawlessly (never seen, no alarm)**, because the NightClaw Challenge asks
+for exactly that. A solver (`npm run solve`) searches
 for such a route while a level is designed; the routes are saved and replayed by the tests.
 
 A level-design checklist for each map: readable sight lines, at least three valid routes to the
@@ -486,16 +481,16 @@ sprite sheets.
   are cut away by occluding Leo, and floors and the vent layer draw as layers.
 - **Pure game-logic core** (no rendering): grid, AP, pathfinding (A* on tiles with move costs), sight
   (shadowcasting with cones), light map, noise propagation, guard AI state machines, enemy turn scheduler,
-  undo stack. Everything is deterministic and seeded, so it can be unit-tested.
+  Everything is deterministic and seeded, so it can be unit-tested.
 - **Data-driven levels:** a JSON level format with tiles, walls, vents, lights, guards and their routes,
-  devices, loot and per-difficulty overlays. A **simple in-game level editor** (developer build) to author
+  devices and loot. A **simple in-game level editor** (developer build) to author
   the 25 maps quickly.
 - **Save system:** profile (level, XP, Catnip, skills, lair, story flags, letter order, challenge
   progress), plus a separate per-level best record.
 - **Testing:**
   - Unit tests for sight, noise, pathfinding and AI.
-  - A **solver bot** that proves every level can be finished at every difficulty tier, by searching
-    through guard timings.
+  - A **solver bot** that proves every level can be finished flawlessly, by searching through guard
+    timings.
   - Story-trigger tests for both letter orders.
 
 ## 14. Milestones
@@ -505,7 +500,7 @@ sprite sheets.
 | **M0** | Grey-box prototype | One flat test map, iso grid, 4-way rotation, AP movement, one guard with sight and patrol, caught = restart. Proves the core turn loop is fun. |
 | **M1** | Stealth sandbox | Light map, noise, alert states, cameras, lasers, vents, lockpicking, loot and inventory space, escape. |
 | **M2** | Vertical slice | Tutorial level with final art direction, narrator, calling card + newspaper, black market, Catnip, XP, the lair purchase. |
-| **M3** | Progression | Attributes, all three skill trees, lair upgrades and the Intel reveal, difficulty tiers, saves. |
+| **M3** | Progression | Attributes, all three skill trees, lair upgrades and the Intel reveal, saves. |
 | **M4** | Content | Levels 1–25, rivals, guard types, letters 1–2 and the challenge museum. |
 | **M5** | Endgame | NightClaw Challenge tracking, Letter 4, NightClaw's Lair, ending, credits, post-game. |
 | **M6** | Ship | Steam (achievements, cloud saves), settings, accessibility, balance pass with the solver bot, polish. |
@@ -519,7 +514,7 @@ The web build goes live from M0 onward, so every milestone can be playtested fro
 | Tutorial, opening, lair | 0.5 |
 | First pass through the 25 levels (about 25–30 minutes each, including restarts) | 11–12 |
 | Replays for loot, centrepieces lost to rivals, skill grinding | 2–4 |
-| NightClaw Challenge clean-up (flawless replays on harder difficulties) | 1–2 |
+| NightClaw Challenge clean-up (flawless replays) | 1–2 |
 | Challenge museum and NightClaw's Lair | 1–1.5 |
 
 ## 15. Decisions log
@@ -527,8 +522,8 @@ The web build goes live from M0 onward, so every milestone can be playtested fro
 | # | Question | Decision |
 | --- | --- | --- |
 | 1 | Art pipeline | **Generated sprites**, following the spec in §12.1. |
-| 2 | Difficulty | **Chosen once for the whole game** when starting a new save (§11). |
-| 3 | Checkpoints | **One checkpoint per level on the easier difficulties** (Casual and Professional); none on Mastermind or Legendary (§4.4). |
+| 2 | Difficulty | **One mode only, the hardest** (originally *Legendary*). Replaces "chosen once for the whole game" (§11). |
+| 3 | Checkpoints | **None**, and no undo, now that there's one mode (§4.4). |
 | 4 | Rivals | **Only appear when they're after the same centrepiece** as Leo, warned about at the lair. Losing a race never blocks the NightClaw Challenge (§5.2). |
 | 5 | Replays | **Yes**, loot is back on display at 50% value after the first clear (§6). |
 | 6 | Platforms | **Both** a web build and a Steam build (§13). |
