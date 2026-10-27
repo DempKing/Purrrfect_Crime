@@ -90,7 +90,7 @@ function distanceMap(level: Level, goals: Point[], shut: Tile | null = null): nu
     const t = level.tiles[y]?.[x];
     // Doors and vaults count as open here: the search finds the way to open them.
     if (t === undefined || t === shut) return false;
-    return t === 'door' || t === 'keydoor' || t === 'vault' || !blocksMove(t) || level.ducts[y][x] || level.rafters[y][x];
+    return t === 'door' || t === 'keydoor' || t === 'vault' || t === 'crate' || !blocksMove(t) || level.ducts[y][x] || level.rafters[y][x];
   };
   while (q.length) {
     const p = q.shift()!;
@@ -106,11 +106,12 @@ function distanceMap(level: Level, goals: Point[], shut: Tile | null = null): nu
   return d;
 }
 
-/** How often the level itself repeats, apart from the guards: spotlights and pulsing lasers. */
+/** How often the level itself repeats, apart from the guards: spotlights, pulsing lasers, the lighthouse and the tide. */
 function levelPeriod(level: Level): number {
   const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
   let p = level.def.pulsingLasers ? 2 : 1;
-  for (const sp of level.spotlights) p = (p * sp.path.length) / gcd(p, sp.path.length);
+  const cycles = [...level.spotlights.map((sp) => sp.path.length), level.def.beacon ? 8 : 1, level.def.tide ? 2 * level.def.tide.period : 1];
+  for (const c of cycles) p = (p * c) / gcd(p, c);
   return p;
 }
 
@@ -118,13 +119,13 @@ let period = 1;
 
 function stateKey(s: State): string {
   return JSON.stringify([
-    s.leo.x, s.leo.y, s.layer, s.ap, s.turn % period, [...s.inventory].sort(), s.picks, s.openDoors, s.camerasOff, s.lasersOff, s.alarm, s.card, s.combination,
+    s.leo.x, s.leo.y, s.layer, s.ap, s.turn % period, [...s.inventory].sort(), s.picks, s.openDoors, s.camerasOff, s.lasersOff, s.alarm, s.card, s.combination, s.lampsOff,
     s.guards.map((g) => [g.x, g.y, g.facing, g.mode, g.target, g.point?.x, g.point?.y, g.look, g.meter, g.asleep]),
     s.cameras.map((c) => c.idx),
   ]);
 }
 
-const USEFUL: ActionKind[] = ['pick-door', 'swipe-card', 'read-notes', 'turn-dials', 'panel', 'fuse', 'enter-vent', 'exit-vent', 'climb-up', 'climb-down', 'drop'];
+const USEFUL: ActionKind[] = ['pick-door', 'swipe-card', 'read-notes', 'turn-dials', 'lights', 'panel', 'fuse', 'enter-vent', 'exit-vent', 'climb-up', 'climb-down', 'drop'];
 
 export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?: number; clean?: boolean; weight?: number; turns?: number } = {}): { plan: RouteStep[][]; s: State; expanded: number } | null {
   const centre = level.def.loot.findIndex((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y);

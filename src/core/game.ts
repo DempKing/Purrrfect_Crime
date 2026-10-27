@@ -18,7 +18,7 @@ export const LOOK_TURNS = 2;
 /** Turns from an alarm to lockdown. */
 export const ALARM_TURNS = 5;
 export const INVENTORY_SPACES = 6;
-export const NOISE = { marble: 2, dash: 4, pick: 1, smash: 6, squeaky: 4, drop: 3, bark: 5 };
+export const NOISE = { marble: 2, dash: 4, pick: 1, smash: 6, squeaky: 4, drop: 3, bark: 5, splash: 4 };
 /** Picks needed to open a lock. */
 export const LOCK_PICKS = 2;
 /** Goes needed to crack a safe (quiet, but slow). */
@@ -225,6 +225,7 @@ export interface State {
   /** Who has the level's keycard: nobody yet, Leo, or a rival who swiped it. */
   card: 'leo' | 'rival' | null;
   combination: boolean; // Leo has read the vault's combination
+  lampsOff: number[]; // lamps switched off at a light switch (indexes into the level's lamps)
   noises: Noise[]; // made this turn, for drawing
   log: string[]; // what just happened, for the HUD
 }
@@ -281,6 +282,7 @@ export function newHeist(level: Level, perks: Perks = BASE_PERKS, rival: RivalPl
     rivalBeaten: false,
     card: null,
     combination: false,
+    lampsOff: [],
     noises: [],
     log: [],
   };
@@ -293,7 +295,28 @@ export function tileNow(level: Level, s: State, x: number, y: number): Tile {
   const t = tileAt(level, x, y);
   if ((t === 'door' || t === 'keydoor' || t === 'vault') && s.openDoors.includes(key(x, y))) return 'floor';
   if (t === 'keycard' && s.card) return 'floor';
+  if (t === 'tidal') return flooded(level, s) ? 'gap' : 'floor';
   return t;
+}
+
+/** High tide: the tidal sand is under water. */
+export function flooded(level: Level, s: State): boolean {
+  const tide = level.def.tide;
+  return !!tide && Math.floor((s.turn - 1) / tide.period) % 2 === (tide.high ? 0 : 1);
+}
+
+/** Turns until the tide turns (1 means it turns at the end of this one). */
+export function tideTurnsLeft(level: Level, s: State): number {
+  const period = level.def.tide?.period ?? 1;
+  return period - ((s.turn - 1) % period);
+}
+
+const inRects = (rects: { x: number; y: number; w: number; h: number }[] | undefined, p: Point) =>
+  (rects ?? []).some((m) => p.x >= m.x && p.x < m.x + m.w && p.y >= m.y && p.y < m.y + m.h);
+
+/** Leo, curled up in a crate: nobody sees him, smells him or bumps into him. */
+export function hiddenAt(level: Level, s: State, p: Point): boolean {
+  return s.layer === 'floor' && tileAt(level, p.x, p.y) === 'crate';
 }
 
 export function lootAt(level: Level, x: number, y: number): number {
@@ -336,10 +359,14 @@ export function inSmoke(s: State, x: number, y: number): boolean {
 // ---------------------------------------------------------------------------------------------
 // Light
 
-const lightCache = new WeakMap<Level, Light[][]>();
+const lightCache = new WeakMap<Level, Map<string, Light[][]>>();
 
-export function lightMap(level: Level): Light[][] {
-  const hit = lightCache.get(level);
+/** The level's light, lamps and moonlight, with some lamps perhaps switched off. */
+export function lightMap(level: Level, lampsOff: number[] = []): Light[][] {
+  const k = [...lampsOff].sort().join(',');
+  const cache = lightCache.get(level) ?? new Map<string, Light[][]>();
+  lightCache.set(level, cache);
+  const hit = cache.get(k);
   if (hit) return hit;
   const out: Light[][] = [];
   for (let y = 0; y < level.h; y++) {
@@ -351,9 +378,10 @@ export function lightMap(level: Level): Light[][] {
       }
       let l: Light = level.def.ambient === 'dim' && !(level.def.shadows ?? []).some((m) => x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h) ? 1 : 0;
       for (const m of level.moonlight) if (x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h) l = 1;
-      for (const lamp of level.lamps) {
+      for (const [i, lamp] of level.lamps.entries()) {
+        if (lampsOff.includes(i)) continue;
         const d = Math.hypot(x - lamp.at.x, y - lamp.at.y);
-        if (d > lamp.radius + 2 || !clearLine(level, lamp.at, { x, y }, (t) => t === 'wall' || t === 'door' || t === 'pillar' || t === 'keydoor' || t === 'vault')) continue;
+        if (d > lamp.radius + 2 || !clearLine(level, lamp.at, { x, y }, (t) => t === 'wall' || t === 'door' || t === 'pillar' || t === 'stack' || t === 'keydoor' || t === 'vault')) continue;
         if (d <= lamp.radius) l = 2;
         else if (l < 1) l = 1;
       }
@@ -361,12 +389,36 @@ export function lightMap(level: Level): Light[][] {
     }
     out.push(row);
   }
-  lightCache.set(level, out);
+  cache.set(k, out);
   return out;
 }
 
-export function lightAt(level: Level, x: number, y: number): Light {
-  return lightMap(level)[y]?.[x] ?? 0;
+export function lightAt(level: Level, x: number, y: number, lampsOff: number[] = []): Light {
+  return lightMap(level, lampsOff)[y]?.[x] ?? 0;
+}
+
+/** Which way the lighthouse beam points this turn. */
+export function beaconFacing(level: Level, s: State): number {
+  return ((level.def.beacon?.facing ?? 0) + s.turn - 1) % 8;
+}
+
+const beaconCache = new WeakMap<Level, Map<number, Set<string>>>();
+
+/** The tiles the lighthouse beam lights this turn: a narrow wedge, stopped by walls. */
+export function beaconTiles(level: Level, s: State): Set<string> {
+  const b = level.def.beacon;
+  if (!b) return new Set();
+  const facing = beaconFacing(level, s);
+  const cache = beaconCache.get(level) ?? new Map<number, Set<string>>();
+  beaconCache.set(level, cache);
+  const hit = cache.get(facing);
+  if (hit) return hit;
+  const out = new Set<string>();
+  for (let y = b.at.y - b.range; y <= b.at.y + b.range; y++)
+    for (let x = b.at.x - b.range; x <= b.at.x + b.range; x++)
+      if ((x !== b.at.x || y !== b.at.y) && inCone(b.at, facing, x, y, b.range, 22.5) && clearLine(level, b.at, { x, y }, (t) => blocksSight(t) && t !== 'switch')) out.add(key(x, y));
+  cache.set(facing, out);
+  return out;
 }
 
 /** Where each spotlight's circle is this turn. */
@@ -377,7 +429,8 @@ export function spotlightsNow(level: Level, s: State): { at: Point; radius: numb
 /** The light on a tile right now: the level's lamps and moonlight, plus any spotlight passing over it. */
 export function lightNow(level: Level, s: State, x: number, y: number): Light {
   for (const sp of spotlightsNow(level, s)) if (Math.hypot(x - sp.at.x, y - sp.at.y) <= sp.radius + 0.01) return 2;
-  return lightAt(level, x, y);
+  if (level.def.beacon && beaconTiles(level, s).has(key(x, y))) return 2;
+  return lightAt(level, x, y, s.lampsOff);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -387,7 +440,7 @@ function walkable(level: Level, s: State, layer: Layer, x: number, y: number): b
   if (layer === 'vent') return isDuct(level, x, y);
   if (layer === 'rafter') return isRafter(level, x, y);
   const t = tileNow(level, s, x, y);
-  return t === 'wire' ? s.perks.tightrope : !blocksMove(t);
+  return t === 'wire' ? s.perks.tightrope : t === 'crate' || !blocksMove(t);
 }
 
 function stepCost(level: Level, s: State, layer: Layer, from: Point, dx: number, dy: number): number {
@@ -485,7 +538,7 @@ export function rangeFor(light: Light): number {
   return light === 2 ? SIGHT_RANGE.lit : light === 1 ? SIGHT_RANGE.dim : SIGHT_RANGE.dark;
 }
 
-function inCone(from: Point, facing: number, x: number, y: number, range: number): boolean {
+function inCone(from: Point, facing: number, x: number, y: number, range: number, halfAngle = SIGHT_HALF_ANGLE): boolean {
   const dx = x - from.x;
   const dy = y - from.y;
   if (dx === 0 && dy === 0) return true;
@@ -493,7 +546,7 @@ function inCone(from: Point, facing: number, x: number, y: number, range: number
   if (dist > range + 0.01) return false;
   const f = DIRS[facing];
   const cos = (dx * f.x + dy * f.y) / (dist * Math.hypot(f.x, f.y));
-  return cos >= Math.cos((SIGHT_HALF_ANGLE * Math.PI) / 180) - 1e-9;
+  return cos >= Math.cos((halfAngle * Math.PI) / 180) - 1e-9;
 }
 
 /**
@@ -598,7 +651,9 @@ function smelled(s: State, g: Guard, p: Point): boolean {
   return false;
 }
 
-const canSmell = (s: State, g: Guard, p: Point) => g.kind === 'sniffer' && !g.asleep && s.layer === 'floor' && s.napTurns <= 0 && Math.hypot(p.x - g.x, p.y - g.y) <= SCENT_RANGE + 0.01;
+/** A sniffer smells Leo close by, unless Leo's in a vent, the rafters or a crate, or the fish market's stink covers him. */
+const canSmell = (level: Level, s: State, g: Guard, p: Point) =>
+  g.kind === 'sniffer' && !g.asleep && s.layer === 'floor' && s.napTurns <= 0 && Math.hypot(p.x - g.x, p.y - g.y) <= SCENT_RANGE + 0.01 && !hiddenAt(level, s, p) && !inRects(level.def.fishy, p);
 
 /** A suspicious captain whistles up the guards near him to look too. */
 function captainCalls(s: State, g: Guard, p: Point): void {
@@ -630,10 +685,10 @@ export function triggerAlarm(s: State, p: Point, why: string, byLeo = true): voi
 
 /** Is Leo seen at p right now? Handles guards (suspicion or a catch) and cameras (alarm). */
 function checkExposure(level: Level, s: State, p: Point): void {
-  if (s.layer !== 'floor' || s.status !== 'playing' || s.napTurns > 0) return;
+  if (s.layer !== 'floor' || s.status !== 'playing' || s.napTurns > 0 || hiddenAt(level, s, p)) return;
   for (const g of s.guards) {
     if (guardSees(level, s, g, p.x, p.y) && spotted(level, s, g, p)) return;
-    if (canSmell(s, g, p) && smelled(s, g, p)) return;
+    if (canSmell(level, s, g, p) && smelled(s, g, p)) return;
   }
   for (const c of s.cameras)
     if (cameraSees(level, s, c, p.x, p.y)) {
@@ -674,10 +729,17 @@ export function makeNoise(level: Level, s: State, p: Point, r: number, fromLeo =
     else if (g.mode === 'patrol') s.log.push(`${g.name} heard something.`);
     g.asleep = false;
     if (g.mode !== 'searching') g.mode = 'suspicious';
-    g.point = { ...p };
+    g.point = standingSpot(level, s, p, g);
     g.look = Math.max(g.look, LOOK_TURNS);
     captainCalls(s, g, p);
   }
+}
+
+/** Where a guard stands to look at p: p itself, or the open tile beside it nearest him (for a kennel, a case, a crate). */
+function standingSpot(level: Level, s: State, p: Point, g: Point): Point {
+  if (!blocksMove(tileNow(level, s, p.x, p.y))) return { ...p };
+  const open = DIRS.map((d) => ({ x: p.x + d.x, y: p.y + d.y })).filter((q) => !blocksMove(tileNow(level, s, q.x, q.y)));
+  return open.sort((a, b) => Math.hypot(a.x - g.x, a.y - g.y) - Math.hypot(b.x - g.x, b.y - g.y))[0] ?? { ...p };
 }
 
 /** A laser beam broken at p: the alarm, unless the Laser Mirror bounces the first one. */
@@ -715,6 +777,28 @@ function pickUpCard(level: Level, s: State, p: Point): void {
   if (s.layer === 'floor' && !s.card && tileAt(level, p.x, p.y) === 'keycard') {
     s.card = 'leo';
     s.log.push('Leo pockets the keycard.');
+  }
+}
+
+const lightsOn = (s: State, lamps: number[]) => lamps.some((i) => !s.lampsOff.includes(i));
+
+/** The lights went out: the nearest guard on his rounds comes over to the switch to put them back on. */
+function lightsNoticed(level: Level, s: State, at: Point): void {
+  const front = DIRS.map((d) => ({ x: at.x + d.x, y: at.y + d.y })).filter((p) => !blocksMove(tileAt(level, p.x, p.y)));
+  const g = s.guards.filter((g) => !g.asleep && g.mode === 'patrol').sort((a, b) => Math.hypot(a.x - at.x, a.y - at.y) - Math.hypot(b.x - at.x, b.y - at.y))[0];
+  if (!g || !front.length) return;
+  g.mode = 'suspicious';
+  g.point = front.sort((a, b) => Math.hypot(a.x - g.x, a.y - g.y) - Math.hypot(b.x - g.x, b.y - g.y))[0];
+  g.look = 1;
+  s.log.push(`${g.name} grumbles about the lights and heads for the switch.`);
+}
+
+/** A guard who passes a switch with its lights off puts them back on. */
+function guardFixesLights(level: Level, s: State, g: Guard, dry: boolean): void {
+  for (const sw of level.def.switches ?? []) {
+    if (!sw.lamps.some((i) => s.lampsOff.includes(i)) || !near8(g, sw.at)) continue;
+    s.lampsOff = s.lampsOff.filter((i) => !sw.lamps.includes(i));
+    if (!dry) s.log.push(`${g.name} flicks the lights back on.`);
   }
 }
 
@@ -790,6 +874,7 @@ export type ActionKind =
   | 'swipe-card'
   | 'read-notes'
   | 'turn-dials'
+  | 'lights'
   | 'panel'
   | 'fuse'
   | 'enter-vent'
@@ -854,6 +939,8 @@ export function actionsHere(level: Level, s: State): Action[] {
         if (t === 'desk' && !s.combination) out.push({ kind: 'read-notes', at: p, label: 'Search the desk for the combination', ap: 1, noise: 0 });
         if (t === 'vault' && near4(L, p))
           out.push({ kind: 'turn-dials', at: p, label: `Turn the vault dials (${s.picks[k] ?? 0}/${VAULT_DIALS})`, ap: 1, noise: 0, blocked: s.combination ? undefined : 'Needs the combination: it’s written down somewhere in the building.' });
+        const sw = t === 'switch' ? (level.def.switches ?? []).find((w) => w.at.x === x && w.at.y === y) : undefined;
+        if (sw) out.push({ kind: 'lights', at: p, label: lightsOn(s, sw.lamps) ? 'Switch off the lights' : 'Switch the lights back on', ap: 1, noise: 0 });
         if (t === 'panel' && !s.camerasOff) out.push({ kind: 'panel', at: p, label: s.alarm !== null ? 'Shut off the cameras and the alarm' : 'Shut off the cameras', ap: 1, noise: 0 });
         if (t === 'fuse' && !s.lasersOff) out.push({ kind: 'fuse', at: p, label: 'Cut the power to the lasers', ap: 1, noise: 0 });
       }
@@ -904,6 +991,18 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
       s.openDoors.push(k);
       s.log.push('Beep. The light turns green and the door slides open.');
       break;
+    case 'lights': {
+      const sw = (level.def.switches ?? []).find((w) => w.at.x === at.x && w.at.y === at.y)!;
+      if (lightsOn(s, sw.lamps)) {
+        s.lampsOff.push(...sw.lamps.filter((i) => !s.lampsOff.includes(i)));
+        s.log.push('Click. The lights go out.');
+        lightsNoticed(level, s, sw.at);
+      } else {
+        s.lampsOff = s.lampsOff.filter((i) => !sw.lamps.includes(i));
+        s.log.push('Click. The lights come back on.');
+      }
+      break;
+    }
     case 'read-notes':
       s.combination = true;
       s.log.push('Taped under the drawer: the vault combination. Of course it is.');
@@ -1250,17 +1349,18 @@ function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
         } else g.facing = (g.facing + 2) % 8; // at the spot: look around
       }
       out.push({ guard: gi, to: { x: g.x, y: g.y, facing: g.facing } });
+      guardFixesLights(level, s, g, dry);
       if (dry) continue;
       if (s.layer === 'floor' && g.x === s.leo.x && g.y === s.leo.y) {
         catchLeo(s, g.name, 'by walking straight into him');
         break;
       }
-      if (s.layer === 'floor' && s.napTurns <= 0 && guardSees(level, s, g, s.leo.x, s.leo.y)) {
+      if (s.layer === 'floor' && s.napTurns <= 0 && !hiddenAt(level, s, s.leo) && guardSees(level, s, g, s.leo.x, s.leo.y)) {
         sawLeo = true;
         spotted(level, s, g, s.leo);
         break; // either caught, or stops to stare
       }
-      if (canSmell(s, g, s.leo)) {
+      if (canSmell(level, s, g, s.leo)) {
         sawLeo = true;
         smelled(s, g, s.leo);
         break;
@@ -1431,6 +1531,23 @@ function rivalSpotted(level: Level, s: State, r: Rival): boolean {
   return true;
 }
 
+/** The tide came in over Leo: it carries him, splashing, to the nearest dry ground. */
+function washedUp(level: Level, s: State): void {
+  const guards = guardTiles(s);
+  let best: Point | null = null;
+  for (let y = 0; y < level.h; y++)
+    for (let x = 0; x < level.w; x++) {
+      const t = tileNow(level, s, x, y);
+      if (blocksMove(t) || t === 'exit' || guards.has(key(x, y))) continue;
+      if (!best || Math.hypot(x - s.leo.x, y - s.leo.y) < Math.hypot(best.x - s.leo.x, best.y - s.leo.y)) best = { x, y };
+    }
+  if (!best) return;
+  s.leo = best;
+  s.log.push('SPLASH! The tide sweeps Leo off his paws and dumps him on the nearest dry ground.');
+  makeNoise(level, s, best, NOISE.splash);
+  checkExposure(level, s, best);
+}
+
 /** Ends Leo's turn: cameras sweep, guards move, the alarm counts down. Returns the guards' steps. */
 export function endTurn(level: Level, s: State): GuardStep[] {
   if (s.status !== 'playing') return [];
@@ -1453,6 +1570,10 @@ export function endTurn(level: Level, s: State): GuardStep[] {
   if (s.status === 'playing') {
     s.turn++;
     s.ap = AP_PER_TURN;
+    if (level.def.tide && tideTurnsLeft(level, s) === level.def.tide.period) {
+      s.log.push(flooded(level, s) ? 'The tide comes in.' : 'The tide goes out.');
+      if (s.layer === 'floor' && tileNow(level, s, s.leo.x, s.leo.y) === 'gap') washedUp(level, s);
+    }
     // The pulsing lasers may have come on under Leo's feet.
     if (s.layer === 'floor' && tileNow(level, s, s.leo.x, s.leo.y) === 'laser' && lasersActive(level, s)) breakLaser(s, s.leo, 'A laser came on right where Leo stood');
     // Still napping: no action points this turn either.
@@ -1463,14 +1584,14 @@ export function endTurn(level: Level, s: State): GuardStep[] {
 
 /** What would happen if Leo stood on p (used to colour the planned path). 0 safe, 1 noticed, 2 caught or alarm. */
 export function danger(level: Level, s: State, p: Point): 0 | 1 | 2 {
-  if (s.layer !== 'floor') return 0;
+  if (s.layer !== 'floor' || hiddenAt(level, s, p)) return 0;
   let worst: 0 | 1 | 2 = 0;
   if (tileNow(level, s, p.x, p.y) === 'laser' && lasersActive(level, s)) worst = 2;
   if (tileNow(level, s, p.x, p.y) === 'plate') worst = 2;
   if (kennelsNear(level, p).length) worst = Math.max(worst, 1) as 0 | 1 | 2;
   for (const c of s.cameras) if (cameraSees(level, s, c, p.x, p.y)) worst = 2;
   for (const g of s.guards) {
-    if (canSmell(s, g, p)) worst = g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 1.5 ? 2 : (Math.max(worst, 1) as 0 | 1 | 2);
+    if (canSmell(level, s, g, p)) worst = g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 1.5 ? 2 : (Math.max(worst, 1) as 0 | 1 | 2);
     if (!guardSees(level, s, g, p.x, p.y)) continue;
     const caught = g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 2 || lightNow(level, s, p.x, p.y) === 2;
     worst = caught ? 2 : Math.max(worst, 1) as 0 | 1 | 2;

@@ -1,7 +1,7 @@
 // Draws a heist: floors and overlays first, then walls, furniture and characters sorted by depth.
 // Placeholder art for now; generated sprites replace the character and prop drawing later.
 import { Container, Graphics } from 'pixi.js';
-import { DIRS, RIVALS, camerasActive, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
+import { DIRS, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
 import type { Level, Point } from '../core/level';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
 
@@ -94,7 +94,6 @@ export class HeistView {
   private fx = new Graphics();
   proj: Projector = { angle: 0, cx: 0, cy: 0 };
   time = 0;
-  private light: { level: Level; map: ReturnType<typeof lightMap> } | null = null;
 
   constructor() {
     this.root.addChild(this.floor, this.objects, this.fx);
@@ -107,8 +106,8 @@ export class HeistView {
     f.clear();
     o.clear();
     this.fx.clear();
-    if (this.light?.level !== level) this.light = { level, map: lightMap(level) };
-    const light = this.light.map;
+    const light = lightMap(level, s.lampsOff);
+    const beam = beaconTiles(level, s);
     const inVent = s.layer === 'vent';
     const inRafters = s.layer === 'rafter';
     const spots = spotlightsNow(level, s);
@@ -117,7 +116,7 @@ export class HeistView {
     for (let y = 0; y < level.h; y++)
       for (let x = 0; x < level.w; x++) {
         const t = tileNow(level, s, x, y);
-        if (t === 'wall' || t === 'pillar' || t === 'panel' || t === 'fuse') continue;
+        if (t === 'wall' || t === 'pillar' || t === 'stack' || t === 'panel' || t === 'fuse') continue;
         const k = key(x, y);
         if (t === 'gap' || t === 'wire') {
           this.gap(f, level, x, y);
@@ -129,16 +128,18 @@ export class HeistView {
           }
           continue;
         }
-        const base = t === 'exit' ? COL.exit : t === 'marble' ? ((x + y) % 2 ? COL.marbleA : COL.marbleB) : t === 'squeaky' ? ((x + y) % 2 ? 0x7a5634 : 0x6e4c2d) : (x + y) % 2 ? COL.carpetA : COL.carpetB;
+        const sand = tileNow(level, s, x, y) === 'floor' && level.tiles[y][x] === 'tidal';
+        const base = sand ? ((x + y) % 2 ? 0xa58a5e : 0x9a8056) : t === 'exit' ? COL.exit : t === 'marble' ? ((x + y) % 2 ? COL.marbleA : COL.marbleB) : t === 'squeaky' ? ((x + y) % 2 ? 0x7a5634 : 0x6e4c2d) : (x + y) % 2 ? COL.carpetA : COL.carpetB;
         this.diamond(f, x, y, 0.5, base, 1, COL.floorLine);
         if (t === 'squeaky') this.planks(f, x, y);
         if (t === 'plate') this.plate(f, x, y);
         if (t === 'keycard') this.keycard(f, x, y);
-        const spotlit = spots.some((sp) => Math.hypot(x - sp.at.x, y - sp.at.y) <= sp.radius + 0.01);
+        const spotlit = spots.some((sp) => Math.hypot(x - sp.at.x, y - sp.at.y) <= sp.radius + 0.01) || beam.has(k);
         const l = spotlit ? 2 : light[y][x];
         if (l === 0) this.diamond(f, x, y, 0.5, 0x05060c, 0.55);
         else if (l === 2) this.diamond(f, x, y, 0.5, spotlit ? 0xfff6d8 : COL.lampGlow, spotlit ? 0.32 : 0.16);
         if (t === 'grate') this.grate(f, x, y);
+        if ((level.def.fishy ?? []).some((m) => x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h)) this.diamond(f, x, y, 0.5, 0x6fd6a0, 0.07 + Math.sin(this.time * 1.5 + x * 0.7 + y) * 0.03);
         if (level.motion[y][x] && sensorsActive(s)) this.diamondOutline(f, x, y, COL.motion, 1, 0.1, 0.35 + Math.sin(this.time * 3) * 0.1);
         if (inVent || inRafters) this.diamond(f, x, y, 0.5, 0x02030a, 0.45);
         if (ov.cameraVision.has(k)) this.diamond(f, x, y, 0.46, COL.camera, 0.3);
@@ -204,12 +205,13 @@ export class HeistView {
         const t = tileNow(level, s, x, y);
         const d = project(p, x + 0.5, y + 0.5).depth;
         const k = key(x, y);
-        if (t === 'wall' || t === 'pillar' || t === 'door' || t === 'keydoor' || t === 'vault' || t === 'panel' || t === 'fuse') {
+        if (t === 'wall' || t === 'pillar' || t === 'stack' || t === 'door' || t === 'keydoor' || t === 'vault' || t === 'panel' || t === 'fuse' || t === 'switch') {
           // Walls between the camera and Leo, the near outer walls, and every wall while Leo is in the vents drop to stubs.
           const near = inVent || inRafters || (Math.hypot(x + 0.5 - leo.x, y + 0.5 - leo.y) < 3.6 && d > leoDepth + 0.2) || this.nearOuterWall(level, x, y);
           const h = near ? STUB_H : t === 'pillar' ? WALL_H - 6 : WALL_H;
           const a = near ? 0.75 : 1;
-          if (t === 'pillar') items.push({ depth: d, draw: (g) => this.prism(g, x + 0.22, y + 0.22, x + 0.78, y + 0.78, h, 0xe6e0d0, COL.pillar, 0x948f82, a) });
+          if (t === 'stack') items.push({ depth: d, draw: (g) => this.crateStack(g, x, y, near ? STUB_H : WALL_H - 20, a) });
+          else if (t === 'pillar') items.push({ depth: d, draw: (g) => this.prism(g, x + 0.22, y + 0.22, x + 0.78, y + 0.78, h, 0xe6e0d0, COL.pillar, 0x948f82, a) });
           else if (t === 'door') items.push({ depth: d, draw: (g) => this.door(g, x, y, near ? STUB_H : WALL_H - 10, a, s.picks[k] ?? 0) });
           else if (t === 'keydoor') items.push({ depth: d, draw: (g) => this.keydoor(g, x, y, near ? STUB_H : WALL_H - 10, a, s.card === 'leo' || s.perks.masterKey) });
           else if (t === 'vault') items.push({ depth: d, draw: (g) => this.vault(g, x, y, near ? STUB_H : WALL_H - 4, a, s.picks[k] ?? 0, s.combination) });
@@ -217,8 +219,9 @@ export class HeistView {
             items.push({
               depth: d,
               draw: (g) => {
-                this.prism(g, x, y, x + 1, y + 1, h, t === 'panel' ? 0x55d6c2 : t === 'fuse' ? 0xf2c94c : COL.wallTop, COL.wallA, COL.wallB, a);
+                this.prism(g, x, y, x + 1, y + 1, h, t === 'panel' ? 0x55d6c2 : t === 'fuse' ? 0xf2c94c : t === 'switch' ? 0xe6e0d0 : COL.wallTop, COL.wallA, COL.wallB, a);
                 if (t === 'panel' || t === 'fuse') this.device(g, x, y, h, t, t === 'panel' ? s.camerasOff : s.lasersOff);
+                if (t === 'switch') this.lightSwitch(g, x, y, h, (level.def.switches ?? []).some((w) => w.at.x === x && w.at.y === y && w.lamps.some((i) => s.lampsOff.includes(i))));
               },
             });
         } else if (t === 'case') {
@@ -230,7 +233,8 @@ export class HeistView {
           const li = lootAt(level, x, y);
           items.push({ depth: d, draw: (g) => this.plinth(g, x, y, li >= 0 && !s.inventory.includes(li) && !s.rivalLoot.includes(li), s.rivalLoot.includes(li)) });
         } else if (t === 'lamp') {
-          items.push({ depth: d, draw: (g) => this.lamp(g, x, y) });
+          const off = s.lampsOff.includes(level.lamps.findIndex((l) => l.at.x === x && l.at.y === y));
+          items.push({ depth: d, draw: (g) => this.lamp(g, x, y, !off) });
         } else if (t === 'laser') {
           items.push({ depth: d + 0.3, draw: (g) => this.laser(g, x, y, lasersOn) });
         } else if (t === 'exit') {
@@ -248,12 +252,16 @@ export class HeistView {
           items.push({ depth: d, draw: (g) => this.glass(g, level, x, y) });
         } else if (t === 'kennel') {
           items.push({ depth: d, draw: (g) => this.kennel(g, x, y) });
+        } else if (t === 'crate') {
+          const inside = hiddenAt(level, s, { x, y }) && s.leo.x === x && s.leo.y === y;
+          items.push({ depth: d, draw: (g) => this.crate(g, x, y, inside) });
         } else if (t === 'desk') {
           items.push({ depth: d, draw: (g) => this.desk(g, x, y, s.combination) });
         }
         // The rafters: beams high overhead, drawn faintly unless Leo is up there.
         if (level.rafters[y][x]) items.push({ depth: d + 0.6, draw: (g) => this.beam(g, x, y, inRafters ? 0.95 : 0.35) });
       }
+    if (level.def.beacon) this.beacon(level, s);
     for (const sp of spots) {
       const c = project(p, sp.at.x + 0.5, sp.at.y + 0.5);
       this.fx.ellipse(c.x, c.y, ((sp.radius + 0.5) * TILE_W) / Math.SQRT2, ((sp.radius + 0.5) * TILE_H) / Math.SQRT2).fill({ color: 0xfff6d8, alpha: 0.1 });
@@ -262,7 +270,7 @@ export class HeistView {
       const facing = c.sweep[c.idx];
       items.push({ depth: project(p, c.at.x + 0.5, c.at.y + 0.5).depth + 0.4, draw: (g) => this.camera(g, c.at, facing, !camerasActive(s, c)) });
     }
-    items.push({
+    if (!hiddenAt(level, s, s.leo) || s.leo.x !== Math.floor(leo.x) || s.leo.y !== Math.floor(leo.y)) items.push({
       depth: leoDepth + 0.05,
       draw: (g) => {
         this.drawLeo(g, leo, s.inventory.length > 0, inVent, inRafters ? RAFTER_Z - 6 : 0);
@@ -400,13 +408,13 @@ export class HeistView {
     }
   }
 
-  private lamp(g: Graphics, x: number, y: number): void {
+  private lamp(g: Graphics, x: number, y: number, on = true): void {
     const base = project(this.proj, x + 0.5, y + 0.5);
     const top = project(this.proj, x + 0.5, y + 0.5, 64);
     g.ellipse(base.x, base.y, 10, 5).fill({ color: 0x2a2116 });
     g.moveTo(base.x, base.y).lineTo(top.x, top.y).stroke({ width: 4, color: 0x3a2f20 });
-    g.poly([top.x - 14, top.y + 6, top.x + 14, top.y + 6, top.x + 8, top.y - 12, top.x - 8, top.y - 12]).fill({ color: 0xf2d29b }).stroke({ width: 2, color: 0x6b5634 });
-    g.circle(top.x, top.y + 4, 28 + Math.sin(this.time * 3 + x) * 1.5).fill({ color: COL.lampGlow, alpha: 0.12 });
+    g.poly([top.x - 14, top.y + 6, top.x + 14, top.y + 6, top.x + 8, top.y - 12, top.x - 8, top.y - 12]).fill({ color: on ? 0xf2d29b : 0x6a6250 }).stroke({ width: 2, color: 0x6b5634 });
+    if (on) g.circle(top.x, top.y + 4, 28 + Math.sin(this.time * 3 + x) * 1.5).fill({ color: COL.lampGlow, alpha: 0.12 });
   }
 
   private laser(g: Graphics, x: number, y: number, on: boolean): void {
@@ -540,6 +548,56 @@ export class HeistView {
     const c = project(this.proj, x + 0.5, y + 0.5, 25);
     if (!found) g.poly([c.x - 8, c.y, c.x, c.y - 4, c.x + 8, c.y, c.x, c.y + 4]).fill({ color: 0xf7f4ec }).stroke({ width: 1, color: 0x8a8578 });
     g.circle(c.x + 10, c.y - 2, 3).fill({ color: 0xf2c46b, alpha: 0.9 });
+  }
+
+  /** A wooden crate with its lid off. With Leo inside, two eyes peek over the edge. */
+  private crate(g: Graphics, x: number, y: number, leoInside: boolean): void {
+    this.prism(g, x + 0.1, y + 0.1, x + 0.9, y + 0.9, 30, 0x3a2a18, 0xa07a48, 0x86643a, 1);
+    for (const t of [0.35, 0.65]) {
+      const a = project(this.proj, x + 0.1, y + t, 30);
+      const b = project(this.proj, x + 0.9, y + t, 30);
+      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1, color: 0x5e4428, alpha: 0.8 });
+    }
+    if (leoInside) {
+      const c = project(this.proj, x + 0.5, y + 0.5, 32);
+      const blink = Math.sin(this.time * 2) > 0.95;
+      for (const dx of [-4, 4]) g.ellipse(c.x + dx, c.y, 2.5, blink ? 0.5 : 2.5).fill({ color: 0xe9d36b });
+      g.poly([c.x - 9, c.y - 2, c.x - 6, c.y - 9, c.x - 3, c.y - 3]).fill({ color: 0x1b1b22 });
+      g.poly([c.x + 9, c.y - 2, c.x + 6, c.y - 9, c.x + 3, c.y - 3]).fill({ color: 0x1b1b22 });
+    }
+  }
+
+  /** Crates stacked high, each a little askew. */
+  private crateStack(g: Graphics, x: number, y: number, h: number, alpha: number): void {
+    const n = Math.max(1, Math.round(h / 22));
+    for (let i = 0; i < n; i++) {
+      const o = ((x * 3 + y * 5 + i * 7) % 3) * 0.03;
+      this.prism(g, x + 0.06 + o, y + 0.06 + o, x + 0.94 - o, y + 0.94 - o, h / n - 1, 0xb88a52, 0xa07a48, 0x86643a, alpha, (i * h) / n);
+    }
+  }
+
+  /** A light switch on the wall: lever up (on) or down (off). */
+  private lightSwitch(g: Graphics, x: number, y: number, h: number, off: boolean): void {
+    const sp = project(this.proj, x + 0.5, y + 0.5, h + 10);
+    g.roundRect(sp.x - 7, sp.y - 10, 14, 20, 3).fill({ color: 0xf2eee2 }).stroke({ width: 1.5, color: 0x6b5634 });
+    g.roundRect(sp.x - 2, off ? sp.y : sp.y - 7, 4, 7, 1).fill({ color: off ? 0x555a66 : 0xf2c46b });
+  }
+
+  /** The lighthouse: a lantern on its tower and the wedge of its beam across the ground. */
+  private beacon(level: Level, s: State): void {
+    const b = level.def.beacon!;
+    const f = beaconFacing(level, s);
+    const c = project(this.proj, b.at.x + 0.5, b.at.y + 0.5, 10);
+    const pts = [c.x, c.y];
+    for (const a of [-22.5, -11, 0, 11, 22.5]) {
+      const ang = Math.atan2(DIRS[f].y, DIRS[f].x) + (a * Math.PI) / 180;
+      const e = project(this.proj, b.at.x + 0.5 + Math.cos(ang) * (b.range + 0.5), b.at.y + 0.5 + Math.sin(ang) * (b.range + 0.5), 10);
+      pts.push(e.x, e.y);
+    }
+    this.fx.poly(pts).fill({ color: 0xfff3c0, alpha: 0.08 });
+    const top = project(this.proj, b.at.x + 0.5, b.at.y + 0.5, WALL_H + 20);
+    this.fx.circle(top.x, top.y, 16 + Math.sin(this.time * 4) * 2).fill({ color: 0xfff3c0, alpha: 0.35 });
+    this.fx.circle(top.x, top.y, 7).fill({ color: 0xfffbe6 });
   }
 
   /** A keycard lying on the floor. */
