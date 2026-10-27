@@ -11,72 +11,88 @@
 
   <header class="hud">
     <div class="card status">
-      <div class="title">Purrrfect Crime <span class="tag">prototype M0</span></div>
+      <div class="title">Purrrfect Crime <span class="tag">prototype M1</span></div>
+      <div class="small" id="level-name"></div>
       <div class="row">
         <span>Turn <b id="turn">1</b></span>
-        <span class="ap-label">Action points <span id="ap"></span></span>
+        <span class="ap-label">AP <span id="ap"></span></span>
+        <span id="light" class="light l0">In shadow</span>
       </div>
-      <div class="small" id="loot">Moonstone: on its plinth</div>
+      <div class="small" id="bag"></div>
     </div>
     <div class="buttons">
       <button id="rotate-left" title="Turn the camera (Q)">⟲ Q</button>
       <button id="rotate-right" title="Turn the camera (E)">E ⟳</button>
-      <button id="steal" title="Steal the Moonstone (F)">Steal (F)</button>
       <button id="end" class="primary" title="End your turn (Space)">End turn</button>
       <button id="restart" title="Restart the level (R)">Restart</button>
+      <button id="levels" title="Choose a level">Levels</button>
       <button id="help-toggle" title="How to play">?</button>
     </div>
   </header>
 
+  <div id="alarm" class="alarm hidden"></div>
   <div id="banner"></div>
-  <footer class="message" id="message"></footer>
+  <footer class="bottom">
+    <div id="actions" class="actions hidden"></div>
+    <div class="message" id="message"></div>
+  </footer>
 
   <aside id="help" class="card help hidden">
     <b>How to play</b>
     <ul>
-      <li><b>Move:</b> click a tile. Blue tiles cost 1 action point, yellow cost both. On a phone, tap once to preview and again to move.</li>
-      <li><b>Red tiles</b> are what the bulldog can see. Step into them and you're caught. A red path means the move would get you caught.</li>
-      <li><b>Orange dots</b> show where the bulldog will walk on his next turn.</li>
-      <li><b>Steal:</b> stand next to the plinth and press Steal, or click the plinth. Costs 1 action point.</li>
-      <li><b>Escape:</b> walk onto the green exit with the Moonstone.</li>
-      <li><b>Camera:</b> Q and E turn the view. Walls near Leo drop down so he's never hidden.</li>
-      <li><b>End turn:</b> Space. Your turn also ends when you're out of action points.</li>
+      <li><b>Move:</b> click a tile. Blue costs 1 action point, yellow costs both (a loud dash). On a phone, tap once to preview and again to move.</li>
+      <li><b>Path colours:</b> white is safe, yellow means a bulldog will notice something and come to look, red means caught or alarm.</li>
+      <li><b>Shadows hide you.</b> Bulldogs see 6 tiles into lamplight, 4 into moonlight and barely past their nose in the dark. Being right next to one, or standing in lamplight in front of one, gets you caught.</li>
+      <li><b>Red</b> is what the bulldogs see, <b>purple</b> is what the cameras see. Orange dots are where the bulldogs walk next.</li>
+      <li><b>Noise:</b> marble floors, dashing, picking locks and (loudest) smashing glass. Bulldogs who hear it come to check.</li>
+      <li><b>Steal:</b> next to a case, pick its lock (quiet, two goes) or smash it (one go, very loud). Use the buttons at the bottom, keys 1–9, or click the case.</li>
+      <li><b>Security:</b> the camera panel shuts off the cameras and the alarm; the fuse box shuts off the lasers. A camera sighting, a broken laser or a guard finding an empty case starts a 5-turn lockdown countdown.</li>
+      <li><b>Vents:</b> step onto a grate and climb in. Nobody sees you in the ducts, but crawling is slow.</li>
+      <li><b>Carry:</b> the bag holds 6. Heavy pieces fill it fast.</li>
+      <li><b>Escape:</b> walk onto the green exit with something in the bag.</li>
     </ul>
   </aside>
 
   <div id="intro" class="overlay">
     <div class="card big">
-      <div class="kicker">Prototype M0 · grey-box test</div>
+      <div class="kicker">Prototype M1 · stealth sandbox</div>
       <h1>Purrrfect Crime</h1>
-      <p>Leo Tuxedo's first job: lift <b>the Moonstone</b> from the Grey Gallery and slip out the exit, without
-        <b>Brutus</b> the night-watch bulldog spotting him.</p>
-      <p class="small">Everything is placeholder art. This build tests the core turn loop: moving on the grid
-        with two action points, reading the guard's vision and patrol, turning the camera, and getting caught.</p>
+      <p>Night has fallen on the city museum. <b>Leo Tuxedo</b> has a bag, a set of lock picks and one rule:
+        don't get seen. <b>Brutus</b> and <b>Bruno</b> are on the night watch.</p>
       <ul class="small">
-        <li>Click a tile to move: <span class="chip blue">blue</span> 1 action point, <span class="chip yellow">yellow</span> 2.</li>
-        <li><span class="chip red">Red</span> is what Brutus sees. Orange dots are where he's going next.</li>
-        <li>Q / E turn the camera · Space ends your turn · F steals · R restarts.</li>
+        <li><span class="chip blue">blue</span> 1 action point, <span class="chip yellow">yellow</span> 2. Paths turn <span class="chip yellow">yellow</span> where you'd be noticed and <span class="chip red">red</span> where you'd be caught.</li>
+        <li>Stay in shadow, mind the marble, pick locks rather than smash glass, and use the vents.</li>
+        <li>Q / E turn the camera · Space ends your turn · 1–9 actions · R restarts · ? for help.</li>
       </ul>
-      <button id="start" class="primary">Start the heist</button>
+      <div id="level-list" class="level-list"></div>
+      <p class="small">Placeholder art throughout. Generated sprites replace it later.</p>
     </div>
   </div>
 
   <div id="caught" class="overlay hidden">
     <div class="card big caught">
       <div class="kicker">Busted!</div>
-      <h1><span id="caught-who">Brutus</span> spotted Leo.</h1>
-      <p>The bulldog grins. Leo sighs. Back to the start.</p>
-      <button id="again" class="primary">Try again (R)</button>
+      <h1><span id="caught-who">Brutus</span> got Leo.</h1>
+      <p id="caught-why"></p>
+      <p class="small">The bulldog grins. Leo sighs. Back to the start.</p>
+      <div class="row-buttons">
+        <button id="again" class="primary">Try again (R)</button>
+        <button id="levels2">Levels</button>
+      </div>
     </div>
   </div>
 
   <div id="escaped" class="overlay hidden">
     <div class="card big won">
-      <div class="kicker">Clean getaway</div>
-      <h1>The Moonstone is gone.</h1>
-      <p>Leo slipped out in <b id="escaped-turns">0</b> turns and left his calling card on the empty plinth.</p>
-      <p class="small">The newspaper, black market and lair come in later milestones.</p>
-      <button id="again2" class="primary">Play again</button>
+      <div class="kicker" id="escaped-kicker">Clean getaway</div>
+      <h1>Leo slipped out in <b id="escaped-turns">0</b> turns.</h1>
+      <ul id="haul" class="haul"></ul>
+      <p class="small" id="left-behind"></p>
+      <p class="small">The calling card, newspaper, black market and lair come in later milestones.</p>
+      <div class="row-buttons">
+        <button id="again2" class="primary">Play again</button>
+        <button id="levels3">Levels</button>
+      </div>
     </div>
   </div>
 

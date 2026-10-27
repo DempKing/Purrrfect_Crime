@@ -1,5 +1,6 @@
-// Plays the built prototype in headless Chromium: screenshots each stage, then clicks through the
-// solver's winning route and checks the heist ends in a clean getaway. Usage: node tests/e2e.mjs [outDir]
+// Plays the built prototype in headless Chromium: screenshots each stage, plays the known Night Gallery
+// route through the real UI and checks it ends in a clean getaway, then plays the M0 warm-up and gets
+// caught on purpose. Usage: node tests/e2e.mjs [outDir]
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -21,9 +22,9 @@ await page.goto(pathToFileURL(join(root, 'dist', 'index.html')).href);
 await page.waitForFunction(() => window.__pc);
 await page.waitForTimeout(500);
 await page.screenshot({ path: join(out, '01-intro.png') });
-await page.click('#start');
+await page.click('#level-0');
 await page.waitForTimeout(1200);
-await page.screenshot({ path: join(out, '02-start.png') });
+await page.screenshot({ path: join(out, '02-night-start.png') });
 
 const idle = () => page.waitForFunction(() => !window.__pc.busy, null, { timeout: 15000 }).then(() => page.waitForTimeout(200));
 async function clickTile(x, y) {
@@ -33,41 +34,51 @@ async function clickTile(x, y) {
   await page.mouse.click(p.x, p.y);
   await idle();
 }
-async function endTurnIfStill(turn) {
-  const s = await page.evaluate(() => ({ turn: window.__pc.state.turn, status: window.__pc.state.status }));
-  if (s.status === 'playing' && s.turn === turn) await page.click('#end');
-  await page.waitForTimeout(400);
+async function action(kind, x, y) {
+  await page.click(`#actions button[data-kind="${kind}"][data-at="${x},${y}"]`, { timeout: 3000 });
   await idle();
 }
+async function endTurnIfStill(turn) {
+  // Out of action points, the game ends the turn by itself; only press End turn when Leo has some left.
+  const s = await page.evaluate(() => ({ turn: window.__pc.state.turn, status: window.__pc.state.status, ap: window.__pc.state.ap }));
+  if (s.status === 'playing' && s.turn === turn && s.ap > 0) await page.click('#end');
+  await page.waitForTimeout(300);
+  await idle();
+  await page.waitForFunction((t) => window.__pc.state.turn > t || window.__pc.state.status !== 'playing', turn, { timeout: 5000 });
+}
 
-// Hover a dangerous tile to show the red path warning.
-const warn = await page.evaluate(() => window.__pc.screenOf(9, 4));
+// Hover a tile in the lamplight in front of Brutus to show the red path warning.
+const warn = await page.evaluate(() => window.__pc.screenOf(4, 12));
 await page.mouse.move(warn.x, warn.y);
 await page.waitForTimeout(300);
 await page.screenshot({ path: join(out, '03-hover.png') });
 
-// The solver's route: wait a turn, slip into the hall, steal, escape.
-const route = [[], [[2, 2]], [[10, 6]], ['steal', [13, 6]], [[18, 8]]];
-for (const [i, actions] of route.entries()) {
-  const turn = i + 1;
-  for (const a of actions) {
-    if (a === 'steal') { await page.click('#steal'); await idle(); }
-    else await clickTile(a[0], a[1]);
+// The known route, read from the source so it can't drift from the rules test.
+const src = (await import('node:fs')).readFileSync(join(root, 'src', 'levels', 'routes.ts'), 'utf8');
+const route = JSON.parse(src.slice(src.indexOf('= [', src.indexOf('NIGHT_GALLERY_ROUTE')) + 2, src.lastIndexOf('];') + 1).replace(/\{ a: '([a-z-]+)', x: (\d+), y: (\d+) \}/g, '{"a":"$1","x":$2,"y":$3}').replace(/,\s*\]/g, ']'));
+const shots = { 3: '04-vents.png', 4: '05-panel.png', 13: '06-smash.png', 20: '07-opal.png' };
+for (const [i, steps] of route.entries()) {
+  const turn = await page.evaluate(() => window.__pc.state.turn);
+  for (const st of steps) {
+    if (Array.isArray(st)) await clickTile(st[0], st[1]);
+    else await action(st.a, st.x, st.y);
   }
-  if (i === 2) await page.screenshot({ path: join(out, '04-hall.png') });
-  if (i < route.length - 1) await endTurnIfStill(turn);
+  if (shots[i]) await page.screenshot({ path: join(out, shots[i]) });
+  const status = await page.evaluate(() => window.__pc.state.status);
+  if (status !== 'playing') break;
+  await endTurnIfStill(turn);
 }
 await page.waitForTimeout(800);
-const final = await page.evaluate(() => window.__pc.state.status);
-await page.screenshot({ path: join(out, '05-end.png') });
+const final = await page.evaluate(() => ({ status: window.__pc.state.status, why: window.__pc.state.caughtWhy, turn: window.__pc.state.turn }));
+await page.screenshot({ path: join(out, '08-escaped.png') });
 
-// Turn the camera and get caught on purpose.
-await page.click('#again2').catch(() => {});
+// The warm-up level: turn the camera and get caught on purpose.
+await page.click('#levels3').catch(() => {});
+await page.click('#level-1');
 await page.waitForTimeout(300);
 await page.keyboard.press('q');
 await page.waitForTimeout(900);
-await page.screenshot({ path: join(out, '06-rotated.png') });
-// Walk Leo into the bulldog's view: end turns until a seen tile is in reach, then step onto it.
+await page.screenshot({ path: join(out, '09-grey-rotated.png') });
 for (let i = 0; i < 12; i++) {
   const t = await page.evaluate(() => window.__pc.dangerTile());
   if (t) { await clickTile(t.x, t.y); break; }
@@ -75,9 +86,9 @@ for (let i = 0; i < 12; i++) {
 }
 await page.waitForTimeout(1200);
 const caughtStatus = await page.evaluate(() => window.__pc.state.status);
-await page.screenshot({ path: join(out, '07-caught.png') });
+await page.screenshot({ path: join(out, '10-caught.png') });
 
-console.log('winning route ends:', final, '| deliberate mistake ends:', caughtStatus);
+console.log('night route ends:', JSON.stringify(final), '| deliberate mistake ends:', caughtStatus);
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors');
 await browser.close();
-process.exit(errors.length || final !== 'escaped' || caughtStatus !== 'caught' ? 1 : 0);
+process.exit(errors.length || final.status !== 'escaped' || caughtStatus !== 'caught' ? 1 : 0);

@@ -1,18 +1,19 @@
 // Draws a heist: floors and overlays first, then walls, furniture and characters sorted by depth.
-// Everything is grey-box shapes for now; generated sprites replace the character and prop drawing later.
+// Placeholder art for now; generated sprites replace the character and prop drawing later.
 import { Container, Graphics } from 'pixi.js';
-import { DIRS, key } from '../core/game';
+import { DIRS, key, lasersActive, lightMap, lootAt, tileNow, type Guard, type State } from '../core/game';
 import type { Level, Point } from '../core/level';
-import { project, screenDir, type Projector } from './iso';
+import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
 
 const WALL_H = 84;
 const STUB_H = 12;
 
 const COL = {
-  bg: 0x0d1020,
-  floorA: 0x3a4157,
-  floorB: 0x343a4f,
-  floorLine: 0x4a5270,
+  carpetA: 0x4a2a3c,
+  carpetB: 0x44263a,
+  marbleA: 0x7d8299,
+  marbleB: 0x737891,
+  floorLine: 0x2a2236,
   exit: 0x2f7d5b,
   wallTop: 0x8e95ad,
   wallA: 0x5b6280,
@@ -21,22 +22,31 @@ const COL = {
   caseGlass: 0x9fd7ff,
   caseBase: 0x5a4a3a,
   plinth: 0xd8d2c0,
-  gem: 0x9fe8ff,
   reach1: 0x4aa3ff,
   reach2: 0xffc54a,
   vision: 0xff5a4a,
+  camera: 0xc77dff,
   path: 0xffffff,
+  warn: 0xffd23f,
   danger: 0xff3b30,
   step: 0xffb199,
+  lampGlow: 0xffd27a,
+  duct: 0x5ec8ff,
+  laser: 0xff2a2a,
 };
+
+/** Loot colours by index, so each piece reads differently on its stand. */
+const LOOT_COLORS = [0x9fe8ff, 0xf2c46b, 0xf5f0ff, 0xffd84a, 0xe0314b, 0xd9b36c, 0x3fbf7f, 0xb6a4ff];
 
 export interface Overlay {
   reach1: Set<string>;
   reach2: Set<string>;
   vision: Set<string>;
+  cameraVision: Set<string>;
   footprints: Point[];
   path: Point[];
-  pathDanger: Set<string>;
+  /** 1 noticed, 2 caught or alarm, per tile on the path. */
+  pathDanger: Map<string, number>;
   hover: Point | null;
 }
 
@@ -45,6 +55,13 @@ export interface Actor {
   y: number;
   facing: number;
   bob: number;
+}
+
+export interface Ripple {
+  x: number;
+  y: number;
+  r: number; // tiles
+  t: number; // 0..1
 }
 
 interface Drawable {
@@ -56,95 +73,129 @@ export class HeistView {
   root = new Container();
   private floor = new Graphics();
   private objects = new Graphics();
+  private fx = new Graphics();
   proj: Projector = { angle: 0, cx: 0, cy: 0 };
+  time = 0;
+  private light: { level: Level; map: ReturnType<typeof lightMap> } | null = null;
 
   constructor() {
-    this.root.addChild(this.floor, this.objects);
+    this.root.addChild(this.floor, this.objects, this.fx);
   }
 
-  draw(level: Level, ov: Overlay, leo: Actor, guards: Actor[], hasLoot: boolean, alert: boolean): void {
+  draw(level: Level, s: State, ov: Overlay, leo: Actor, guards: Actor[], ripples: Ripple[]): void {
     const p = this.proj;
     const f = this.floor;
     const o = this.objects;
     f.clear();
     o.clear();
+    this.fx.clear();
+    if (this.light?.level !== level) this.light = { level, map: lightMap(level) };
+    const light = this.light.map;
+    const inVent = s.layer === 'vent';
 
-    // Floors, with the overlays painted on top of them.
+    // Floors, shaded by light, with the overlays painted on top of them.
     for (let y = 0; y < level.h; y++)
       for (let x = 0; x < level.w; x++) {
-        const t = level.tiles[y][x];
-        if (t === 'wall' || t === 'pillar') continue;
+        const t = tileNow(level, s, x, y);
+        if (t === 'wall' || t === 'pillar' || t === 'panel' || t === 'fuse') continue;
         const k = key(x, y);
-        const base = t === 'exit' ? COL.exit : (x + y) % 2 ? COL.floorA : COL.floorB;
+        const base = t === 'exit' ? COL.exit : t === 'marble' ? ((x + y) % 2 ? COL.marbleA : COL.marbleB) : (x + y) % 2 ? COL.carpetA : COL.carpetB;
         this.diamond(f, x, y, 0.5, base, 1, COL.floorLine);
+        const l = light[y][x];
+        if (l === 0) this.diamond(f, x, y, 0.5, 0x05060c, 0.55);
+        else if (l === 2) this.diamond(f, x, y, 0.5, COL.lampGlow, 0.16);
+        if (t === 'grate') this.grate(f, x, y);
+        if (inVent) this.diamond(f, x, y, 0.5, 0x02030a, 0.45);
+        if (ov.cameraVision.has(k)) this.diamond(f, x, y, 0.46, COL.camera, 0.3);
         if (ov.vision.has(k)) this.diamond(f, x, y, 0.47, COL.vision, 0.32);
-        if (ov.reach1.has(k)) this.diamond(f, x, y, 0.4, COL.reach1, 0.28);
-        else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.4, COL.reach2, 0.24);
+        if (!inVent) {
+          if (ov.reach1.has(k)) this.diamond(f, x, y, 0.38, COL.reach1, 0.3);
+          else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.38, COL.reach2, 0.26);
+        }
       }
+    // The vent layer, drawn like a blueprint while Leo is inside.
+    if (inVent)
+      for (let y = 0; y < level.h; y++)
+        for (let x = 0; x < level.w; x++) {
+          if (!level.ducts[y][x]) continue;
+          const k = key(x, y);
+          this.diamond(f, x, y, 0.42, COL.duct, 0.18);
+          this.diamondOutline(f, x, y, COL.duct, 1.5, 0.08, 0.6);
+          if (ov.reach1.has(k)) this.diamond(f, x, y, 0.3, COL.reach1, 0.45);
+          else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.3, COL.reach2, 0.4);
+        }
     for (const fp of ov.footprints) {
-      const s = project(p, fp.x + 0.5, fp.y + 0.5);
-      f.circle(s.x, s.y, 4).fill({ color: COL.step, alpha: 0.75 });
+      const sp = project(p, fp.x + 0.5, fp.y + 0.5);
+      f.circle(sp.x, sp.y, 4).fill({ color: COL.step, alpha: 0.75 });
     }
-    if (ov.path.length > 1) {
-      for (let i = 1; i < ov.path.length; i++) {
-        const a = project(p, ov.path[i - 1].x + 0.5, ov.path[i - 1].y + 0.5);
-        const b = project(p, ov.path[i].x + 0.5, ov.path[i].y + 0.5);
-        const danger = ov.pathDanger.has(key(ov.path[i].x, ov.path[i].y));
-        f.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 4, color: danger ? COL.danger : COL.path, alpha: 0.9 });
-      }
+    for (let i = 1; i < ov.path.length; i++) {
+      const a = project(p, ov.path[i - 1].x + 0.5, ov.path[i - 1].y + 0.5);
+      const b = project(p, ov.path[i].x + 0.5, ov.path[i].y + 0.5);
+      const d = ov.pathDanger.get(key(ov.path[i].x, ov.path[i].y)) ?? 0;
+      f.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 4, color: d === 2 ? COL.danger : d === 1 ? COL.warn : COL.path, alpha: 0.95 });
     }
-    if (ov.hover) this.diamondOutline(f, ov.hover.x, ov.hover.y, ov.pathDanger.size ? COL.danger : COL.path);
+    if (ov.hover) {
+      const worst = Math.max(0, ...ov.pathDanger.values());
+      this.diamondOutline(f, ov.hover.x, ov.hover.y, worst === 2 ? COL.danger : worst === 1 ? COL.warn : COL.path, 3);
+    }
 
     // Everything standing up, nearest last.
     const items: Drawable[] = [];
     const leoDepth = project(p, leo.x, leo.y).depth;
+    const lasersOn = lasersActive(level, s);
     for (let y = 0; y < level.h; y++)
       for (let x = 0; x < level.w; x++) {
-        const t = level.tiles[y][x];
+        const t = tileNow(level, s, x, y);
         const d = project(p, x + 0.5, y + 0.5).depth;
-        if (t === 'wall' || t === 'pillar') {
-          // Walls between the camera and Leo drop to stubs so he's never hidden.
-          const near = (Math.hypot(x + 0.5 - leo.x, y + 0.5 - leo.y) < 3.6 && d > leoDepth + 0.2) || this.nearOuterWall(level, x, y);
+        const k = key(x, y);
+        if (t === 'wall' || t === 'pillar' || t === 'door' || t === 'panel' || t === 'fuse') {
+          // Walls between the camera and Leo, the near outer walls, and every wall while Leo is in the vents drop to stubs.
+          const near = inVent || (Math.hypot(x + 0.5 - leo.x, y + 0.5 - leo.y) < 3.6 && d > leoDepth + 0.2) || this.nearOuterWall(level, x, y);
           const h = near ? STUB_H : t === 'pillar' ? WALL_H - 6 : WALL_H;
-          if (t === 'wall') items.push({ depth: d, draw: (g) => this.prism(g, x, y, x + 1, y + 1, h, COL.wallTop, COL.wallA, COL.wallB, near ? 0.75 : 1) });
-          else items.push({ depth: d, draw: (g) => this.prism(g, x + 0.22, y + 0.22, x + 0.78, y + 0.78, h, 0xe6e0d0, COL.pillar, 0x948f82, near ? 0.75 : 1) });
+          const a = near ? 0.75 : 1;
+          if (t === 'pillar') items.push({ depth: d, draw: (g) => this.prism(g, x + 0.22, y + 0.22, x + 0.78, y + 0.78, h, 0xe6e0d0, COL.pillar, 0x948f82, a) });
+          else if (t === 'door') items.push({ depth: d, draw: (g) => this.door(g, x, y, near ? STUB_H : WALL_H - 10, a, s.picks[k] ?? 0) });
+          else
+            items.push({
+              depth: d,
+              draw: (g) => {
+                this.prism(g, x, y, x + 1, y + 1, h, t === 'panel' ? 0x55d6c2 : t === 'fuse' ? 0xf2c94c : COL.wallTop, COL.wallA, COL.wallB, a);
+                if (t === 'panel' || t === 'fuse') this.device(g, x, y, h, t, t === 'panel' ? s.camerasOff : s.lasersOff);
+              },
+            });
         } else if (t === 'case') {
-          items.push({
-            depth: d,
-            draw: (g) => {
-              this.prism(g, x + 0.12, y + 0.12, x + 0.88, y + 0.88, 22, 0x6b5946, COL.caseBase, 0x47392b, 1);
-              const s = project(p, x + 0.5, y + 0.5, 34);
-              g.circle(s.x, s.y, 5).fill({ color: 0xf2c46b });
-              this.prism(g, x + 0.16, y + 0.16, x + 0.84, y + 0.84, 52, COL.caseGlass, COL.caseGlass, COL.caseGlass, 0.22, 22);
-            },
-          });
+          const li = lootAt(level, x, y);
+          const taken = li >= 0 && s.bag.includes(li);
+          const broken = s.smashed.includes(k);
+          items.push({ depth: d, draw: (g) => this.displayCase(g, x, y, li, taken, broken) });
         } else if (t === 'plinth') {
-          items.push({
-            depth: d,
-            draw: (g) => {
-              this.prism(g, x + 0.18, y + 0.18, x + 0.82, y + 0.82, 34, 0xf3eee0, COL.plinth, 0xa9a392, 1);
-              if (!hasLoot) {
-                const s = project(p, x + 0.5, y + 0.5, 48);
-                g.circle(s.x, s.y, 18).fill({ color: COL.gem, alpha: 0.18 });
-                g.poly([s.x, s.y - 12, s.x + 8, s.y, s.x, s.y + 8, s.x - 8, s.y]).fill({ color: COL.gem }).stroke({ width: 1.5, color: 0xffffff });
-              }
-            },
-          });
+          const li = lootAt(level, x, y);
+          items.push({ depth: d, draw: (g) => this.plinth(g, x, y, li >= 0 && !s.bag.includes(li)) });
+        } else if (t === 'lamp') {
+          items.push({ depth: d, draw: (g) => this.lamp(g, x, y) });
+        } else if (t === 'laser') {
+          items.push({ depth: d + 0.3, draw: (g) => this.laser(g, x, y, lasersOn) });
         } else if (t === 'exit') {
-          items.push({
-            depth: d - 0.4,
-            draw: (g) => {
-              const s = project(p, x + 0.5, y + 0.5, 70);
-              g.roundRect(s.x - 22, s.y - 10, 44, 20, 4).fill({ color: 0x1f6b49 }).stroke({ width: 2, color: 0x9ff0c8 });
-              g.moveTo(s.x - 10, s.y).lineTo(s.x + 8, s.y).moveTo(s.x + 2, s.y - 6).lineTo(s.x + 9, s.y).lineTo(s.x + 2, s.y + 6).stroke({ width: 3, color: 0xffffff });
-            },
-          });
+          items.push({ depth: d - 0.4, draw: (g) => this.exitSign(g, x, y) });
         }
       }
-    items.push({ depth: leoDepth + 0.05, draw: (g) => this.drawLeo(g, leo, hasLoot) });
-    guards.forEach((a) => items.push({ depth: project(p, a.x, a.y).depth + 0.05, draw: (g) => this.drawBulldog(g, a, alert) }));
+    for (const c of s.cameras) {
+      const facing = c.sweep[c.idx];
+      items.push({ depth: project(p, c.at.x + 0.5, c.at.y + 0.5).depth + 0.4, draw: (g) => this.camera(g, c.at, facing, s.camerasOff) });
+    }
+    items.push({ depth: leoDepth + 0.05, draw: (g) => this.drawLeo(g, leo, s.bag.length > 0, inVent) });
+    guards.forEach((a, i) =>
+      items.push({ depth: project(p, a.x, a.y).depth + 0.05, draw: (g) => this.drawBulldog(g, a, s.guards[i], s.status === 'caught' && s.caughtBy === s.guards[i].name) }),
+    );
     items.sort((a, b) => a.depth - b.depth);
     for (const it of items) it.draw(o);
+
+    // Noise ripples spreading from where the sound was made. A circle on the floor is an ellipse on screen.
+    for (const r of ripples) {
+      const sp = project(p, r.x + 0.5, r.y + 0.5);
+      const R = Math.max(0.15, r.r * r.t);
+      this.fx.ellipse(sp.x, sp.y, (R * TILE_W) / Math.SQRT2, (R * TILE_H) / Math.SQRT2).stroke({ width: 3, color: 0xfff0b0, alpha: (1 - r.t) * 0.85 });
+    }
   }
 
   /** Outer walls on the two sides facing the camera are always cut down, so the room is never hidden. */
@@ -166,9 +217,9 @@ export class HeistView {
     if (line !== undefined) g.stroke({ width: 1, color: line, alpha: 0.6 });
   }
 
-  private diamondOutline(g: Graphics, x: number, y: number, color: number): void {
-    const c = this.corners(x + 0.04, y + 0.04, x + 0.96, y + 0.96, 0);
-    g.poly(c.flatMap((q) => [q.x, q.y])).stroke({ width: 3, color, alpha: 0.95 });
+  private diamondOutline(g: Graphics, x: number, y: number, color: number, width: number, inset = 0.04, alpha = 0.95): void {
+    const c = this.corners(x + inset, y + inset, x + 1 - inset, y + 1 - inset, 0);
+    g.poly(c.flatMap((q) => [q.x, q.y])).stroke({ width, color, alpha });
   }
 
   /** A box. Only the faces turned toward the camera are drawn, shaded by which way they face. */
@@ -193,51 +244,147 @@ export class HeistView {
     g.poly(t.flatMap((q) => [q.x, q.y])).fill({ color: top, alpha }).stroke({ width: 1, color: 0x1a1d2c, alpha: alpha * 0.5 });
   }
 
+  private grate(g: Graphics, x: number, y: number): void {
+    this.diamond(g, x, y, 0.32, 0x14161f, 1);
+    for (let i = -2; i <= 2; i++) {
+      const a = project(this.proj, x + 0.5 + i * 0.1, y + 0.22);
+      const b = project(this.proj, x + 0.5 + i * 0.1, y + 0.78);
+      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1.5, color: 0x8a90a8, alpha: 0.9 });
+    }
+  }
+
+  private door(g: Graphics, x: number, y: number, h: number, alpha: number, picks: number): void {
+    this.prism(g, x + 0.06, y + 0.06, x + 0.94, y + 0.94, h, 0x8a6a45, 0x6b4a2a, 0x553a20, alpha);
+    const sp = project(this.proj, x + 0.5, y + 0.5, h * 0.45);
+    g.circle(sp.x, sp.y, 4).fill({ color: picks > 0 ? 0x9ff0c8 : 0xf2c46b });
+  }
+
+  private device(g: Graphics, x: number, y: number, h: number, kind: 'panel' | 'fuse', off: boolean): void {
+    const sp = project(this.proj, x + 0.5, y + 0.5, h + 10);
+    const blink = Math.sin(this.time * 4 + x) > 0;
+    g.roundRect(sp.x - 12, sp.y - 9, 24, 18, 4).fill({ color: 0x1c2233 }).stroke({ width: 2, color: kind === 'panel' ? 0x55d6c2 : 0xf2c94c });
+    if (kind === 'panel') g.rect(sp.x - 8, sp.y - 5, 16, 9).fill({ color: off ? 0x333a4a : 0x2fb8a3 });
+    else g.moveTo(sp.x + 2, sp.y - 6).lineTo(sp.x - 3, sp.y + 1).lineTo(sp.x + 2, sp.y + 1).lineTo(sp.x - 2, sp.y + 7).stroke({ width: 2, color: off ? 0x555a66 : 0xffe066 });
+    g.circle(sp.x + 9, sp.y - 6, 2).fill({ color: off ? 0x555a66 : blink ? 0x4dff88 : 0x1d6b3a });
+  }
+
+  private displayCase(g: Graphics, x: number, y: number, li: number, taken: boolean, broken: boolean): void {
+    this.prism(g, x + 0.12, y + 0.12, x + 0.88, y + 0.88, 22, 0x6b5946, COL.caseBase, 0x47392b, 1);
+    if (!taken && li >= 0) {
+      const sp = project(this.proj, x + 0.5, y + 0.5, 32);
+      const col = LOOT_COLORS[li % LOOT_COLORS.length];
+      g.circle(sp.x, sp.y, 10).fill({ color: col, alpha: 0.18 });
+      g.poly([sp.x, sp.y - 8, sp.x + 6, sp.y, sp.x, sp.y + 5, sp.x - 6, sp.y]).fill({ color: col }).stroke({ width: 1, color: 0xffffff, alpha: 0.8 });
+    }
+    if (broken) {
+      // Shards on the floor around the case.
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + x;
+        const sp = project(this.proj, x + 0.5 + Math.cos(a) * 0.45, y + 0.5 + Math.sin(a) * 0.45, 1);
+        g.poly([sp.x, sp.y - 3, sp.x + 3, sp.y, sp.x - 1, sp.y + 2]).fill({ color: COL.caseGlass, alpha: 0.8 });
+      }
+    } else this.prism(g, x + 0.16, y + 0.16, x + 0.84, y + 0.84, 30, COL.caseGlass, COL.caseGlass, COL.caseGlass, 0.2, 22);
+  }
+
+  private plinth(g: Graphics, x: number, y: number, hasGem: boolean): void {
+    this.prism(g, x + 0.18, y + 0.18, x + 0.82, y + 0.82, 34, 0xf3eee0, COL.plinth, 0xa9a392, 1);
+    const sp = project(this.proj, x + 0.5, y + 0.5, 50);
+    if (hasGem) {
+      const hue = [0x9fe8ff, 0xff9ff3, 0xb6ffb0, 0xffe39f][Math.floor(this.time * 2) % 4];
+      g.circle(sp.x, sp.y, 20).fill({ color: hue, alpha: 0.2 });
+      g.poly([sp.x, sp.y - 13, sp.x + 9, sp.y, sp.x, sp.y + 9, sp.x - 9, sp.y]).fill({ color: hue }).stroke({ width: 1.5, color: 0xffffff });
+    } else {
+      // Leo's calling card on the empty plinth.
+      g.roundRect(sp.x - 9, sp.y - 2, 18, 11, 2).fill({ color: 0xf5f5f5 }).stroke({ width: 1, color: 0x222222 });
+      g.circle(sp.x, sp.y + 3.5, 2.5).fill({ color: 0xd8262f });
+    }
+  }
+
+  private lamp(g: Graphics, x: number, y: number): void {
+    const base = project(this.proj, x + 0.5, y + 0.5);
+    const top = project(this.proj, x + 0.5, y + 0.5, 64);
+    g.ellipse(base.x, base.y, 10, 5).fill({ color: 0x2a2116 });
+    g.moveTo(base.x, base.y).lineTo(top.x, top.y).stroke({ width: 4, color: 0x3a2f20 });
+    g.poly([top.x - 14, top.y + 6, top.x + 14, top.y + 6, top.x + 8, top.y - 12, top.x - 8, top.y - 12]).fill({ color: 0xf2d29b }).stroke({ width: 2, color: 0x6b5634 });
+    g.circle(top.x, top.y + 4, 28 + Math.sin(this.time * 3 + x) * 1.5).fill({ color: COL.lampGlow, alpha: 0.12 });
+  }
+
+  private laser(g: Graphics, x: number, y: number, on: boolean): void {
+    for (const z of [14, 30]) {
+      const a = project(this.proj, x, y + 0.5, z);
+      const b = project(this.proj, x + 1, y + 0.5, z);
+      if (on) {
+        g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 5, color: COL.laser, alpha: 0.25 });
+        g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1.8, color: 0xff8080, alpha: 0.95 });
+      } else
+        for (let i = 0; i < 4; i++) {
+          const t0 = i / 4;
+          const t1 = t0 + 0.12;
+          g.moveTo(a.x + (b.x - a.x) * t0, a.y + (b.y - a.y) * t0).lineTo(a.x + (b.x - a.x) * t1, a.y + (b.y - a.y) * t1).stroke({ width: 1, color: 0x884444, alpha: 0.5 });
+        }
+    }
+  }
+
+  private exitSign(g: Graphics, x: number, y: number): void {
+    const sp = project(this.proj, x + 0.5, y + 0.5, 70);
+    g.roundRect(sp.x - 22, sp.y - 10, 44, 20, 4).fill({ color: 0x1f6b49 }).stroke({ width: 2, color: 0x9ff0c8 });
+    g.moveTo(sp.x - 10, sp.y).lineTo(sp.x + 8, sp.y).moveTo(sp.x + 2, sp.y - 6).lineTo(sp.x + 9, sp.y).lineTo(sp.x + 2, sp.y + 6).stroke({ width: 3, color: 0xffffff });
+  }
+
+  private camera(g: Graphics, at: Point, facing: number, off: boolean): void {
+    const d = screenDir(this.proj, DIRS[facing].x, DIRS[facing].y);
+    const sp = project(this.proj, at.x + 0.5, at.y + 0.5, 74);
+    g.roundRect(sp.x - 9, sp.y - 6, 18, 12, 3).fill({ color: 0x2b2f3d }).stroke({ width: 1.5, color: 0x0d0f16 });
+    g.moveTo(sp.x, sp.y).lineTo(sp.x + d.x * 14, sp.y + d.y * 14).stroke({ width: 7, color: 0x3b4052 });
+    g.circle(sp.x + d.x * 15, sp.y + d.y * 15, 3.5).fill({ color: off ? 0x444444 : 0x9fd7ff });
+    if (!off && Math.sin(this.time * 5) > 0) g.circle(sp.x - 5, sp.y - 2, 2).fill({ color: 0xff3b30 });
+  }
+
   private face(a: Actor): { x: number; y: number } {
     const d = DIRS[a.facing];
     return screenDir(this.proj, d.x, d.y);
   }
 
-  /** Leo Tuxedo, grey-box edition: black cat, white shirt front, red bow tie. */
-  private drawLeo(g: Graphics, a: Actor, hasLoot: boolean): void {
+  /** Leo Tuxedo, placeholder edition: black cat, white shirt front, red bow tie. */
+  private drawLeo(g: Graphics, a: Actor, hasLoot: boolean, inVent: boolean): void {
     const s = project(this.proj, a.x, a.y);
     const f = this.face(a);
-    const front = f.y > -0.2; // facing toward the camera
+    const front = f.y > -0.2;
     const by = s.y - a.bob;
-    g.ellipse(s.x, s.y, 18, 8).fill({ color: 0x000000, alpha: 0.35 });
-    // Tail curls out behind him.
-    g.moveTo(s.x - f.x * 10, by - 14).bezierCurveTo(s.x - f.x * 30, by - 20, s.x - f.x * 26, by - 46, s.x - f.x * 16, by - 50).stroke({ width: 5, color: 0x16161c, cap: 'round' });
-    g.ellipse(s.x, by - 22, 14, 19).fill({ color: 0x1b1b22 }).stroke({ width: 2, color: 0x000000 });
+    const alpha = inVent ? 0.55 : 1;
+    if (inVent) g.ellipse(s.x, s.y - 4, 26, 13).stroke({ width: 2, color: COL.duct, alpha: 0.9 });
+    else g.ellipse(s.x, s.y, 18, 8).fill({ color: 0x000000, alpha: 0.35 });
+    g.moveTo(s.x - f.x * 10, by - 14).bezierCurveTo(s.x - f.x * 30, by - 20, s.x - f.x * 26, by - 46, s.x - f.x * 16, by - 50).stroke({ width: 5, color: 0x16161c, cap: 'round', alpha });
+    g.ellipse(s.x, by - 22, 14, 19).fill({ color: 0x1b1b22, alpha }).stroke({ width: 2, color: 0x000000, alpha });
     if (front) {
-      g.poly([s.x + f.x * 6 - 6, by - 36, s.x + f.x * 6 + 6, by - 36, s.x + f.x * 6, by - 14]).fill({ color: 0xf5f5f5 });
-      g.poly([s.x + f.x * 6 - 7, by - 38, s.x + f.x * 6, by - 35, s.x + f.x * 6 - 7, by - 32]).fill({ color: 0xd8262f });
-      g.poly([s.x + f.x * 6 + 7, by - 38, s.x + f.x * 6, by - 35, s.x + f.x * 6 + 7, by - 32]).fill({ color: 0xd8262f });
+      g.poly([s.x + f.x * 6 - 6, by - 36, s.x + f.x * 6 + 6, by - 36, s.x + f.x * 6, by - 14]).fill({ color: 0xf5f5f5, alpha });
+      g.poly([s.x + f.x * 6 - 7, by - 38, s.x + f.x * 6, by - 35, s.x + f.x * 6 - 7, by - 32]).fill({ color: 0xd8262f, alpha });
+      g.poly([s.x + f.x * 6 + 7, by - 38, s.x + f.x * 6, by - 35, s.x + f.x * 6 + 7, by - 32]).fill({ color: 0xd8262f, alpha });
     }
     const hx = s.x + f.x * 3;
     const hy = by - 48;
-    g.poly([hx - 11, hy - 6, hx - 8, hy - 20, hx - 2, hy - 9]).fill({ color: 0x1b1b22 }).stroke({ width: 2, color: 0x000000 });
-    g.poly([hx + 11, hy - 6, hx + 8, hy - 20, hx + 2, hy - 9]).fill({ color: 0x1b1b22 }).stroke({ width: 2, color: 0x000000 });
-    g.circle(hx, hy, 12).fill({ color: 0x1b1b22 }).stroke({ width: 2, color: 0x000000 });
+    g.poly([hx - 11, hy - 6, hx - 8, hy - 20, hx - 2, hy - 9]).fill({ color: 0x1b1b22, alpha }).stroke({ width: 2, color: 0x000000, alpha });
+    g.poly([hx + 11, hy - 6, hx + 8, hy - 20, hx + 2, hy - 9]).fill({ color: 0x1b1b22, alpha }).stroke({ width: 2, color: 0x000000, alpha });
+    g.circle(hx, hy, 12).fill({ color: 0x1b1b22, alpha }).stroke({ width: 2, color: 0x000000, alpha });
     if (front) {
-      g.ellipse(hx + f.x * 5, hy + 4, 6, 4).fill({ color: 0xf5f5f5 });
-      g.circle(hx + f.x * 6 - 5, hy - 2, 2.4).fill({ color: 0xc6f05a });
-      g.circle(hx + f.x * 6 + 5, hy - 2, 2.4).fill({ color: 0xc6f05a });
+      g.ellipse(hx + f.x * 5, hy + 4, 6, 4).fill({ color: 0xf5f5f5, alpha });
+      g.circle(hx + f.x * 6 - 5, hy - 2, 2.4).fill({ color: 0xc6f05a, alpha });
+      g.circle(hx + f.x * 6 + 5, hy - 2, 2.4).fill({ color: 0xc6f05a, alpha });
     }
     if (hasLoot) {
-      g.circle(s.x - f.x * 12, by - 24, 8).fill({ color: 0x6b4b2a }).stroke({ width: 2, color: 0x2a1a0c });
-      g.poly([s.x - f.x * 12, by - 31, s.x - f.x * 12 + 4, by - 26, s.x - f.x * 12, by - 22, s.x - f.x * 12 - 4, by - 26]).fill({ color: COL.gem });
+      g.circle(s.x - f.x * 12, by - 24, 8).fill({ color: 0x6b4b2a, alpha }).stroke({ width: 2, color: 0x2a1a0c, alpha });
+      g.poly([s.x - f.x * 12, by - 31, s.x - f.x * 12 + 4, by - 26, s.x - f.x * 12, by - 22, s.x - f.x * 12 - 4, by - 26]).fill({ color: 0x9fe8ff, alpha });
     }
   }
 
-  /** A night-watch bulldog: stocky, tan, peaked cap, torch. */
-  private drawBulldog(g: Graphics, a: Actor, alert: boolean): void {
+  /** A night-watch bulldog: stocky, tan, peaked cap, torch. Shows ? when suspicious, ! when searching. */
+  private drawBulldog(g: Graphics, a: Actor, guard: Guard, grinning: boolean): void {
     const s = project(this.proj, a.x, a.y);
     const f = this.face(a);
     const front = f.y > -0.2;
     const by = s.y - a.bob;
     g.ellipse(s.x, s.y, 22, 10).fill({ color: 0x000000, alpha: 0.35 });
     g.ellipse(s.x, by - 22, 19, 20).fill({ color: 0x2b3a67 }).stroke({ width: 2, color: 0x121a33 });
-    // Torch beam stub, pointing the way he looks.
     g.moveTo(s.x + f.x * 14, by - 26).lineTo(s.x + f.x * 30, by - 26 + f.y * 14).stroke({ width: 5, color: 0x333333, cap: 'round' });
     g.circle(s.x + f.x * 31, by - 26 + f.y * 14, 4).fill({ color: 0xfff3b0 });
     const hx = s.x + f.x * 4;
@@ -248,16 +395,25 @@ export class HeistView {
       g.circle(hx + f.x * 7 - 6, hy - 2, 2.5).fill({ color: 0x1a1a1a });
       g.circle(hx + f.x * 7 + 6, hy - 2, 2.5).fill({ color: 0x1a1a1a });
       g.ellipse(hx + f.x * 8, hy + 3, 4, 3).fill({ color: 0x2a1a12 });
+      if (grinning) g.moveTo(hx + f.x * 6 - 7, hy + 8).quadraticCurveTo(hx + f.x * 6, hy + 14, hx + f.x * 6 + 7, hy + 8).stroke({ width: 2, color: 0x2a1a12 });
     }
     g.ellipse(hx - 15, hy + 1, 5, 7).fill({ color: 0x9c7046 });
     g.ellipse(hx + 15, hy + 1, 5, 7).fill({ color: 0x9c7046 });
     g.ellipse(hx, hy - 12, 15, 5).fill({ color: 0x1e2b52 });
     g.rect(hx - 10, hy - 22, 20, 10).fill({ color: 0x24335f });
     g.circle(hx, hy - 17, 2.5).fill({ color: 0xf2c46b });
-    if (alert) {
-      g.roundRect(hx - 9, hy - 56, 18, 26, 4).fill({ color: 0xff3b30 }).stroke({ width: 2, color: 0xffffff });
-      g.rect(hx - 2, hy - 52, 4, 13).fill({ color: 0xffffff });
-      g.rect(hx - 2, hy - 36, 4, 4).fill({ color: 0xffffff });
+    const mark = grinning || guard.mode === 'searching' ? '!' : guard.mode === 'suspicious' ? '?' : '';
+    if (!mark) return;
+    const col = mark === '!' ? 0xff3b30 : 0xffd23f;
+    const top = hy - 52 + Math.sin(this.time * 6) * 2;
+    g.roundRect(hx - 10, top, 20, 26, 5).fill({ color: col }).stroke({ width: 2, color: 0xffffff });
+    if (mark === '!') {
+      g.rect(hx - 2, top + 4, 4, 12).fill({ color: 0xffffff });
+      g.rect(hx - 2, top + 19, 4, 4).fill({ color: 0xffffff });
+    } else {
+      g.arc(hx, top + 9, 5, Math.PI, Math.PI * 2.25).stroke({ width: 3, color: 0x1a1205 });
+      g.moveTo(hx + 1, top + 13).lineTo(hx, top + 17).stroke({ width: 3, color: 0x1a1205 });
+      g.rect(hx - 1.5, top + 19, 3, 3).fill({ color: 0x1a1205 });
     }
   }
 }
