@@ -1,6 +1,7 @@
 node_modules/
 dist/
 release/
+.test-build/
 *.log
 .DS_Store
 steam_appid.txt
