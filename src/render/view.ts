@@ -1,7 +1,7 @@
 // Draws a heist: floors and overlays first, then walls, furniture and characters sorted by depth.
 // Placeholder art for now; generated sprites replace the character and prop drawing later.
 import { Container, Graphics } from 'pixi.js';
-import { DIRS, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
+import { DIRS, PRINT_TURNS, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, roboOff, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
 import type { Level, Point } from '../core/level';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
 
@@ -134,6 +134,8 @@ export class HeistView {
         if (t === 'squeaky') this.planks(f, x, y);
         if (t === 'plate') this.plate(f, x, y);
         if (t === 'keycard') this.keycard(f, x, y);
+        if (t === 'belt-e' || t === 'belt-w') this.belt(f, x, y, t === 'belt-e' ? 1 : -1);
+        if (t === 'paint') this.paint(f, x, y);
         const spotlit = spots.some((sp) => Math.hypot(x - sp.at.x, y - sp.at.y) <= sp.radius + 0.01) || beam.has(k);
         const l = spotlit ? 2 : light[y][x];
         if (l === 0) this.diamond(f, x, y, 0.5, 0x05060c, 0.55);
@@ -176,6 +178,7 @@ export class HeistView {
           else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.3, COL.reach2, 0.4);
         }
     for (const d of s.decoys) this.decoyCard(f, d);
+    for (const pr of s.prints) this.pawPrint(f, pr, pr.turns / PRINT_TURNS);
     for (const fp of ov.footprints) {
       const sp = project(p, fp.x + 0.5, fp.y + 0.5);
       f.circle(sp.x, sp.y, 4).fill({ color: COL.step, alpha: 0.75 });
@@ -281,7 +284,13 @@ export class HeistView {
     if (rival && r && (r.phase === 'in' || r.phase === 'leaving'))
       items.push({ depth: project(p, rival.x, rival.y).depth + 0.05, draw: (g) => this.drawRival(g, rival, r.id, r.prize) });
     guards.forEach((a, i) =>
-      items.push({ depth: project(p, a.x, a.y).depth + 0.05, draw: (g) => this.drawGuard(g, a, s.guards[i], s.status === 'caught' && s.caughtBy === s.guards[i].name) }),
+      items.push({
+        depth: project(p, a.x, a.y).depth + 0.05,
+        draw: (g) =>
+          s.guards[i].kind === 'robo'
+            ? this.drawRobo(g, a, s.guards[i], roboOff(s, s.guards[i]), s.status === 'caught' && s.caughtBy === s.guards[i].name)
+            : this.drawGuard(g, a, s.guards[i], s.status === 'caught' && s.caughtBy === s.guards[i].name),
+      }),
     );
     items.sort((a, b) => a.depth - b.depth);
     for (const it of items) it.draw(o);
@@ -598,6 +607,67 @@ export class HeistView {
     const top = project(this.proj, b.at.x + 0.5, b.at.y + 0.5, WALL_H + 20);
     this.fx.circle(top.x, top.y, 16 + Math.sin(this.time * 4) * 2).fill({ color: 0xfff3c0, alpha: 0.35 });
     this.fx.circle(top.x, top.y, 7).fill({ color: 0xfffbe6 });
+  }
+
+  /** A conveyor belt: dark rubber with chevrons creeping along it. */
+  private belt(g: Graphics, x: number, y: number, dir: number): void {
+    this.diamond(g, x, y, 0.42, 0x2a2c34, 1);
+    const shift = ((this.time * 0.6) % 1) * dir;
+    for (const i of [-0.25, 0.25]) {
+      const cx = x + 0.5 + i + shift * 0.25;
+      const a = project(this.proj, cx - 0.08 * dir, y + 0.3);
+      const m = project(this.proj, cx + 0.08 * dir, y + 0.5);
+      const b = project(this.proj, cx - 0.08 * dir, y + 0.7);
+      g.moveTo(a.x, a.y).lineTo(m.x, m.y).lineTo(b.x, b.y).stroke({ width: 2, color: 0xf2c46b, alpha: 0.8 });
+    }
+  }
+
+  /** A puddle of wet paint, in a different colour on every tile. */
+  private paint(g: Graphics, x: number, y: number): void {
+    const col = [0xe0314b, 0x3fbf7f, 0x5ec8ff, 0xf2c46b][(x * 7 + y * 3) % 4];
+    const c = project(this.proj, x + 0.5, y + 0.5);
+    g.ellipse(c.x, c.y, 22, 10).fill({ color: col, alpha: 0.85 });
+    g.ellipse(c.x - 8, c.y + 2, 6, 3).fill({ color: 0xffffff, alpha: 0.25 });
+  }
+
+  /** A wet paw print, fading as it dries. */
+  private pawPrint(g: Graphics, at: Point, fresh: number): void {
+    const c = project(this.proj, at.x + 0.5, at.y + 0.5);
+    const a = 0.25 + 0.6 * fresh;
+    g.ellipse(c.x, c.y + 2, 5, 3.5).fill({ color: 0xe0314b, alpha: a });
+    for (const [dx, dy] of [[-5, -3], [-2, -6], [2, -6], [5, -3]]) g.circle(c.x + dx, c.y + dy, 1.6).fill({ color: 0xe0314b, alpha: a });
+  }
+
+  /** A Robo-Guard: a bulldog-shaped tin can on a wheel, with a red heat-scanner visor (dark when unpowered). */
+  private drawRobo(g: Graphics, a: Actor, guard: Guard, off: boolean, grinning: boolean): void {
+    const s = project(this.proj, a.x, a.y);
+    const f = this.face(a);
+    const front = f.y > -0.2;
+    const by = s.y - (off ? 0 : a.bob);
+    g.ellipse(s.x, s.y, 20, 9).fill({ color: 0x000000, alpha: 0.35 });
+    g.circle(s.x, by - 5, 6).fill({ color: 0x2a2c34 });
+    g.roundRect(s.x - 17, by - 40, 34, 32, 8).fill({ color: off ? 0x6e7280 : 0x9aa3b5 }).stroke({ width: 2, color: 0x3a3f4c });
+    g.rect(s.x - 10, by - 30, 20, 3).fill({ color: 0x3a3f4c });
+    const hx = s.x + f.x * 3;
+    const hy = by - 52;
+    g.roundRect(hx - 15, hy - 11, 30, 22, 7).fill({ color: off ? 0x6e7280 : 0xb7bfcf }).stroke({ width: 2, color: 0x3a3f4c });
+    g.moveTo(hx, hy - 11).lineTo(hx, hy - 22).stroke({ width: 2, color: 0x3a3f4c });
+    g.circle(hx, hy - 23, 3).fill({ color: off ? 0x444444 : Math.sin(this.time * 6) > 0 ? 0xff3b30 : 0x7a1a14 });
+    if (front) {
+      g.roundRect(hx + f.x * 4 - 11, hy - 4, 22, 7, 3).fill({ color: off ? 0x2a2c34 : 0xff3b30, alpha: off ? 1 : 0.85 + Math.sin(this.time * 8) * 0.15 });
+      if (grinning) g.rect(hx + f.x * 4 - 6, hy + 6, 12, 2).fill({ color: 0x3a3f4c });
+    }
+    if (off) {
+      const z = project(this.proj, a.x + 0.3, a.y - 0.3, 80);
+      g.moveTo(z.x - 5, z.y).lineTo(z.x + 5, z.y).stroke({ width: 2, color: 0x9aa3b5 });
+      return;
+    }
+    if (guard.mode === 'searching' || grinning) {
+      const top = hy - 46 + Math.sin(this.time * 6) * 2;
+      g.roundRect(hx - 10, top, 20, 22, 5).fill({ color: 0xff3b30 }).stroke({ width: 2, color: 0xffffff });
+      g.rect(hx - 2, top + 4, 4, 9).fill({ color: 0xffffff });
+      g.rect(hx - 2, top + 15, 4, 3).fill({ color: 0xffffff });
+    }
   }
 
   /** A keycard lying on the floor. */

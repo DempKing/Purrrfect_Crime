@@ -2,7 +2,7 @@
 // exactly. Used while designing levels; with --write the route is saved to src/levels/solutions.ts, where the
 // tests replay it. Usage: npm run solve -- <level id> [--clean] [--write] [--loot] [--max N] [--debug]
 import { blocksMove, parseLevel, type Level, type Point, type Tile } from '../src/core/level';
-import { BASE_PERKS, actionsHere, doAction, endTurn, leoReach, moveAp, newHeist, pathTo, walkPath, type ActionKind, type Perks, type State } from '../src/core/game';
+import { BASE_PERKS, key, actionsHere, doAction, endTurn, leoReach, moveAp, newHeist, pathTo, walkPath, type ActionKind, type Perks, type State } from '../src/core/game';
 import type { RouteStep } from '../src/levels/routes';
 import { ALL_LEVELS } from '../src/levels';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -116,10 +116,12 @@ function levelPeriod(level: Level): number {
 }
 
 let period = 1;
+/** Turns before the time lock opens matter on their own, not just the repeating cycle. */
+let timeLock = 0;
 
 function stateKey(s: State): string {
   return JSON.stringify([
-    s.leo.x, s.leo.y, s.layer, s.ap, s.turn % period, [...s.inventory].sort(), s.picks, s.openDoors, s.camerasOff, s.lasersOff, s.alarm, s.card, s.combination, s.lampsOff,
+    s.leo.x, s.leo.y, s.layer, s.ap, s.turn % period, [...s.inventory].sort(), s.picks, s.openDoors, s.camerasOff, s.lasersOff, s.alarm, s.card, s.combination, s.lampsOff, s.wetPaws, s.prints.map((p) => key(p.x, p.y)), Math.min(s.turn, timeLock),
     s.guards.map((g) => [g.x, g.y, g.facing, g.mode, g.target, g.point?.x, g.point?.y, g.look, g.meter, g.asleep]),
     s.cameras.map((c) => c.idx),
   ]);
@@ -142,6 +144,7 @@ export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?:
   const errands = [
     { door: 'keydoor' as Tile, goals: tilesOf('keycard'), done: (s: State) => s.card === 'leo' },
     { door: 'vault' as Tile, goals: beside(tilesOf('desk')), done: (s: State) => s.combination },
+    { door: 'laser' as Tile, goals: beside(tilesOf('fuse')), done: (s: State) => s.lasersOff },
   ]
     .filter((e) => e.goals.length && distanceMap(level, around, e.door)[level.start.y][level.start.x] === Infinity)
     .map((e) => {
@@ -156,6 +159,7 @@ export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?:
     return here / 5 + (has ? 0 : 1) + todo.length;
   };
   period = levelPeriod(level);
+  timeLock = level.def.timeLock ?? 0;
   const start = newHeist(level, opts.perks ?? BASE_PERKS);
   const open = new Heap();
   const seen = new Set<string>();

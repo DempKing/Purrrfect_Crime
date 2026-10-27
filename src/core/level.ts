@@ -30,6 +30,9 @@ export type Tile =
   | 'crate' // an open crate: Leo can climb in and hide (nobody sees or smells him); guards walk round it
   | 'tidal' // sand at low tide, sea at high tide (see LevelDef.tide)
   | 'switch' // a light switch, on a wall
+  | 'belt-e' // a conveyor belt running east: it carries Leo a tile at the end of each turn
+  | 'belt-w' // and west
+  | 'paint' // wet paint: Leo leaves paw prints for the next few steps
   | 'exit';
 
 export interface Point {
@@ -40,8 +43,10 @@ export interface Point {
 /**
  * watch: walks a route. sleepy: dozes at his post, wakes to noise. captain: sees further and calls nearby
  * guards when he's suspicious. sniffer: short-sighted, but smells Leo through walls within 2 tiles.
+ * robo: never sleeps, hears nothing, ignores decoys and empty cases, but sees Leo's heat in any light; the
+ * fuse box powers it down.
  */
-export type GuardKind = 'watch' | 'sleepy' | 'captain' | 'sniffer';
+export type GuardKind = 'watch' | 'sleepy' | 'captain' | 'sniffer' | 'robo';
 
 export interface GuardDef {
   name: string;
@@ -89,7 +94,7 @@ export interface LevelDef {
    * `L` lamp · `+` locked door · `V` vent grate · `x` laser · `C` camera panel · `F` fuse box ·
    * `~` squeaky floorboard · `S` safe · `H` ladder to the rafters · `h` theatre seats · `^` pressure plate ·
    * `K` keycard door · `k` keycard · `_` gap (a drop, or water) · `-` wire · `|` glass wall · `B` kennel ·
-   * `Y` stack of crates · `Q` vault door · `N` desk with the combination · `O` crate to hide in · `t` tidal sand · `W` light switch ·
+   * `Y` stack of crates · `>` `<` conveyor belts · `%` wet paint · `Q` vault door · `N` desk with the combination · `O` crate to hide in · `t` tidal sand · `W` light switch ·
    * `@` Leo's start · `E` exit
    */
   map: string[];
@@ -113,6 +118,10 @@ export interface LevelDef {
   fishy?: { x: number; y: number; w: number; h: number }[];
   /** Light switches: each one (a `W` on the map) works these lamps, by their index in `lamps`. */
   switches?: { at: Point; lamps: number[] }[];
+  /** Where slot machines jingle so loud that nobody hears the noises Leo makes there. */
+  loud?: { x: number; y: number; w: number; h: number }[];
+  /** The vault's time lock: its dials won't turn before this turn. */
+  timeLock?: number;
   /** Dark corners in a dim building. */
   shadows?: { x: number; y: number; w: number; h: number }[];
   lamps?: LampDef[];
@@ -184,6 +193,9 @@ const LEGEND: Record<string, Tile> = {
   O: 'crate',
   t: 'tidal',
   W: 'switch',
+  '>': 'belt-e',
+  '<': 'belt-w',
+  '%': 'paint',
   '@': 'floor',
   E: 'exit',
 };
@@ -254,6 +266,11 @@ export function parseLevel(def: LevelDef): Level {
   for (const e of def.rivalEntrances ?? []) if (blocksMove(tiles[e.y]?.[e.x] ?? 'wall')) throw new Error(`${def.id}: rival entrance ${e.x},${e.y} is in a wall`);
   for (const g of level.guards) for (const p of [g.start, ...g.route]) if (blocksMove(tiles[p.y]?.[p.x] ?? 'wall')) throw new Error(`${def.id}: guard ${g.name} stands in a wall at ${p.x},${p.y}`);
   return level;
+}
+
+/** "the Golden Compass", but "the Prank of the Century" for a name that already starts with The. */
+export function the(name: string): string {
+  return /^the /i.test(name) ? `the ${name.slice(4)}` : `the ${name}`;
 }
 
 export function tileAt(level: Level, x: number, y: number): Tile {
