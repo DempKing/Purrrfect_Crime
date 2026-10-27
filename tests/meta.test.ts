@@ -301,3 +301,46 @@ test('beating a rival to it pays a bonus and makes the headline', () => {
   assert.match(r.paper.headline, /TUXEDO CAT BEATS PROFESSOR PAWS/);
   assert.deepEqual(p.rivalRecord.paws, { won: 1, lost: 0 });
 });
+
+// --- NightClaw's letters ----------------------------------------------------------------------------
+
+test('Letter 1 comes with the first trigger reached and Letter 2 with the second, in either order', async () => {
+  const { deliverLetters, hasLetter } = await import('../src/meta/letters');
+  const heistsFirst = newProfile();
+  heistsFirst.heists = 9;
+  assert.deepEqual(deliverLetters(heistsFirst), []);
+  heistsFirst.heists = 10;
+  assert.deepEqual(deliverLetters(heistsFirst), [1]);
+  assert.deepEqual(deliverLetters(heistsFirst), [], 'only once');
+  heistsFirst.soldTotal = 10000;
+  assert.deepEqual(deliverLetters(heistsFirst), [2]);
+  const salesFirst = newProfile();
+  salesFirst.soldTotal = 12000;
+  assert.deepEqual(deliverLetters(salesFirst), [1]);
+  assert.ok(!hasLetter(salesFirst, 2));
+  salesFirst.heists = 10;
+  assert.deepEqual(deliverLetters(salesFirst), [2]);
+  const both = newProfile();
+  both.heists = 11;
+  both.soldTotal = 20000;
+  assert.deepEqual(deliverLetters(both), [1, 2], 'both at once arrive in order');
+  assert.ok(both.letters.every((l) => !l.read));
+});
+
+test('Letter 3 is inside the challenge centrepiece, and only there', () => {
+  const p = newProfile();
+  completeHeist(p, corner, play(corner, CORNER_GALLERY_ROUTE));
+  assert.equal(p.letters.length, 0);
+  const challenge = parseLevel({ ...CORNER_GALLERY, challenge: true });
+  completeHeist(p, challenge, play(challenge, CORNER_GALLERY_ROUTE));
+  assert.deepEqual(p.letters.map((l) => l.id), [3]);
+  completeHeist(p, challenge, play(challenge, CORNER_GALLERY_ROUTE));
+  assert.equal(p.letters.length, 1, 'once');
+});
+
+test('older saves start with no letters', async () => {
+  const { upgradeProfile } = await import('../src/meta/profile');
+  const old = { ...newProfile() } as Partial<ReturnType<typeof newProfile>>;
+  delete old.letters;
+  assert.deepEqual(upgradeProfile(old)!.letters, []);
+});

@@ -2,7 +2,7 @@
 // src/levels/solutions.ts are replayed here, so a change to the rules or a map can't quietly break one.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseLevel } from '../src/core/level';
+import { blocksMove, parseLevel } from '../src/core/level';
 import { doAction, endTurn, moveLeo, newHeist } from '../src/core/game';
 import { ALL_LEVELS, DISTRICTS } from '../src/levels';
 import { SOLUTIONS } from '../src/levels/solutions';
@@ -34,9 +34,15 @@ test('every level has a centrepiece, a reachable exit, and loot that fits a fres
     const level = parseLevel(def);
     assert.ok(level.plinth, `${def.id}: no plinth`);
     for (const l of def.loot) assert.ok(l.space <= 6, `${def.id}: ${l.name} is too big`);
-    const beside = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !['wall', 'pillar', 'case', 'plinth', 'lamp', 'door', 'panel', 'fuse', 'safe', 'seat'].includes(level.tiles[level.exit.y + dy]?.[level.exit.x + dx] ?? 'wall'));
+    const beside = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !blocksMove(level.tiles[level.exit.y + dy]?.[level.exit.x + dx] ?? 'wall'));
     assert.ok(beside, `${def.id}: nothing to walk onto the exit from`);
   }
+});
+
+test('NightClaw’s challenge museum is the only challenge level, and has no rival thieves', () => {
+  const challenges = ALL_LEVELS.filter((l) => l.challenge);
+  assert.deepEqual(challenges.map((l) => l.id), ['nc-midnight-museum']);
+  assert.ok(!challenges[0].rivalEntrances?.length);
 });
 
 test('level ids are unique and every district has levels', () => {

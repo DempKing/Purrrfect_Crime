@@ -121,12 +121,12 @@ export const SKILLS: SkillInfo[] = [
   { id: 'vanish', tree: 'shadow', name: 'Vanish', text: 'The first time a guard glimpses Leo each heist, he’s gone before it registers.', level: 20, cost: 3000, requires: 'smoke-pellet' },
   { id: 'camera-loop', tree: 'tech', name: 'Camera Loop', text: 'Once a heist, loop a camera within 7 tiles: it sees nothing for three turns.', level: 3, cost: 400 },
   { id: 'laser-mirror', tree: 'tech', name: 'Laser Mirror', text: 'The first laser beam Leo breaks each heist bounces off harmlessly.', level: 5, cost: 600, requires: 'camera-loop' },
-  { id: 'keycard-clone', tree: 'tech', name: 'Keycard Clone', text: 'A copy of the master keycard: locked doors open in one go.', level: 8, cost: 1000, requires: 'laser-mirror' },
+  { id: 'keycard-clone', tree: 'tech', name: 'Keycard Clone', text: 'A copy of the master keycard: locked doors open in one go, and card-reader doors open without finding the keycard.', level: 8, cost: 1000, requires: 'laser-mirror' },
   { id: 'fuse-kit', tree: 'tech', name: 'Fuse Kit', text: 'Once a heist, short every laser in the building for three turns, from anywhere.', level: 11, cost: 1400, requires: 'keycard-clone' },
   { id: 'emp-collar', tree: 'tech', name: 'EMP Collar', text: 'Once a heist, knock out every camera within 5 tiles, and all the lasers, for two turns.', level: 18, cost: 2800, requires: 'fuse-kit' },
   { id: 'pounce', tree: 'acrobat', name: 'Pounce', text: 'Leap two tiles in a straight line, over a laser, a case or a lamp, without a sound. 1 action point, any number of times.', level: 3, cost: 400 },
   { id: 'ceiling-climb', tree: 'acrobat', name: 'Ceiling Climb', text: 'Climb the ladders into the rafters and walk the beams where nobody looks. Drop down anywhere (thump), or climb down a ladder quietly.', level: 6, cost: 800, requires: 'pounce' },
-  { id: 'tightrope', tree: 'acrobat', name: 'Tightrope', text: 'Cross gaps on wires and beams.', level: 9, cost: 1100, requires: 'pounce', later: 'Arrives with the rooftop levels.' },
+  { id: 'tightrope', tree: 'acrobat', name: 'Tightrope', text: 'Walk the wires strung over rooftop gaps and water, where no guard can follow.', level: 9, cost: 1100, requires: 'pounce' },
   { id: 'cat-nap', tree: 'acrobat', name: 'Cat Nap', text: 'Once a heist, curl up in a shadow: for two turns no guard notices Leo unless they trip over him.', level: 15, cost: 2200, requires: 'pounce' },
   { id: 'second-wind', tree: 'acrobat', name: 'Second Wind', text: 'Once a heist, after spending an action point, catch your breath: one more action point this turn.', level: 25, cost: 4000, requires: 'cat-nap' },
 ];
@@ -278,6 +278,8 @@ export function perksFor(p: Profile): Perks {
     vanish: has('vanish'),
     laserMirror: has('laser-mirror'),
     ceilingClimb: has('ceiling-climb'),
+    tightrope: has('tightrope'),
+    masterKey: has('keycard-clone'),
     charges,
   };
 }

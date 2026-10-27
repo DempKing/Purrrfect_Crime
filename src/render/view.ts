@@ -119,10 +119,21 @@ export class HeistView {
         const t = tileNow(level, s, x, y);
         if (t === 'wall' || t === 'pillar' || t === 'panel' || t === 'fuse') continue;
         const k = key(x, y);
+        if (t === 'gap' || t === 'wire') {
+          this.gap(f, level, x, y);
+          if (ov.vision.has(k)) this.diamond(f, x, y, 0.47, COL.vision, 0.2);
+          if (ov.cameraVision.has(k)) this.diamond(f, x, y, 0.46, COL.camera, 0.2);
+          if (t === 'wire' && !inVent && !inRafters) {
+            if (ov.reach1.has(k)) this.diamond(f, x, y, 0.38, COL.reach1, 0.3);
+            else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.38, COL.reach2, 0.26);
+          }
+          continue;
+        }
         const base = t === 'exit' ? COL.exit : t === 'marble' ? ((x + y) % 2 ? COL.marbleA : COL.marbleB) : t === 'squeaky' ? ((x + y) % 2 ? 0x7a5634 : 0x6e4c2d) : (x + y) % 2 ? COL.carpetA : COL.carpetB;
         this.diamond(f, x, y, 0.5, base, 1, COL.floorLine);
         if (t === 'squeaky') this.planks(f, x, y);
         if (t === 'plate') this.plate(f, x, y);
+        if (t === 'keycard') this.keycard(f, x, y);
         const spotlit = spots.some((sp) => Math.hypot(x - sp.at.x, y - sp.at.y) <= sp.radius + 0.01);
         const l = spotlit ? 2 : light[y][x];
         if (l === 0) this.diamond(f, x, y, 0.5, 0x05060c, 0.55);
@@ -193,13 +204,15 @@ export class HeistView {
         const t = tileNow(level, s, x, y);
         const d = project(p, x + 0.5, y + 0.5).depth;
         const k = key(x, y);
-        if (t === 'wall' || t === 'pillar' || t === 'door' || t === 'panel' || t === 'fuse') {
+        if (t === 'wall' || t === 'pillar' || t === 'door' || t === 'keydoor' || t === 'vault' || t === 'panel' || t === 'fuse') {
           // Walls between the camera and Leo, the near outer walls, and every wall while Leo is in the vents drop to stubs.
           const near = inVent || inRafters || (Math.hypot(x + 0.5 - leo.x, y + 0.5 - leo.y) < 3.6 && d > leoDepth + 0.2) || this.nearOuterWall(level, x, y);
           const h = near ? STUB_H : t === 'pillar' ? WALL_H - 6 : WALL_H;
           const a = near ? 0.75 : 1;
           if (t === 'pillar') items.push({ depth: d, draw: (g) => this.prism(g, x + 0.22, y + 0.22, x + 0.78, y + 0.78, h, 0xe6e0d0, COL.pillar, 0x948f82, a) });
           else if (t === 'door') items.push({ depth: d, draw: (g) => this.door(g, x, y, near ? STUB_H : WALL_H - 10, a, s.picks[k] ?? 0) });
+          else if (t === 'keydoor') items.push({ depth: d, draw: (g) => this.keydoor(g, x, y, near ? STUB_H : WALL_H - 10, a, s.card === 'leo' || s.perks.masterKey) });
+          else if (t === 'vault') items.push({ depth: d, draw: (g) => this.vault(g, x, y, near ? STUB_H : WALL_H - 4, a, s.picks[k] ?? 0, s.combination) });
           else
             items.push({
               depth: d,
@@ -229,6 +242,14 @@ export class HeistView {
           items.push({ depth: d, draw: (g) => this.prism(g, x + 0.08, y + 0.2, x + 0.92, y + 0.8, 20, 0x9c2a3a, 0x7a1f2c, 0x5e1722, 1) });
         } else if (t === 'ladder') {
           items.push({ depth: d + 0.2, draw: (g) => this.ladder(g, x, y) });
+        } else if (t === 'wire') {
+          items.push({ depth: d, draw: (g) => this.wire(g, level, x, y) });
+        } else if (t === 'glass') {
+          items.push({ depth: d, draw: (g) => this.glass(g, level, x, y) });
+        } else if (t === 'kennel') {
+          items.push({ depth: d, draw: (g) => this.kennel(g, x, y) });
+        } else if (t === 'desk') {
+          items.push({ depth: d, draw: (g) => this.desk(g, x, y, s.combination) });
         }
         // The rafters: beams high overhead, drawn faintly unless Leo is up there.
         if (level.rafters[y][x]) items.push({ depth: d + 0.6, draw: (g) => this.beam(g, x, y, inRafters ? 0.95 : 0.35) });
@@ -445,6 +466,89 @@ export class HeistView {
       g.moveTo(c.x, c.y).lineTo(c.x + Math.cos(a) * 6, c.y + Math.sin(a) * 6).stroke({ width: 2, color: 0x20242c });
       for (let i = 0; i < cracks; i++) g.circle(c.x - 8 + i * 8, c.y + 13, 2).fill({ color: 0x6ee7a8 });
     }
+  }
+
+  /** A card-reader door: steel, with a red light, green once Leo has the card. */
+  private keydoor(g: Graphics, x: number, y: number, h: number, alpha: number, canOpen: boolean): void {
+    this.prism(g, x + 0.06, y + 0.06, x + 0.94, y + 0.94, h, 0x8a93a8, 0x646c80, 0x4e5566, alpha);
+    const sp = project(this.proj, x + 0.5, y + 0.5, h * 0.5);
+    g.roundRect(sp.x - 5, sp.y - 7, 10, 14, 2).fill({ color: 0x1c2233 });
+    g.circle(sp.x, sp.y - 3, 2.5).fill({ color: canOpen ? 0x4dff88 : 0xff3b30 });
+  }
+
+  /** A round vault door in a steel frame, with its dials. */
+  private vault(g: Graphics, x: number, y: number, h: number, alpha: number, dials: number, known: boolean): void {
+    this.prism(g, x, y, x + 1, y + 1, h, 0x9aa1b2, 0x6e7586, 0x575d6c, alpha);
+    const c = project(this.proj, x + 0.5, y + 0.5, h + 2);
+    g.circle(c.x, c.y, 12).fill({ color: 0xc0c6d4, alpha }).stroke({ width: 2, color: 0x2e333e });
+    for (let i = 0; i < 2; i++) g.circle(c.x - 5 + i * 10, c.y, 3).fill({ color: i < dials ? 0x6ee7a8 : known ? 0xf2c46b : 0x2e333e });
+  }
+
+  /** A gap between rooftops (a long way down) or the water at the docks. */
+  private gap(g: Graphics, level: Level, x: number, y: number): void {
+    const water = level.def.gaps === 'water';
+    this.diamond(g, x, y, 0.5, water ? 0x0f2a44 : 0x05060c, 1);
+    if (water) {
+      const a = project(this.proj, x + 0.25, y + 0.5);
+      const w = Math.sin(this.time * 2 + x + y) * 2;
+      g.moveTo(a.x, a.y + w).quadraticCurveTo(a.x + 8, a.y - 4 + w, a.x + 16, a.y + w).stroke({ width: 1.5, color: 0x5aa0d0, alpha: 0.6 });
+    } else if ((x * 7 + y * 13) % 5 === 0) {
+      // Streetlights far below.
+      const c = project(this.proj, x + 0.5, y + 0.5);
+      g.circle(c.x, c.y, 1.5).fill({ color: 0xf2c46b, alpha: 0.7 });
+    }
+  }
+
+  /** A wire strung across a gap, from each neighbour that isn't open air. */
+  private wire(g: Graphics, level: Level, x: number, y: number): void {
+    const c = project(this.proj, x + 0.5, y + 0.5, 4);
+    for (const d of [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]) {
+      if (level.tiles[y + d.y]?.[x + d.x] === 'gap' || level.tiles[y + d.y]?.[x + d.x] === undefined) continue;
+      const e = project(this.proj, x + 0.5 + d.x * 0.5, y + 0.5 + d.y * 0.5, 4);
+      g.moveTo(c.x, c.y).lineTo(e.x, e.y).stroke({ width: 2, color: 0xc8ccd8 });
+    }
+  }
+
+  /** A glass wall: see-through panes that join up with their neighbours. */
+  private glass(g: Graphics, level: Level, x: number, y: number): void {
+    const t = (dx: number, dy: number) => ['glass', 'wall', 'pillar'].includes(level.tiles[y + dy]?.[x + dx] ?? '');
+    const horizontal = t(-1, 0) || t(1, 0);
+    const [x0, y0, x1, y1] = horizontal ? [x, y + 0.42, x + 1, y + 0.58] : [x + 0.42, y, x + 0.58, y + 1];
+    this.prism(g, x0, y0, x1, y1, WALL_H - 14, 0xbfe9ff, 0x9fd7ff, 0x86c4ef, 0.28);
+    const top0 = project(this.proj, horizontal ? x : x + 0.5, horizontal ? y + 0.5 : y, WALL_H - 14);
+    const top1 = project(this.proj, horizontal ? x + 1 : x + 0.5, horizontal ? y + 0.5 : y + 1, WALL_H - 14);
+    g.moveTo(top0.x, top0.y).lineTo(top1.x, top1.y).stroke({ width: 2, color: 0xe6f6ff, alpha: 0.7 });
+  }
+
+  /** A kennel with a sleeping guard dog's nose poking out. */
+  private kennel(g: Graphics, x: number, y: number): void {
+    this.prism(g, x + 0.15, y + 0.15, x + 0.85, y + 0.85, 26, 0x9c4a2a, 0x7a3a20, 0x5e2c18, 1);
+    const roof = project(this.proj, x + 0.5, y + 0.5, 40);
+    const l = project(this.proj, x + 0.12, y + 0.5, 26);
+    const r = project(this.proj, x + 0.88, y + 0.5, 26);
+    g.poly([l.x, l.y, roof.x, roof.y, r.x, r.y]).fill({ color: 0x5a2a1a }).stroke({ width: 1, color: 0x1a1d2c });
+    const nose = project(this.proj, x + 0.5, y + 0.9, 6);
+    g.circle(nose.x, nose.y, 3.5).fill({ color: 0xc8a06a });
+    g.circle(nose.x, nose.y - 1, 1.5).fill({ color: 0x1b1b22 });
+    const z = project(this.proj, x + 0.7, y + 0.3, 48 + Math.sin(this.time * 2 + x) * 3);
+    g.moveTo(z.x - 3, z.y - 3).lineTo(z.x + 3, z.y - 3).lineTo(z.x - 3, z.y + 3).lineTo(z.x + 3, z.y + 3).stroke({ width: 1.5, color: 0xe6e6f0, alpha: 0.8 });
+  }
+
+  /** A desk, with the combination somewhere in it (papers on top until Leo finds it). */
+  private desk(g: Graphics, x: number, y: number, found: boolean): void {
+    this.prism(g, x + 0.08, y + 0.2, x + 0.92, y + 0.8, 24, 0x7a5634, 0x5e4228, 0x4a341f, 1);
+    const c = project(this.proj, x + 0.5, y + 0.5, 25);
+    if (!found) g.poly([c.x - 8, c.y, c.x, c.y - 4, c.x + 8, c.y, c.x, c.y + 4]).fill({ color: 0xf7f4ec }).stroke({ width: 1, color: 0x8a8578 });
+    g.circle(c.x + 10, c.y - 2, 3).fill({ color: 0xf2c46b, alpha: 0.9 });
+  }
+
+  /** A keycard lying on the floor. */
+  private keycard(g: Graphics, x: number, y: number): void {
+    const c = project(this.proj, x + 0.5, y + 0.5, 1);
+    const glow = 0.25 + Math.sin(this.time * 4) * 0.1;
+    g.circle(c.x, c.y, 12).fill({ color: 0x5ef0ff, alpha: glow });
+    g.poly([c.x - 9, c.y, c.x, c.y - 5, c.x + 9, c.y, c.x, c.y + 5]).fill({ color: 0xffffff }).stroke({ width: 1, color: 0x1b1b22 });
+    g.circle(c.x - 2, c.y, 1.8).fill({ color: 0x2fb8a3 });
   }
 
   private ladder(g: Graphics, x: number, y: number): void {

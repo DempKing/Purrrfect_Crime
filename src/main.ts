@@ -1,5 +1,5 @@
 // Prototype M4: content. One mode, the hardest: no checkpoints, no undo. Save slots; Leo's attributes, skills
-// and gadgets in the heist; the lair's rooms; the briefing; rival thieves. Built on the M2 slice
+// and gadgets in the heist; the lair's rooms; the briefing; rival thieves; NightClaw's letters. Built on the M2 slice
 // (tutorial, narrator, paper, black market) and the M1 sandbox.
 import { Application, Container } from 'pixi.js';
 // Lets PixiJS run on pages with a strict security policy (no eval), such as claude.ai artifacts.
@@ -39,6 +39,7 @@ import { ALL_LEVELS, DISTRICTS } from './levels';
 import { CORNER_GALLERY } from './levels/tutorial';
 import { buyLair, rivalFor, completeHeist, deleteSlot, loadSlot, loadSlots, narratorBuysTutorialLoot, newProfile, saveSlot, sell, type Profile } from './meta/profile';
 import { learn, perksFor, raise, upgrade } from './meta/progression';
+import { deliverLetters } from './meta/letters';
 import { TUTORIAL, advance, type TutorialEvents } from './meta/tutorial';
 import * as screens from './ui/screens';
 import { HeistView, type Actor, type Overlay, type Ripple } from './render/view';
@@ -434,6 +435,17 @@ function cityMap(): void {
 
 function showLair(tab: screens.LairTab = 'heists'): void {
   leaveHeist();
+  // NightClaw's letters wait at the door until they've been read.
+  deliverLetters(profile);
+  const unread = profile.letters.find((l) => !l.read);
+  if (unread) {
+    persist();
+    return screens.letter(unread, profile, () => {
+      unread.read = true;
+      persist();
+      showLair(tab);
+    });
+  }
   screens.lair(
     profile,
     {
@@ -466,6 +478,7 @@ function showLair(tab: screens.LairTab = 'heists'): void {
         persist();
         showLair('lair');
       },
+      onLetter: (i) => screens.letter(profile.letters[i], profile, () => showLair('lair'), 'Back to the lair'),
       onQuit: showTitle,
     },
     tab,
@@ -547,7 +560,8 @@ const LIGHT_NAMES = ['In shadow', 'Dim light', 'In the light'];
 function updateHud(): void {
   $('turn').textContent = String(state.turn);
   $('ap').innerHTML = Array.from({ length: AP_PER_TURN }, (_, i) => `<span class="pip ${i < state.ap ? 'on' : ''}"></span>`).join('');
-  $('inventory').innerHTML = `Inventory <b>${inventoryUsed(level, state)}/${state.perks.spaces}</b> · ${money(inventoryValue(level, state))}`;
+  const extras = [state.card === 'leo' ? 'keycard' : '', state.combination ? 'the combination' : ''].filter(Boolean).join(', ');
+  $('inventory').innerHTML = `Inventory <b>${inventoryUsed(level, state)}/${state.perks.spaces}</b> · ${money(inventoryValue(level, state))}${extras ? ` · ${extras}` : ''}`;
   // The race, if there is one. Before they arrive, only a good Planning Table says when.
   const r = state.rival;
   const rl = $('rival');

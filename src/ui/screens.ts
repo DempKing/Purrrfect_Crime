@@ -4,6 +4,7 @@
 import { parseLevel, type LevelDef, type LootCategory } from '../core/level';
 import { RIVALS, type RivalPlan } from '../core/game';
 import type { Paper } from '../meta/newspaper';
+import { LETTERS, delivery, hasLetter, type Letter } from '../meta/letters';
 import { MASTHEAD } from '../meta/newspaper';
 import {
   LAIR_PRICE,
@@ -91,7 +92,7 @@ function slotSummary(p: Profile): string {
 export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void {
   const el = show(
     `<div class="card big title-card">
-      <div class="kicker">Prototype M4 · Museum Mile</div>
+      <div class="kicker">Prototype M4 · The Heights</div>
       <h1>Purrrfect Crime</h1>
       <p>Leo Tuxedo is new in town, sharply dressed and short of Catnip. The museums are full of treasures
         and the guards are half asleep. Time to make a name for himself.</p>
@@ -196,6 +197,29 @@ export function heistReport(r: HeistReport, p: Profile, done: () => void): void 
   on(el, '#report-ok', done);
 }
 
+// --- NightClaw's letters -------------------------------------------------------------------------------
+
+/** NightClaw's seal: a black wax disc with three claw marks. */
+const SEAL_SVG = `<svg viewBox="0 0 40 40" class="seal" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="#1b1b22" stroke="#4a3a52" stroke-width="2"/>
+  <path d="M13 10 Q15 20 12 30 M20 9 Q22 20 19 31 M27 10 Q29 20 26 30" stroke="#b9a7d9" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>`;
+
+export function letter(l: Letter, p: Profile, done: () => void, button = 'Fold it away'): void {
+  const L = LETTERS[l.id];
+  const el = show(
+    `<div class="letter-wrap">
+      <p class="small letter-how">${l.id === 3 ? 'Folded small, inside the music box:' : esc(delivery(p))}</p>
+      <div class="letter">
+        <div class="kicker">Letter ${l.id} · ${esc(L.title)} · day ${l.day}</div>
+        ${L.body.map((b) => `<p>${esc(b)}</p>`).join('')}
+        <p class="sign">— NC ${SEAL_SVG}</p>
+      </div>
+      <div class="row-buttons"><button id="letter-ok" class="primary">${esc(button)}</button></div>
+    </div>`,
+    'overlay dark',
+  );
+  on(el, '#letter-ok', done);
+}
+
 // --- The city map: buying the lair ---------------------------------------------------------------------
 
 export function cityMap(p: Profile, onBuy: () => void): void {
@@ -246,6 +270,7 @@ export interface LairCallbacks {
   onRaise: (id: Attribute) => void;
   onLearn: (id: SkillId) => void;
   onUpgrade: (id: Room) => void;
+  onLetter: (index: number) => void;
   onQuit: () => void;
 }
 
@@ -260,8 +285,10 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   const wanted = demand(p.day);
   const points = attributePoints(p);
 
-  // A heist opens once the one before it is cleared; anything already cleared stays open.
-  const unlocked = (i: number) => i === 0 || !!p.records[cb.jobs[i].id] || !!p.records[cb.jobs[i - 1].id];
+  // A heist opens once the one before it is cleared; anything already cleared stays open. NightClaw's
+  // challenge opens with his second letter.
+  const unlocked = (i: number) =>
+    cb.jobs[i].challenge ? hasLetter(p, 2) : i === 0 || !!p.records[cb.jobs[i].id] || !!p.records[cb.jobs[i - 1].id];
   const job = (def: LevelDef) => {
     const i = cb.jobs.indexOf(def);
     const rec = p.records[def.id];
@@ -278,7 +305,12 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
         <button class="primary" data-job="${i}">${rec ? 'Replay' : 'Plan the heist'}</button>
       </div>`;
   };
-  const heists = cb.districts
+  const campaign = cb.jobs.slice(1).filter((d) => !d.challenge);
+  const flawless = campaign.filter((d) => p.records[d.id]?.flawless).length;
+  const challenge = hasLetter(p, 3)
+    ? `<div class="card challenge"><b>The NightClaw Challenge</b> ${pips(flawless, campaign.length)}<p class="small">${flawless} of ${campaign.length} centrepieces taken in a flawless heist (never seen, no alarms). NightClaw wants every one.${campaign.length < 25 ? ' More of the city opens in later builds.' : ''}</p></div>`
+    : '';
+  const heists = challenge + cb.districts
     .filter((d) => d.levels.some((l) => unlocked(cb.jobs.indexOf(l))))
     .map((d) => `<h2 class="section district">${esc(d.name)}</h2>${d.levels.map(job).join('')}`)
     .join('');
@@ -346,9 +378,13 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
       return c ? `<li>${esc(c.name)} <span class="small">· ${esc(def!.name)}${p.records[id].flawless ? ' · flawless' : ''}</span></li>` : '';
     })
     .join('');
+  const letters = p.letters.length
+    ? `<h2 class="section">Letters</h2>${p.letters.map((l, i) => `<button class="paper-link" data-letter="${i}"><span class="small">Day ${l.day} · signed NC</span><br><b>Letter ${l.id}: ${esc(LETTERS[l.id].title)}</b></button>`).join('')}`
+    : '';
   const lairTab = `
     <p class="small">Every upgrade fixes up the building a little more.</p>
     <div class="ups">${rooms}</div>
+    ${letters}
     ${p.rooms.trophy ? `<h2 class="section">Trophy Room</h2>${trophies ? `<ul class="trophies">${trophies}</ul>` : '<p class="small">Empty shelves, waiting for centrepieces.</p>'}` : ''}`;
 
   const papers = p.papers.length
@@ -388,6 +424,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   on(el, '[data-raise]', (e) => cb.onRaise((e.currentTarget as HTMLElement).dataset.raise as Attribute));
   on(el, '[data-learn]', (e) => cb.onLearn((e.currentTarget as HTMLElement).dataset.learn as SkillId));
   on(el, '[data-upgrade]', (e) => cb.onUpgrade((e.currentTarget as HTMLElement).dataset.upgrade as Room));
+  on(el, '[data-letter]', (e) => cb.onLetter(Number((e.currentTarget as HTMLElement).dataset.letter)));
   on(el, '#lair-quit', cb.onQuit);
 }
 
@@ -419,9 +456,13 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
     for (let y = 0; y < level.h; y++)
       for (let x = 0; x < level.w; x++) {
         const t = level.tiles[y][x];
-        const fill = t === 'wall' || t === 'panel' || t === 'fuse' ? '#3b4366' : t === 'pillar' ? '#59608a' : t === 'exit' ? '#2f7d5b' : t === 'door' ? '#8a6a45' : t === 'marble' ? '#2a3150' : '#1f2540';
+        const fill =
+          t === 'wall' || t === 'panel' || t === 'fuse'
+            ? '#3b4366'
+            : ({ pillar: '#59608a', exit: '#2f7d5b', door: '#8a6a45', marble: '#2a3150', keydoor: '#8a93a8', vault: '#c0c6d4', glass: '#5b88a8', kennel: '#9c4a2a', desk: '#7a5634', keycard: '#5ef0ff', gap: def.gaps === 'water' ? '#0f2a44' : '#06070d', wire: def.gaps === 'water' ? '#0f2a44' : '#06070d' } as Record<string, string>)[t] ?? '#1f2540';
         cells.push(`<rect x="${x * S}" y="${y * S}" width="${S}" height="${S}" fill="${fill}"/>`);
         if (level.ducts[y][x]) cells.push(`<rect x="${x * S + 5}" y="${y * S + 5}" width="6" height="6" fill="#5ec8ff" opacity="0.5"/>`);
+        if (t === 'wire') cells.push(`<line x1="${x * S}" y1="${y * S + 8}" x2="${x * S + S}" y2="${y * S + 8}" stroke="#c8ccd8" stroke-width="1.5"/>`);
         if (t === 'laser') cells.push(`<line x1="${x * S}" y1="${y * S + 8}" x2="${x * S + S}" y2="${y * S + 8}" stroke="#ff2a2a" stroke-width="2"/>`);
         if (t === 'panel' || t === 'fuse') cells.push(`<rect x="${x * S + 4}" y="${y * S + 4}" width="8" height="8" fill="${t === 'panel' ? '#55d6c2' : '#f2c94c'}"/>`);
       }
