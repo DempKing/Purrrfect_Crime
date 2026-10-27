@@ -14,8 +14,7 @@ vents, an inventory with 6 spaces and an alarm countdown. The M0 warm-up, **The 
 
 ## Play the prototype
 
-**https://dempking.github.io/Purrrfect_Crime/** once GitHub Pages is switched on for this repository
-(Settings → Pages → Source: **GitHub Actions**). Every push to `main` is tested, built and published there.
+**https://dempking.github.io/Purrrfect_Crime/** — every push to `main` is tested, built and published there.
 
 Controls: click a tile to move (blue costs 1 action point, yellow costs 2; on a phone, tap once to preview
 and again to move). The planned path turns yellow where a guard would notice Leo and red where he'd be
@@ -55,8 +54,7 @@ tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 
 ## Platforms
 
-- **Web:** for playtesting, at https://dempking.github.io/Purrrfect_Crime/ once the first build is up and
-  GitHub Pages is switched on for this repository.
+- **Web:** for playtesting, at https://dempking.github.io/Purrrfect_Crime/ (published by GitHub Actions on every push).
 - **Steam:** Windows, macOS and Linux, packaged with Electron.
 
 ## Milestones
