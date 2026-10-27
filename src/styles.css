@@ -21,7 +21,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); c
 
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
 
-.hud { position: fixed; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; pointer-events: none; flex-wrap: wrap; }
+.hud { position: fixed; top: calc(10px + env(safe-area-inset-top, 0px)); left: max(10px, env(safe-area-inset-left, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; pointer-events: none; flex-wrap: wrap; }
 .hud > * { pointer-events: auto; }
 .status { padding: 10px 14px; min-width: 240px; }
 .title { font-weight: 700; letter-spacing: 0.02em; color: var(--gold); }
@@ -37,7 +37,7 @@ button:hover:not(:disabled) { border-color: var(--gold); }
 button:disabled { opacity: 0.4; cursor: default; }
 button.primary { background: #c8892e; border-color: #f2c46b; color: #1a1205; font-weight: 700; }
 
-.message { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); max-width: min(720px, calc(100vw - 20px)); text-align: center; padding: 10px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; font-size: 0.95em; pointer-events: none; }
+.message { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); max-width: min(720px, calc(100vw - 20px)); text-align: center; padding: 10px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; font-size: 0.95em; pointer-events: none; }
 .message:empty { display: none; }
 
 #banner { position: fixed; top: 38%; left: 50%; transform: translate(-50%, -50%) scale(0.9); font-size: 2.2em; font-weight: 800; letter-spacing: 0.04em; color: var(--gold); text-shadow: 0 4px 18px #000; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; }
