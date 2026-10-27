@@ -20,7 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       pages: ${{ steps.pages.outputs.enabled }}
-    env:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -46,12 +45,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Only a definite "not found" means Pages is off; anything else, try to publish.
-          code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" \
+          # Publish only when Pages is set to deploy from GitHub Actions. Otherwise say why and stay green.
+          resp=$(curl -s -w '\n%{http_code}' -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/pages")
+          code=$(echo "$resp" | tail -n1)
           if [ "$code" = "404" ]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::GitHub Pages is not enabled for this repository (Settings → Pages → Source: GitHub Actions), so the game was built and tested but not published."
+            echo "::notice::GitHub Pages is off. Turn it on in Settings → Pages → Source: GitHub Actions to publish the game."
+          elif [ "$code" = "200" ] && ! echo "$resp" | grep -q '"build_type": *"workflow"'; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::GitHub Pages is set to 'Deploy from a branch', which publishes the raw source instead of the built game. Change Settings → Pages → Source to GitHub Actions."
           else
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           fi
