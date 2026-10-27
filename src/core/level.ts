@@ -18,6 +18,14 @@ export type Tile =
   | 'ladder' // up to the rafters (Ceiling Climb)
   | 'seat' // a row of theatre seats: low, so guards see over them, but in Leo's way
   | 'plate' // a pressure plate: step on it and the alarm goes off
+  | 'keydoor' // a door with a card reader: it opens for the keycard, and can't be picked
+  | 'keycard' // floor with a keycard lying on it: walk over it to pick it up
+  | 'gap' // a drop between rooftops, or water: nobody walks it, but everyone sees across it
+  | 'wire' // a wire across a gap: only Leo, with Tightrope, can walk it
+  | 'glass' // a glass wall: guards see straight through it, but sound doesn't carry
+  | 'kennel' // a guard dog's kennel: the dog barks at anything that comes within 2 tiles
+  | 'vault' // a vault door: turn the dials, with the combination
+  | 'desk' // a desk with the vault's combination in it
   | 'exit';
 
 export interface Point {
@@ -76,7 +84,8 @@ export interface LevelDef {
    * `#` wall · `.` floor · `,` marble (noisy) · `P` pillar · `D` display case · `G` centrepiece plinth ·
    * `L` lamp · `+` locked door · `V` vent grate · `x` laser · `C` camera panel · `F` fuse box ·
    * `~` squeaky floorboard · `S` safe · `H` ladder to the rafters · `h` theatre seats · `^` pressure plate ·
-   * `@` Leo's start · `E` exit
+   * `K` keycard door · `k` keycard · `_` gap (a drop, or water) · `-` wire · `|` glass wall · `B` kennel ·
+   * `Q` vault door · `N` desk with the combination · `@` Leo's start · `E` exit
    */
   map: string[];
   /** The rafters, same size as the map: `=` beam, `H` the top of a ladder (must match an `H` on the map). */
@@ -89,6 +98,8 @@ export interface LevelDef {
    * windows) apart from its shadows. 'dark': only lamps and moonlight light it.
    */
   ambient: 'lit' | 'dim' | 'dark';
+  /** What the gaps are: a drop between rooftops (the default) or water. */
+  gaps?: 'sky' | 'water';
   /** Dark corners in a dim building. */
   shadows?: { x: number; y: number; w: number; h: number }[];
   lamps?: LampDef[];
@@ -105,6 +116,8 @@ export interface LevelDef {
   loot: LootDef[];
   /** What's new in this level, for the briefing. */
   tip?: string;
+  /** NightClaw's challenge museum: opened by Letter 2, and its centrepiece holds Letter 3. */
+  challenge?: boolean;
   /** Base XP for a successful heist, and the turn count that earns a speed bonus. */
   xp?: number;
   par?: number;
@@ -146,6 +159,14 @@ const LEGEND: Record<string, Tile> = {
   H: 'ladder',
   h: 'seat',
   '^': 'plate',
+  K: 'keydoor',
+  k: 'keycard',
+  _: 'gap',
+  '-': 'wire',
+  '|': 'glass',
+  B: 'kennel',
+  Q: 'vault',
+  N: 'desk',
   '@': 'floor',
   E: 'exit',
 };
@@ -185,6 +206,8 @@ export function parseLevel(def: LevelDef): Level {
     rafters.push(rrow);
   }
   if (!start || !exit) throw new Error(`${def.id}: map needs @ and E`);
+  if (def.map.join('').split('k').length > 2) throw new Error(`${def.id}: one keycard per level`);
+  if (def.map.join('').includes('Q') && !def.map.join('').includes('N')) throw new Error(`${def.id}: a vault door needs a desk with the combination`);
   for (const l of def.loot) {
     const t = tiles[l.at.y]?.[l.at.x];
     if (t !== 'case' && t !== 'plinth' && t !== 'safe') throw new Error(`${def.id}: loot "${l.name}" is not in a case, a safe or on the plinth`);
@@ -226,10 +249,18 @@ export function isRafter(level: Level, x: number, y: number): boolean {
 
 /** Whether a tile blocks walking, given which doors are open and which cases are emptied. */
 export function blocksMove(t: Tile): boolean {
-  return t === 'wall' || t === 'pillar' || t === 'case' || t === 'plinth' || t === 'lamp' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'safe' || t === 'seat';
+  return (
+    t === 'wall' || t === 'pillar' || t === 'case' || t === 'plinth' || t === 'lamp' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'safe' || t === 'seat' ||
+    t === 'keydoor' || t === 'gap' || t === 'wire' || t === 'glass' || t === 'kennel' || t === 'vault' || t === 'desk'
+  );
 }
 
-/** Display cases, the plinth and lamps are low: guards see over them. Closed doors block sight. */
+/** Display cases, the plinth and lamps are low: guards see over them, and through glass. Closed doors block sight. */
 export function blocksSight(t: Tile): boolean {
-  return t === 'wall' || t === 'pillar' || t === 'door' || t === 'panel' || t === 'fuse';
+  return t === 'wall' || t === 'pillar' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'keydoor' || t === 'vault';
+}
+
+/** Walls, closed doors and glass stop sound (it carries round pillars). */
+export function blocksSound(t: Tile): boolean {
+  return t === 'wall' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'keydoor' || t === 'vault' || t === 'glass';
 }

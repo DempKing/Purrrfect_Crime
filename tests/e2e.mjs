@@ -196,19 +196,34 @@ await page.click('[data-play="0"]');
 await page.waitForSelector('.lair');
 const reloaded = await page.evaluate(() => ({ catnip: window.__pc.profile.catnip, heists: window.__pc.profile.heists, papers: window.__pc.profile.papers.length, skills: window.__pc.profile.skills.length }));
 
+// --- NightClaw's letters: ten heists and 10,000 Catnip sold bring both, and open the challenge museum -----
+await page.evaluate(() => { window.__pc.profile.heists = 10; window.__pc.profile.soldTotal = 10000; });
+await page.click('[data-job="1"]');
+await page.click('#back');
+await page.waitForSelector('.letter');
+await shot('23-letter-1.png');
+const letterTitles = [await page.textContent('.letter .kicker')];
+await page.click('#letter-ok');
+await page.waitForSelector('.letter');
+letterTitles.push(await page.textContent('.letter .kicker'));
+await page.click('#letter-ok');
+await page.waitForSelector('.lair');
+const challenge = await page.evaluate(() => [...document.querySelectorAll('.district')].map((d) => d.textContent));
+await shot('24-challenge-heist.png');
+
 // --- Phone layout ----------------------------------------------------------------------------------------
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(300);
-await shot('23-phone-lair.png');
+await shot('25-phone-lair.png');
 await page.click('[data-tab="leo"]');
-await shot('24-phone-leo.png');
+await shot('26-phone-leo.png');
 await page.click('[data-tab="heists"]');
 await page.click('[data-job="1"]');
 await page.click('#go');
 await page.waitForTimeout(800);
-await shot('25-phone-heist.png');
+await shot('27-phone-heist.png');
 
-const results = { tutorialEnd, tips: [...tips], afterLair, coinEnd, sold, spent, kit, afterCap, caughtStatus, race, reloaded };
+const results = { tutorialEnd, tips: [...tips], afterLair, coinEnd, sold, spent, kit, afterCap, caughtStatus, race, reloaded, letterTitles, challenge };
 console.log(JSON.stringify(results, null, 1));
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors');
 await browser.close();
@@ -223,5 +238,6 @@ const ok =
   kit.spaces === 7 && kit.blend && kit.caps === 1 &&
   afterCap.caps === 0 && afterCap.ap === 1 && caughtStatus === 'caught' &&
   race.status === 'playing' && (race.phase === 'in' || race.phase === 'leaving' || race.phase === 'gone') && /Luna Luck/.test(race.hud) &&
-  reloaded.heists === 2 && reloaded.papers === 2 && reloaded.catnip === spent.catnip && reloaded.skills === 1;
+  reloaded.heists === 2 && reloaded.papers === 2 && reloaded.catnip === spent.catnip && reloaded.skills === 1 &&
+  /Letter 1/.test(letterTitles[0]) && /Letter 2/.test(letterTitles[1]) && challenge.some((d) => /NightClaw/.test(d));
 process.exit(errors.length || !ok ? 1 : 0);

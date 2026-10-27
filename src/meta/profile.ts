@@ -4,6 +4,7 @@ import type { Level, LevelDef, LootCategory } from '../core/level';
 import { RIVALS, type RivalId, type RivalPlan, type State } from '../core/game';
 import { writePaper, type Paper } from './newspaper';
 import { playerLevel, type Attribute, type Room, type SkillId } from './progression';
+import { openMusicBox, type Letter } from './letters';
 
 export { LEVEL_CAP, playerLevel, xpForLevel, xpToNext } from './progression';
 /** What the narrator pays for the tutorial loot, and exactly what the abandoned building costs. */
@@ -56,6 +57,8 @@ export interface Profile {
   rivals: Record<string, RivalPlan | null>;
   lastRival: RivalId | null;
   rivalRecord: Partial<Record<RivalId, { won: number; lost: number }>>;
+  /** NightClaw's letters, in the order they arrived. */
+  letters: Letter[];
 }
 
 export function newProfile(): Profile {
@@ -79,6 +82,7 @@ export function newProfile(): Profile {
     rivals: {},
     lastRival: null,
     rivalRecord: {},
+    letters: [],
   };
 }
 
@@ -234,6 +238,7 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
     p.lastRival = rival.id;
   }
   delete p.rivals[def.id]; // a new roll next time
+  if (def.challenge && centrepiece) openMusicBox(p);
   const paper = writePaper({
     day: p.day,
     levelId: def.id,

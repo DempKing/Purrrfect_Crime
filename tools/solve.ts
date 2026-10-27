@@ -1,7 +1,7 @@
 // Finds a winning route through a level: best-first search over Leo's choices, simulating the guards
 // exactly. Used while designing levels; with --write the route is saved to src/levels/solutions.ts, where the
 // tests replay it. Usage: npm run solve -- <level id> [--clean] [--write] [--loot] [--max N] [--debug]
-import { parseLevel, type Level, type Point } from '../src/core/level';
+import { blocksMove, parseLevel, type Level, type Point, type Tile } from '../src/core/level';
 import { BASE_PERKS, actionsHere, doAction, endTurn, leoReach, moveAp, newHeist, pathTo, walkPath, type ActionKind, type Perks, type State } from '../src/core/game';
 import type { RouteStep } from '../src/levels/routes';
 import { ALL_LEVELS } from '../src/levels';
@@ -79,7 +79,7 @@ class Heap {
 }
 
 /** Steps from every tile to the nearest goal tile, through anything Leo could ever walk, crawl or open. */
-function distanceMap(level: Level, goals: Point[]): number[][] {
+function distanceMap(level: Level, goals: Point[], shut: Tile | null = null): number[][] {
   const d = level.tiles.map((r) => r.map(() => Infinity));
   const q: Point[] = [];
   for (const g of goals) {
@@ -88,7 +88,9 @@ function distanceMap(level: Level, goals: Point[]): number[][] {
   }
   const passable = (x: number, y: number) => {
     const t = level.tiles[y]?.[x];
-    return t !== undefined && (!['wall', 'pillar', 'case', 'plinth', 'lamp', 'panel', 'fuse', 'safe', 'seat'].includes(t) || level.ducts[y][x] || level.rafters[y][x]);
+    // Doors and vaults count as open here: the search finds the way to open them.
+    if (t === undefined || t === shut) return false;
+    return t === 'door' || t === 'keydoor' || t === 'vault' || !blocksMove(t) || level.ducts[y][x] || level.rafters[y][x];
   };
   while (q.length) {
     const p = q.shift()!;
@@ -116,27 +118,41 @@ let period = 1;
 
 function stateKey(s: State): string {
   return JSON.stringify([
-    s.leo.x, s.leo.y, s.layer, s.ap, s.turn % period, [...s.inventory].sort(), s.picks, s.openDoors, s.camerasOff, s.lasersOff, s.alarm,
+    s.leo.x, s.leo.y, s.layer, s.ap, s.turn % period, [...s.inventory].sort(), s.picks, s.openDoors, s.camerasOff, s.lasersOff, s.alarm, s.card, s.combination,
     s.guards.map((g) => [g.x, g.y, g.facing, g.mode, g.target, g.point?.x, g.point?.y, g.look, g.meter, g.asleep]),
     s.cameras.map((c) => c.idx),
   ]);
 }
 
-const USEFUL: ActionKind[] = ['pick-door', 'panel', 'fuse', 'enter-vent', 'exit-vent', 'climb-up', 'climb-down', 'drop'];
+const USEFUL: ActionKind[] = ['pick-door', 'swipe-card', 'read-notes', 'turn-dials', 'panel', 'fuse', 'enter-vent', 'exit-vent', 'climb-up', 'climb-down', 'drop'];
 
 export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?: number; clean?: boolean; weight?: number; turns?: number } = {}): { plan: RouteStep[][]; s: State; expanded: number } | null {
   const centre = level.def.loot.findIndex((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y);
   if (centre < 0) throw new Error('no centrepiece');
   const c = level.def.loot[centre].at;
-  const around = [];
+  const around: Point[] = [];
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) around.push({ x: c.x + dx, y: c.y + dy });
   const toCentre = distanceMap(level, around);
   const toExit = distanceMap(level, [level.exit]);
   const centreToExit = Math.min(...around.map((p) => toExit[p.y]?.[p.x] ?? Infinity));
+  // Errands: what Leo has to fetch first when a card door or a vault stands between him and the centrepiece.
+  const tilesOf = (t: Tile) => level.tiles.flatMap((row, y) => row.flatMap((tt, x) => (tt === t ? [{ x, y }] : [])));
+  const beside = (ps: Point[]) => ps.flatMap((p) => [-1, 0, 1].flatMap((dy) => [-1, 0, 1].map((dx) => ({ x: p.x + dx, y: p.y + dy })))).filter((p) => !blocksMove(level.tiles[p.y]?.[p.x] ?? 'wall'));
+  const errands = [
+    { door: 'keydoor' as Tile, goals: tilesOf('keycard'), done: (s: State) => s.card === 'leo' },
+    { door: 'vault' as Tile, goals: beside(tilesOf('desk')), done: (s: State) => s.combination },
+  ]
+    .filter((e) => e.goals.length && distanceMap(level, around, e.door)[level.start.y][level.start.x] === Infinity)
+    .map((e) => {
+      const to = distanceMap(level, e.goals);
+      return { ...e, to, onward: Math.min(...e.goals.map((g) => toCentre[g.y][g.x])) };
+    });
   const h = (s: State) => {
     const has = s.inventory.includes(centre);
-    const here = has ? toExit[s.leo.y][s.leo.x] : toCentre[s.leo.y][s.leo.x] + centreToExit;
-    return here / 5 + (has ? 0 : 1);
+    const todo = has ? [] : errands.filter((e) => !e.done(s));
+    let here = has ? toExit[s.leo.y][s.leo.x] : toCentre[s.leo.y][s.leo.x] + centreToExit;
+    if (todo.length) here = todo[0].to[s.leo.y][s.leo.x] + todo[0].onward + centreToExit + (todo.length > 1 ? 10 : 0);
+    return here / 5 + (has ? 0 : 1) + todo.length;
   };
   period = levelPeriod(level);
   const start = newHeist(level, opts.perks ?? BASE_PERKS);

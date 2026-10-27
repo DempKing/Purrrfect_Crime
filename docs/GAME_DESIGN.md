@@ -132,11 +132,13 @@ differently.
 | **Laser grid** (static / pulsing / moving) | Time your moves, jump through a gap (skill), or cut it at a fuse box. |
 | **Pressure plates** | Raised metal squares: stepping on one sets off the alarm. Walk around them or Pounce over them. |
 | **Motion sensors** | A zone (red grid) where moving two or more tiles in one move sets off the alarm, so cross it a tile at a time. The fuse box turns them off. |
-| **Locked doors / display cases / safes** | Lockpicking with a tiered difficulty, keycards found on the map, glass cutter (skill), safe-cracking minigame. |
+| **Locked doors / display cases / safes** | Lockpicking with a tiered difficulty, keycards found on the map, glass cutter (skill), safe-cracking minigame. As built: card-reader doors can't be picked; the level's keycard lies on the floor somewhere (walk over it), or Keycard Clone opens them without it. |
+| **Glass walls** | Block Leo, and sound, but not sight: guards see straight through, and nobody outside hears a noise made inside. |
+| **Rooftop gaps and water** | Nobody walks them, everyone sees across them. Wires over them are for Leo with Tightrope; Pounce leaps a one-tile gap. |
 | **Alarm panels** | Once an alarm trips, a countdown runs until the level locks down. Disarm the panel or escape before it ends. |
 | **Spotlights and searchlights** | Moving light sources that sweep areas on a timer. |
-| **Guard dogs' kennels / bells / squeaky floorboards** | Noise traps. |
-| **Vault doors** (late game) | Several steps: a code found somewhere in the level plus timed dials. |
+| **Guard dogs' kennels / bells / squeaky floorboards** | Noise traps. As built: a dog barks (noise 5) at Leo within 2 tiles of its kennel, once a move, and guards come to look. |
+| **Vault doors** (late game) | Several steps: a code found somewhere in the level plus timed dials. As built: search the desk with the combination (1 action point), then two silent turns of the dials. |
 
 ### 5.1 Air ducts
 
@@ -191,7 +193,7 @@ lost), and achievements for beating each one.
 district (capped at 35%), worked out from the save so it can't be rerolled. A rival arrives between turns
 3 and 7 through one of the level's rival entrances, moves after the guards, and their next steps show as
 purple footprints. Mittens sets off an alarm away from her route once she's in (an alarm Leo didn't cause
-doesn't spoil a flawless heist); Luna is never spotted by guards; Sammy swipes loot from any open case he
+doesn't spoil a flawless heist); Luna is never spotted by guards; Sammy swipes loot (and a keycard lying about) from any case he
 passes; Paws blinds the cameras he passes and relocks doors behind him. Beating a rival is worth +75 XP
 and a headline; the Leo tab keeps the rivalry record.
 
@@ -265,12 +267,12 @@ As built in M3:
 | Vanish | 20 | 3,000 | The first time a guard glimpses Leo, it doesn't count. |
 | Camera Loop | 3 | 400 | Once a heist: a camera within 7 tiles sees nothing for three turns. |
 | Laser Mirror | 5 | 600 | The first laser Leo breaks is ignored. |
-| Keycard Clone | 8 | 1,000 | Doors open in one go. |
+| Keycard Clone | 8 | 1,000 | Doors open in one go, and card-reader doors open without the keycard. |
 | Fuse Kit | 11 | 1,400 | Once a heist: all lasers off for three turns, from anywhere. |
 | EMP Collar | 18 | 2,800 | Once a heist: cameras within 5 tiles and all lasers off for two turns. |
 | Pounce | 3 | 400 | 1 AP, unlimited: leap two tiles over a laser, case or lamp. Landing on a live laser trips it. |
 | Ceiling Climb | 6 | 800 | Locked until the levels with rafters (M4). |
-| Tightrope | 9 | 1,100 | Locked until the rooftop levels (M4). |
+| Tightrope | 9 | 1,100 | Walk the wires over rooftop gaps and water, where no guard can follow. |
 | Cat Nap | 15 | 2,200 | Once a heist: guards can't notice Leo for two of their turns (unless they walk into him). |
 | Second Wind | 25 | 4,000 | Once a heist, with 1 action point or fewer left: free, +1 action point this turn. (It replaced Nine Lives when the game went to one mode, where a catch is always a catch.) |
 
@@ -342,6 +344,13 @@ Then the story runs in order:
    peace, now that the city has a new best thief.
 5. **After the credits:** free play continues. A newspaper headline: "NIGHTCLAW'S SUCCESSOR?"
 
+**As built (M4):** Letters 1 and 2 arrive at the lair the next time Leo walks in after a trigger (in the
+mailbox, or pinned to the door if there isn't one), and wait there until they're read; both can be
+reread from the Lair tab. Letter 2 opens **NightClaw's Challenge** on the heist list with *The Midnight
+Museum*; its centrepiece is the *Midnight Music Box*, and Letter 3 is folded inside it. After Letter 3,
+the heist list shows the challenge's progress: centrepieces taken in a flawless heist, out of every
+level after the tutorial.
+
 ### 9.3 Calling card and newspaper
 
 - At the end of every successful heist, Leo **automatically leaves his calling card** at the scene, a
@@ -392,7 +401,7 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | **Downtown** | The Grand Bank, Casino Royale-Paws, The Mint, The Museum of Modern Mischief, City Hall Treasury |
 | **Special** | NightClaw's challenge museum (*The Midnight Museum*), NightClaw's Lair |
 
-**Built so far (M4: Old Town and Museum Mile):**
+**Built so far (M4: Old Town, Museum Mile, The Heights and the challenge museum):**
 
 | # | Level | What it introduces |
 | --- | --- | --- |
@@ -406,6 +415,12 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | 7 | The Modern Art Atrium | A marble atrium where every step is heard, under a circling spotlight. |
 | 8 | The Gem & Mineral Hall | A vault with lasers and motion sensors, both on one fuse box beside a sleeping guard. |
 | 9 | The Planetarium | A dim dome with two spotlights sweeping opposite ways and five guards. |
+| 10 | The Millionaire's Mansion | A card-reader door; the keycard lies in the library beside a dozing butler. |
+| 11 | The Sky Garden Hotel | Rooftops: gaps everyone sees across, wires for Tightrope, a searchlight. |
+| 12 | The Glass Tower Auction | Glass walls: seen through, not heard through. A glass vitrine in the middle of the floor. |
+| 13 | The Yacht Club | Guard dogs in kennels; water between the piers and yachts. |
+| 14 | The Observatory Estate | A vault door, with the combination in the study desk next door. |
+| NC | The Midnight Museum | NightClaw's challenge (opened by Letter 2): every mechanic so far, in one building. |
 
 Each level opens when the one before it is cleared. Guard types as built: **sleepy** guards see
 nothing while dozing, wake to noise, look around and go back to their chair; **captains** see 25%

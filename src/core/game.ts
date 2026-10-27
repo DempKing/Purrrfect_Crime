@@ -1,6 +1,6 @@
 // The rules of a heist: Leo's action points, movement and actions; light, sight and noise; guards,
 // cameras, lasers and alarms; and the turn order. Pure data in, data out, so it can be unit-tested.
-import { blocksMove, blocksSight, isDuct, isRafter, tileAt, type GuardKind, type Level, type Point, type Tile } from './level';
+import { blocksMove, blocksSight, blocksSound, isDuct, isRafter, tileAt, type GuardKind, type Level, type Point, type Tile } from './level';
 
 export const AP_PER_TURN = 2;
 /** Tiles of movement one action point buys (diagonals cost 1.5). */
@@ -18,11 +18,15 @@ export const LOOK_TURNS = 2;
 /** Turns from an alarm to lockdown. */
 export const ALARM_TURNS = 5;
 export const INVENTORY_SPACES = 6;
-export const NOISE = { marble: 2, dash: 4, pick: 1, smash: 6, squeaky: 4, drop: 3 };
+export const NOISE = { marble: 2, dash: 4, pick: 1, smash: 6, squeaky: 4, drop: 3, bark: 5 };
 /** Picks needed to open a lock. */
 export const LOCK_PICKS = 2;
 /** Goes needed to crack a safe (quiet, but slow). */
 export const SAFE_CRACKS = 3;
+/** Goes at a vault door's dials, once Leo has the combination. */
+export const VAULT_DIALS = 2;
+/** A guard dog barks at Leo within this many tiles (not in vents or the rafters). */
+export const BARK_RANGE = 2;
 /** How far guard types see, as a share of a night-watch guard. */
 export const KIND_SIGHT: Record<GuardKind, number> = { watch: 1, sleepy: 1, captain: 1.25, sniffer: 0.6 };
 /** A sniffer smells Leo this many tiles away, through walls (not through vents or from the rafters). */
@@ -53,6 +57,8 @@ export interface Perks {
   vanish: boolean; // the first time a guard glimpses Leo, he's gone before it registers (Shadow)
   laserMirror: boolean; // the first laser Leo breaks bounces harmlessly (Tech)
   ceilingClimb: boolean; // the rafters, by the ladders (Acrobat)
+  tightrope: boolean; // walk the wires over gaps (Acrobat)
+  masterKey: boolean; // keycard doors open without the keycard (Tech: Keycard Clone)
   charges: Partial<Record<Ability, number>>; // per heist; pounce is unlimited when owned
 }
 
@@ -72,6 +78,8 @@ export const BASE_PERKS: Perks = {
   vanish: false,
   laserMirror: false,
   ceilingClimb: false,
+  tightrope: false,
+  masterKey: false,
   charges: {},
 };
 
@@ -214,6 +222,9 @@ export interface State {
   rival: Rival | null;
   rivalLoot: number[]; // loot a rival has taken (the centrepiece, or whatever Sammy pocketed)
   rivalBeaten: boolean; // Leo took the centrepiece while a rival was after it
+  /** Who has the level's keycard: nobody yet, Leo, or a rival who swiped it. */
+  card: 'leo' | 'rival' | null;
+  combination: boolean; // Leo has read the vault's combination
   noises: Noise[]; // made this turn, for drawing
   log: string[]; // what just happened, for the HUD
 }
@@ -268,6 +279,8 @@ export function newHeist(level: Level, perks: Perks = BASE_PERKS, rival: RivalPl
         : null,
     rivalLoot: [],
     rivalBeaten: false,
+    card: null,
+    combination: false,
     noises: [],
     log: [],
   };
@@ -278,7 +291,8 @@ export function newHeist(level: Level, perks: Perks = BASE_PERKS, rival: RivalPl
 
 export function tileNow(level: Level, s: State, x: number, y: number): Tile {
   const t = tileAt(level, x, y);
-  if (t === 'door' && s.openDoors.includes(key(x, y))) return 'floor';
+  if ((t === 'door' || t === 'keydoor' || t === 'vault') && s.openDoors.includes(key(x, y))) return 'floor';
+  if (t === 'keycard' && s.card) return 'floor';
   return t;
 }
 
@@ -339,7 +353,7 @@ export function lightMap(level: Level): Light[][] {
       for (const m of level.moonlight) if (x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h) l = 1;
       for (const lamp of level.lamps) {
         const d = Math.hypot(x - lamp.at.x, y - lamp.at.y);
-        if (d > lamp.radius + 2 || !clearLine(level, lamp.at, { x, y }, (t) => t === 'wall' || t === 'door' || t === 'pillar')) continue;
+        if (d > lamp.radius + 2 || !clearLine(level, lamp.at, { x, y }, (t) => t === 'wall' || t === 'door' || t === 'pillar' || t === 'keydoor' || t === 'vault')) continue;
         if (d <= lamp.radius) l = 2;
         else if (l < 1) l = 1;
       }
@@ -372,7 +386,8 @@ export function lightNow(level: Level, s: State, x: number, y: number): Light {
 function walkable(level: Level, s: State, layer: Layer, x: number, y: number): boolean {
   if (layer === 'vent') return isDuct(level, x, y);
   if (layer === 'rafter') return isRafter(level, x, y);
-  return !blocksMove(tileNow(level, s, x, y));
+  const t = tileNow(level, s, x, y);
+  return t === 'wire' ? s.perks.tightrope : !blocksMove(t);
 }
 
 function stepCost(level: Level, s: State, layer: Layer, from: Point, dx: number, dy: number): number {
@@ -640,7 +655,7 @@ function hearingDistance(level: Level, s: State, from: Point, to: Point, max: nu
       const nx = p.x + dir.x;
       const ny = p.y + dir.y;
       const t = tileNow(level, s, nx, ny);
-      if (t === 'wall' || t === 'door' || t === 'panel' || t === 'fuse' || seen.has(key(nx, ny))) continue;
+      if (blocksSound(t) || seen.has(key(nx, ny))) continue;
       seen.set(key(nx, ny), d + 1);
       queue.push({ x: nx, y: ny });
     }
@@ -675,6 +690,34 @@ function breakLaser(s: State, p: Point, why: string): void {
   triggerAlarm(s, p, why);
 }
 
+/** The guard dogs within earshot of p: each barks (once a move, `barked` keeps track), and guards come running. */
+function dogsBark(level: Level, s: State, p: Point, barked: Set<string>): void {
+  if (s.layer !== 'floor') return;
+  for (const k of kennelsNear(level, p)) {
+    if (barked.has(key(k.x, k.y))) continue;
+    barked.add(key(k.x, k.y));
+    s.log.push('Woof! WOOF! The guard dog has smelled cat.');
+    makeNoise(level, s, k, NOISE.bark, false);
+  }
+}
+
+/** Kennels within barking range of p. */
+export function kennelsNear(level: Level, p: Point): Point[] {
+  const out: Point[] = [];
+  for (let y = p.y - BARK_RANGE; y <= p.y + BARK_RANGE; y++)
+    for (let x = p.x - BARK_RANGE; x <= p.x + BARK_RANGE; x++)
+      if (tileAt(level, x, y) === 'kennel' && Math.hypot(x - p.x, y - p.y) <= BARK_RANGE + 0.01) out.push({ x, y });
+  return out;
+}
+
+/** Leo walks over the keycard: it's his. */
+function pickUpCard(level: Level, s: State, p: Point): void {
+  if (s.layer === 'floor' && !s.card && tileAt(level, p.x, p.y) === 'keycard') {
+    s.card = 'leo';
+    s.log.push('Leo pockets the keycard.');
+  }
+}
+
 // ---------------------------------------------------------------------------------------------
 // Moving
 
@@ -706,6 +749,7 @@ export function walkPath(level: Level, s: State, path: Point[], cost: number): M
     s.log.push('Ghost Step: not a sound.');
   }
   const walked: Point[] = [path[0]];
+  const barked = new Set<string>();
   let inZone = 0; // steps taken inside motion-sensor zones this move
   for (const p of path.slice(1)) {
     s.leo = { ...p };
@@ -720,6 +764,8 @@ export function walkPath(level: Level, s: State, path: Point[], cost: number): M
         makeNoise(level, s, p, NOISE.squeaky);
         s.log.push('Creeeak!');
       }
+      pickUpCard(level, s, p);
+      dogsBark(level, s, p, barked);
     }
     checkExposure(level, s, p);
     if (s.status !== 'playing') return { ok: true, path: walked };
@@ -735,7 +781,22 @@ export function walkPath(level: Level, s: State, path: Point[], cost: number): M
 // ---------------------------------------------------------------------------------------------
 // Actions: picking locks, smashing glass, panels, vents
 
-export type ActionKind = 'pick-case' | 'smash-case' | 'take' | 'crack-safe' | 'pick-door' | 'panel' | 'fuse' | 'enter-vent' | 'exit-vent' | 'climb-up' | 'climb-down' | 'drop';
+export type ActionKind =
+  | 'pick-case'
+  | 'smash-case'
+  | 'take'
+  | 'crack-safe'
+  | 'pick-door'
+  | 'swipe-card'
+  | 'read-notes'
+  | 'turn-dials'
+  | 'panel'
+  | 'fuse'
+  | 'enter-vent'
+  | 'exit-vent'
+  | 'climb-up'
+  | 'climb-down'
+  | 'drop';
 
 export interface Action {
   kind: ActionKind;
@@ -788,6 +849,11 @@ export function actionsHere(level: Level, s: State): Action[] {
         }
         if (t === 'plinth' && loot && !taken) out.push({ kind: 'take', at: p, label: `Take ${loot.name}`, ap: 1, noise: 0, blocked: noRoom });
         if (t === 'door' && near4(L, p)) out.push({ kind: 'pick-door', at: p, label: s.perks.doorPicks > 1 ? `Pick the door lock (${s.picks[k] ?? 0}/${s.perks.doorPicks})` : 'Open the door', ap: 1, noise: s.perks.silentPicks ? 0 : NOISE.pick });
+        if (t === 'keydoor' && near4(L, p))
+          out.push({ kind: 'swipe-card', at: p, label: s.card === 'leo' ? 'Swipe the keycard' : 'Open it with the cloned card', ap: 1, noise: 0, blocked: s.card === 'leo' || s.perks.masterKey ? undefined : s.card === 'rival' ? 'A rival swiped the keycard.' : 'Needs the keycard: it’s somewhere in the building.' });
+        if (t === 'desk' && !s.combination) out.push({ kind: 'read-notes', at: p, label: 'Search the desk for the combination', ap: 1, noise: 0 });
+        if (t === 'vault' && near4(L, p))
+          out.push({ kind: 'turn-dials', at: p, label: `Turn the vault dials (${s.picks[k] ?? 0}/${VAULT_DIALS})`, ap: 1, noise: 0, blocked: s.combination ? undefined : 'Needs the combination: it’s written down somewhere in the building.' });
         if (t === 'panel' && !s.camerasOff) out.push({ kind: 'panel', at: p, label: s.alarm !== null ? 'Shut off the cameras and the alarm' : 'Shut off the cameras', ap: 1, noise: 0 });
         if (t === 'fuse' && !s.lasersOff) out.push({ kind: 'fuse', at: p, label: 'Cut the power to the lasers', ap: 1, noise: 0 });
       }
@@ -834,6 +900,21 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
         }
       } else s.log.push('Click… one more go.');
       break;
+    case 'swipe-card':
+      s.openDoors.push(k);
+      s.log.push('Beep. The light turns green and the door slides open.');
+      break;
+    case 'read-notes':
+      s.combination = true;
+      s.log.push('Taped under the drawer: the vault combination. Of course it is.');
+      break;
+    case 'turn-dials':
+      s.picks[k] = (s.picks[k] ?? 0) + 1;
+      if (s.picks[k] >= VAULT_DIALS) {
+        s.openDoors.push(k);
+        s.log.push('Clunk. The vault door swings open.');
+      } else s.log.push('The first dial clicks home.');
+      break;
     case 'smash-case':
       s.smashed.push(k);
       makeNoise(level, s, at, NOISE.smash);
@@ -859,6 +940,7 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
       break;
     case 'exit-vent':
       s.layer = 'floor';
+      dogsBark(level, s, s.leo, new Set());
       checkExposure(level, s, s.leo);
       break;
     case 'crack-safe':
@@ -875,12 +957,14 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
       break;
     case 'climb-down':
       s.layer = 'floor';
+      dogsBark(level, s, s.leo, new Set());
       checkExposure(level, s, s.leo);
       break;
     case 'drop':
       s.layer = 'floor';
       s.log.push('Thump!');
       makeNoise(level, s, s.leo, NOISE.drop);
+      dogsBark(level, s, s.leo, new Set());
       checkExposure(level, s, s.leo);
       break;
   }
@@ -949,6 +1033,9 @@ const throwable = (level: Level, s: State, x: number, y: number) => {
   return !blocksMove(t) || t === 'case' || t === 'plinth';
 };
 
+/** Thrown things and leaps stop at anything that blocks sight, and at glass. */
+const blocksThrow = (t: Tile) => blocksSight(t) || t === 'glass';
+
 /** Tiles an ability can be aimed at from where Leo is. */
 export function abilityTargets(level: Level, s: State, kind: Ability): Set<string> {
   const out = new Set<string>();
@@ -957,7 +1044,7 @@ export function abilityTargets(level: Level, s: State, kind: Ability): Set<strin
     for (let y = L.y - r; y <= L.y + r; y++)
       for (let x = L.x - r; x <= L.x + r; x++) {
         if ((x === L.x && y === L.y) || Math.hypot(x - L.x, y - L.y) > r + 0.01) continue;
-        if (ok(x, y) && clearLine(level, L, { x, y }, blocksSight, s)) out.add(key(x, y));
+        if (ok(x, y) && clearLine(level, L, { x, y }, blocksThrow, s)) out.add(key(x, y));
       }
   };
   if (kind === 'bottle-cap') within(ABILITY_RANGE.throw, (x, y) => throwable(level, s, x, y));
@@ -973,8 +1060,8 @@ export function abilityTargets(level: Level, s: State, kind: Ability): Set<strin
       const mid = tileNow(level, s, L.x + d.x, L.y + d.y);
       const lx = L.x + 2 * d.x;
       const ly = L.y + 2 * d.y;
-      if (blocksSight(mid) || blocksMove(tileNow(level, s, lx, ly)) || guards.has(key(lx, ly))) continue;
-      if (d.x && d.y && (blocksSight(tileNow(level, s, L.x + d.x, L.y)) || blocksSight(tileNow(level, s, L.x, L.y + d.y)))) continue;
+      if (blocksThrow(mid) || blocksMove(tileNow(level, s, lx, ly)) || guards.has(key(lx, ly))) continue;
+      if (d.x && d.y && (blocksThrow(tileNow(level, s, L.x + d.x, L.y)) || blocksThrow(tileNow(level, s, L.x, L.y + d.y)))) continue;
       out.add(key(lx, ly));
     }
   }
@@ -1026,6 +1113,9 @@ export function useAbility(level: Level, s: State, kind: Ability, at?: Point): b
       s.leo = { ...at! };
       s.log.push('Pounce!');
       if (tileNow(level, s, at!.x, at!.y) === 'laser' && lasersActive(level, s)) breakLaser(s, at!, 'Leo landed on a laser beam');
+      if (tileNow(level, s, at!.x, at!.y) === 'plate') triggerAlarm(s, at!, 'A pressure plate clicked under Leo’s paw');
+      pickUpCard(level, s, at!);
+      dogsBark(level, s, s.leo, new Set());
       checkExposure(level, s, s.leo);
       if (s.status === 'playing' && s.inventory.length && s.leo.x === level.exit.x && s.leo.y === level.exit.y) s.status = 'escaped';
       break;
@@ -1214,13 +1304,14 @@ function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
 // ---------------------------------------------------------------------------------------------
 // The rival's turn, after the guards'
 
-/** The next tile toward any of the goals for a rival: floors, and doors (rivals are pros). */
+/** The next tile toward any of the goals for a rival. */
 function rivalStep(level: Level, s: State, r: Rival, goals: Point[]): Point | null {
+  // Rivals are pros: they get through any door, vault or wire.
   const goal = new Set(goals.map((g) => key(g.x, g.y)));
   if (goal.has(key(r.x, r.y))) return null;
   const ok = (x: number, y: number) => {
     const t = tileNow(level, s, x, y);
-    return (t === 'door' || !blocksMove(t)) && !(s.layer === 'floor' && s.leo.x === x && s.leo.y === y);
+    return (t === 'door' || t === 'keydoor' || t === 'vault' || t === 'wire' || !blocksMove(t)) && !(s.layer === 'floor' && s.leo.x === x && s.leo.y === y);
   };
   const prev = new Map<string, string>([[key(r.x, r.y), '']]);
   const q: Point[] = [{ x: r.x, y: r.y }];
@@ -1300,8 +1391,12 @@ function runRival(level: Level, s: State): GuardStep[] {
   return out;
 }
 
-/** Sammy pockets loot as he passes; Professor Paws blinds cameras near him and locks doors behind himself. */
+/** Sammy pockets loot (and the keycard) as he passes; Professor Paws blinds cameras near him and locks doors behind himself. */
 function rivalHabits(level: Level, s: State, r: Rival, was: Point): void {
+  if (r.id === 'sammy' && !s.card && [{ x: 0, y: 0 }, ...DIRS].some((d) => tileAt(level, r.x + d.x, r.y + d.y) === 'keycard')) {
+    s.card = 'rival';
+    s.log.push('Sammy Swipes pockets the keycard. Typical.');
+  }
   if (r.id === 'sammy')
     for (const d of DIRS) {
       const li = lootAt(level, r.x + d.x, r.y + d.y);
@@ -1311,7 +1406,7 @@ function rivalHabits(level: Level, s: State, r: Rival, was: Point): void {
     }
   if (r.id === 'paws') {
     for (const c of s.cameras) if (Math.hypot(c.at.x - r.x, c.at.y - r.y) <= 3) c.offTurns = Math.max(c.offTurns, 1);
-    if (tileAt(level, was.x, was.y) === 'door' && (was.x !== r.x || was.y !== r.y)) {
+    if (['door', 'keydoor'].includes(tileAt(level, was.x, was.y)) && (was.x !== r.x || was.y !== r.y)) {
       const k = key(was.x, was.y);
       s.openDoors = s.openDoors.filter((d) => d !== k);
       delete s.picks[k];
@@ -1372,6 +1467,7 @@ export function danger(level: Level, s: State, p: Point): 0 | 1 | 2 {
   let worst: 0 | 1 | 2 = 0;
   if (tileNow(level, s, p.x, p.y) === 'laser' && lasersActive(level, s)) worst = 2;
   if (tileNow(level, s, p.x, p.y) === 'plate') worst = 2;
+  if (kennelsNear(level, p).length) worst = Math.max(worst, 1) as 0 | 1 | 2;
   for (const c of s.cameras) if (cameraSees(level, s, c, p.x, p.y)) worst = 2;
   for (const g of s.guards) {
     if (canSmell(s, g, p)) worst = g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 1.5 ? 2 : (Math.max(worst, 1) as 0 | 1 | 2);

@@ -9,12 +9,16 @@ There's no combat: stay hidden in the shadows and vents. Get caught and you rest
 
 **Status:** prototype M4 in progress (content), placeholder art. There's **one mode, the hardest**: no
 difficulty choice, no checkpoints, no undo, and every level is designed to be beaten flawlessly.
-**Old Town and Museum Mile are built**: after the
+**Old Town, Museum Mile and The Heights are built**: after the
 tutorial come the Cobblestone Coin Museum (a sleepy guard, creaky floorboards, a safe), the Clocktower
 Archive (a captain who calls for help, rafters for Ceiling Climb), the Pawnbroker Penthouse (a sniffer
 who smells through walls, pulsing lasers) and the Opera House Costume Vault (moving spotlights). Museum Mile follows
 with five dim halls: Natural History (pressure plates), the Egyptian Wing (motion sensors), the Modern
-Art Atrium, the Gem & Mineral Hall and the Planetarium. **Rival thieves** (Mittens, Luna, Sammy and
+Art Atrium, the Gem & Mineral Hall and the Planetarium. The Heights brings card-reader doors (the
+Millionaire's Mansion), rooftop gaps and wires for Tightrope (the Sky Garden Hotel), glass walls (the
+Glass Tower Auction), guard dogs and water (the Yacht Club) and a vault with a combination (the
+Observatory Estate). **NightClaw's letters** arrive after ten heists and 10,000 Catnip of sales; the
+second opens his challenge museum, the Midnight Museum. **Rival thieves** (Mittens, Luna, Sammy and
 Professor Paws) sometimes race Leo for the centrepiece, with a warning on the lair's rumour board. Each
 level opens when the one before it is cleared. Underneath is M3's progression (save slots, attributes,
 skill trees, lair rooms, the briefing) and the M2 slice (narrator, newspaper, black market).
@@ -73,6 +77,6 @@ tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 | M1 ✓ | Stealth sandbox: light, noise, alert states, cameras, lasers, vents, lockpicking, loot, escape |
 | M2 ✓ (art pending) | Vertical slice: the tutorial level with real art, narrator, calling card and newspaper, black market, lair |
 | M3 ✓ | Progression: attributes, skill trees, lair upgrades, saves |
-| M4 (Old Town ✓, Museum Mile ✓, rivals ✓) | Content: levels 1–25, rivals, all guard types, NightClaw's first letters, the challenge museum |
+| M4 (Old Town ✓, Museum Mile ✓, The Heights ✓, rivals ✓, letters 1–3 ✓, challenge museum ✓) | Content: levels 1–25, rivals, all guard types, NightClaw's first letters, the challenge museum |
 | M5 | Endgame: the NightClaw Challenge, NightClaw's Lair, ending |
 | M6 | Ship: Steam, settings, accessibility, balance and polish |
