@@ -40,23 +40,28 @@ jobs:
           path: site
       # Publishing only happens once GitHub Pages is switched on for this repository
       # (Settings → Pages → Source: GitHub Actions), so the workflow stays green until then.
-      - name: Check whether GitHub Pages is enabled
+      # Publishing needs Pages set to deploy from GitHub Actions. If it's off or set to a branch, try to
+      # switch it with this workflow's token; if GitHub doesn't allow that, say what to change and stay green.
+      - name: Make sure GitHub Pages publishes from Actions
         id: pages
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Publish only when Pages is set to deploy from GitHub Actions. Otherwise say why and stay green.
-          resp=$(curl -s -w '\n%{http_code}' -H "Authorization: Bearer $GH_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/pages")
-          code=$(echo "$resp" | tail -n1)
-          if [ "$code" = "404" ]; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::GitHub Pages is off. Turn it on in Settings → Pages → Source: GitHub Actions to publish the game."
-          elif [ "$code" = "200" ] && ! echo "$resp" | grep -q '"build_type": *"workflow"'; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::GitHub Pages is set to 'Deploy from a branch', which publishes the raw source instead of the built game. Change Settings → Pages → Source to GitHub Actions."
-          else
+          api="https://api.github.com/repos/${{ github.repository }}/pages"
+          call() { curl -s -o /tmp/pages.json -w '%{http_code}' -X "$1" -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" "$api" ${2:+-d "$2"}; }
+          code=$(call GET)
+          echo "Pages: HTTP $code"; cat /tmp/pages.json; echo
+          if [ "$code" = "200" ] && grep -q '"build_type": *"workflow"' /tmp/pages.json; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ "$code" = "404" ]; then try=$(call POST '{"build_type":"workflow"}'); else try=$(call PUT '{"build_type":"workflow"}'); fi
+          echo "Switching to GitHub Actions: HTTP $try"; cat /tmp/pages.json; echo
+          if [ "$try" = "201" ] || [ "$try" = "204" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::GitHub Pages isn't publishing from GitHub Actions, and this workflow isn't allowed to change that. Set Settings → Pages → Source to GitHub Actions."
           fi
 
   deploy:
