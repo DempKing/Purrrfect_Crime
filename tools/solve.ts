@@ -2,7 +2,7 @@
 // exactly. Used while designing levels; the routes it prints go into src/levels/routes.ts, where the
 // tests replay them. Usage: npm run solve -- <level id> [difficulty] [--loot] [--max N]
 import { parseLevel, DIFFICULTIES, type Difficulty, type Level, type Point } from '../src/core/level';
-import { BASE_PERKS, actionsHere, doAction, endTurn, key, leoReach, moveAp, newHeist, pathTo, walkPath, type ActionKind, type Perks, type State } from '../src/core/game';
+import { BASE_PERKS, actionsHere, doAction, endTurn, leoReach, moveAp, newHeist, pathTo, walkPath, type ActionKind, type Perks, type State } from '../src/core/game';
 import type { RouteStep } from '../src/levels/routes';
 import { ALL_LEVELS } from '../src/levels';
 import { readFileSync, writeFileSync } from 'node:fs';
