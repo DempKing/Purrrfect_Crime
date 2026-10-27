@@ -9,7 +9,8 @@
     "dev": "node scripts/build.mjs --dev && npx http-server dist -p 8100 -c-1",
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/test.mjs"
+    "test": "node scripts/test.mjs",
+    "solve": "esbuild tools/solve.ts --bundle --platform=node --outfile=.solve/solve.cjs --log-level=warning && node --max-old-space-size=8000 .solve/solve.cjs"
   },
   "devDependencies": {
     "@types/node": "22.15.0",

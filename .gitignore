@@ -5,3 +5,4 @@ release/
 *.log
 .DS_Store
 steam_appid.txt
+.solve/

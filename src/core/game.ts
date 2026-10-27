@@ -1,6 +1,6 @@
 // The rules of a heist: Leo's action points, movement and actions; light, sight and noise; guards,
 // cameras, lasers and alarms; and the turn order. Pure data in, data out, so it can be unit-tested.
-import { blocksMove, blocksSight, isDuct, tileAt, type Level, type Point, type Tile } from './level';
+import { blocksMove, blocksSight, isDuct, isRafter, tileAt, type GuardKind, type Level, type Point, type Tile } from './level';
 
 export const AP_PER_TURN = 2;
 /** Tiles of movement one action point buys (diagonals cost 1.5). */
@@ -18,9 +18,17 @@ export const LOOK_TURNS = 2;
 /** Turns from an alarm to lockdown. */
 export const ALARM_TURNS = 5;
 export const INVENTORY_SPACES = 6;
-export const NOISE = { marble: 2, dash: 4, pick: 1, smash: 6 };
+export const NOISE = { marble: 2, dash: 4, pick: 1, smash: 6, squeaky: 4, drop: 3 };
 /** Picks needed to open a lock. */
 export const LOCK_PICKS = 2;
+/** Goes needed to crack a safe (quiet, but slow). */
+export const SAFE_CRACKS = 3;
+/** How far guard types see, as a share of a night-watch guard. */
+export const KIND_SIGHT: Record<GuardKind, number> = { watch: 1, sleepy: 1, captain: 1.25, sniffer: 0.6 };
+/** A sniffer smells Leo this many tiles away, through walls (not through vents or from the rafters). */
+export const SCENT_RANGE = 2;
+/** A captain who gets suspicious calls guards within this many tiles. */
+export const CAPTAIN_CALL = 7;
 
 /** Gadgets and active skills: things Leo uses on purpose, most with a few charges per heist. */
 export type Ability = 'bottle-cap' | 'decoy-card' | 'smoke' | 'camera-loop' | 'fuse-kit' | 'emp' | 'pounce' | 'cat-nap';
@@ -36,6 +44,7 @@ export interface Perks {
   blend: boolean; // dim light counts as dark (Shadow: Blend)
   noise: number; // share of the noise Leo makes; Quiet Paws
   casePicks: number; // goes needed to pick a case; Dexterity
+  safeCracks: number; // goes needed to crack a safe; Dexterity
   doorPicks: number; // and a door; Dexterity, Tech: Keycard Clone
   silentPicks: boolean; // Dexterity 5
   spaces: number; // inventory; Pockets
@@ -44,6 +53,7 @@ export interface Perks {
   vanish: boolean; // the first time a guard glimpses Leo, he's gone before it registers (Shadow)
   laserMirror: boolean; // the first laser Leo breaks bounces harmlessly (Tech)
   nineLives: boolean; // the first catch of a heist doesn't count (Acrobat)
+  ceilingClimb: boolean; // the rafters, by the ladders (Acrobat)
   charges: Partial<Record<Ability, number>>; // per heist; pounce is unlimited when owned
 }
 
@@ -54,6 +64,7 @@ export const BASE_PERKS: Perks = {
   blend: false,
   noise: 1,
   casePicks: LOCK_PICKS,
+  safeCracks: SAFE_CRACKS,
   doorPicks: LOCK_PICKS,
   silentPicks: false,
   spaces: INVENTORY_SPACES,
@@ -62,6 +73,7 @@ export const BASE_PERKS: Perks = {
   vanish: false,
   laserMirror: false,
   nineLives: false,
+  ceilingClimb: false,
   charges: {},
 };
 
@@ -81,11 +93,14 @@ export const DIRS: Point[] = [
 ];
 
 export type Light = 0 | 1 | 2; // dark, dim, lit
-export type Layer = 'floor' | 'vent';
+/** Where Leo is: on the floor, in a vent, or up in the rafters. Nobody sees him in the last two. */
+export type Layer = 'floor' | 'vent' | 'rafter';
 export type GuardMode = 'patrol' | 'suspicious' | 'searching';
 
 export interface Guard {
   name: string;
+  kind: GuardKind;
+  asleep: boolean; // a sleepy guard at his post
   x: number;
   y: number;
   facing: number; // index into DIRS
@@ -157,10 +172,12 @@ export function newHeist(level: Level, perks: Perks = BASE_PERKS): State {
     turn: 1,
     guards: level.guards.map((g) => ({
       name: g.name,
+      kind: g.kind ?? 'watch',
+      asleep: g.kind === 'sleepy',
       x: g.start.x,
       y: g.start.y,
       facing: faceToward(g.start, g.route[0]),
-      route: g.route.map((p) => ({ ...p })),
+      route: g.kind === 'sleepy' ? [{ ...g.start }] : g.route.map((p) => ({ ...p })),
       target: 0,
       mode: 'patrol',
       meter: 0,
@@ -263,11 +280,23 @@ export function lightAt(level: Level, x: number, y: number): Light {
   return lightMap(level)[y]?.[x] ?? 0;
 }
 
+/** Where each spotlight's circle is this turn. */
+export function spotlightsNow(level: Level, s: State): { at: Point; radius: number }[] {
+  return level.spotlights.map((sp) => ({ at: sp.path[(s.turn - 1) % sp.path.length], radius: sp.radius }));
+}
+
+/** The light on a tile right now: the level's lamps and moonlight, plus any spotlight passing over it. */
+export function lightNow(level: Level, s: State, x: number, y: number): Light {
+  for (const sp of spotlightsNow(level, s)) if (Math.hypot(x - sp.at.x, y - sp.at.y) <= sp.radius + 0.01) return 2;
+  return lightAt(level, x, y);
+}
+
 // ---------------------------------------------------------------------------------------------
 // Movement
 
 function walkable(level: Level, s: State, layer: Layer, x: number, y: number): boolean {
   if (layer === 'vent') return isDuct(level, x, y);
+  if (layer === 'rafter') return isRafter(level, x, y);
   return !blocksMove(tileNow(level, s, x, y));
 }
 
@@ -382,15 +411,15 @@ function inCone(from: Point, facing: number, x: number, y: number, range: number
  * neither helps an empty display case, which is what `thing` is for.
  */
 function sightRange(level: Level, s: State, x: number, y: number, thing: boolean): number {
-  const light = lightAt(level, x, y);
+  const light = lightNow(level, s, x, y);
   if (thing) return rangeFor(light);
   return rangeFor(s.perks.blend && light === 1 ? 0 : light) * s.perks.sight;
 }
 
 /** Whether a guard can make out Leo (or, with `thing`, an object) at x,y, given the light there. */
-export function guardSees(level: Level, s: State, g: { x: number; y: number; facing: number }, x: number, y: number, thing = false): boolean {
-  if (inSmoke(s, x, y)) return false;
-  if (!inCone(g, g.facing, x, y, sightRange(level, s, x, y, thing))) return false;
+export function guardSees(level: Level, s: State, g: { x: number; y: number; facing: number; kind?: GuardKind; asleep?: boolean }, x: number, y: number, thing = false): boolean {
+  if (g.asleep || inSmoke(s, x, y)) return false;
+  if (!inCone(g, g.facing, x, y, sightRange(level, s, x, y, thing) * KIND_SIGHT[g.kind ?? 'watch'])) return false;
   return clearLine(level, g, { x, y }, blocksSight, s);
 }
 
@@ -404,11 +433,14 @@ export function cameraSees(level: Level, s: State, c: Camera, x: number, y: numb
 /** Tiles a guard would see Leo on (cone, walls and light all considered), for drawing. */
 export function guardView(level: Level, s: State, g: Guard): Set<string> {
   const out = new Set<string>();
-  const r = SIGHT_RANGE.lit;
+  if (g.asleep) return out;
+  const r = Math.ceil(SIGHT_RANGE.lit * KIND_SIGHT[g.kind]);
   for (let y = g.y - r; y <= g.y + r; y++)
     for (let x = g.x - r; x <= g.x + r; x++) {
       if (blocksSight(tileNow(level, s, x, y))) continue;
       if (guardSees(level, s, g, x, y)) out.add(key(x, y));
+      // A sniffer's nose works through walls.
+      else if (g.kind === 'sniffer' && Math.hypot(x - g.x, y - g.y) <= SCENT_RANGE + 0.01 && !blocksMove(tileNow(level, s, x, y))) out.add(key(x, y));
     }
   return out;
 }
@@ -460,8 +492,9 @@ function spotted(level: Level, s: State, g: Guard, p: Point): boolean {
   }
   s.seen = true;
   const close = Math.hypot(p.x - g.x, p.y - g.y) <= 2;
-  if (g.mode === 'searching' || g.meter >= 1 || close || lightAt(level, p.x, p.y) === 2) {
-    return catchLeo(s, g.name, close ? 'right in front of him' : lightAt(level, p.x, p.y) === 2 ? 'in the light' : 'a second time');
+  const lit = lightNow(level, s, p.x, p.y) === 2;
+  if (g.mode === 'searching' || g.meter >= 1 || close || lit) {
+    return catchLeo(s, g.name, close ? 'right in front of him' : lit ? 'in the light' : 'a second time');
   }
   g.meter = 1;
   g.mode = 'suspicious';
@@ -469,7 +502,40 @@ function spotted(level: Level, s: State, g: Guard, p: Point): boolean {
   g.look = LOOK_TURNS;
   g.facing = faceToward(g, p);
   s.log.push(`${g.name} glimpsed something in the shadows.`);
+  captainCalls(s, g, p);
   return false;
+}
+
+/** A sniffer within scent range of Leo: suspicious at first, and a catch if he's already sniffing or right there. */
+function smelled(s: State, g: Guard, p: Point): boolean {
+  if (s.perks.vanish && !s.used.vanish) {
+    s.used.vanish = true;
+    s.log.push(`Vanish! ${g.name} sniffs the air and shrugs.`);
+    return false;
+  }
+  s.seen = true;
+  if (g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 1.5) return catchLeo(s, g.name, 'sniffed him out');
+  g.meter = 1;
+  g.mode = 'suspicious';
+  g.point = { ...p };
+  g.look = LOOK_TURNS;
+  s.log.push(`${g.name} sniffs… and smells cat.`);
+  return false;
+}
+
+const canSmell = (s: State, g: Guard, p: Point) => g.kind === 'sniffer' && !g.asleep && g.dazed <= 0 && s.layer === 'floor' && s.napTurns <= 0 && Math.hypot(p.x - g.x, p.y - g.y) <= SCENT_RANGE + 0.01;
+
+/** A suspicious captain whistles up the guards near him to look too. */
+function captainCalls(s: State, g: Guard, p: Point): void {
+  if (g.kind !== 'captain') return;
+  for (const o of s.guards) {
+    if (o === g || o.mode === 'searching' || Math.hypot(o.x - g.x, o.y - g.y) > CAPTAIN_CALL) continue;
+    if (o.mode === 'patrol') s.log.push(`${g.name} whistles: ${o.name} comes to help.`);
+    o.asleep = false;
+    o.mode = 'suspicious';
+    o.point = { ...p };
+    o.look = Math.max(o.look, LOOK_TURNS);
+  }
 }
 
 export function triggerAlarm(s: State, p: Point, why: string): void {
@@ -479,6 +545,7 @@ export function triggerAlarm(s: State, p: Point, why: string): void {
     s.log.push(`Alarm! ${why}. Lockdown in ${ALARM_TURNS} turns.`);
   }
   for (const g of s.guards) {
+    g.asleep = false;
     g.mode = 'searching';
     g.point = { ...p };
     g.look = 3;
@@ -490,6 +557,7 @@ function checkExposure(level: Level, s: State, p: Point): void {
   if (s.layer !== 'floor' || s.status !== 'playing' || s.napTurns > 0) return;
   for (const g of s.guards) {
     if (g.dazed <= 0 && guardSees(level, s, g, p.x, p.y) && spotted(level, s, g, p)) return;
+    if (canSmell(s, g, p) && smelled(s, g, p)) return;
   }
   for (const c of s.cameras)
     if (cameraSees(level, s, c, p.x, p.y)) {
@@ -526,10 +594,13 @@ export function makeNoise(level: Level, s: State, p: Point, r: number, fromLeo =
   s.noises.push({ x: p.x, y: p.y, r });
   for (const g of s.guards) {
     if (hearingDistance(level, s, p, g, r) > r) continue;
-    if (g.mode === 'patrol') s.log.push(`${g.name} heard something.`);
+    if (g.asleep) s.log.push(`${g.name} wakes with a snort.`);
+    else if (g.mode === 'patrol') s.log.push(`${g.name} heard something.`);
+    g.asleep = false;
     if (g.mode !== 'searching') g.mode = 'suspicious';
     g.point = { ...p };
     g.look = Math.max(g.look, LOOK_TURNS);
+    captainCalls(s, g, p);
   }
 }
 
@@ -560,9 +631,14 @@ export function moveLeo(level: Level, s: State, to: Point): MoveResult {
   if (!path || path.length < 2) return { ok: false, path: [], reason: 'Leo can’t get there this turn.' };
   const cost = moveAp(s, reach.cost.get(key(to.x, to.y))!);
   if (cost > s.ap) return { ok: false, path: [], reason: 'Not enough action points.' };
+  return walkPath(level, s, path, cost);
+}
+
+/** Walks a path already known to be reachable for `cost` action points (moveLeo works it out first). */
+export function walkPath(level: Level, s: State, path: Point[], cost: number): MoveResult {
   s.ap -= cost;
   // Ghost Step: the first move of the heist that would make a sound makes none.
-  const noisy = s.layer === 'floor' && (cost === 2 || path.slice(1).some((p) => tileNow(level, s, p.x, p.y) === 'marble'));
+  const noisy = s.layer === 'floor' && (cost === 2 || path.slice(1).some((p) => ['marble', 'squeaky'].includes(tileNow(level, s, p.x, p.y))));
   const ghost = noisy && s.perks.ghostStep && !s.used.ghostStep;
   if (ghost) {
     s.used.ghostStep = true;
@@ -576,6 +652,10 @@ export function moveLeo(level: Level, s: State, to: Point): MoveResult {
       const t = tileNow(level, s, p.x, p.y);
       if (t === 'laser' && lasersActive(level, s)) breakLaser(s, p, 'Leo broke a laser beam');
       if (t === 'marble' && !ghost) makeNoise(level, s, p, NOISE.marble);
+      if (t === 'squeaky' && !ghost) {
+        makeNoise(level, s, p, NOISE.squeaky);
+        s.log.push('Creeeak!');
+      }
     }
     const saved = s.used.nineLives;
     checkExposure(level, s, p);
@@ -594,7 +674,7 @@ export function moveLeo(level: Level, s: State, to: Point): MoveResult {
 // ---------------------------------------------------------------------------------------------
 // Actions: picking locks, smashing glass, panels, vents
 
-export type ActionKind = 'pick-case' | 'smash-case' | 'take' | 'pick-door' | 'panel' | 'fuse' | 'enter-vent' | 'exit-vent';
+export type ActionKind = 'pick-case' | 'smash-case' | 'take' | 'crack-safe' | 'pick-door' | 'panel' | 'fuse' | 'enter-vent' | 'exit-vent' | 'climb-up' | 'climb-down' | 'drop';
 
 export interface Action {
   kind: ActionKind;
@@ -616,8 +696,13 @@ export function actionsHere(level: Level, s: State): Action[] {
   const L = s.leo;
   if (s.layer === 'vent') {
     if (tileAt(level, L.x, L.y) === 'grate') out.push({ kind: 'exit-vent', at: L, label: 'Climb out of the vent', ap: 1, noise: 0 });
+  } else if (s.layer === 'rafter') {
+    const below = tileNow(level, s, L.x, L.y);
+    if (below === 'ladder') out.push({ kind: 'climb-down', at: L, label: 'Climb down the ladder', ap: 1, noise: 0 });
+    else if (!blocksMove(below) && !guardTiles(s).has(key(L.x, L.y))) out.push({ kind: 'drop', at: L, label: 'Drop to the floor', ap: 1, noise: NOISE.drop });
   } else {
     if (tileAt(level, L.x, L.y) === 'grate') out.push({ kind: 'enter-vent', at: L, label: 'Climb into the vent', ap: 1, noise: 0 });
+    if (tileAt(level, L.x, L.y) === 'ladder') out.push({ kind: 'climb-up', at: L, label: 'Climb up to the rafters', ap: 1, noise: 0, blocked: s.perks.ceilingClimb ? undefined : 'Needs the Ceiling Climb skill (Acrobat).' });
     for (let y = L.y - 1; y <= L.y + 1; y++)
       for (let x = L.x - 1; x <= L.x + 1; x++) {
         const p = { x, y };
@@ -635,6 +720,10 @@ export function actionsHere(level: Level, s: State): Action[] {
             out.push({ kind: 'pick-case', at: p, label: s.perks.casePicks > 1 ? `Pick the case lock (${done}/${s.perks.casePicks})` : `Pick the lock and take the ${loot.name}`, ap: 1, noise: s.perks.silentPicks ? 0 : NOISE.pick, blocked: noRoom });
             out.push({ kind: 'smash-case', at: p, label: `Smash the glass and grab the ${loot.name}`, ap: 1, noise: NOISE.smash, blocked: noRoom });
           }
+        }
+        if (t === 'safe' && loot && !taken) {
+          const done = s.picks[k] ?? 0;
+          out.push({ kind: 'crack-safe', at: p, label: s.perks.safeCracks > 1 ? `Crack the safe (${done}/${s.perks.safeCracks})` : `Crack the safe and take the ${loot.name}`, ap: 1, noise: 0, blocked: noRoom });
         }
         if (t === 'plinth' && loot && !taken) out.push({ kind: 'take', at: p, label: `Take ${loot.name}`, ap: 1, noise: 0, blocked: noRoom });
         if (t === 'door' && near4(L, p)) out.push({ kind: 'pick-door', at: p, label: s.perks.doorPicks > 1 ? `Pick the door lock (${s.picks[k] ?? 0}/${s.perks.doorPicks})` : 'Open the door', ap: 1, noise: s.perks.silentPicks ? 0 : NOISE.pick });
@@ -699,6 +788,28 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
       s.layer = 'floor';
       checkExposure(level, s, s.leo);
       break;
+    case 'crack-safe':
+      s.picks[k] = (s.picks[k] ?? 0) + 1;
+      if (s.picks[k] >= s.perks.safeCracks) {
+        s.smashed.push(k); // open and empty: a disturbance like any other
+        s.log.push('The last tumbler falls. The safe swings open.');
+        take(level, s, at);
+      } else s.log.push('Click… click… one tumbler down.');
+      break;
+    case 'climb-up':
+      s.layer = 'rafter';
+      s.log.push('Up into the rafters. Nobody looks up.');
+      break;
+    case 'climb-down':
+      s.layer = 'floor';
+      checkExposure(level, s, s.leo);
+      break;
+    case 'drop':
+      s.layer = 'floor';
+      s.log.push('Thump!');
+      makeNoise(level, s, s.leo, NOISE.drop);
+      checkExposure(level, s, s.leo);
+      break;
   }
   return true;
 }
@@ -750,7 +861,7 @@ export function abilities(level: Level, s: State): AbilityInfo[] {
     if (s.status !== 'playing') a.blocked = 'The heist is over.';
     else if (left <= 0) a.blocked = 'None left this heist.';
     else if (s.ap < a.ap) a.blocked = 'Not enough action points.';
-    else if (s.layer === 'vent' && kind !== 'cat-nap') a.blocked = 'Not from inside a vent.';
+    else if (s.layer !== 'floor' && kind !== 'cat-nap') a.blocked = s.layer === 'vent' ? 'Not from inside a vent.' : 'Not from up in the rafters.';
     else if (a.target !== 'self' && abilityTargets(level, s, kind).size === 0) a.blocked = 'Nothing in reach.';
     out.push(a);
   }
@@ -934,6 +1045,13 @@ function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
       g.dazed--; // the footprint preview runs on a copy, so this is safe there too
       continue;
     }
+    if (g.asleep) continue;
+    // A sleepy guard who has settled back at his post nods off again.
+    if (g.kind === 'sleepy' && g.mode === 'patrol' && g.x === g.route[0].x && g.y === g.route[0].y) {
+      g.asleep = true;
+      if (!dry) s.log.push(`${g.name} settles back in his chair and nods off.`);
+      continue;
+    }
     let sawLeo = false;
     const steps = g.mode === 'searching' ? SEARCH_STEPS : GUARD_STEPS;
     for (let i = 0; i < steps && s.status === 'playing'; i++) {
@@ -971,6 +1089,11 @@ function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
         sawLeo = true;
         spotted(level, s, g, s.leo);
         break; // either caught, or stops to stare
+      }
+      if (canSmell(s, g, s.leo)) {
+        sawLeo = true;
+        smelled(s, g, s.leo);
+        break;
       }
       for (const d of disturbances(level, s)) {
         const k = key(d.x, d.y);
@@ -1044,8 +1167,10 @@ export function danger(level: Level, s: State, p: Point): 0 | 1 | 2 {
   if (tileNow(level, s, p.x, p.y) === 'laser' && lasersActive(level, s)) worst = 2;
   for (const c of s.cameras) if (cameraSees(level, s, c, p.x, p.y)) worst = 2;
   for (const g of s.guards) {
-    if (g.dazed > 0 || !guardSees(level, s, g, p.x, p.y)) continue;
-    const caught = g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 2 || lightAt(level, p.x, p.y) === 2;
+    if (g.dazed > 0) continue;
+    if (canSmell(s, g, p)) worst = g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 1.5 ? 2 : (Math.max(worst, 1) as 0 | 1 | 2);
+    if (!guardSees(level, s, g, p.x, p.y)) continue;
+    const caught = g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 2 || lightNow(level, s, p.x, p.y) === 2;
     worst = caught ? 2 : Math.max(worst, 1) as 0 | 1 | 2;
   }
   return worst;

@@ -63,7 +63,7 @@ export const ATTRIBUTES: AttributeInfo[] = [
   { id: 'agility', name: 'Agility', blurb: 'Further moves and quicker crawling.', ranks: ['+1 tile per action point', 'Crawl through vents faster', '+1 tile per action point', 'Crawl through vents faster', '+1 tile per action point'] },
   { id: 'stealth', name: 'Stealth', blurb: 'Harder to make out: guards and cameras see Leo from less far away.', ranks: ['Seen from 7% less far', 'Seen from 14% less far', 'Seen from 21% less far', 'Seen from 28% less far', 'Seen from 35% less far'] },
   { id: 'quietPaws', name: 'Quiet Paws', blurb: 'Less noise from everything Leo does.', ranks: ['12% quieter', '24% quieter', '36% quieter', '48% quieter', '60% quieter'] },
-  { id: 'dexterity', name: 'Dexterity', blurb: 'Faster, quieter lockpicking.', ranks: ['Cases open in one go', 'Doors open in one go', 'Picking a lock makes no sound'] },
+  { id: 'dexterity', name: 'Dexterity', blurb: 'Faster, quieter lockpicking.', ranks: ['Cases open in one go, safes in one go less', 'Doors open in one go', 'Picking a lock makes no sound'] },
   { id: 'pockets', name: 'Pockets', blurb: 'More inventory space.', ranks: ['+1 inventory space', '+1 inventory space', '+1 inventory space', '+1 inventory space'] },
   { id: 'perception', name: 'Perception', blurb: 'Read the guards further ahead: their footprints show more turns.', ranks: ['Footprints 1 more turn ahead', 'Footprints 1 more turn ahead'] },
 ];
@@ -146,7 +146,7 @@ export const SKILLS: SkillInfo[] = [
   { id: 'fuse-kit', tree: 'tech', name: 'Fuse Kit', text: 'Once a heist, short every laser in the building for three turns, from anywhere.', level: 11, cost: 1400, requires: 'keycard-clone' },
   { id: 'emp-collar', tree: 'tech', name: 'EMP Collar', text: 'Once a heist, knock out every camera within 5 tiles, and all the lasers, for two turns.', level: 18, cost: 2800, requires: 'fuse-kit' },
   { id: 'pounce', tree: 'acrobat', name: 'Pounce', text: 'Leap two tiles in a straight line, over a laser, a case or a lamp, without a sound. 1 action point, any number of times.', level: 3, cost: 400 },
-  { id: 'ceiling-climb', tree: 'acrobat', name: 'Ceiling Climb', text: 'Crawl along the rafters as a second route.', level: 6, cost: 800, requires: 'pounce', later: 'Arrives with the rafters in the Old Town levels.' },
+  { id: 'ceiling-climb', tree: 'acrobat', name: 'Ceiling Climb', text: 'Climb the ladders into the rafters and walk the beams where nobody looks. Drop down anywhere (thump), or climb down a ladder quietly.', level: 6, cost: 800, requires: 'pounce' },
   { id: 'tightrope', tree: 'acrobat', name: 'Tightrope', text: 'Cross gaps on wires and beams.', level: 9, cost: 1100, requires: 'pounce', later: 'Arrives with the rooftop levels.' },
   { id: 'cat-nap', tree: 'acrobat', name: 'Cat Nap', text: 'Once a heist, curl up in a shadow: for two turns no guard notices Leo unless they trip over him.', level: 15, cost: 2200, requires: 'pounce' },
   { id: 'nine-lives', tree: 'acrobat', name: 'Nine Lives', text: 'Once a heist, getting caught doesn’t count: Leo wriggles free (or jams the lockdown for three more turns). Not on Legendary.', level: 25, cost: 4000, requires: 'cat-nap' },
@@ -289,6 +289,7 @@ export function perksFor(p: Profile): Perks {
     blend: has('blend'),
     noise: Math.round((1 - 0.12 * a.quietPaws) * 100) / 100,
     casePicks: a.dexterity >= 1 ? 1 : BASE_PERKS.casePicks,
+    safeCracks: BASE_PERKS.safeCracks - (a.dexterity >= 1 ? 1 : 0),
     doorPicks: a.dexterity >= 2 || has('keycard-clone') ? 1 : BASE_PERKS.doorPicks,
     silentPicks: a.dexterity >= 3,
     spaces: BASE_PERKS.spaces + a.pockets,
@@ -297,6 +298,7 @@ export function perksFor(p: Profile): Perks {
     vanish: has('vanish'),
     laserMirror: has('laser-mirror'),
     nineLives: has('nine-lives') && DIFFICULTY[p.difficulty].nineLives,
+    ceilingClimb: has('ceiling-climb'),
     charges,
   };
 }

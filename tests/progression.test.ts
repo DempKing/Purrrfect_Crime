@@ -335,7 +335,7 @@ test('skills need their level, the one before them in the tree, and Catnip', () 
   assert.match(canLearn(p, 'ghost-step')!, /Blend first/);
   assert.ok(learn(p, 'blend'));
   assert.match(canLearn(p, 'ghost-step')!, /level 4/);
-  assert.match(canLearn(p, 'ceiling-climb')!, /Arrives/);
+  assert.match(canLearn(p, 'tightrope')!, /Arrives/);
   p.catnip = 0;
   p.xp = xpForLevel(4);
   assert.match(canLearn(p, 'ghost-step')!, /Catnip/);
