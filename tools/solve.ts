@@ -1,7 +1,7 @@
 // Finds a winning route through a level: best-first search over Leo's choices, simulating the guards
-// exactly. Used while designing levels; the routes it prints go into src/levels/routes.ts, where the
-// tests replay them. Usage: npm run solve -- <level id> [difficulty] [--loot] [--max N]
-import { parseLevel, DIFFICULTIES, type Difficulty, type Level, type Point } from '../src/core/level';
+// exactly. Used while designing levels; with --write the route is saved to src/levels/solutions.ts, where the
+// tests replay it. Usage: npm run solve -- <level id> [--clean] [--write] [--loot] [--max N] [--debug]
+import { parseLevel, type Level, type Point } from '../src/core/level';
 import { BASE_PERKS, actionsHere, doAction, endTurn, leoReach, moveAp, newHeist, pathTo, walkPath, type ActionKind, type Perks, type State } from '../src/core/game';
 import type { RouteStep } from '../src/levels/routes';
 import { ALL_LEVELS } from '../src/levels';
@@ -10,19 +10,14 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const SOLUTIONS_FILE = 'src/levels/solutions.ts';
 
 /** Saves a route into the generated solutions file, keeping the others. */
-function writeSolution(levelId: string, difficulty: Difficulty, plan: RouteStep[][]): void {
+function writeSolution(levelId: string, plan: RouteStep[][]): void {
   const text = readFileSync(SOLUTIONS_FILE, 'utf8');
   const a = text.indexOf('/* BEGIN */') + '/* BEGIN */'.length;
   const b = text.indexOf('/* END */');
-  const all = JSON.parse(text.slice(a, b)) as Record<string, Record<string, RouteStep[][]>>;
-  (all[levelId] ??= {})[difficulty] = plan;
+  const all = JSON.parse(text.slice(a, b)) as Record<string, RouteStep[][]>;
+  all[levelId] = plan;
   // One turn per line, so the routes read like the ones in routes.ts.
-  const body =
-    '{\n' +
-    Object.entries(all)
-      .map(([id, byDiff]) => `  ${JSON.stringify(id)}: {\n` + Object.entries(byDiff).map(([d, plan]) => `    ${JSON.stringify(d)}: [\n` + plan.map((t) => `      ${JSON.stringify(t)}`).join(',\n') + '\n    ]').join(',\n') + '\n  }')
-      .join(',\n') +
-    '\n}';
+  const body = '{\n' + Object.entries(all).map(([id, plan]) => `  ${JSON.stringify(id)}: [\n` + plan.map((t) => `    ${JSON.stringify(t)}`).join(',\n') + '\n  ]').join(',\n') + '\n}';
   writeFileSync(SOLUTIONS_FILE, text.slice(0, a) + ' ' + body + ' ' + text.slice(b));
 }
 
@@ -122,14 +117,14 @@ let period = 1;
 function stateKey(s: State): string {
   return JSON.stringify([
     s.leo.x, s.leo.y, s.layer, s.ap, s.turn % period, [...s.inventory].sort(), s.picks, s.openDoors, s.camerasOff, s.lasersOff, s.alarm,
-    s.guards.map((g) => [g.x, g.y, g.facing, g.mode, g.target, g.point?.x, g.point?.y, g.look, g.meter, g.asleep, g.dazed]),
+    s.guards.map((g) => [g.x, g.y, g.facing, g.mode, g.target, g.point?.x, g.point?.y, g.look, g.meter, g.asleep]),
     s.cameras.map((c) => c.idx),
   ]);
 }
 
 const USEFUL: ActionKind[] = ['pick-door', 'panel', 'fuse', 'enter-vent', 'exit-vent', 'climb-up', 'climb-down', 'drop'];
 
-export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?: number; clean?: boolean } = {}): { plan: RouteStep[][]; s: State; expanded: number } | null {
+export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?: number; clean?: boolean; weight?: number; turns?: number } = {}): { plan: RouteStep[][]; s: State; expanded: number } | null {
   const centre = level.def.loot.findIndex((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y);
   if (centre < 0) throw new Error('no centrepiece');
   const c = level.def.loot[centre].at;
@@ -159,6 +154,7 @@ export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?:
     const push = (s: State, step: RouteStep | null) => {
       if (s.status === 'caught') return;
       if (opts.clean && (s.seen || s.alarmRaised)) return;
+      if (s.turn > (opts.turns ?? 60)) return; // no endless waiting
       s.log = [];
       s.noises = [];
       const k = stateKey(s);
@@ -167,7 +163,7 @@ export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?:
       const gg = (s.turn - 1) * 2 + (2 - s.ap);
       // Alarms and sightings cost a little, so cleaner routes come first.
       const penalty = (s.alarmRaised ? 3 : 0) + (s.seen ? 2 : 0);
-      open.push({ s, parent: n, step, f: gg + 1.6 * h(s) + penalty });
+      open.push({ s, parent: n, step, f: gg + (opts.weight ?? 1.6) * h(s) + penalty });
     };
     if (n.s.status === 'escaped') {
       const plan = planOf(n);
@@ -223,17 +219,14 @@ if (args.length) {
   const id = args[0];
   const def = ALL_LEVELS.find((l) => l.id === id || l.id.includes(id));
   if (!def) throw new Error(`no level ${id}: ${ALL_LEVELS.map((l) => l.id).join(', ')}`);
-  const diffs = (args[1] && !args[1].startsWith('--') ? [args[1]] : DIFFICULTIES) as Difficulty[];
   const max = args.includes('--max') ? Number(args[args.indexOf('--max') + 1]) : undefined;
-  for (const d of diffs) {
-    const t0 = Date.now();
-    const r = solve(parseLevel(def, d), { loot: args.includes('--loot'), max, clean: args.includes('--clean') });
-    if (!r) {
-      console.log(`${def.id} ${d}: NO ROUTE FOUND (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
-      continue;
-    }
-    console.log(`${def.id} ${d}: escaped on turn ${r.s.turn}, seen ${r.s.seen}, alarm ${r.s.alarmRaised}, ${r.expanded} states, ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+  const t0 = Date.now();
+  const num = (flag: string) => (args.includes(flag) ? Number(args[args.indexOf(flag) + 1]) : undefined);
+  const r = solve(parseLevel(def), { loot: args.includes('--loot'), max, clean: args.includes('--clean'), weight: num('--weight'), turns: num('--turns') });
+  if (!r) console.log(`${def.id}: NO ROUTE FOUND (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
+  else {
+    console.log(`${def.id}: escaped on turn ${r.s.turn}, seen ${r.s.seen}, alarm ${r.s.alarmRaised}, ${r.expanded} states, ${((Date.now() - t0) / 1000).toFixed(1)}s`);
     console.log(formatRoute(r.plan));
-    if (args.includes('--write')) writeSolution(def.id, d, r.plan);
+    if (args.includes('--write')) writeSolution(def.id, r.plan);
   }
 }

@@ -10,6 +10,7 @@ import type { LevelDef } from '../core/level';
  */
 export const COIN_MUSEUM: LevelDef = {
   id: 'l1-coin-museum',
+  rivalEntrances: [{ x: 24, y: 1 }, { x: 15, y: 1 }], // the office skylight, a hall window
   tip: 'Barnaby is a sleepy guard: he sees nothing while he dozes, but noise wakes him. The brown floorboards creak loudly. The safe is slow to crack (three goes) but silent.',
   name: 'The Cobblestone Coin Museum',
   objective: 'Lift the Double Doubloon from the vault and get back out through the street door. The curator keeps something in his safe, too.',
@@ -55,27 +56,23 @@ export const COIN_MUSEUM: LevelDef = {
     { at: { x: 10, y: 1 }, radius: 2 },
     { at: { x: 14, y: 6 }, radius: 2 },
   ],
-  moonlight: [{ x: 6, y: 4, w: 5, h: 3 }],
+  moonlight: [
+    { x: 6, y: 4, w: 5, h: 3 },
+    { x: 17, y: 1, w: 8, h: 5 },
+  ],
   // In the vault, looking up the passage on odd turns and across the plinth on even ones.
-  cameras: [{ at: { x: 18, y: 9 }, sweep: [6, 1], range: 5 }],
-  checkpoint: { x: 16, y: 7 }, // the passage into the vault
+  cameras: [
+    { at: { x: 18, y: 9 }, sweep: [6, 1], range: 5 },
+    { at: { x: 8, y: 7 }, sweep: [6, 7, 6, 5], range: 5 },
+    { at: { x: 22, y: 4 }, sweep: [4, 3], range: 5 },
+  ],
   guards: [
     { name: 'Barnaby', kind: 'sleepy', start: { x: 4, y: 12 }, route: [{ x: 3, y: 12 }] },
     { name: 'Rex', start: { x: 2, y: 2 }, route: [{ x: 15, y: 2 }, { x: 15, y: 7 }, { x: 2, y: 7 }, { x: 2, y: 2 }] },
     { name: 'Duke', start: { x: 18, y: 13 }, route: [{ x: 23, y: 13 }, { x: 23, y: 9 }, { x: 18, y: 9 }, { x: 18, y: 13 }] },
+    { name: 'Mack', start: { x: 2, y: 6 }, route: [{ x: 13, y: 6 }, { x: 2, y: 6 }] },
+    { name: 'Spike', start: { x: 1, y: 11 }, route: [{ x: 6, y: 11 }, { x: 6, y: 14 }, { x: 1, y: 14 }, { x: 1, y: 11 }] },
   ],
-  extras: {
-    // A camera sweeps the moonlit middle of the coin hall.
-    professional: { cameras: [{ at: { x: 8, y: 7 }, sweep: [6, 7, 6, 5], range: 5 }] },
-    // Mack keeps watch along the hall's south side, and the office gets a camera.
-    mastermind: {
-      guards: [{ name: 'Mack', start: { x: 2, y: 6 }, route: [{ x: 13, y: 6 }, { x: 2, y: 6 }] }],
-      cameras: [{ at: { x: 22, y: 4 }, sweep: [4, 3], range: 5 }],
-      moonlight: [{ x: 17, y: 1, w: 8, h: 5 }],
-    },
-    // Spike walks the foyer, between Leo and the street door.
-    legendary: { guards: [{ name: 'Spike', start: { x: 1, y: 11 }, route: [{ x: 6, y: 11 }, { x: 6, y: 14 }, { x: 1, y: 14 }, { x: 1, y: 11 }] }] },
-  },
   loot: [
     { at: { x: 21, y: 11 }, name: 'Double Doubloon', value: 5200, space: 2, category: 'curiosity' },
     { at: { x: 23, y: 1 }, name: 'The Mint Ledger', value: 2600, space: 1, category: 'artefact' },
@@ -96,6 +93,7 @@ export const COIN_MUSEUM: LevelDef = {
  */
 export const CLOCKTOWER: LevelDef = {
   id: 'l2-clocktower',
+  rivalEntrances: [{ x: 26, y: 15 }, { x: 7, y: 3 }], // the back corridor, the hall's high window
   tip: 'Big Ben is a captain: he sees further, and when he gets suspicious he whistles nearby guards over to help. With Ceiling Climb (Acrobat), the ladders lead up to the rafters.',
   name: 'The Clocktower Archive',
   objective: 'Take the Brass Astrolabe from the clock chamber and leave by the back door.',
@@ -147,18 +145,17 @@ export const CLOCKTOWER: LevelDef = {
     { x: 22, y: 1, w: 3, h: 3 }, // the clock face, lit from behind
     { x: 7, y: 7, w: 14, h: 2 }, // tall windows down the hall
   ],
-  cameras: [{ at: { x: 26, y: 11 }, sweep: [3, 4], range: 5 }],
-  checkpoint: { x: 20, y: 12 },
+  cameras: [
+    { at: { x: 26, y: 11 }, sweep: [3, 4], range: 5 },
+    { at: { x: 7, y: 9 }, sweep: [0, 7, 0, 1], range: 6 },
+  ],
   guards: [
     { name: 'Big Ben', kind: 'captain', start: { x: 8, y: 4 }, route: [{ x: 20, y: 4 }, { x: 20, y: 14 }, { x: 8, y: 14 }, { x: 8, y: 4 }] },
     { name: 'Tick', start: { x: 14, y: 5 }, route: [{ x: 14, y: 12 }, { x: 14, y: 5 }] },
     { name: 'Tock', kind: 'sleepy', start: { x: 25, y: 6 }, route: [{ x: 24, y: 6 }] },
+    { name: 'Chime', start: { x: 23, y: 2 }, route: [{ x: 26, y: 2 }, { x: 26, y: 9 }, { x: 23, y: 9 }, { x: 23, y: 2 }] },
+    { name: 'Gong', start: { x: 22, y: 15 }, route: [{ x: 26, y: 15 }, { x: 26, y: 12 }, { x: 22, y: 12 }, { x: 22, y: 15 }] },
   ],
-  extras: {
-    professional: { cameras: [{ at: { x: 7, y: 9 }, sweep: [0, 7, 0, 1], range: 6 }] },
-    mastermind: { guards: [{ name: 'Chime', start: { x: 23, y: 2 }, route: [{ x: 26, y: 2 }, { x: 26, y: 9 }, { x: 23, y: 9 }, { x: 23, y: 2 }] }] },
-    legendary: { guards: [{ name: 'Gong', start: { x: 22, y: 15 }, route: [{ x: 26, y: 15 }, { x: 26, y: 12 }, { x: 22, y: 12 }, { x: 22, y: 15 }] }] },
-  },
   loot: [
     { at: { x: 24, y: 4 }, name: 'Brass Astrolabe', value: 6400, space: 2, category: 'artefact' },
   ],
@@ -172,6 +169,7 @@ export const CLOCKTOWER: LevelDef = {
  */
 export const PAWNBROKER: LevelDef = {
   id: 'l3-pawnbroker',
+  rivalEntrances: [{ x: 24, y: 3 }, { x: 1, y: 14 }], // the far end of the top hall, a shop window
   tip: 'Biscuit is a sniffer: short-sighted, but he smells Leo through walls from two tiles away. The lasers in the top hall pulse: off every other turn.',
   name: 'The Pawnbroker Penthouse',
   objective: 'Get the Pawned Tiara out of the owner’s vault, and out by the fire escape. The safes are worth a look.',
@@ -205,17 +203,16 @@ export const PAWNBROKER: LevelDef = {
     { x: 1, y: 5, w: 14, h: 2 }, // the shop windows
     { x: 16, y: 11, w: 9, h: 4 }, // a skylight in the vault
   ],
-  cameras: [{ at: { x: 24, y: 11 }, sweep: [3, 4, 5, 4], range: 5 }],
-  checkpoint: { x: 15, y: 7 },
+  cameras: [
+    { at: { x: 24, y: 11 }, sweep: [3, 4, 5, 4], range: 5 },
+    { at: { x: 1, y: 5 }, sweep: [1, 0, 1, 2], range: 6 },
+  ],
   guards: [
     { name: 'Lou', start: { x: 2, y: 8 }, route: [{ x: 13, y: 8 }, { x: 13, y: 13 }, { x: 2, y: 13 }, { x: 2, y: 8 }] },
     { name: 'Biscuit', kind: 'sniffer', start: { x: 17, y: 6 }, route: [{ x: 23, y: 6 }, { x: 17, y: 6 }] },
+    { name: 'Mo', start: { x: 14, y: 1 }, route: [{ x: 23, y: 1 }, { x: 23, y: 3 }, { x: 14, y: 3 }, { x: 14, y: 1 }] },
+    { name: 'Rufus', kind: 'sniffer', start: { x: 5, y: 12 }, route: [{ x: 11, y: 12 }, { x: 5, y: 12 }] },
   ],
-  extras: {
-    professional: { guards: [{ name: 'Mo', start: { x: 14, y: 1 }, route: [{ x: 23, y: 1 }, { x: 23, y: 3 }, { x: 14, y: 3 }, { x: 14, y: 1 }] }] },
-    mastermind: { cameras: [{ at: { x: 1, y: 5 }, sweep: [1, 0, 1, 2], range: 6 }] },
-    legendary: { guards: [{ name: 'Rufus', kind: 'sniffer', start: { x: 5, y: 12 }, route: [{ x: 11, y: 12 }, { x: 5, y: 12 }] }] },
-  },
   loot: [
     { at: { x: 21, y: 13 }, name: 'Pawned Tiara', value: 7800, space: 2, category: 'jewel' },
     { at: { x: 24, y: 6 }, name: 'Stack of IOUs', value: 1900, space: 1, category: 'curiosity' },
@@ -238,6 +235,7 @@ export const PAWNBROKER: LevelDef = {
  */
 export const OPERA_HOUSE: LevelDef = {
   id: 'l4-opera-house',
+  rivalEntrances: [{ x: 18, y: 1 }, { x: 26, y: 16 }], // the stage's fly door, the lobby's side door
   tip: 'Two spotlights are sweeping: anything in their circle is in bright light. Watch where they’ll be next turn.',
   name: 'The Opera House Costume Vault',
   objective: 'Steal the Phantom’s Mask from the costume vault and walk out the front doors.',
@@ -283,21 +281,22 @@ export const OPERA_HOUSE: LevelDef = {
     { at: { x: 26, y: 1 }, radius: 2 },
     { at: { x: 23, y: 16 }, radius: 2 },
   ],
-  moonlight: [{ x: 20, y: 12, w: 7, h: 3 }], // the lobby's glass doors
+  moonlight: [
+    { x: 20, y: 12, w: 7, h: 3 },
+    { x: 1, y: 1, w: 5, h: 11 },
+  ], // the lobby's glass doors
   // Hanging from the lobby's ceiling, swinging between the front doors and the door to the stalls.
-  cameras: [{ at: { x: 23, y: 13 }, sweep: [0, 4], range: 5 }],
-  checkpoint: { x: 19, y: 14 },
+  cameras: [
+    { at: { x: 23, y: 13 }, sweep: [0, 4], range: 5 },
+    { at: { x: 5, y: 12 }, sweep: [5, 6, 7, 6], range: 6 },
+  ],
   guards: [
     { name: 'Maestro', kind: 'captain', start: { x: 7, y: 9 }, route: [{ x: 18, y: 9 }, { x: 18, y: 16 }, { x: 15, y: 16 }, { x: 15, y: 9 }, { x: 10, y: 9 }, { x: 10, y: 16 }, { x: 7, y: 16 }, { x: 7, y: 9 }] },
-    // The usher checks the doors, then the back of the stalls, then the doors again.
     { name: 'Usher', start: { x: 26, y: 15 }, route: [{ x: 20, y: 15 }, { x: 19, y: 14 }, { x: 16, y: 15 }, { x: 19, y: 14 }, { x: 20, y: 13 }, { x: 26, y: 13 }, { x: 26, y: 15 }] },
     { name: 'Diva', kind: 'sleepy', start: { x: 26, y: 5 }, route: [{ x: 25, y: 5 }] },
+    { name: 'Stagehand', start: { x: 8, y: 2 }, route: [{ x: 17, y: 2 }, { x: 17, y: 6 }, { x: 8, y: 6 }, { x: 8, y: 2 }] },
+    { name: 'Tenor', kind: 'sniffer', start: { x: 21, y: 2 }, route: [{ x: 21, y: 8 }, { x: 21, y: 2 }] },
   ],
-  extras: {
-    professional: { guards: [{ name: 'Stagehand', start: { x: 8, y: 2 }, route: [{ x: 17, y: 2 }, { x: 17, y: 6 }, { x: 8, y: 6 }, { x: 8, y: 2 }] }] },
-    mastermind: { cameras: [{ at: { x: 5, y: 12 }, sweep: [5, 6, 7, 6], range: 6 }], moonlight: [{ x: 1, y: 1, w: 5, h: 11 }] },
-    legendary: { guards: [{ name: 'Tenor', kind: 'sniffer', start: { x: 21, y: 2 }, route: [{ x: 21, y: 8 }, { x: 21, y: 2 }] }] },
-  },
   loot: [
     { at: { x: 23, y: 4 }, name: 'Phantom’s Mask', value: 9500, space: 1, category: 'artefact' },
   ],

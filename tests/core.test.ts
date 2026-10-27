@@ -269,7 +269,7 @@ test('guard footprints preview the next turn without changing anything', () => {
   const s = newHeist(night);
   const before = JSON.stringify(s);
   const plan = planGuards(night, s);
-  assert.equal(plan.length, 2);
+  assert.equal(plan.length, s.guards.length);
   assert.ok(plan[0].length >= 1);
   assert.equal(JSON.stringify(s), before);
 });

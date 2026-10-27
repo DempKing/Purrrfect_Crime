@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseLevel, type GuardDef, type LevelDef } from '../src/core/level';
-import { BASE_PERKS, actionsHere, doAction, endTurn, guardSees, guardView, key, lightNow, moveLeo, newHeist, type Perks, type State } from '../src/core/game';
+import { BASE_PERKS, actionsHere, doAction, endTurn, guardSees, guardView, key, lightNow, motionTrip, moveLeo, newHeist, planRival, useAbility, type Perks, type RivalPlan, type State } from '../src/core/game';
 
 const MAP = [
   '##################',
@@ -159,4 +159,121 @@ test('a spotlight lights its circle, and moves one step a turn', () => {
 test('maps reject a ladder without rafters above it, and loot outside cases, safes and plinths', () => {
   assert.throws(() => parseLevel(sandbox([], { rafters: [] })), /ladder/);
   assert.throws(() => parseLevel(sandbox([], { loot: [{ at: { x: 2, y: 2 }, name: 'X', value: 1, space: 1, category: 'jewel' }] })), /loot/);
+});
+
+// --- Museum Mile: pressure plates, motion sensors, rivals ------------------------------------------------
+
+const HALL: LevelDef = {
+  id: 'hall',
+  name: 'Hall',
+  objective: '',
+  ambient: 'dark',
+  map: [
+    '##################',
+    '#@...............#',
+    '#....^...........#',
+    '#.......G........#',
+    '#................#',
+    '#.D..............E',
+    '##################',
+  ],
+  motion: [{ x: 10, y: 1, w: 4, h: 5 }],
+  rivalEntrances: [{ x: 16, y: 1 }],
+  guards: [],
+  loot: [
+    { at: { x: 8, y: 3 }, name: 'Prize', value: 1000, space: 1, category: 'jewel' },
+    { at: { x: 2, y: 5 }, name: 'Trinket', value: 100, space: 1, category: 'curiosity' },
+  ],
+};
+
+test('a pressure plate sets off the alarm; pouncing over it doesn’t', () => {
+  const level = parseLevel(HALL);
+  const s = newHeist(level);
+  s.leo = { x: 4, y: 2 };
+  moveLeo(level, s, { x: 6, y: 2 });
+  assert.equal(s.alarmRaised, true);
+  const hop = newHeist(level, { ...BASE_PERKS, charges: { pounce: 99 } });
+  hop.leo = { x: 4, y: 2 };
+  assert.ok(useAbility(level, hop, 'pounce', { x: 6, y: 2 }));
+  assert.equal(hop.alarmRaised, false);
+});
+
+test('motion sensors: one tile at a time inside the zone, or the alarm; the fuse box turns them off', () => {
+  const level = parseLevel(HALL);
+  const s = newHeist(level);
+  s.leo = { x: 9, y: 4 };
+  moveLeo(level, s, { x: 10, y: 4 });
+  assert.equal(s.alarm, null, 'one step in is fine');
+  endTurn(level, s);
+  moveLeo(level, s, { x: 11, y: 4 });
+  assert.equal(s.alarm, null, 'and one more, next move');
+  moveLeo(level, s, { x: 13, y: 4 });
+  assert.notEqual(s.alarm, null, 'two in one move trips it');
+  assert.equal(motionTrip(level, newHeist(level), [{ x: 9, y: 4 }, { x: 10, y: 4 }, { x: 11, y: 4 }]), 2);
+  const off = newHeist(level);
+  off.lasersOff = true;
+  off.leo = { x: 9, y: 4 };
+  moveLeo(level, off, { x: 13, y: 4 });
+  assert.equal(off.alarm, null);
+});
+
+const plan = (id: RivalPlan['id'], arrive = 1): RivalPlan => ({ id, arrive, entrance: 0 });
+
+test('a rival arrives on their turn, runs for the centrepiece and gets away with it', () => {
+  const level = parseLevel(HALL);
+  const s = newHeist(level, BASE_PERKS, plan('luna', 2));
+  endTurn(level, s);
+  assert.equal(s.rival!.phase, 'waiting');
+  endTurn(level, s);
+  assert.equal(s.rival!.phase, 'in');
+  assert.ok(planRival(level, s).length > 0, 'her footprints show');
+  for (let i = 0; i < 6 && s.rival!.phase !== 'gone'; i++) endTurn(level, s);
+  assert.equal(s.rival!.phase, 'gone');
+  assert.deepEqual(s.rivalLoot, [0]);
+  s.leo = { x: 7, y: 2 };
+  assert.ok(!actionsHere(level, s).some((a) => a.kind === 'take'), 'nothing left to take');
+});
+
+test('if Leo takes the centrepiece first, the rival gives up; the race doesn’t spoil a flawless heist', () => {
+  const level = parseLevel(HALL);
+  const s = newHeist(level, BASE_PERKS, plan('paws', 1));
+  endTurn(level, s);
+  assert.equal(s.rival!.phase, 'in');
+  s.leo = { x: 7, y: 3 };
+  assert.ok(doAction(level, s, 'take', { x: 8, y: 3 }));
+  assert.equal(s.rival!.phase, 'gone');
+  assert.equal(s.rivalBeaten, true);
+  assert.equal(s.alarmRaised, false);
+});
+
+test('a guard who spots a rival sends the guards searching, but it isn’t Leo’s alarm; Luna is never spotted', () => {
+  const guards: GuardDef[] = [{ name: 'Rex', start: { x: 15, y: 3 }, route: [{ x: 15, y: 3 }] }]; // standing still
+  const level = parseLevel({ ...HALL, ambient: 'lit', guards });
+  const s = newHeist(level, BASE_PERKS, plan('paws', 1));
+  s.guards[0].facing = 6; // looking north, at the way in
+  endTurn(level, s);
+  assert.equal(s.rival!.phase, 'gone');
+  assert.equal(s.guards[0].mode, 'searching');
+  assert.equal(s.alarm, null);
+  assert.equal(s.alarmRaised, false);
+  const luna = newHeist(level, BASE_PERKS, plan('luna', 1));
+  luna.guards[0].facing = 6;
+  endTurn(level, luna);
+  assert.equal(luna.rival!.phase, 'in');
+});
+
+test('Mittens sets off an alarm (not Leo’s); Sammy pockets loot he passes', () => {
+  const guards: GuardDef[] = [{ name: 'Rex', start: { x: 2, y: 2 }, route: [{ x: 3, y: 2 }] }];
+  const level = parseLevel({ ...HALL, guards });
+  const s = newHeist(level, BASE_PERKS, plan('mittens', 1));
+  endTurn(level, s);
+  endTurn(level, s);
+  assert.notEqual(s.alarm, null);
+  assert.equal(s.alarmRaised, false);
+  // Sammy comes in by the trinket's case.
+  const sammyLevel = parseLevel({ ...HALL, rivalEntrances: [{ x: 1, y: 4 }] });
+  const t = newHeist(sammyLevel, BASE_PERKS, plan('sammy', 1));
+  endTurn(sammyLevel, t);
+  endTurn(sammyLevel, t);
+  assert.ok(t.rivalLoot.includes(1), 'the trinket');
 });

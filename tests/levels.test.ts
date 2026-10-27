@@ -1,42 +1,41 @@
-// Every level can be beaten flawlessly (never seen, no alarm) on every difficulty: the solver's routes
-// in src/levels/solutions.ts are replayed here, so a change to the rules or a map can't quietly break one.
+// Every level can be beaten flawlessly (never seen, no alarm): the solver's routes in
+// src/levels/solutions.ts are replayed here, so a change to the rules or a map can't quietly break one.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DIFFICULTIES, parseLevel } from '../src/core/level';
+import { parseLevel } from '../src/core/level';
 import { doAction, endTurn, moveLeo, newHeist } from '../src/core/game';
 import { ALL_LEVELS, DISTRICTS } from '../src/levels';
 import { SOLUTIONS } from '../src/levels/solutions';
 
 for (const def of ALL_LEVELS) {
-  test(`${def.name}: a flawless route on every difficulty`, () => {
-    for (const d of DIFFICULTIES) {
-      const route = SOLUTIONS[def.id]?.[d];
-      assert.ok(route, `no route for ${d}: run npm run solve -- ${def.id} ${d} --clean --write`);
-      const level = parseLevel(def, d);
-      const s = newHeist(level);
-      for (const turn of route) {
-        for (const st of turn) {
-          const ok = Array.isArray(st) ? moveLeo(level, s, { x: st[0], y: st[1] }).ok : doAction(level, s, st.a as never, { x: st.x, y: st.y });
-          assert.ok(ok, `${d}: step ${JSON.stringify(st)} failed on turn ${s.turn}`);
-          if (s.status !== 'playing') break;
-        }
+  test(`${def.name}: a flawless route`, () => {
+    const route = SOLUTIONS[def.id];
+    assert.ok(route, `no route: run npm run solve -- ${def.id} --clean --write`);
+    const level = parseLevel(def);
+    const s = newHeist(level);
+    for (const turn of route) {
+      for (const st of turn) {
+        const ok = Array.isArray(st) ? moveLeo(level, s, { x: st[0], y: st[1] }).ok : doAction(level, s, st.a as never, { x: st.x, y: st.y });
+        assert.ok(ok, `step ${JSON.stringify(st)} failed on turn ${s.turn}`);
         if (s.status !== 'playing') break;
-        endTurn(level, s);
       }
-      assert.equal(s.status, 'escaped', `${d}: ended ${s.status} (${s.caughtBy}: ${s.caughtWhy})`);
-      assert.equal(s.seen, false, `${d}: seen`);
-      assert.equal(s.alarmRaised, false, `${d}: alarm`);
-      assert.ok(s.inventory.some((i) => level.plinth && def.loot[i].at.x === level.plinth.x && def.loot[i].at.y === level.plinth.y), `${d}: without the centrepiece`);
+      if (s.status !== 'playing') break;
+      endTurn(level, s);
     }
+    assert.equal(s.status, 'escaped', `ended ${s.status} (${s.caughtBy}: ${s.caughtWhy})`);
+    assert.equal(s.seen, false, 'seen');
+    assert.equal(s.alarmRaised, false, 'alarm');
+    assert.ok(s.inventory.some((i) => level.plinth && def.loot[i].at.x === level.plinth.x && def.loot[i].at.y === level.plinth.y), 'without the centrepiece');
   });
 }
 
-test('every level has a centrepiece, a checkpoint and loot that fits a fresh inventory', () => {
+test('every level has a centrepiece, a reachable exit, and loot that fits a fresh inventory', () => {
   for (const def of ALL_LEVELS) {
     const level = parseLevel(def);
     assert.ok(level.plinth, `${def.id}: no plinth`);
-    assert.ok(def.checkpoint || def.id.startsWith('l0'), `${def.id}: no checkpoint`);
     for (const l of def.loot) assert.ok(l.space <= 6, `${def.id}: ${l.name} is too big`);
+    const beside = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !['wall', 'pillar', 'case', 'plinth', 'lamp', 'door', 'panel', 'fuse', 'safe', 'seat'].includes(level.tiles[level.exit.y + dy]?.[level.exit.x + dx] ?? 'wall'));
+    assert.ok(beside, `${def.id}: nothing to walk onto the exit from`);
   }
 });
 

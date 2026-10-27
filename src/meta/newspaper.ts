@@ -36,6 +36,8 @@ export interface HeistFacts {
   turns: number;
   first: boolean;
   replay: boolean;
+  /** A rival who raced Leo for the centrepiece, and who won. */
+  rival?: { name: string; won: boolean; prize: string } | null;
 }
 
 export const MASTHEAD = 'The Whisker Times';
@@ -61,7 +63,13 @@ export function writePaper(f: HeistFacts): Paper {
 
   let headline: string;
   let subhead: string;
-  if (f.first) {
+  if (f.rival && !f.rival.won) {
+    headline = `${f.rival.name.toUpperCase()} BEATS TUXEDO CAT TO THE ${f.rival.prize.toUpperCase()}`;
+    subhead = `Two thieves in one night at ${f.place}. Only one of them got the ${f.rival.prize}.`;
+  } else if (f.rival && f.rival.won) {
+    headline = `TUXEDO CAT BEATS ${f.rival.name.toUpperCase()} TO THE ${f.rival.prize.toUpperCase()}`;
+    subhead = `Witnesses describe a race through ${f.place}, and a calling card on the empty plinth.`;
+  } else if (f.first) {
     headline = `NEW CAT IN TOWN: TUXEDO THIEF HITS ${PLACE}`;
     subhead = `A calling card with a red bow tie was all the burglar left behind${centre ? `, on the plinth where the ${centre.name} used to sit` : ''}.`;
   } else if (!f.seen && !f.alarm && centre) {

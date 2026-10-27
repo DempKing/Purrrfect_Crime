@@ -17,6 +17,7 @@ export type Tile =
   | 'safe' // a safe with loot inside: slow to crack, but silent
   | 'ladder' // up to the rafters (Ceiling Climb)
   | 'seat' // a row of theatre seats: low, so guards see over them, but in Leo's way
+  | 'plate' // a pressure plate: step on it and the alarm goes off
   | 'exit';
 
 export interface Point {
@@ -67,19 +68,6 @@ export interface LootDef {
   category: LootCategory;
 }
 
-/** Chosen once per game. Harder ones add hand-placed security and pay more. */
-export type Difficulty = 'casual' | 'professional' | 'mastermind' | 'legendary';
-export const DIFFICULTIES: Difficulty[] = ['casual', 'professional', 'mastermind', 'legendary'];
-
-/** Security a level adds at a difficulty, on top of everything from the easier ones. */
-export interface Extras {
-  guards?: GuardDef[];
-  cameras?: CameraDef[];
-  lamps?: LampDef[];
-  moonlight?: { x: number; y: number; w: number; h: number }[];
-  spotlights?: SpotlightDef[];
-}
-
 export interface LevelDef {
   id: string;
   name: string;
@@ -87,7 +75,8 @@ export interface LevelDef {
   /**
    * `#` wall · `.` floor · `,` marble (noisy) · `P` pillar · `D` display case · `G` centrepiece plinth ·
    * `L` lamp · `+` locked door · `V` vent grate · `x` laser · `C` camera panel · `F` fuse box ·
-   * `~` squeaky floorboard · `S` safe · `H` ladder to the rafters · `h` theatre seats · `@` Leo's start · `E` exit
+   * `~` squeaky floorboard · `S` safe · `H` ladder to the rafters · `h` theatre seats · `^` pressure plate ·
+   * `@` Leo's start · `E` exit
    */
   map: string[];
   /** The rafters, same size as the map: `=` beam, `H` the top of a ladder (must match an `H` on the map). */
@@ -95,14 +84,23 @@ export interface LevelDef {
   spotlights?: SpotlightDef[];
   /** The duct layer, same size as the map: `=` duct, `V` grate (must match a `V` on the map). */
   vents?: string[];
-  /** 'lit' means the whole level is lit (no shadows); otherwise only lamps light it. */
-  ambient: 'lit' | 'dark';
+  /**
+   * 'lit': lit everywhere, no shadows. 'dim': the whole building is in dim light (night lighting, big
+   * windows) apart from its shadows. 'dark': only lamps and moonlight light it.
+   */
+  ambient: 'lit' | 'dim' | 'dark';
+  /** Dark corners in a dim building. */
+  shadows?: { x: number; y: number; w: number; h: number }[];
   lamps?: LampDef[];
   /** Moonlit rectangles: dim light from skylights and windows. */
   moonlight?: { x: number; y: number; w: number; h: number }[];
   cameras?: CameraDef[];
   /** Lasers on odd turns only, when true. */
   pulsingLasers?: boolean;
+  /** Motion sensor zones: Leo may move only one tile per move inside them. Powered from the fuse box. */
+  motion?: { x: number; y: number; w: number; h: number }[];
+  /** Where a rival thief can get in (a window, a skylight, a coal chute), and leaves again. */
+  rivalEntrances?: Point[];
   guards: GuardDef[];
   loot: LootDef[];
   /** What's new in this level, for the briefing. */
@@ -110,16 +108,10 @@ export interface LevelDef {
   /** Base XP for a successful heist, and the turn count that earns a speed bonus. */
   xp?: number;
   par?: number;
-  /** The chalk paw print: on Casual and Professional, reaching it saves a restart point. */
-  checkpoint?: Point;
-  /** Extra security per difficulty (cumulative: Mastermind also gets Professional's). */
-  extras?: Partial<Record<Exclude<Difficulty, 'casual'>, Extras>>;
 }
 
 export interface Level {
   def: LevelDef;
-  difficulty: Difficulty;
-  /** The level's own security plus the difficulty's extras. */
   guards: GuardDef[];
   cameras: CameraDef[];
   lamps: LampDef[];
@@ -129,6 +121,7 @@ export interface Level {
   tiles: Tile[][]; // tiles[y][x]
   ducts: boolean[][];
   rafters: boolean[][];
+  motion: boolean[][];
   spotlights: SpotlightDef[];
   start: Point;
   exit: Point;
@@ -152,11 +145,12 @@ const LEGEND: Record<string, Tile> = {
   S: 'safe',
   H: 'ladder',
   h: 'seat',
+  '^': 'plate',
   '@': 'floor',
   E: 'exit',
 };
 
-export function parseLevel(def: LevelDef, difficulty: Difficulty = 'casual'): Level {
+export function parseLevel(def: LevelDef): Level {
   const h = def.map.length;
   const w = Math.max(...def.map.map((r) => r.length));
   let start: Point | null = null;
@@ -195,27 +189,25 @@ export function parseLevel(def: LevelDef, difficulty: Difficulty = 'casual'): Le
     const t = tiles[l.at.y]?.[l.at.x];
     if (t !== 'case' && t !== 'plinth' && t !== 'safe') throw new Error(`${def.id}: loot "${l.name}" is not in a case, a safe or on the plinth`);
   }
-  const tier = DIFFICULTIES.indexOf(difficulty);
-  const extras = DIFFICULTIES.slice(1, tier + 1).map((d) => def.extras?.[d as Exclude<Difficulty, 'casual'>] ?? {});
   const level: Level = {
     def,
-    difficulty,
     w,
     h,
     tiles,
     ducts,
     rafters,
-    spotlights: [...(def.spotlights ?? []), ...extras.flatMap((e) => e.spotlights ?? [])],
+    motion: tiles.map((row, y) => row.map((_, x) => (def.motion ?? []).some((m) => x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h))),
+    spotlights: def.spotlights ?? [],
     start,
     exit,
     plinth,
-    guards: [...def.guards, ...extras.flatMap((e) => e.guards ?? [])],
-    cameras: [...(def.cameras ?? []), ...extras.flatMap((e) => e.cameras ?? [])],
-    lamps: [...(def.lamps ?? []), ...extras.flatMap((e) => e.lamps ?? [])],
-    moonlight: [...(def.moonlight ?? []), ...extras.flatMap((e) => e.moonlight ?? [])],
+    guards: def.guards,
+    cameras: def.cameras ?? [],
+    lamps: def.lamps ?? [],
+    moonlight: def.moonlight ?? [],
   };
+  for (const e of def.rivalEntrances ?? []) if (blocksMove(tiles[e.y]?.[e.x] ?? 'wall')) throw new Error(`${def.id}: rival entrance ${e.x},${e.y} is in a wall`);
   for (const g of level.guards) for (const p of [g.start, ...g.route]) if (blocksMove(tiles[p.y]?.[p.x] ?? 'wall')) throw new Error(`${def.id}: guard ${g.name} stands in a wall at ${p.x},${p.y}`);
-  if (def.checkpoint && blocksMove(tiles[def.checkpoint.y][def.checkpoint.x])) throw new Error(`${def.id}: the checkpoint is in a wall`);
   return level;
 }
 

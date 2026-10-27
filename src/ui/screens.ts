@@ -1,7 +1,8 @@
 // The screens between heists, built as plain DOM over the game canvas: the title and save slots,
 // the narrator, the calling card, the morning paper, the heist report, the city map, the lair and
 // the briefing before a heist.
-import { DIFFICULTIES, parseLevel, type Difficulty, type LevelDef, type LootCategory } from '../core/level';
+import { parseLevel, type LevelDef, type LootCategory } from '../core/level';
+import { RIVALS, type RivalPlan } from '../core/game';
 import type { Paper } from '../meta/newspaper';
 import { MASTHEAD } from '../meta/newspaper';
 import {
@@ -18,7 +19,6 @@ import {
 } from '../meta/profile';
 import {
   ATTRIBUTES,
-  DIFFICULTY,
   ROOMS,
   SKILLS,
   TREES,
@@ -79,19 +79,19 @@ function on(el: HTMLElement, sel: string, fn: (e: Event) => void): void {
 
 export interface TitleCallbacks {
   onPlay: (slot: number) => void;
-  onNew: (slot: number, difficulty: Difficulty) => void;
+  onNew: (slot: number) => void;
   onDelete: (slot: number) => void;
 }
 
 function slotSummary(p: Profile): string {
   const where = !p.tutorialDone ? 'In the tutorial' : !p.lairOwned ? 'Looking for a lair' : `Day ${p.day} · ${p.heists} heist${p.heists === 1 ? '' : 's'}`;
-  return `${DIFFICULTY[p.difficulty].name} · level ${playerLevel(p.xp)} · ${where} · ${p.catnip.toLocaleString('en-US')} Catnip`;
+  return `Level ${playerLevel(p.xp)} · ${where} · ${p.catnip.toLocaleString('en-US')} Catnip`;
 }
 
 export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void {
   const el = show(
     `<div class="card big title-card">
-      <div class="kicker">Prototype M4 · Old Town</div>
+      <div class="kicker">Prototype M4 · Museum Mile</div>
       <h1>Purrrfect Crime</h1>
       <p>Leo Tuxedo is new in town, sharply dressed and short of Catnip. The museums are full of treasures
         and the guards are half asleep. Time to make a name for himself.</p>
@@ -111,30 +111,13 @@ export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void
     'overlay',
   );
   on(el, '[data-play]', (e) => cb.onPlay(Number((e.currentTarget as HTMLElement).dataset.play)));
-  on(el, '[data-new]', (e) => difficultyPicker(Number((e.currentTarget as HTMLElement).dataset.new), cb, slots));
+  on(el, '[data-new]', (e) => cb.onNew(Number((e.currentTarget as HTMLElement).dataset.new)));
   on(el, '[data-delete]', (e) => {
     const b = e.currentTarget as HTMLElement;
     if (b.dataset.armed) return cb.onDelete(Number(b.dataset.delete));
     b.dataset.armed = '1';
     b.textContent = 'Really delete?';
   });
-}
-
-function difficultyPicker(slot: number, cb: TitleCallbacks, slots: (Profile | null)[]): void {
-  const el = show(
-    `<div class="card big">
-      <div class="kicker">Game ${slot + 1} · new game</div>
-      <h1>How hard?</h1>
-      <p>You choose once, for the whole game. It can't be changed later.</p>
-      <div class="difficulties">
-        ${DIFFICULTIES.map((d) => `<button class="difficulty ${d === 'casual' ? 'primary' : ''}" data-difficulty="${d}"><b>${DIFFICULTY[d].name}</b><span>${esc(DIFFICULTY[d].blurb)}</span></button>`).join('')}
-      </div>
-      <div class="row-buttons"><button id="back">Back</button></div>
-    </div>`,
-    'overlay',
-  );
-  on(el, '[data-difficulty]', (e) => cb.onNew(slot, (e.currentTarget as HTMLElement).dataset.difficulty as Difficulty));
-  on(el, '#back', () => titleScreen(slots, cb));
 }
 
 // --- The narrator, between heists --------------------------------------------------------------
@@ -201,6 +184,7 @@ export function heistReport(r: HeistReport, p: Profile, done: () => void): void 
       <h1>${r.flawless ? 'Flawless.' : 'Got away.'} ${r.turns} turns.</h1>
       <table class="xp">${r.xp.map((l) => `<tr><td>${esc(l.label)}</td><td>+${l.amount} XP</td></tr>`).join('')}
         <tr class="total"><td>Total</td><td>+${r.xpTotal} XP</td></tr></table>
+      ${r.rival ? `<p class="rival-line">${r.rival.won ? `You beat ${esc(RIVALS[r.rival.id].name)} to the prize.` : `${esc(RIVALS[r.rival.id].name)} got the centrepiece this time. Replay to take it yourself.`}</p>` : ''}
       ${r.levelAfter > r.levelBefore ? `<p class="levelup">Level up! Leo is now level ${r.levelAfter}. The fences pay ${Math.round(fenceRate(r.levelAfter) * 100)}% now.</p>` : ''}
       <div class="xpbar"><span style="width:${Math.min(100, (into / need) * 100)}%"></span></div>
       <p class="small">Level ${lvl} · ${into}/${need} XP to level ${lvl + 1}</p>
@@ -288,6 +272,8 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
         <div><b>${esc(def.name)}</b>${rec ? ' <span class="badge">cleared</span>' : ' <span class="badge new">new</span>'}
           <p class="small">${esc(def.objective)}</p>
           <p class="small">${def.loot.length} piece${def.loot.length === 1 ? '' : 's'} of loot${centre ? ` · centrepiece: ${esc(centre.name)}${rec?.centrepiece ? ' ✓' : ''}` : ''}${rec ? ` · best ${rec.bestTurns} turns${rec.flawless ? ' · flawless ✓' : ''}` : ''}</p>
+          ${rec?.lostTo ? `<p class="small rival-line">${esc(RIVALS[rec.lostTo].name)} got away with the ${esc(centre?.name ?? 'centrepiece')}. Replay to steal it yourself.</p>` : ''}
+          ${p.rivals[def.id] && p.rooms.planning >= 1 ? `<p class="small rival-line">Rumour: ${esc(RIVALS[p.rivals[def.id]!.id].name)} is after the ${esc(centre?.name ?? 'centrepiece')}.</p>` : ''}
           ${rec ? '<p class="small warn">Replay: the loot is back on display, but the fences will call it hot and pay half.</p>' : ''}</div>
         <button class="primary" data-job="${i}">${rec ? 'Replay' : 'Plan the heist'}</button>
       </div>`;
@@ -317,11 +303,15 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
         })
         .join('')}</div>`,
   ).join('');
+  const rivalry = (Object.entries(p.rivalRecord) as [keyof typeof RIVALS, { won: number; lost: number }][])
+    .map(([id, r]) => `<li>${esc(RIVALS[id].name)}: beaten ${r.won} time${r.won === 1 ? '' : 's'}, lost ${r.lost}</li>`)
+    .join('');
   const leo = `
     <p>Attribute points: <b>${points}</b> <span class="small">(one per level, plus Catnip for training)</span></p>
     <div class="ups">${attributes}</div>
     <h2 class="section">Skills</h2>
-    <div class="trees">${trees}</div>`;
+    <div class="trees">${trees}</div>
+    ${rivalry ? `<h2 class="section">Rivals</h2><ul class="trophies">${rivalry}</ul>` : ''}`;
 
   const collector = collectorWants(p);
   const stash = p.stash
@@ -380,7 +370,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
         <div class="lair-stats">
           <div class="title">Leo's lair</div>
           <div>Level <b>${lvl}</b> <span class="xpbar small-bar"><span style="width:${Math.min(100, (into / need) * 100)}%"></span></span> <span class="small">${into}/${need} XP</span></div>
-          <div>Catnip ${catnip(p.catnip)} · Day ${p.day} · ${DIFFICULTY[p.difficulty].name}</div>
+          <div>Catnip ${catnip(p.catnip)} · Day ${p.day} · Heists ${p.heists}</div>
         </div>
         <button id="lair-quit" class="quit" title="Back to the title screen">Save &amp; quit</button>
       </header>
@@ -419,9 +409,9 @@ function lairSvg(condition: number, mailbox: boolean): string {
 
 // --- The briefing: what the Planning Table knows -----------------------------------------------------
 
-export function briefing(def: LevelDef, p: Profile, onStart: () => void, onBack: () => void): void {
+export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onStart: () => void, onBack: () => void): void {
   const tier = p.rooms.planning;
-  const level = parseLevel(def, p.difficulty);
+  const level = parseLevel(def);
   const rec = p.records[def.id];
   const S = 16;
   const cells: string[] = [];
@@ -439,7 +429,6 @@ export function briefing(def: LevelDef, p: Profile, onStart: () => void, onBack:
   if (tier >= 1) {
     for (const l of def.loot) marks.push(`<circle cx="${l.at.x * S + 8}" cy="${l.at.y * S + 8}" r="${def.map[l.at.y][l.at.x] === 'G' ? 6 : 4}" fill="${def.map[l.at.y][l.at.x] === 'G' ? '#f2c46b' : '#9fe8ff'}"/>`);
     marks.push(`<text x="${level.start.x * S + 8}" y="${level.start.y * S + 12}" text-anchor="middle" font-size="11" fill="#fff">L</text>`);
-    if (def.checkpoint && DIFFICULTY[p.difficulty].checkpoints) marks.push(`<text x="${def.checkpoint.x * S + 8}" y="${def.checkpoint.y * S + 12}" text-anchor="middle" font-size="11">🐾</text>`);
   }
   if (tier >= 2) {
     for (const lamp of level.lamps) marks.push(`<circle cx="${lamp.at.x * S + 8}" cy="${lamp.at.y * S + 8}" r="${lamp.radius * S}" fill="#ffd27a" opacity="0.12"/><circle cx="${lamp.at.x * S + 8}" cy="${lamp.at.y * S + 8}" r="3" fill="#ffd27a"/>`);
@@ -450,14 +439,22 @@ export function briefing(def: LevelDef, p: Profile, onStart: () => void, onBack:
       const pts = [g.start, ...g.route].map((q) => `${q.x * S + 8},${q.y * S + 8}`).join(' ');
       marks.push(`<polyline points="${pts}" fill="none" stroke="#ff8a5a" stroke-width="2" stroke-dasharray="4 3"/><circle cx="${g.start.x * S + 8}" cy="${g.start.y * S + 8}" r="4" fill="#ff8a5a"/>`);
     }
+  const centre = def.loot.find((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y)?.name ?? 'prize';
+  const entrance = rival && def.rivalEntrances ? def.rivalEntrances[rival.entrance % def.rivalEntrances.length] : null;
+  if (rival && entrance && tier >= 2) marks.push(`<text x="${entrance.x * S + 8}" y="${entrance.y * S + 12}" text-anchor="middle" font-size="12" fill="#b05cff">R</text>`);
+  const rumour =
+    tier < 1
+      ? ''
+      : rival
+        ? `<p class="rumour"><b>Rumour board:</b> word is ${esc(RIVALS[rival.id].name)} has an eye on the ${esc(centre)} tonight.${tier >= 2 && entrance ? ` They’ll come in on turn ${rival.arrive}, by the spot marked R.` : ' A better Planning Table would tell you when, and where they’ll come in.'} Get it first.</p>`
+        : '<p class="small"><b>Rumour board:</b> no rival thieves are after this one.</p>';
   const plan = tier
     ? `<svg class="plan" viewBox="0 0 ${level.w * S} ${level.h * S}">${cells.join('')}${marks.join('')}</svg>
        <p class="small legend"><span style="color:#f2c46b">●</span> centrepiece · <span style="color:#9fe8ff">●</span> loot · <span style="color:#5ec8ff">■</span> vents · <span style="color:#ff2a2a">—</span> lasers${tier >= 2 ? ' · <span style="color:#c77dff">■</span> cameras · <span style="color:#ffd27a">●</span> lamps' : ''}${tier >= 3 ? ' · <span style="color:#ff8a5a">- -</span> guard routes' : ''}</p>`
     : '<p class="small">Build a Planning Table at the lair to see the floor plan before you go in.</p>';
-  const rumour = tier >= 1 ? '<p class="small"><b>Rumour board:</b> no rival thieves are after this one.</p>' : '';
   const el = show(
     `<div class="card big briefing">
-      <div class="kicker">Briefing · ${DIFFICULTY[p.difficulty].name}</div>
+      <div class="kicker">Briefing</div>
       <h1>${esc(def.name)}</h1>
       <p>${esc(def.objective)}</p>
       <p class="small">${def.loot.length} pieces of loot · ${level.guards.length} guard${level.guards.length === 1 ? '' : 's'}${tier >= 2 ? ` · ${level.cameras.length} camera${level.cameras.length === 1 ? '' : 's'}` : ''}${rec ? ` · best ${rec.bestTurns} turns` : ''}</p>

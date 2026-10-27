@@ -19,11 +19,11 @@
         <span id="light" class="light l0">In shadow</span>
       </div>
       <div class="small" id="inventory"></div>
+      <div class="small rival-line hidden" id="rival"></div>
     </div>
     <div class="buttons">
       <button id="rotate-left" title="Turn the camera (Q)">⟲ Q</button>
       <button id="rotate-right" title="Turn the camera (E)">E ⟳</button>
-      <button id="undo" class="hidden" title="Undo this turn (Z)">Undo</button>
       <button id="end" class="primary" title="End your turn (Space)">End turn</button>
       <button id="restart" title="Restart the level (R)">Restart</button>
       <button id="quit" title="Leave the heist">Quit</button>
@@ -55,6 +55,8 @@
       <li><b>Shadows hide you.</b> Guards see 6 tiles into lamplight, 4 into moonlight and barely past their nose in the dark. Being right next to one, or standing in lamplight in front of one, gets you caught.</li>
       <li><b>Red</b> is what the guards see, <b>purple</b> is what the cameras see. Orange dots are where the guards walk next.</li>
       <li><b>Guard types:</b> sleepy guards (Zzz) see nothing until a noise wakes them; captains (gold braid) see further and call others over; sniffers (big nose) smell you through walls from two tiles away.</li>
+      <li><b>Pressure plates</b> (raised metal squares) set off the alarm. <b>Motion sensors</b> (the red grid) allow one tile per move inside them; the fuse box turns them off.</li>
+      <li><b>Rival thieves</b> sometimes want the same centrepiece. Their purple footprints show where they're heading. Take it first and they give up; if they take it, it's gone for tonight.</li>
       <li><b>Creaky floorboards</b> (brown planks) are loud. <b>Safes</b> take three quiet goes. <b>Spotlights</b> move every turn. <b>Ladders</b> lead to the rafters, with the Ceiling Climb skill.</li>
       <li><b>Noise:</b> marble floors, dashing, picking locks and (loudest) smashing glass. Guards who hear it come to check.</li>
       <li><b>Steal:</b> next to a case, pick its lock (quiet, two goes) or smash it (one go, very loud). Use the buttons at the bottom, keys 1–9, or click the case.</li>
@@ -62,7 +64,6 @@
       <li><b>Vents:</b> step onto a grate and climb in. Nobody sees you in the ducts, but crawling is slow.</li>
       <li><b>Inventory:</b> 6 spaces. Bigger pieces take up more of them.</li>
       <li><b>Gadgets and skills</b> (the teal row above the actions): bottle caps from the Workshop, and skills like Pounce, Camera Loop and Smoke Pellet. Click one, then click a highlighted tile. Esc cancels.</li>
-      <li><b>Checkpoint</b> (Casual and Professional): the chalk paw print. Reach it and, if you're caught, you can start again from there. <b>Undo</b> (Z) takes back your whole turn.</li>
       <li><b>Escape:</b> walk onto the green exit with something in your inventory.</li>
     </ul>
   </aside>
@@ -75,7 +76,6 @@
       <p id="caught-why"></p>
       <p class="small">The guard grins. Leo sighs. Back to the start.</p>
       <div class="row-buttons">
-        <button id="from-checkpoint" class="primary hidden">From the checkpoint</button>
         <button id="again" class="primary">Try again (R)</button>
         <button id="quit2">Quit</button>
       </div>

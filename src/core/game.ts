@@ -31,7 +31,7 @@ export const SCENT_RANGE = 2;
 export const CAPTAIN_CALL = 7;
 
 /** Gadgets and active skills: things Leo uses on purpose, most with a few charges per heist. */
-export type Ability = 'bottle-cap' | 'decoy-card' | 'smoke' | 'camera-loop' | 'fuse-kit' | 'emp' | 'pounce' | 'cat-nap';
+export type Ability = 'bottle-cap' | 'decoy-card' | 'smoke' | 'camera-loop' | 'fuse-kit' | 'emp' | 'pounce' | 'cat-nap' | 'second-wind';
 
 /**
  * What Leo's attributes, skills and lair bring to a heist. The defaults are a fresh Leo; the profile
@@ -52,7 +52,6 @@ export interface Perks {
   ghostStep: boolean; // the first noisy move of a heist makes none (Shadow)
   vanish: boolean; // the first time a guard glimpses Leo, he's gone before it registers (Shadow)
   laserMirror: boolean; // the first laser Leo breaks bounces harmlessly (Tech)
-  nineLives: boolean; // the first catch of a heist doesn't count (Acrobat)
   ceilingClimb: boolean; // the rafters, by the ladders (Acrobat)
   charges: Partial<Record<Ability, number>>; // per heist; pounce is unlimited when owned
 }
@@ -72,10 +71,65 @@ export const BASE_PERKS: Perks = {
   ghostStep: false,
   vanish: false,
   laserMirror: false,
-  nineLives: false,
   ceilingClimb: false,
   charges: {},
 };
+
+// ---------------------------------------------------------------------------------------------
+// Rival thieves
+
+export type RivalId = 'mittens' | 'luna' | 'sammy' | 'paws';
+
+export const RIVALS: Record<RivalId, { name: string; speed: number; hello: string; beaten: string; won: string }> = {
+  mittens: {
+    name: 'Mischief Mittens',
+    speed: 4,
+    hello: 'Mischief Mittens tumbles in: “Ooh, a tuxedo! Let’s make some noise, shall we?”',
+    beaten: 'Mischief Mittens hisses, knocks over a vase on principle, and is gone.',
+    won: 'Mischief Mittens cackles off into the night with the prize.',
+  },
+  luna: {
+    name: 'Luna Luck',
+    speed: 6,
+    hello: 'Luna Luck drops in without a sound: “Evening, Tuxedo. Try to keep up.”',
+    beaten: 'Luna Luck tips an imaginary hat: “Lucky you. Next time.” She’s gone.',
+    won: 'Luna Luck slips away with the prize. Of course she does.',
+  },
+  sammy: {
+    name: 'Sammy Swipes',
+    speed: 3,
+    hello: 'Sammy Swipes squeezes in, pockets already clinking: “Don’t mind me, just browsing.”',
+    beaten: 'Sammy Swipes grumbles and wriggles back out the way he came.',
+    won: 'Sammy Swipes waddles off with the prize, and probably your spare change.',
+  },
+  paws: {
+    name: 'Professor Paws',
+    speed: 4,
+    hello: 'Professor Paws lets himself in and adjusts his spectacles: “Ah. The amateur.”',
+    beaten: 'Professor Paws makes a note in his little book and departs.',
+    won: 'Professor Paws leaves with the prize, locking up neatly behind himself.',
+  },
+};
+
+/** Which rival is coming tonight, when, and by which way in (an index into the level's rival entrances). */
+export interface RivalPlan {
+  id: RivalId;
+  arrive: number;
+  entrance: number;
+}
+
+export interface Rival {
+  id: RivalId;
+  name: string;
+  x: number;
+  y: number;
+  facing: number;
+  arrive: number;
+  entrance: Point;
+  phase: 'waiting' | 'in' | 'leaving' | 'gone';
+  prize: boolean;
+  alarmed: boolean; // Mittens has set off her alarm
+}
 
 /** Unlimited uses, while Leo has the skill. */
 export const UNLIMITED = 99;
@@ -112,7 +166,6 @@ export interface Guard {
   point: Point | null; // where he's going to look
   look: number; // turns left looking around at the point
   noticed: string[]; // disturbances he has already reacted to
-  dazed: number; // turns he stands blinking after Leo wriggled out of his paws (Nine Lives)
 }
 
 export interface Camera {
@@ -153,18 +206,22 @@ export interface State {
   alarmRaised: boolean;
   perks: Perks;
   charges: Partial<Record<Ability, number>>; // left this heist
-  used: { ghostStep: boolean; vanish: boolean; laserMirror: boolean; nineLives: boolean };
+  used: { ghostStep: boolean; vanish: boolean; laserMirror: boolean };
   smoke: { x: number; y: number; turns: number }[]; // smoke pellets: 3x3 clouds that block sight
   decoys: Point[]; // calling cards left as decoys
   lasersOffTurns: number; // lasers cut for a while (Fuse Kit, EMP Collar)
   napTurns: number; // Cat Nap: guards can't see Leo for this many of their turns
+  rival: Rival | null;
+  rivalLoot: number[]; // loot a rival has taken (the centrepiece, or whatever Sammy pocketed)
+  rivalBeaten: boolean; // Leo took the centrepiece while a rival was after it
   noises: Noise[]; // made this turn, for drawing
   log: string[]; // what just happened, for the HUD
 }
 
 export const key = (x: number, y: number) => `${x},${y}`;
 
-export function newHeist(level: Level, perks: Perks = BASE_PERKS): State {
+export function newHeist(level: Level, perks: Perks = BASE_PERKS, rival: RivalPlan | null = null): State {
+  const entrance = rival ? level.def.rivalEntrances?.[rival.entrance % (level.def.rivalEntrances?.length || 1)] : undefined;
   return {
     leo: { ...level.start },
     layer: 'floor',
@@ -184,7 +241,6 @@ export function newHeist(level: Level, perks: Perks = BASE_PERKS): State {
       point: null,
       look: 0,
       noticed: [],
-      dazed: 0,
     })),
     cameras: level.cameras.map((c) => ({ at: { ...c.at }, sweep: [...c.sweep], idx: 0, range: c.range ?? 5, offTurns: 0 })),
     status: 'playing',
@@ -201,11 +257,17 @@ export function newHeist(level: Level, perks: Perks = BASE_PERKS): State {
     alarmRaised: false,
     perks: structuredClone(perks),
     charges: { ...perks.charges },
-    used: { ghostStep: false, vanish: false, laserMirror: false, nineLives: false },
+    used: { ghostStep: false, vanish: false, laserMirror: false },
     smoke: [],
     decoys: [],
     lasersOffTurns: 0,
     napTurns: 0,
+    rival:
+      rival && entrance && level.plinth
+        ? { id: rival.id, name: RIVALS[rival.id].name, x: entrance.x, y: entrance.y, facing: 0, arrive: rival.arrive, entrance: { ...entrance }, phase: 'waiting', prize: false, alarmed: false }
+        : null,
+    rivalLoot: [],
+    rivalBeaten: false,
     noises: [],
     log: [],
   };
@@ -236,6 +298,19 @@ export function lasersActive(level: Level, s: State): boolean {
   return !s.lasersOff && s.lasersOffTurns <= 0 && (!level.def.pulsingLasers || s.turn % 2 === 1);
 }
 
+/** Motion sensors run off the same fuse box as the lasers. */
+export function sensorsActive(s: State): boolean {
+  return !s.lasersOff && s.lasersOffTurns <= 0;
+}
+
+/** Which step of a path (an index into it) would trip a motion sensor, or -1. */
+export function motionTrip(level: Level, s: State, path: Point[]): number {
+  if (s.layer !== 'floor' || !sensorsActive(s)) return -1;
+  let n = 0;
+  for (let i = 1; i < path.length; i++) if (level.motion[path[i].y][path[i].x] && ++n === 2) return i;
+  return -1;
+}
+
 export function camerasActive(s: State, c: Camera): boolean {
   return !s.camerasOff && c.offTurns <= 0;
 }
@@ -260,7 +335,7 @@ export function lightMap(level: Level): Light[][] {
         row.push(2);
         continue;
       }
-      let l: Light = 0;
+      let l: Light = level.def.ambient === 'dim' && !(level.def.shadows ?? []).some((m) => x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h) ? 1 : 0;
       for (const m of level.moonlight) if (x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h) l = 1;
       for (const lamp of level.lamps) {
         const d = Math.hypot(x - lamp.at.x, y - lamp.at.y);
@@ -460,23 +535,8 @@ export function cameraView(level: Level, s: State, c: Camera, idx = c.idx): Set<
 // ---------------------------------------------------------------------------------------------
 // Getting noticed
 
-/** Ends the heist, unless Nine Lives saves Leo once. Returns whether he was caught. */
+/** Ends the heist. Returns true, so callers can say `return catchLeo(…)`. */
 function catchLeo(s: State, by: string, why: string): boolean {
-  if (s.perks.nineLives && !s.used.nineLives) {
-    s.used.nineLives = true;
-    s.seen = true;
-    s.log.push(by === 'The police' ? 'Nine Lives! Leo jams the lockdown: three more turns.' : `Nine Lives! Leo wriggles out of ${by}'s paws.`);
-    if (by === 'The police') s.alarm = 3;
-    else
-      for (const g of s.guards)
-        if (g.name === by) {
-          g.mode = 'searching';
-          g.point = { ...s.leo };
-          g.look = 2;
-          g.dazed = 1;
-        }
-    return false;
-  }
   s.status = 'caught';
   s.caughtBy = by;
   s.caughtWhy = why;
@@ -523,7 +583,7 @@ function smelled(s: State, g: Guard, p: Point): boolean {
   return false;
 }
 
-const canSmell = (s: State, g: Guard, p: Point) => g.kind === 'sniffer' && !g.asleep && g.dazed <= 0 && s.layer === 'floor' && s.napTurns <= 0 && Math.hypot(p.x - g.x, p.y - g.y) <= SCENT_RANGE + 0.01;
+const canSmell = (s: State, g: Guard, p: Point) => g.kind === 'sniffer' && !g.asleep && s.layer === 'floor' && s.napTurns <= 0 && Math.hypot(p.x - g.x, p.y - g.y) <= SCENT_RANGE + 0.01;
 
 /** A suspicious captain whistles up the guards near him to look too. */
 function captainCalls(s: State, g: Guard, p: Point): void {
@@ -538,8 +598,9 @@ function captainCalls(s: State, g: Guard, p: Point): void {
   }
 }
 
-export function triggerAlarm(s: State, p: Point, why: string): void {
-  s.alarmRaised = true;
+/** Sets off the alarm. Only Leo's alarms count against a flawless heist, not a rival's. */
+export function triggerAlarm(s: State, p: Point, why: string, byLeo = true): void {
+  if (byLeo) s.alarmRaised = true;
   if (s.alarm === null) {
     s.alarm = ALARM_TURNS;
     s.log.push(`Alarm! ${why}. Lockdown in ${ALARM_TURNS} turns.`);
@@ -556,7 +617,7 @@ export function triggerAlarm(s: State, p: Point, why: string): void {
 function checkExposure(level: Level, s: State, p: Point): void {
   if (s.layer !== 'floor' || s.status !== 'playing' || s.napTurns > 0) return;
   for (const g of s.guards) {
-    if (g.dazed <= 0 && guardSees(level, s, g, p.x, p.y) && spotted(level, s, g, p)) return;
+    if (guardSees(level, s, g, p.x, p.y) && spotted(level, s, g, p)) return;
     if (canSmell(s, g, p) && smelled(s, g, p)) return;
   }
   for (const c of s.cameras)
@@ -645,23 +706,23 @@ export function walkPath(level: Level, s: State, path: Point[], cost: number): M
     s.log.push('Ghost Step: not a sound.');
   }
   const walked: Point[] = [path[0]];
+  let inZone = 0; // steps taken inside motion-sensor zones this move
   for (const p of path.slice(1)) {
     s.leo = { ...p };
     walked.push(p);
     if (s.layer === 'floor') {
       const t = tileNow(level, s, p.x, p.y);
       if (t === 'laser' && lasersActive(level, s)) breakLaser(s, p, 'Leo broke a laser beam');
+      if (t === 'plate') triggerAlarm(s, p, 'A pressure plate clicked under Leo’s paw');
+      if (level.motion[p.y][p.x] && sensorsActive(s) && ++inZone === 2) triggerAlarm(s, p, 'A motion sensor saw Leo move');
       if (t === 'marble' && !ghost) makeNoise(level, s, p, NOISE.marble);
       if (t === 'squeaky' && !ghost) {
         makeNoise(level, s, p, NOISE.squeaky);
         s.log.push('Creeeak!');
       }
     }
-    const saved = s.used.nineLives;
     checkExposure(level, s, p);
     if (s.status !== 'playing') return { ok: true, path: walked };
-    // Wriggling out of a guard's paws stops Leo where he is.
-    if (s.used.nineLives && !saved) return { ok: true, path: walked };
   }
   if (cost === 2 && s.layer === 'floor' && !ghost) {
     makeNoise(level, s, s.leo, NOISE.dash);
@@ -711,7 +772,7 @@ export function actionsHere(level: Level, s: State): Action[] {
         const li = lootAt(level, x, y);
         const loot = li >= 0 ? level.def.loot[li] : null;
         const k = key(x, y);
-        const taken = li >= 0 && s.inventory.includes(li);
+        const taken = li >= 0 && lootGone(s, li);
         const noRoom = loot && inventoryUsed(level, s) + loot.space > s.perks.spaces ? `No room: the inventory has ${s.perks.spaces} spaces.` : undefined;
         if (t === 'case' && loot && !taken) {
           if (s.smashed.includes(k)) out.push({ kind: 'take', at: p, label: `Take the ${loot.name}`, ap: 1, noise: 0, blocked: noRoom });
@@ -739,6 +800,18 @@ function take(level: Level, s: State, at: Point): void {
   const li = lootAt(level, at.x, at.y);
   s.inventory.push(li);
   s.log.push(`Got the ${level.def.loot[li].name}.`);
+  // Beaten to it: a rival after the centrepiece gives up.
+  const r = s.rival;
+  if (r && r.phase !== 'gone' && level.plinth && at.x === level.plinth.x && at.y === level.plinth.y) {
+    if (r.phase !== 'waiting') s.log.push(RIVALS[r.id].beaten);
+    r.phase = 'gone';
+    s.rivalBeaten = true;
+  }
+}
+
+/** Loot that's gone: in Leo's inventory, or taken by a rival. */
+function lootGone(s: State, li: number): boolean {
+  return s.inventory.includes(li) || s.rivalLoot.includes(li);
 }
 
 export function doAction(level: Level, s: State, kind: ActionKind, at: Point): boolean {
@@ -836,6 +909,7 @@ const ABILITY_NAMES: Record<Ability, string> = {
   emp: 'EMP collar',
   pounce: 'Pounce',
   'cat-nap': 'Cat nap',
+  'second-wind': 'Second wind',
 };
 const ABILITY_TARGET: Record<Ability, AbilityInfo['target']> = {
   'bottle-cap': 'tile',
@@ -846,6 +920,7 @@ const ABILITY_TARGET: Record<Ability, AbilityInfo['target']> = {
   emp: 'self',
   pounce: 'tile',
   'cat-nap': 'self',
+  'second-wind': 'self',
 };
 /** How far each can reach, in tiles. */
 export const ABILITY_RANGE = { throw: 6, card: 5, smoke: 5, loop: 7, emp: 5 };
@@ -857,10 +932,11 @@ export function abilities(level: Level, s: State): AbilityInfo[] {
   for (const kind of Object.keys(ABILITY_NAMES) as Ability[]) {
     if (!(kind in s.charges)) continue;
     const left = s.charges[kind] ?? 0;
-    const a: AbilityInfo = { kind, name: ABILITY_NAMES[kind], target: ABILITY_TARGET[kind], ap: 1, left };
+    const a: AbilityInfo = { kind, name: ABILITY_NAMES[kind], target: ABILITY_TARGET[kind], ap: kind === 'second-wind' ? 0 : 1, left };
     if (s.status !== 'playing') a.blocked = 'The heist is over.';
     else if (left <= 0) a.blocked = 'None left this heist.';
     else if (s.ap < a.ap) a.blocked = 'Not enough action points.';
+    else if (kind === 'second-wind' && s.ap > AP_PER_TURN - 1) a.blocked = 'Save it for when you’ve spent a point.';
     else if (s.layer !== 'floor' && kind !== 'cat-nap') a.blocked = s.layer === 'vent' ? 'Not from inside a vent.' : 'Not from up in the rafters.';
     else if (a.target !== 'self' && abilityTargets(level, s, kind).size === 0) a.blocked = 'Nothing in reach.';
     out.push(a);
@@ -953,6 +1029,10 @@ export function useAbility(level: Level, s: State, kind: Ability, at?: Point): b
       checkExposure(level, s, s.leo);
       if (s.status === 'playing' && s.inventory.length && s.leo.x === level.exit.x && s.leo.y === level.exit.y) s.status = 'escaped';
       break;
+    case 'second-wind':
+      s.ap += 1;
+      s.log.push('Second wind: one more action point this turn.');
+      break;
     case 'cat-nap':
       s.napTurns = 2;
       s.ap = 0;
@@ -975,11 +1055,14 @@ export function steal(level: Level, s: State): boolean {
 // The guards' turn
 
 /** Tiles that show a theft: broken or emptied cases and an empty plinth. */
-function disturbances(level: Level, s: State): Point[] {
-  return s.inventory.map((i) => level.def.loot[i].at).concat(s.smashed.filter((k) => !s.inventory.some((i) => key(level.def.loot[i].at.x, level.def.loot[i].at.y) === k)).map((k) => {
+function disturbances(level: Level, s: State): (Point & { byLeo: boolean })[] {
+  const leo = s.inventory.map((i) => ({ ...level.def.loot[i].at, byLeo: true }));
+  const smashed = s.smashed.filter((k) => !s.inventory.some((i) => key(level.def.loot[i].at.x, level.def.loot[i].at.y) === k)).map((k) => {
     const [x, y] = k.split(',').map(Number);
-    return { x, y };
-  }));
+    return { x, y, byLeo: true };
+  });
+  const rivals = s.rivalLoot.map((i) => ({ ...level.def.loot[i].at, byLeo: false }));
+  return [...leo, ...smashed, ...rivals];
 }
 
 function guardWalkable(level: Level, s: State, x: number, y: number): boolean {
@@ -1022,9 +1105,10 @@ export function nextStepToward(level: Level, s: State, g: Guard, target: Point, 
   return { x, y };
 }
 
+/** One step of the guards' (or, with guard -1, the rival's) turn, for the animation. */
 export interface GuardStep {
   guard: number;
-  to: Guard;
+  to: { x: number; y: number; facing: number };
 }
 
 /** Where each guard will walk over the next turns if nothing changes, for drawing the footprints. */
@@ -1041,10 +1125,6 @@ function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
   const out: GuardStep[] = [];
   for (let gi = 0; gi < s.guards.length; gi++) {
     const g = s.guards[gi];
-    if (g.dazed > 0) {
-      g.dazed--; // the footprint preview runs on a copy, so this is safe there too
-      continue;
-    }
     if (g.asleep) continue;
     // A sleepy guard who has settled back at his post nods off again.
     if (g.kind === 'sleepy' && g.mode === 'patrol' && g.x === g.route[0].x && g.y === g.route[0].y) {
@@ -1079,7 +1159,7 @@ function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
           g.y = next.y;
         } else g.facing = (g.facing + 2) % 8; // at the spot: look around
       }
-      out.push({ guard: gi, to: { ...g, route: g.route } });
+      out.push({ guard: gi, to: { x: g.x, y: g.y, facing: g.facing } });
       if (dry) continue;
       if (s.layer === 'floor' && g.x === s.leo.x && g.y === s.leo.y) {
         catchLeo(s, g.name, 'by walking straight into him');
@@ -1099,7 +1179,7 @@ function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
         const k = key(d.x, d.y);
         if (!g.noticed.includes(k) && guardSees(level, s, g, d.x, d.y, true)) {
           g.noticed.push(k);
-          triggerAlarm(s, d, `${g.name} found an empty display`);
+          triggerAlarm(s, d, `${g.name} found an empty display`, d.byLeo);
         }
       }
       // A decoy card catches a guard's eye: he goes over to look, and pockets it.
@@ -1131,6 +1211,131 @@ function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
   return out;
 }
 
+// ---------------------------------------------------------------------------------------------
+// The rival's turn, after the guards'
+
+/** The next tile toward any of the goals for a rival: floors, and doors (rivals are pros). */
+function rivalStep(level: Level, s: State, r: Rival, goals: Point[]): Point | null {
+  const goal = new Set(goals.map((g) => key(g.x, g.y)));
+  if (goal.has(key(r.x, r.y))) return null;
+  const ok = (x: number, y: number) => {
+    const t = tileNow(level, s, x, y);
+    return (t === 'door' || !blocksMove(t)) && !(s.layer === 'floor' && s.leo.x === x && s.leo.y === y);
+  };
+  const prev = new Map<string, string>([[key(r.x, r.y), '']]);
+  const q: Point[] = [{ x: r.x, y: r.y }];
+  while (q.length) {
+    const p = q.shift()!;
+    if (goal.has(key(p.x, p.y))) {
+      let k = key(p.x, p.y);
+      while (prev.get(k) !== key(r.x, r.y)) k = prev.get(k)!;
+      const [x, y] = k.split(',').map(Number);
+      return { x, y };
+    }
+    for (const d of DIRS) {
+      const x = p.x + d.x;
+      const y = p.y + d.y;
+      if (prev.has(key(x, y)) || !ok(x, y)) continue;
+      if (d.x && d.y && (!ok(p.x + d.x, p.y) || !ok(p.x, p.y + d.y))) continue;
+      prev.set(key(x, y), key(p.x, p.y));
+      q.push({ x, y });
+    }
+  }
+  return null;
+}
+
+/** Where the rival will go on their next turn, if nothing changes, for drawing their footprints. */
+export function planRival(level: Level, s: State): Point[] {
+  if (!s.rival || s.rival.phase === 'gone' || s.rival.phase === 'waiting') return [];
+  const sim = structuredClone(s);
+  sim.log = [];
+  return runRival(level, sim).map((st) => ({ x: st.to.x, y: st.to.y }));
+}
+
+function runRival(level: Level, s: State): GuardStep[] {
+  const r = s.rival;
+  const out: GuardStep[] = [];
+  if (!r || r.phase === 'gone' || !level.plinth) return out;
+  const centre = lootAt(level, level.plinth.x, level.plinth.y);
+  if (r.phase === 'waiting') {
+    if (s.turn < r.arrive) return out;
+    r.phase = 'in';
+    s.log.push(RIVALS[r.id].hello);
+    out.push({ guard: -1, to: { x: r.x, y: r.y, facing: r.facing } });
+    if (rivalSpotted(level, s, r)) return out;
+  }
+  // Mittens sets off an alarm on the far side of the building, to pull the guards away from her.
+  if (r.id === 'mittens' && !r.alarmed && s.turn >= r.arrive + 1) {
+    r.alarmed = true;
+    const far = level.guards.flatMap((g) => g.route).reduce((a, b) => (Math.hypot(b.x - r.x, b.y - r.y) > Math.hypot(a.x - r.x, a.y - r.y) ? b : a), { x: r.x, y: r.y });
+    triggerAlarm(s, far, 'Somebody set off an alarm on the far side of the building', false);
+  }
+  const around: Point[] = [];
+  for (const d of DIRS) around.push({ x: level.plinth.x + d.x, y: level.plinth.y + d.y });
+  for (let i = 0; i < RIVALS[r.id].speed; i++) {
+    if (r.phase === 'in' && around.some((a) => a.x === r.x && a.y === r.y)) {
+      // Reached the prize: it takes the rest of the turn to lift it.
+      r.prize = true;
+      s.rivalLoot.push(centre);
+      r.phase = 'leaving';
+      s.log.push(`${r.name} grabs the ${level.def.loot[centre].name}!`);
+      break;
+    }
+    const next = rivalStep(level, s, r, r.phase === 'in' ? around : [r.entrance]);
+    if (!next) {
+      if (r.phase === 'leaving' && r.x === r.entrance.x && r.y === r.entrance.y) {
+        r.phase = 'gone';
+        s.log.push(RIVALS[r.id].won);
+      }
+      break;
+    }
+    const was = { x: r.x, y: r.y };
+    r.facing = faceToward(r, next);
+    r.x = next.x;
+    r.y = next.y;
+    out.push({ guard: -1, to: { x: r.x, y: r.y, facing: r.facing } });
+    rivalHabits(level, s, r, was);
+    if (rivalSpotted(level, s, r)) break;
+  }
+  return out;
+}
+
+/** Sammy pockets loot as he passes; Professor Paws blinds cameras near him and locks doors behind himself. */
+function rivalHabits(level: Level, s: State, r: Rival, was: Point): void {
+  if (r.id === 'sammy')
+    for (const d of DIRS) {
+      const li = lootAt(level, r.x + d.x, r.y + d.y);
+      if (li < 0 || lootGone(s, li) || tileAt(level, r.x + d.x, r.y + d.y) !== 'case') continue;
+      s.rivalLoot.push(li);
+      s.log.push(`Sammy Swipes pockets the ${level.def.loot[li].name}.`);
+    }
+  if (r.id === 'paws') {
+    for (const c of s.cameras) if (Math.hypot(c.at.x - r.x, c.at.y - r.y) <= 3) c.offTurns = Math.max(c.offTurns, 1);
+    if (tileAt(level, was.x, was.y) === 'door' && (was.x !== r.x || was.y !== r.y)) {
+      const k = key(was.x, was.y);
+      s.openDoors = s.openDoors.filter((d) => d !== k);
+      delete s.picks[k];
+    }
+  }
+}
+
+/** A guard who spots a rival raises the hue and cry; the rival bolts (with the prize, if they have it). */
+function rivalSpotted(level: Level, s: State, r: Rival): boolean {
+  if (r.id === 'luna') return false; // a little too lucky
+  const g = s.guards.find((g) => !g.asleep && guardSees(level, s, g, r.x, r.y, true));
+  if (!g) return false;
+  s.log.push(`${g.name} spots ${r.name}! ${r.name} bolts${r.prize ? ' with the prize' : ''}.`);
+  r.phase = 'gone';
+  for (const o of s.guards) {
+    if (o !== g && Math.hypot(o.x - g.x, o.y - g.y) > CAPTAIN_CALL) continue;
+    o.asleep = false;
+    o.mode = 'searching';
+    o.point = { x: r.x, y: r.y };
+    o.look = 3;
+  }
+  return true;
+}
+
 /** Ends Leo's turn: cameras sweep, guards move, the alarm counts down. Returns the guards' steps. */
 export function endTurn(level: Level, s: State): GuardStep[] {
   if (s.status !== 'playing') return [];
@@ -1139,6 +1344,7 @@ export function endTurn(level: Level, s: State): GuardStep[] {
   for (const c of s.cameras) c.idx = (c.idx + 1) % c.sweep.length;
   checkExposure(level, s, s.leo);
   const steps = s.status === 'playing' ? runGuards(level, s, false) : [];
+  if (s.status === 'playing') steps.push(...runRival(level, s));
   // Gadgets wear off at the end of the guards' turn.
   for (const c of s.cameras) c.offTurns = Math.max(0, c.offTurns - 1);
   s.lasersOffTurns = Math.max(0, s.lasersOffTurns - 1);
@@ -1165,9 +1371,9 @@ export function danger(level: Level, s: State, p: Point): 0 | 1 | 2 {
   if (s.layer !== 'floor') return 0;
   let worst: 0 | 1 | 2 = 0;
   if (tileNow(level, s, p.x, p.y) === 'laser' && lasersActive(level, s)) worst = 2;
+  if (tileNow(level, s, p.x, p.y) === 'plate') worst = 2;
   for (const c of s.cameras) if (cameraSees(level, s, c, p.x, p.y)) worst = 2;
   for (const g of s.guards) {
-    if (g.dazed > 0) continue;
     if (canSmell(s, g, p)) worst = g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 1.5 ? 2 : (Math.max(worst, 1) as 0 | 1 | 2);
     if (!guardSees(level, s, g, p.x, p.y)) continue;
     const caught = g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 2 || lightNow(level, s, p.x, p.y) === 2;

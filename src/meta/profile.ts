@@ -1,9 +1,9 @@
 // Everything that lasts between heists: Catnip, XP, the stash of unsold loot, the lair, the front pages.
 // Pure functions over a plain object, so the save is just JSON and the rules can be unit-tested.
-import type { Difficulty, Level, LootCategory } from '../core/level';
-import type { State } from '../core/game';
+import type { Level, LevelDef, LootCategory } from '../core/level';
+import { RIVALS, type RivalId, type RivalPlan, type State } from '../core/game';
 import { writePaper, type Paper } from './newspaper';
-import { DIFFICULTY, playerLevel, type Attribute, type Room, type SkillId } from './progression';
+import { playerLevel, type Attribute, type Room, type SkillId } from './progression';
 
 export { LEVEL_CAP, playerLevel, xpForLevel, xpToNext } from './progression';
 /** What the narrator pays for the tutorial loot, and exactly what the abandoned building costs. */
@@ -31,11 +31,12 @@ export interface LevelRecord {
   bestTurns: number;
   centrepiece: boolean;
   flawless: boolean;
+  /** The rival who got away with the centrepiece, while Leo hasn't stolen it himself. */
+  lostTo?: RivalId;
 }
 
 export interface Profile {
   version: 2;
-  difficulty: Difficulty;
   day: number; // one per heist; the market's demand changes every few days
   catnip: number;
   xp: number;
@@ -51,12 +52,15 @@ export interface Profile {
   attributes: Record<Attribute, number>;
   skills: SkillId[];
   rooms: Record<Room, number>; // tier of each lair room, 0 = not built
+  /** Tonight's rival for each heist (or null for none), rolled once and kept until the heist is played. */
+  rivals: Record<string, RivalPlan | null>;
+  lastRival: RivalId | null;
+  rivalRecord: Partial<Record<RivalId, { won: number; lost: number }>>;
 }
 
-export function newProfile(difficulty: Difficulty = 'casual'): Profile {
+export function newProfile(): Profile {
   return {
     version: 2,
-    difficulty,
     day: 1,
     catnip: 0,
     xp: 0,
@@ -72,7 +76,40 @@ export function newProfile(difficulty: Difficulty = 'casual'): Profile {
     attributes: { agility: 0, stealth: 0, quietPaws: 0, dexterity: 0, pockets: 0, perception: 0 },
     skills: [],
     rooms: { planning: 0, workshop: 0, fence: 0, gym: 0, trophy: 0, mailbox: 0 },
+    rivals: {},
+    lastRival: null,
+    rivalRecord: {},
   };
+}
+
+// --- Rivals --------------------------------------------------------------------------------------
+
+const RIVAL_IDS = Object.keys(RIVALS) as RivalId[];
+
+function hash(text: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+/** The chance a rival is after a heist's centrepiece: none for the first three heists, then 20%, rising by district to 35%. */
+export function rivalChance(p: Profile, district: number): number {
+  const done = p.heists - (p.tutorialDone ? 1 : 0);
+  return done < 3 ? 0 : Math.min(0.35, 0.2 + 0.05 * district);
+}
+
+/** Tonight's rival for a heist, rolled the first time it's asked for and then kept until the heist is played. */
+export function rivalFor(p: Profile, def: LevelDef, district: number): RivalPlan | null {
+  if (def.id in p.rivals) return p.rivals[def.id];
+  let plan: RivalPlan | null = null;
+  const entrances = def.rivalEntrances?.length ?? 0;
+  const h = hash(`${def.id}|${p.day}|${p.heists}`);
+  if (entrances && (h % 1000) / 1000 < rivalChance(p, district)) {
+    const choices = RIVAL_IDS.filter((r) => r !== p.lastRival);
+    plan = { id: choices[(h >>> 10) % choices.length], arrive: 3 + ((h >>> 14) % 5), entrance: (h >>> 18) % entrances };
+  }
+  p.rivals[def.id] = plan;
+  return plan;
 }
 
 // --- The black market ------------------------------------------------------------------------
@@ -136,6 +173,7 @@ export interface XpLine {
 }
 
 export interface HeistReport {
+  rival: { id: RivalId; won: boolean } | null;
   levelId: string;
   levelName: string;
   turns: number;
@@ -156,16 +194,16 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
   const def = level.def;
   const prev = p.records[def.id];
   const replay = !!prev;
-  // Harder difficulties guard better things: loot is worth more, and so is the XP.
-  const mult = DIFFICULTY[p.difficulty].mult;
   const items: StashItem[] = s.inventory.map((i) => {
     const l = def.loot[i];
     const centrepiece = !!level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y;
-    return { id: p.nextId++, name: l.name, category: l.category, value: Math.round(l.value * mult), levelId: def.id, levelName: def.name, centrepiece, hot: replay };
+    return { id: p.nextId++, name: l.name, category: l.category, value: l.value, levelId: def.id, levelName: def.name, centrepiece, hot: replay };
   });
   const total = items.reduce((n, i) => n + i.value, 0);
   const centrepiece = items.some((i) => i.centrepiece);
   const flawless = !s.seen && !s.alarmRaised;
+  // The race: did a rival come, and who got the centrepiece?
+  const rival = s.rival && s.rival.phase !== 'waiting' ? { id: s.rival.id, won: s.rivalBeaten } : s.rival && s.rivalBeaten ? { id: s.rival.id, won: true } : null;
 
   const xp: XpLine[] = [{ label: 'Heist complete', amount: def.xp ?? 100 }];
   if (!s.seen) xp.push({ label: 'Never seen', amount: 50 });
@@ -173,9 +211,9 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
   if (centrepiece) xp.push({ label: 'The centrepiece', amount: 100 });
   if (total > 0) xp.push({ label: 'Loot value', amount: Math.floor(total / 200) });
   if (def.par && s.turn < def.par) xp.push({ label: 'Quick work', amount: (def.par - s.turn) * 5 });
+  if (rival?.won) xp.push({ label: `Beat ${RIVALS[rival.id].name} to it`, amount: 75 });
   const base = xp.reduce((n, l) => n + l.amount, 0);
-  if (mult > 1) xp.push({ label: `${DIFFICULTY[p.difficulty].name} ×${mult}`, amount: Math.round(base * (mult - 1)) });
-  if (p.rooms.trophy) xp.push({ label: 'Fame (Trophy Room)', amount: Math.round(base * mult * 0.05 * p.rooms.trophy) });
+  if (p.rooms.trophy) xp.push({ label: 'Fame (Trophy Room)', amount: Math.round(base * 0.05 * p.rooms.trophy) });
   const xpTotal = xp.reduce((n, l) => n + l.amount, 0);
 
   const levelBefore = playerLevel(p.xp);
@@ -187,7 +225,15 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
     bestTurns: Math.min(prev?.bestTurns ?? Infinity, s.turn),
     centrepiece: (prev?.centrepiece ?? false) || centrepiece,
     flawless: (prev?.flawless ?? false) || (flawless && centrepiece),
+    lostTo: centrepiece || prev?.centrepiece ? undefined : rival && !rival.won ? rival.id : prev?.lostTo,
   };
+  if (rival) {
+    const rec = (p.rivalRecord[rival.id] ??= { won: 0, lost: 0 });
+    if (rival.won) rec.won++;
+    else rec.lost++;
+    p.lastRival = rival.id;
+  }
+  delete p.rivals[def.id]; // a new roll next time
   const paper = writePaper({
     day: p.day,
     levelId: def.id,
@@ -200,10 +246,11 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
     turns: s.turn,
     first: p.heists === 1,
     replay,
+    rival: rival ? { name: RIVALS[rival.id].name, won: rival.won, prize: def.loot.find((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y)?.name ?? 'prize' } : null,
   });
   p.papers.unshift(paper);
   p.day++;
-  return { levelId: def.id, levelName: def.name, turns: s.turn, items, total, centrepiece, flawless, replay, xp, xpTotal, levelBefore, levelAfter: playerLevel(p.xp), paper };
+  return { rival, levelId: def.id, levelName: def.name, turns: s.turn, items, total, centrepiece, flawless, replay, xp, xpTotal, levelBefore, levelAfter: playerLevel(p.xp), paper };
 }
 
 // --- Saving: three slots ---------------------------------------------------------------------
@@ -220,8 +267,12 @@ export function upgradeProfile(raw: unknown): Profile | null {
   if (!raw || typeof raw !== 'object') return null;
   const p = raw as Omit<Partial<Profile>, 'version'> & { version?: number };
   if (p.version !== 1 && p.version !== 2) return null;
-  const fresh = newProfile(p.difficulty ?? 'casual');
-  return { ...fresh, ...p, version: 2, attributes: { ...fresh.attributes, ...p.attributes }, rooms: { ...fresh.rooms, ...p.rooms }, skills: p.skills ?? [] };
+  const fresh = newProfile();
+  // Older saves chose a difficulty; there's only one now, and Nine Lives became Second Wind.
+  const { difficulty: _difficulty, ...rest } = p as typeof p & { difficulty?: string };
+  void _difficulty;
+  const skills = (p.skills ?? []).map((id) => ((id as string) === 'nine-lives' ? 'second-wind' : id));
+  return { ...fresh, ...rest, version: 2, attributes: { ...fresh.attributes, ...p.attributes }, rooms: { ...fresh.rooms, ...p.rooms }, skills };
 }
 
 export function loadSlot(storage: Pick<Storage, 'getItem'> | null, slot: number): Profile | null {

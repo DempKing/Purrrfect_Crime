@@ -41,8 +41,6 @@ export const CORNER_GALLERY: LevelDef = {
     '',
     '       V=======V',
   ],
-  // In the storeroom, past the camera: the halfway point.
-  checkpoint: { x: 16, y: 9 },
   lamps: [{ at: { x: 8, y: 1 }, radius: 2 }],
   moonlight: [
     { x: 11, y: 1, w: 5, h: 2 }, // skylight over the middle of the hall; the far wall stays dark
