@@ -5,6 +5,7 @@ export type Tile =
   | 'marble' // noisy underfoot
   | 'wall'
   | 'pillar'
+  | 'stack' // a tall stack of crates: works like a pillar
   | 'case' // display case with loot inside
   | 'plinth' // the centrepiece
   | 'lamp' // a standing lamp: furniture you can't walk through
@@ -26,6 +27,9 @@ export type Tile =
   | 'kennel' // a guard dog's kennel: the dog barks at anything that comes within 2 tiles
   | 'vault' // a vault door: turn the dials, with the combination
   | 'desk' // a desk with the vault's combination in it
+  | 'crate' // an open crate: Leo can climb in and hide (nobody sees or smells him); guards walk round it
+  | 'tidal' // sand at low tide, sea at high tide (see LevelDef.tide)
+  | 'switch' // a light switch, on a wall
   | 'exit';
 
 export interface Point {
@@ -85,7 +89,8 @@ export interface LevelDef {
    * `L` lamp · `+` locked door · `V` vent grate · `x` laser · `C` camera panel · `F` fuse box ·
    * `~` squeaky floorboard · `S` safe · `H` ladder to the rafters · `h` theatre seats · `^` pressure plate ·
    * `K` keycard door · `k` keycard · `_` gap (a drop, or water) · `-` wire · `|` glass wall · `B` kennel ·
-   * `Q` vault door · `N` desk with the combination · `@` Leo's start · `E` exit
+   * `Y` stack of crates · `Q` vault door · `N` desk with the combination · `O` crate to hide in · `t` tidal sand · `W` light switch ·
+   * `@` Leo's start · `E` exit
    */
   map: string[];
   /** The rafters, same size as the map: `=` beam, `H` the top of a ladder (must match an `H` on the map). */
@@ -100,6 +105,14 @@ export interface LevelDef {
   ambient: 'lit' | 'dim' | 'dark';
   /** What the gaps are: a drop between rooftops (the default) or water. */
   gaps?: 'sky' | 'water';
+  /** The tide: tidal tiles are dry for `period` turns, then under water for `period` turns, and so on. It starts high with `high`. */
+  tide?: { period: number; high?: boolean };
+  /** A lighthouse: its beam lights a narrow wedge, `range` tiles long, turning one eighth clockwise a turn. */
+  beacon?: { at: Point; range: number; facing: number };
+  /** Where the fish market's smell is so strong that sniffers can't smell a cat. */
+  fishy?: { x: number; y: number; w: number; h: number }[];
+  /** Light switches: each one (a `W` on the map) works these lamps, by their index in `lamps`. */
+  switches?: { at: Point; lamps: number[] }[];
   /** Dark corners in a dim building. */
   shadows?: { x: number; y: number; w: number; h: number }[];
   lamps?: LampDef[];
@@ -146,6 +159,7 @@ const LEGEND: Record<string, Tile> = {
   '.': 'floor',
   ',': 'marble',
   P: 'pillar',
+  Y: 'stack',
   D: 'case',
   G: 'plinth',
   L: 'lamp',
@@ -167,6 +181,9 @@ const LEGEND: Record<string, Tile> = {
   B: 'kennel',
   Q: 'vault',
   N: 'desk',
+  O: 'crate',
+  t: 'tidal',
+  W: 'switch',
   '@': 'floor',
   E: 'exit',
 };
@@ -208,6 +225,11 @@ export function parseLevel(def: LevelDef): Level {
   if (!start || !exit) throw new Error(`${def.id}: map needs @ and E`);
   if (def.map.join('').split('k').length > 2) throw new Error(`${def.id}: one keycard per level`);
   if (def.map.join('').includes('Q') && !def.map.join('').includes('N')) throw new Error(`${def.id}: a vault door needs a desk with the combination`);
+  if (def.map.join('').includes('t') && !def.tide) throw new Error(`${def.id}: tidal sand needs a tide`);
+  for (const sw of def.switches ?? []) {
+    if (def.map[sw.at.y]?.[sw.at.x] !== 'W') throw new Error(`${def.id}: switch at ${sw.at.x},${sw.at.y} has no W on the map`);
+    for (const i of sw.lamps) if (!def.lamps?.[i]) throw new Error(`${def.id}: switch at ${sw.at.x},${sw.at.y} works a lamp that isn't there`);
+  }
   for (const l of def.loot) {
     const t = tiles[l.at.y]?.[l.at.x];
     if (t !== 'case' && t !== 'plinth' && t !== 'safe') throw new Error(`${def.id}: loot "${l.name}" is not in a case, a safe or on the plinth`);
@@ -250,17 +272,18 @@ export function isRafter(level: Level, x: number, y: number): boolean {
 /** Whether a tile blocks walking, given which doors are open and which cases are emptied. */
 export function blocksMove(t: Tile): boolean {
   return (
-    t === 'wall' || t === 'pillar' || t === 'case' || t === 'plinth' || t === 'lamp' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'safe' || t === 'seat' ||
-    t === 'keydoor' || t === 'gap' || t === 'wire' || t === 'glass' || t === 'kennel' || t === 'vault' || t === 'desk'
+    t === 'wall' || t === 'pillar' || t === 'stack' || t === 'case' || t === 'plinth' || t === 'lamp' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'safe' || t === 'seat' ||
+    t === 'keydoor' || t === 'gap' || t === 'wire' || t === 'glass' || t === 'kennel' || t === 'vault' || t === 'desk' ||
+    t === 'crate' || t === 'switch'
   );
 }
 
 /** Display cases, the plinth and lamps are low: guards see over them, and through glass. Closed doors block sight. */
 export function blocksSight(t: Tile): boolean {
-  return t === 'wall' || t === 'pillar' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'keydoor' || t === 'vault';
+  return t === 'wall' || t === 'pillar' || t === 'stack' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'keydoor' || t === 'vault' || t === 'switch';
 }
 
 /** Walls, closed doors and glass stop sound (it carries round pillars). */
 export function blocksSound(t: Tile): boolean {
-  return t === 'wall' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'keydoor' || t === 'vault' || t === 'glass';
+  return t === 'wall' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'keydoor' || t === 'vault' || t === 'glass' || t === 'switch';
 }

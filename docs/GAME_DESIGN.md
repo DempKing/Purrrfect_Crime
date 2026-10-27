@@ -138,6 +138,11 @@ differently.
 | **Alarm panels** | Once an alarm trips, a countdown runs until the level locks down. Disarm the panel or escape before it ends. |
 | **Spotlights and searchlights** | Moving light sources that sweep areas on a timer. |
 | **Guard dogs' kennels / bells / squeaky floorboards** | Noise traps. As built: a dog barks (noise 5) at Leo within 2 tiles of its kennel, once a move, and guards come to look. |
+| **Hiding crates** (Harbour) | Climb into an open crate: nobody sees or smells Leo there, and guards walk round it. A noise from inside still brings them to look. |
+| **Lighthouse beam** (Harbour) | A narrow wedge of bright light, 11 tiles long, turning an eighth of the way round each turn. |
+| **The tide** (Harbour) | Tidal sand is dry for a few turns, then under water for as many. Caught on it when the tide comes in, Leo is washed onto the nearest dry tile with a splash (noise 4). |
+| **The fish market** (Harbour) | So smelly that sniffers can't smell a cat on it. |
+| **Light switches** (Harbour) | Put a room's lamps out (silent, 1 action point). The nearest guard on his rounds heads for the switch, and any guard who passes it puts the lights back on. |
 | **Vault doors** (late game) | Several steps: a code found somewhere in the level plus timed dials. As built: search the desk with the combination (1 action point), then two silent turns of the dials. |
 
 ### 5.1 Air ducts
@@ -401,7 +406,7 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | **Downtown** | The Grand Bank, Casino Royale-Paws, The Mint, The Museum of Modern Mischief, City Hall Treasury |
 | **Special** | NightClaw's challenge museum (*The Midnight Museum*), NightClaw's Lair |
 
-**Built so far (M4: Old Town, Museum Mile, The Heights and the challenge museum):**
+**Built so far (M4: Old Town, Museum Mile, The Heights, Harbour and the challenge museum):**
 
 | # | Level | What it introduces |
 | --- | --- | --- |
@@ -420,9 +425,15 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | 12 | The Glass Tower Auction | Glass walls: seen through, not heard through. A glass vitrine in the middle of the floor. |
 | 13 | The Yacht Club | Guard dogs in kennels; water between the piers and yachts. |
 | 14 | The Observatory Estate | A vault door, with the combination in the study desk next door. |
+| 15 | The Customs Warehouse | Open crates to hide in, among aisles of stacked crates. |
+| 16 | The Lighthouse Collection | The lighthouse beam sweeping a moonlit headland. |
+| 17 | The Shipwreck Museum | The tide, round a wreck on a sandbank in a sea cave. |
+| 18 | The Fish Market Bank | Sniffers everywhere, except on the fish market floor; a vault. |
+| 19 | The Aquarium Gala | Light switches, a great glass tank, and a camera that's blind in the dark. |
 | NC | The Midnight Museum | NightClaw's challenge (opened by Letter 2): every mechanic so far, in one building. |
 
-Each level opens when the one before it is cleared. Guard types as built: **sleepy** guards see
+Guards who hear a noise from something they can't stand on (a kennel, a case, a crate) go to the open
+tile beside it nearest them. Each level opens when the one before it is cleared. Guard types as built: **sleepy** guards see
 nothing while dozing, wake to noise, look around and go back to their chair; **captains** see 25%
 further and call guards within 7 tiles when suspicious; **sniffers** see 60% as far but smell Leo
 within 2 tiles through walls (not in vents or rafters), and a second sniff is a catch. Creaky

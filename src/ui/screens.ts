@@ -92,7 +92,7 @@ function slotSummary(p: Profile): string {
 export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void {
   const el = show(
     `<div class="card big title-card">
-      <div class="kicker">Prototype M4 · The Heights</div>
+      <div class="kicker">Prototype M4 · Harbour</div>
       <h1>Purrrfect Crime</h1>
       <p>Leo Tuxedo is new in town, sharply dressed and short of Catnip. The museums are full of treasures
         and the guards are half asleep. Time to make a name for himself.</p>
@@ -459,7 +459,7 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
         const fill =
           t === 'wall' || t === 'panel' || t === 'fuse'
             ? '#3b4366'
-            : ({ pillar: '#59608a', exit: '#2f7d5b', door: '#8a6a45', marble: '#2a3150', keydoor: '#8a93a8', vault: '#c0c6d4', glass: '#5b88a8', kennel: '#9c4a2a', desk: '#7a5634', keycard: '#5ef0ff', gap: def.gaps === 'water' ? '#0f2a44' : '#06070d', wire: def.gaps === 'water' ? '#0f2a44' : '#06070d' } as Record<string, string>)[t] ?? '#1f2540';
+            : ({ pillar: '#59608a', stack: '#86643a', exit: '#2f7d5b', door: '#8a6a45', marble: '#2a3150', keydoor: '#8a93a8', vault: '#c0c6d4', glass: '#5b88a8', kennel: '#9c4a2a', desk: '#7a5634', keycard: '#5ef0ff', crate: '#a07a48', tidal: '#9a8056', switch: '#e6e0d0', gap: def.gaps === 'water' ? '#0f2a44' : '#06070d', wire: def.gaps === 'water' ? '#0f2a44' : '#06070d' } as Record<string, string>)[t] ?? '#1f2540';
         cells.push(`<rect x="${x * S}" y="${y * S}" width="${S}" height="${S}" fill="${fill}"/>`);
         if (level.ducts[y][x]) cells.push(`<rect x="${x * S + 5}" y="${y * S + 5}" width="6" height="6" fill="#5ec8ff" opacity="0.5"/>`);
         if (t === 'wire') cells.push(`<line x1="${x * S}" y1="${y * S + 8}" x2="${x * S + S}" y2="${y * S + 8}" stroke="#c8ccd8" stroke-width="1.5"/>`);

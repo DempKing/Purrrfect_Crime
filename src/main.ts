@@ -29,6 +29,9 @@ import {
   useAbility,
   planRival,
   motionTrip,
+  hiddenAt,
+  flooded,
+  tideTurnsLeft,
   type Ability,
   type RivalPlan,
   type Action,
@@ -583,11 +586,13 @@ function updateHud(): void {
             : state.rivalLoot.length
               ? `${r.name} got away with the ${prize}`
               : `${r.name} has fled`;
-  rl.textContent = rivalText;
-  rl.classList.toggle('hidden', !rivalText);
-  const l = state.layer !== 'floor' ? -1 : lightNow(level, state, state.leo.x, state.leo.y);
+  const tide = level.def.tide ? `${flooded(level, state) ? 'High' : 'Low'} tide · it turns in ${tideTurnsLeft(level, state)} turn${tideTurnsLeft(level, state) === 1 ? '' : 's'}` : '';
+  rl.textContent = [rivalText, tide].filter(Boolean).join(' · ');
+  rl.classList.toggle('hidden', !rivalText && !tide);
+  const hidden = hiddenAt(level, state, state.leo);
+  const l = state.layer !== 'floor' || hidden ? -1 : lightNow(level, state, state.leo.x, state.leo.y);
   const li = $('light');
-  li.textContent = l < 0 ? (state.layer === 'vent' ? 'In the vents' : 'In the rafters') : LIGHT_NAMES[l];
+  li.textContent = hidden ? 'In a crate' : l < 0 ? (state.layer === 'vent' ? 'In the vents' : 'In the rafters') : LIGHT_NAMES[l];
   li.className = `light l${l < 0 ? 'v' : l}`;
   const al = $('alarm');
   if (state.alarm !== null && state.status === 'playing') {
