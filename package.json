@@ -1,0 +1,20 @@
+{
+  "name": "purrrfect-crime",
+  "productName": "Purrrfect Crime",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A turn-based stealth heist game: Leo Tuxedo, cat burglar, versus bulldog guards.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "node scripts/build.mjs --dev && npx http-server dist -p 8100 -c-1",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/test.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.0",
+    "esbuild": "0.24.2",
+    "pixi.js": "8.21.0",
+    "typescript": "5.9.3"
+  }
+}
