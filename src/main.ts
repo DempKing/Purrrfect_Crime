@@ -1,12 +1,13 @@
-// Prototype M2: the vertical slice. The tutorial with its narrator, then the calling card, the morning paper,
-// the heist report, the city map and the lair with its black market. The heist itself is the M1 sandbox.
+// Prototype M3: progression. Save slots and a difficulty per game; Leo's attributes, skills and gadgets in the
+// heist; the lair's rooms; the briefing; checkpoints and undo on the easier difficulties. Built on the M2 slice
+// (tutorial, narrator, paper, black market) and the M1 sandbox.
 import { Application, Container } from 'pixi.js';
 // Lets PixiJS run on pages with a strict security policy (no eval), such as claude.ai artifacts.
 import 'pixi.js/unsafe-eval';
 import { parseLevel, type Level, type LevelDef, type Point } from './core/level';
 import {
   actionsHere,
-  apCost,
+  moveAp,
   inventoryUsed,
   inventoryValue,
   cameraView,
@@ -23,14 +24,18 @@ import {
   pathTo,
   planGuards,
   AP_PER_TURN,
-  INVENTORY_SPACES,
+  abilities,
+  abilityTargets,
+  useAbility,
+  type Ability,
   type Action,
   type GuardStep,
   type State,
 } from './core/game';
 import { NIGHT_GALLERY } from './levels/prototype';
 import { CORNER_GALLERY } from './levels/tutorial';
-import { buyLair, completeHeist, loadProfile, narratorBuysTutorialLoot, newProfile, saveProfile, sell, type Profile } from './meta/profile';
+import { buyLair, completeHeist, deleteSlot, loadSlot, loadSlots, narratorBuysTutorialLoot, newProfile, saveSlot, sell, type Profile } from './meta/profile';
+import { DIFFICULTY, learn, perksFor, raise, upgrade } from './meta/progression';
 import { TUTORIAL, advance, type TutorialEvents } from './meta/tutorial';
 import * as screens from './ui/screens';
 import { HeistView, type Actor, type Overlay, type Ripple } from './render/view';
@@ -52,8 +57,9 @@ function storage(): Storage | null {
     return null;
   }
 }
-let profile: Profile = loadProfile(storage()) ?? newProfile();
-const persist = () => saveProfile(storage(), profile);
+let slot = 0;
+let profile: Profile = newProfile();
+const persist = () => saveSlot(storage(), slot, profile);
 
 // --- the narrator's tutorial ------------------------------------------------------------------
 
@@ -92,6 +98,7 @@ interface Segment {
   facing: number;
   t: number;
   dur: number;
+  leap?: boolean; // a Pounce: a high arc instead of a walk
 }
 let queue: Segment[] = [];
 let busy = false;
@@ -148,10 +155,16 @@ function overlay(): Overlay {
   const reach1 = new Set<string>();
   const reach2 = new Set<string>();
   const live = state.status === 'playing' && !busy;
+  const cp = checkpointAllowed() ? level.def.checkpoint ?? null : null;
+  if (targeting && live) {
+    const targets = abilityTargets(level, state, targeting);
+    const target = selected ?? hover;
+    return { reach1, reach2, vision: c.vision, cameraVision: c.cameraVision, footprints: c.footprints, path: [], pathDanger: new Map(), hover: target && targets.has(key(target.x, target.y)) ? target : null, targets, checkpoint: cp, checkpointReached: !!checkpoint };
+  }
   if (live)
     for (const [k, cost] of c.reach.cost) {
       if (cost === 0) continue;
-      const ap = apCost(cost);
+      const ap = moveAp(state, cost);
       if (ap > state.ap) continue;
       (ap === 1 ? reach1 : reach2).add(k);
     }
@@ -160,7 +173,7 @@ function overlay(): Overlay {
   const pathDanger = new Map<string, number>();
   if (target && live) {
     path = pathTo(c.reach, target) ?? [];
-    if (path.length && apCost(c.reach.cost.get(key(target.x, target.y)) ?? 99) > state.ap) path = [];
+    if (path.length && moveAp(state, c.reach.cost.get(key(target.x, target.y)) ?? 99) > state.ap) path = [];
     for (const p of path.slice(1)) {
       const d = danger(level, state, p);
       if (d) pathDanger.set(key(p.x, p.y), d);
@@ -176,6 +189,9 @@ function overlay(): Overlay {
     path,
     pathDanger,
     hover: target && (path.length > 1 || actionable) ? target : null,
+    targets: new Set(),
+    checkpoint: cp,
+    checkpointReached: !!checkpoint,
   };
 }
 
@@ -196,12 +212,17 @@ function clickAction(tile: Point): Action | null {
 
 function act(tile: Point): void {
   if (busy || state.status !== 'playing') return;
+  if (targeting) {
+    if (abilityTargets(level, state, targeting).has(key(tile.x, tile.y))) return runAbility(targeting, tile);
+    return cancelTargeting();
+  }
   const a = clickAction(tile);
   if (a) return runAction(a);
   state.log = [];
   const apBefore = state.ap;
   const res = moveLeo(level, state, tile);
   if (!res.ok) return say(res.reason ?? '');
+  turnActed = true;
   if (tutorial) {
     tutorial.ev.moved = true;
     if (apBefore - state.ap === 2) tutorial.ev.dashed = true;
@@ -224,15 +245,113 @@ function runAction(a: Action): void {
   if (a.blocked) return say(a.blocked);
   state.log = [];
   if (!doAction(level, state, a.kind, a.at)) return say('Leo can’t do that right now.');
+  turnActed = true;
   selected = null;
   version++;
   afterLeoActs();
   if (a.at.x !== state.leo.x || a.at.y !== state.leo.y) leo.facing = faceToward(state.leo, a.at);
 }
 
+// --- gadgets and skills ---------------------------------------------------------------------------
+
+let targeting: Ability | null = null;
+
+function startAbility(kind: Ability): void {
+  if (busy || state.status !== 'playing') return;
+  if (targeting === kind) return cancelTargeting();
+  const a = abilities(level, state).find((x) => x.kind === kind);
+  if (!a) return;
+  if (a.blocked) return say(a.blocked);
+  if (a.target === 'self') return runAbility(kind);
+  targeting = kind;
+  selected = null;
+  say(a.target === 'camera' ? `${a.name}: click a camera within reach. Esc to cancel.` : `${a.name}: click one of the highlighted tiles. Esc to cancel.`);
+  updateHud();
+}
+
+function cancelTargeting(): void {
+  targeting = null;
+  say('');
+  updateHud();
+}
+
+function runAbility(kind: Ability, at?: Point): void {
+  const from = { ...state.leo };
+  state.log = [];
+  targeting = null;
+  if (!useAbility(level, state, kind, at)) {
+    updateHud();
+    return say('Leo can’t do that right now.');
+  }
+  turnActed = true;
+  selected = null;
+  version++;
+  if (kind === 'pounce') return play([{ who: 'leo', from, to: { ...state.leo }, facing: faceToward(from, state.leo), t: 0, dur: 0.35, leap: true }], afterLeoActs);
+  afterLeoActs();
+  if (at) leo.facing = faceToward(state.leo, at);
+}
+
+// --- checkpoints and undo (Casual and Professional) ------------------------------------------------
+
+let checkpoint: State | null = null;
+let turnStart: State | null = null;
+let turnActed = false;
+const checkpointAllowed = () => DIFFICULTY[profile.difficulty].checkpoints && !tutorial;
+const undoAllowed = () => DIFFICULTY[profile.difficulty].undo;
+
+function checkCheckpoint(): void {
+  const cp = level.def.checkpoint;
+  if (!cp || checkpoint || !checkpointAllowed() || state.status !== 'playing' || state.layer !== 'floor') return;
+  if (state.leo.x !== cp.x || state.leo.y !== cp.y) return;
+  checkpoint = structuredClone(state);
+  banner('Checkpoint');
+  say('Checkpoint: Leo marks the floor with chalk. If he’s caught from here on, he can start again from this spot.');
+}
+
+function beginTurn(): void {
+  turnStart = structuredClone(state);
+  turnActed = false;
+}
+
+function undo(): void {
+  if (busy || !turnStart || !turnActed || !undoAllowed()) return;
+  if (checkpoint && checkpoint.turn === turnStart.turn) checkpoint = null;
+  state = structuredClone(turnStart);
+  turnActed = false;
+  targeting = null;
+  ripples = [];
+  noisesSeen = state.noises.length;
+  selected = null;
+  version++;
+  syncActors();
+  updateHud();
+  say('Undone. The turn starts again.');
+  tutorialUpdate();
+}
+
+function fromCheckpoint(): void {
+  if (!checkpoint) return;
+  state = structuredClone(checkpoint);
+  queue = [];
+  busy = false;
+  afterAnim = null;
+  targeting = null;
+  selected = null;
+  ripples = [];
+  noisesSeen = state.noises.length;
+  version++;
+  syncActors();
+  hide('caught');
+  beginTurn();
+  updateHud();
+  banner('Your turn');
+  say('Back at the checkpoint.');
+}
+
 function afterLeoActs(): void {
   spawnRipples();
   syncActors();
+  checkCheckpoint();
   updateHud();
   if (state.log.length) say(state.log.join(' '));
   tutorialUpdate();
@@ -263,15 +382,23 @@ function doEndTurn(): void {
     if (state.log.length) say(state.log.join(' '));
     tutorialUpdate();
     if (state.status === 'caught') return caught();
+    beginTurn();
+    updateHud();
+    // Still asleep after a Cat Nap: the guards go again.
+    if (state.ap <= 0) {
+      banner('Zzz…');
+      setTimeout(() => !busy && state.status === 'playing' && state.ap <= 0 && doEndTurn(), 700);
+      return;
+    }
     banner(state.alarm !== null ? `Alarm! ${state.alarm} turns` : 'Your turn');
   });
 }
 
 function startHeist(def: LevelDef): void {
-  level = parseLevel(def);
+  level = parseLevel(def, profile.difficulty);
   view.proj.cx = level.w / 2;
   view.proj.cy = level.h / 2;
-  $('level-name').textContent = level.def.name;
+  $('level-name').textContent = `${level.def.name} · ${DIFFICULTY[profile.difficulty].name}`;
   tutorial = def.id === CORNER_GALLERY.id && !profile.tutorialDone ? { step: 0, ev: { moved: false, dashed: false, rotated: false, onMarble: false }, hidden: false } : null;
   screens.hideScreens();
   inHeist = true;
@@ -286,6 +413,7 @@ function leaveHeist(): void {
   busy = false;
   hide('caught');
   hide('help');
+  targeting = null;
   $('narrator').classList.add('hidden');
   document.body.classList.add('meta');
 }
@@ -341,7 +469,7 @@ function showLair(tab: screens.LairTab = 'heists'): void {
     profile,
     {
       jobs: JOBS,
-      onHeist: (def) => startHeist(def),
+      onHeist: (def) => screens.briefing(def, profile, () => startHeist(def), () => showLair()),
       onSell: (id) => {
         sell(profile, id);
         persist();
@@ -353,6 +481,22 @@ function showLair(tab: screens.LairTab = 'heists'): void {
         showLair('market');
       },
       onPaper: (i) => screens.newspaper(profile.papers[i], false, () => showLair('papers'), 'Back to the lair'),
+      onRaise: (id) => {
+        raise(profile, id);
+        persist();
+        showLair('leo');
+      },
+      onLearn: (id) => {
+        learn(profile, id);
+        persist();
+        showLair('leo');
+      },
+      onUpgrade: (id) => {
+        upgrade(profile, id);
+        persist();
+        showLair('lair');
+      },
+      onQuit: showTitle,
     },
     tab,
   );
@@ -365,19 +509,32 @@ function quit(): void {
 
 function showTitle(): void {
   leaveHeist();
-  screens.titleScreen(
-    !!loadProfile(storage()),
-    () => {
-      profile = newProfile();
+  screens.titleScreen(loadSlots(storage()), {
+    onPlay: (i) => {
+      const p = loadSlot(storage(), i);
+      if (!p) return showTitle();
+      slot = i;
+      profile = p;
+      goOn();
+    },
+    onNew: (i, difficulty) => {
+      slot = i;
+      profile = newProfile(difficulty);
       persist();
       startHeist(CORNER_GALLERY);
     },
-    goOn,
-  );
+    onDelete: (i) => {
+      deleteSlot(storage(), i);
+      showTitle();
+    },
+  });
 }
 
 function restart(): void {
-  state = newHeist(level);
+  state = newHeist(level, perksFor(profile));
+  checkpoint = null;
+  targeting = null;
+  beginTurn();
   queue = [];
   busy = false;
   afterAnim = null;
@@ -421,7 +578,7 @@ const LIGHT_NAMES = ['In shadow', 'Dim light', 'In the light'];
 function updateHud(): void {
   $('turn').textContent = String(state.turn);
   $('ap').innerHTML = Array.from({ length: AP_PER_TURN }, (_, i) => `<span class="pip ${i < state.ap ? 'on' : ''}"></span>`).join('');
-  $('inventory').innerHTML = `Inventory <b>${inventoryUsed(level, state)}/${INVENTORY_SPACES}</b> · ${money(inventoryValue(level, state))}`;
+  $('inventory').innerHTML = `Inventory <b>${inventoryUsed(level, state)}/${state.perks.spaces}</b> · ${money(inventoryValue(level, state))}`;
   const l = state.layer === 'vent' ? -1 : lightAt(level, state.leo.x, state.leo.y);
   const li = $('light');
   li.textContent = l < 0 ? 'In the vents' : LIGHT_NAMES[l];
@@ -432,6 +589,25 @@ function updateHud(): void {
     show('alarm');
   } else hide('alarm');
   ($('end') as HTMLButtonElement).disabled = busy || state.status !== 'playing';
+  const undoBtn = $('undo') as HTMLButtonElement;
+  undoBtn.classList.toggle('hidden', !undoAllowed());
+  undoBtn.disabled = busy || !turnActed || state.status !== 'playing';
+
+  // Gadgets and active skills, with what's left of each.
+  const ab = $('abilities');
+  const list = state.status === 'playing' ? abilities(level, state) : [];
+  ab.innerHTML = '';
+  for (const a of list) {
+    const b = document.createElement('button');
+    b.className = `ability${targeting === a.kind ? ' on' : ''}`;
+    b.dataset.ability = a.kind;
+    b.disabled = busy || (!!a.blocked && targeting !== a.kind);
+    b.title = a.blocked ?? `${a.ap} action point`;
+    b.innerHTML = `${a.name}${a.left < 99 ? ` <span class="count">×${a.left}</span>` : ''}`;
+    b.addEventListener('click', () => startAbility(a.kind));
+    ab.appendChild(b);
+  }
+  ab.classList.toggle('hidden', list.length === 0);
 
   const bar = $('actions');
   const acts = busy ? [] : actionsHere(level, state);
@@ -453,6 +629,9 @@ function updateHud(): void {
 function caught(): void {
   $('caught-who').textContent = state.caughtBy ?? 'A guard';
   $('caught-why').textContent = state.caughtWhy ? `${state.caughtWhy}.` : '';
+  $('from-checkpoint').classList.toggle('hidden', !checkpoint);
+  $('again').textContent = checkpoint ? 'From the start' : 'Try again (R)';
+  $('again').classList.toggle('primary', !checkpoint);
   setTimeout(() => show('caught'), 600);
 }
 
@@ -503,6 +682,8 @@ async function boot(): Promise<void> {
   $('end').addEventListener('click', doEndTurn);
   $('restart').addEventListener('click', restart);
   $('again').addEventListener('click', restart);
+  $('from-checkpoint').addEventListener('click', fromCheckpoint);
+  $('undo').addEventListener('click', undo);
   $('quit').addEventListener('click', quit);
   $('quit2').addEventListener('click', quit);
   $('narrator-face').innerHTML = screens.NARRATOR_SVG;
@@ -526,7 +707,10 @@ async function boot(): Promise<void> {
       if (state.status === 'playing') doEndTurn();
       else restart();
     } else if (e.key === 'r' || e.key === 'R') restart();
-    else if (e.key === 'Escape') selected = null;
+    else if (e.key === 'Escape') {
+      selected = null;
+      if (targeting) cancelTargeting();
+    } else if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey || !e.shiftKey)) undo();
     else if (/^[1-9]$/.test(e.key)) ($('actions').children[Number(e.key) - 1] as HTMLButtonElement | undefined)?.click();
   });
 
@@ -548,12 +732,21 @@ async function boot(): Promise<void> {
       return tutorial ? TUTORIAL[tutorial.step]?.id ?? 'done' : null;
     },
     startHeist: (id: string) => startHeist(JOBS.find((j) => j.id === id)!),
+    get slot() {
+      return slot;
+    },
+    get checkpoint() {
+      return !!checkpoint;
+    },
+    get targeting() {
+      return targeting;
+    },
     screenOf: (x: number, y: number) => world.toGlobal(project(view.proj, x + 0.5, y + 0.5)),
     /** A tile Leo can reach this turn where he'd be caught or set off the alarm. */
     dangerTile: () => {
       for (const [k, cost] of leoReach(level, state).cost) {
         const [x, y] = k.split(',').map(Number);
-        if (cost > 0 && apCost(cost) <= state.ap && danger(level, state, { x, y }) === 2) return { x, y };
+        if (cost > 0 && moveAp(state, cost) <= state.ap && danger(level, state, { x, y }) === 2) return { x, y };
       }
       return null;
     },
@@ -573,7 +766,7 @@ async function boot(): Promise<void> {
       a.x = seg.from.x + 0.5 + (seg.to.x - seg.from.x) * k;
       a.y = seg.from.y + 0.5 + (seg.to.y - seg.from.y) * k;
       a.facing = seg.facing;
-      a.bob = Math.abs(Math.sin(k * Math.PI)) * 4;
+      a.bob = Math.abs(Math.sin(k * Math.PI)) * (seg.leap ? 34 : 4);
       if (seg.t >= 1) {
         a.bob = 0;
         queue.shift();

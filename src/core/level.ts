@@ -50,6 +50,18 @@ export interface LootDef {
   category: LootCategory;
 }
 
+/** Chosen once per game. Harder ones add hand-placed security and pay more. */
+export type Difficulty = 'casual' | 'professional' | 'mastermind' | 'legendary';
+export const DIFFICULTIES: Difficulty[] = ['casual', 'professional', 'mastermind', 'legendary'];
+
+/** Security a level adds at a difficulty, on top of everything from the easier ones. */
+export interface Extras {
+  guards?: GuardDef[];
+  cameras?: CameraDef[];
+  lamps?: LampDef[];
+  moonlight?: { x: number; y: number; w: number; h: number }[];
+}
+
 export interface LevelDef {
   id: string;
   name: string;
@@ -75,10 +87,20 @@ export interface LevelDef {
   /** Base XP for a successful heist, and the turn count that earns a speed bonus. */
   xp?: number;
   par?: number;
+  /** The chalk paw print: on Casual and Professional, reaching it saves a restart point. */
+  checkpoint?: Point;
+  /** Extra security per difficulty (cumulative: Mastermind also gets Professional's). */
+  extras?: Partial<Record<Exclude<Difficulty, 'casual'>, Extras>>;
 }
 
 export interface Level {
   def: LevelDef;
+  difficulty: Difficulty;
+  /** The level's own security plus the difficulty's extras. */
+  guards: GuardDef[];
+  cameras: CameraDef[];
+  lamps: LampDef[];
+  moonlight: { x: number; y: number; w: number; h: number }[];
   w: number;
   h: number;
   tiles: Tile[][]; // tiles[y][x]
@@ -105,7 +127,7 @@ const LEGEND: Record<string, Tile> = {
   E: 'exit',
 };
 
-export function parseLevel(def: LevelDef): Level {
+export function parseLevel(def: LevelDef, difficulty: Difficulty = 'casual'): Level {
   const h = def.map.length;
   const w = Math.max(...def.map.map((r) => r.length));
   let start: Point | null = null;
@@ -137,7 +159,26 @@ export function parseLevel(def: LevelDef): Level {
     const t = tiles[l.at.y]?.[l.at.x];
     if (t !== 'case' && t !== 'plinth') throw new Error(`${def.id}: loot "${l.name}" is not in a case or on the plinth`);
   }
-  return { def, w, h, tiles, ducts, start, exit, plinth };
+  const tier = DIFFICULTIES.indexOf(difficulty);
+  const extras = DIFFICULTIES.slice(1, tier + 1).map((d) => def.extras?.[d as Exclude<Difficulty, 'casual'>] ?? {});
+  const level: Level = {
+    def,
+    difficulty,
+    w,
+    h,
+    tiles,
+    ducts,
+    start,
+    exit,
+    plinth,
+    guards: [...def.guards, ...extras.flatMap((e) => e.guards ?? [])],
+    cameras: [...(def.cameras ?? []), ...extras.flatMap((e) => e.cameras ?? [])],
+    lamps: [...(def.lamps ?? []), ...extras.flatMap((e) => e.lamps ?? [])],
+    moonlight: [...(def.moonlight ?? []), ...extras.flatMap((e) => e.moonlight ?? [])],
+  };
+  for (const g of level.guards) for (const p of [g.start, ...g.route]) if (blocksMove(tiles[p.y]?.[p.x] ?? 'wall')) throw new Error(`${def.id}: guard ${g.name} stands in a wall at ${p.x},${p.y}`);
+  if (def.checkpoint && blocksMove(tiles[def.checkpoint.y][def.checkpoint.x])) throw new Error(`${def.id}: the checkpoint is in a wall`);
+  return level;
 }
 
 export function tileAt(level: Level, x: number, y: number): Tile {

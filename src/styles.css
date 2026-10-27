@@ -189,3 +189,41 @@ table.stash td.price { text-align: right; white-space: nowrap; }
   .lair-art svg { width: 96px; }
   .job { flex-direction: column; align-items: stretch; }
 }
+
+/* --- M3: slots, difficulty, Leo, the lair's rooms, the briefing, abilities ---------------------- */
+.slots { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 8px; }
+.slot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,0.03); }
+.slot.empty { opacity: 0.85; }
+.slot .row-buttons { flex: none; }
+.difficulties { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.difficulty { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 10px 14px; }
+.difficulty span { font-size: 0.85em; opacity: 0.85; font-weight: 400; }
+.lair-head { position: relative; }
+.lair-head .quit { position: absolute; right: 0; top: 0; }
+.ups { display: flex; flex-direction: column; }
+.up, .skill { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.up:last-child, .skill:last-child { border-bottom: none; }
+.up button, .skill button { flex: none; min-width: 88px; }
+.next { color: #9ff0c8; }
+.pips { display: inline-flex; gap: 3px; vertical-align: middle; margin-left: 4px; }
+.pips i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--gold); }
+.pips i.on { background: var(--gold); }
+h2.section { font-size: 1.1em; margin: 18px 0 6px; color: var(--gold); }
+.trees { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.tree h3 { margin: 0 0 4px; font-size: 1em; }
+.skill.owned b { color: #6ee7a8; }
+.skill.later { opacity: 0.6; }
+.trophies { margin: 4px 0; padding-left: 18px; line-height: 1.6; }
+.briefing { max-width: 760px; width: 100%; }
+.plan { width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); background: #0d1020; display: block; margin: 8px 0 4px; }
+.legend { margin-top: 2px; }
+.abilities { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; pointer-events: auto; }
+.ability { background: rgba(20, 60, 80, 0.95); border-color: #5ef0ff; font-size: 0.88em; padding: 6px 10px; }
+.ability.on { background: #5ef0ff; color: #0d1020; font-weight: 700; }
+.ability .count { opacity: 0.8; font-size: 0.85em; }
+@media (max-width: 700px) {
+  .lair-head .quit { position: static; }
+  .lair-head { flex-wrap: wrap; }
+  .slot { flex-direction: column; align-items: stretch; }
+  .ability { font-size: 0.8em; padding: 5px 8px; }
+}

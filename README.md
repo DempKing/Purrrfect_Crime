@@ -7,13 +7,15 @@ and catch the eye of the legendary **NightClaw**.
 
 There's no combat: stay hidden in the shadows and vents. Get caught and you restart the level.
 
-**Status:** prototype M2 (vertical slice), placeholder art. A new game opens on the tutorial, **The Corner
-Gallery**, where a narrator teaches one thing at a time. After each heist Leo leaves his calling card,
-*The Whisker Times* spins in with the headline and photos of the empty displays, and a heist report
-adds up the XP. The narrator buys the tutorial loot for Leo's first 500 Catnip, Leo buys an abandoned
-building on the city map for his lair, and from there he can pick heists (the Corner Gallery or the
-Night Gallery), sell loot on the black market (weekly demand, hot loot from replays) and read old front
-pages. Progress saves in the browser.
+**Status:** prototype M3 (progression), placeholder art. Three save slots, each with a difficulty chosen
+once (Casual, Professional, Mastermind, Legendary: more guards and cameras, bigger rewards, and no
+checkpoints or undo on the top two). At the lair Leo spends attribute points and Catnip on six
+attributes, learns skills from three trees (Shadow, Tech, Acrobat), and builds six rooms: the Planning
+Table (a briefing map before each heist that shows more per tier), the Workshop (bottle caps), the
+Fence's Office, the Scratching Tower, the Trophy Room and the Mailbox. In a heist, gadgets and active
+skills sit in a row above the actions; aim them at the highlighted tiles. On the easier difficulties a
+chalk paw print marks a checkpoint, and Undo (Z) takes back a turn. Underneath is the M2 slice: the
+tutorial and narrator, the calling card and newspaper, the black market, and the lair.
 
 ## Play the prototype
 
@@ -31,7 +33,7 @@ at the bottom, or press **1–9**. **Q / E** turn the camera, **Space** ends the
 npm install
 npm run dev        # builds with source maps and serves on http://localhost:8100
 npm run build      # dist/index.html: one self-contained file
-npm test           # rules, progression, market and newspaper tests, plus known winning routes
+npm test           # rules, skills, progression, market and newspaper tests, plus winning routes on every difficulty
 npm run typecheck
 node tests/e2e.mjs # plays the built game in a headless browser (needs Playwright)
 ```
@@ -67,7 +69,7 @@ tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 | M0 ✓ | Grey-box prototype: one map, camera rotation, action-point movement, one guard, caught = restart |
 | M1 ✓ | Stealth sandbox: light, noise, alert states, cameras, lasers, vents, lockpicking, loot, escape |
 | M2 ✓ (art pending) | Vertical slice: the tutorial level with real art, narrator, calling card and newspaper, black market, lair |
-| M3 | Progression: attributes, skill trees, lair upgrades, difficulty, saves |
+| M3 ✓ | Progression: attributes, skill trees, lair upgrades, difficulty, saves |
 | M4 | Content: levels 1–25, rivals, all guard types, NightClaw's first letters, the challenge museum |
 | M5 | Endgame: the NightClaw Challenge, NightClaw's Lair, ending |
 | M6 | Ship: Steam, settings, accessibility, balance and polish |

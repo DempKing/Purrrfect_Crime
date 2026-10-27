@@ -1,7 +1,7 @@
 // Draws a heist: floors and overlays first, then walls, furniture and characters sorted by depth.
 // Placeholder art for now; generated sprites replace the character and prop drawing later.
 import { Container, Graphics } from 'pixi.js';
-import { DIRS, key, lasersActive, lightMap, lootAt, tileNow, type Guard, type State } from '../core/game';
+import { DIRS, camerasActive, key, lasersActive, lightMap, lootAt, tileNow, type Guard, type State } from '../core/game';
 import type { Level, Point } from '../core/level';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
 
@@ -33,6 +33,7 @@ const COL = {
   lampGlow: 0xffd27a,
   duct: 0x5ec8ff,
   laser: 0xff2a2a,
+  target: 0x5ef0ff,
 };
 
 /** Loot colours by index, so each piece reads differently on its stand. */
@@ -48,6 +49,11 @@ export interface Overlay {
   /** 1 noticed, 2 caught or alarm, per tile on the path. */
   pathDanger: Map<string, number>;
   hover: Point | null;
+  /** Where the gadget or skill being aimed can go. */
+  targets: Set<string>;
+  /** The chalk paw print, when this difficulty has checkpoints, and whether Leo has reached it. */
+  checkpoint: Point | null;
+  checkpointReached: boolean;
 }
 
 export interface Actor {
@@ -107,6 +113,10 @@ export class HeistView {
         if (t === 'grate') this.grate(f, x, y);
         if (inVent) this.diamond(f, x, y, 0.5, 0x02030a, 0.45);
         if (ov.cameraVision.has(k)) this.diamond(f, x, y, 0.46, COL.camera, 0.3);
+        if (ov.targets.has(k)) {
+          this.diamond(f, x, y, 0.4, COL.target, 0.28 + Math.sin(this.time * 5) * 0.08);
+          this.diamondOutline(f, x, y, COL.target, 1.5, 0.12, 0.8);
+        }
         if (ov.vision.has(k)) this.diamond(f, x, y, 0.47, COL.vision, 0.32);
         if (!inVent) {
           if (ov.reach1.has(k)) this.diamond(f, x, y, 0.38, COL.reach1, 0.3);
@@ -124,6 +134,8 @@ export class HeistView {
           if (ov.reach1.has(k)) this.diamond(f, x, y, 0.3, COL.reach1, 0.45);
           else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.3, COL.reach2, 0.4);
         }
+    if (ov.checkpoint) this.pawPrint(f, ov.checkpoint, ov.checkpointReached);
+    for (const d of s.decoys) this.decoyCard(f, d);
     for (const fp of ov.footprints) {
       const sp = project(p, fp.x + 0.5, fp.y + 0.5);
       f.circle(sp.x, sp.y, 4).fill({ color: COL.step, alpha: 0.75 });
@@ -181,14 +193,29 @@ export class HeistView {
       }
     for (const c of s.cameras) {
       const facing = c.sweep[c.idx];
-      items.push({ depth: project(p, c.at.x + 0.5, c.at.y + 0.5).depth + 0.4, draw: (g) => this.camera(g, c.at, facing, s.camerasOff) });
+      items.push({ depth: project(p, c.at.x + 0.5, c.at.y + 0.5).depth + 0.4, draw: (g) => this.camera(g, c.at, facing, !camerasActive(s, c)) });
     }
-    items.push({ depth: leoDepth + 0.05, draw: (g) => this.drawLeo(g, leo, s.inventory.length > 0, inVent) });
+    items.push({
+      depth: leoDepth + 0.05,
+      draw: (g) => {
+        this.drawLeo(g, leo, s.inventory.length > 0, inVent);
+        if (s.napTurns > 0) this.zzz(g, leo);
+      },
+    });
     guards.forEach((a, i) =>
       items.push({ depth: project(p, a.x, a.y).depth + 0.05, draw: (g) => this.drawGuard(g, a, s.guards[i], s.status === 'caught' && s.caughtBy === s.guards[i].name) }),
     );
     items.sort((a, b) => a.depth - b.depth);
     for (const it of items) it.draw(o);
+
+    // Smoke pellets: drifting grey puffs over each cloud's 3×3 tiles.
+    for (const c of s.smoke)
+      for (let i = 0; i < 9; i++) {
+        const dx = (i % 3) - 1;
+        const dy = Math.floor(i / 3) - 1;
+        const sp = project(p, c.x + 0.5 + dx * 0.9, c.y + 0.5 + dy * 0.9, 18 + Math.sin(this.time * 2 + i) * 6);
+        this.fx.circle(sp.x, sp.y, 30 + Math.sin(this.time * 1.5 + i * 2) * 4).fill({ color: 0xb8bcc8, alpha: 0.55 });
+      }
 
     // Noise ripples spreading from where the sound was made. A circle on the floor is an ellipse on screen.
     for (const r of ripples) {
@@ -340,6 +367,32 @@ export class HeistView {
     if (!off && Math.sin(this.time * 5) > 0) g.circle(sp.x - 5, sp.y - 2, 2).fill({ color: 0xff3b30 });
   }
 
+  /** The checkpoint: a chalk paw print on the floor, glowing once Leo has reached it. */
+  private pawPrint(g: Graphics, at: Point, reached: boolean): void {
+    const c = project(this.proj, at.x + 0.5, at.y + 0.5);
+    const col = reached ? 0x9ff0c8 : 0xe8e4d8;
+    const alpha = reached ? 0.95 : 0.6;
+    g.ellipse(c.x, c.y + 3, 9, 5).fill({ color: col, alpha });
+    for (const [dx, dy] of [[-10, -4], [-4, -9], [4, -9], [10, -4]]) g.ellipse(c.x + dx, c.y + dy, 3.2, 2.2).fill({ color: col, alpha });
+  }
+
+  private decoyCard(g: Graphics, at: Point): void {
+    const c = project(this.proj, at.x + 0.5, at.y + 0.5, 2);
+    g.poly([c.x - 10, c.y, c.x, c.y - 6, c.x + 10, c.y, c.x, c.y + 6]).fill({ color: 0xf7f4ec }).stroke({ width: 1, color: 0x1b1b22 });
+    g.circle(c.x, c.y, 2).fill({ color: 0xd8262f });
+  }
+
+  private zzz(g: Graphics, a: Actor): void {
+    const s = project(this.proj, a.x, a.y);
+    for (let i = 0; i < 3; i++) {
+      const t = (this.time * 0.8 + i / 3) % 1;
+      const x = s.x + 10 + t * 14;
+      const y = s.y - 64 - t * 26;
+      const z = 4 + i;
+      g.moveTo(x - z, y - z).lineTo(x + z, y - z).lineTo(x - z, y + z).lineTo(x + z, y + z).stroke({ width: 2, color: 0xd8e4ff, alpha: 1 - t });
+    }
+  }
+
   private face(a: Actor): { x: number; y: number } {
     const d = DIRS[a.facing];
     return screenDir(this.proj, d.x, d.y);
@@ -402,6 +455,14 @@ export class HeistView {
     g.ellipse(hx, hy - 12, 15, 5).fill({ color: 0x1e2b52 });
     g.rect(hx - 10, hy - 22, 20, 10).fill({ color: 0x24335f });
     g.circle(hx, hy - 17, 2.5).fill({ color: 0xf2c46b });
+    if (guard.dazed > 0) {
+      // Little stars circling a guard who just had Leo wriggle out of his paws.
+      for (let i = 0; i < 3; i++) {
+        const a = this.time * 4 + (i * Math.PI * 2) / 3;
+        g.star(hx + Math.cos(a) * 16, hy - 26 + Math.sin(a) * 5, 5, 5, 2).fill({ color: 0xffe066 });
+      }
+      return;
+    }
     const mark = grinning || guard.mode === 'searching' ? '!' : guard.mode === 'suspicious' ? '?' : '';
     if (!mark) return;
     const col = mark === '!' ? 0xff3b30 : 0xffd23f;

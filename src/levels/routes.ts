@@ -50,3 +50,33 @@ export const CORNER_GALLERY_ROUTE: RouteStep[][] = [
   [{ a: 'take', x: 4, y: 9 }, [1, 10]],
   [[0, 11]],
 ];
+
+// The Night Gallery on every difficulty, Legendary included. Mastermind puts a camera on the office's
+// vent grate, so Leo waits in the duct until it looks away, climbs out and steps clear before it turns
+// back, then kills the cameras. Rocco (Legendary) circles the marble hall but never looks up the east side.
+export const NIGHT_GALLERY_ANY_ROUTE: RouteStep[][] = [
+  [[4, 14], { a: 'enter-vent', x: 4, y: 14 }],
+  [[5, 9]],
+  [[5, 3]],
+  [[2, 3]],
+  [],
+  [{ a: 'exit-vent', x: 2, y: 3 }, [2, 1]],
+  [{ a: 'panel', x: 2, y: 0 }, [2, 3]],
+  [{ a: 'enter-vent', x: 2, y: 3 }],
+  [[5, 6]],
+  [[6, 11]],
+  [[12, 11]],
+  [[18, 11]],
+  [[22, 10]],
+  [[22, 8], { a: 'exit-vent', x: 22, y: 8 }],
+  [[20, 3]],
+  [{ a: 'smash-case', x: 19, y: 2 }, { a: 'smash-case', x: 21, y: 2 }],
+  [[18, 5], { a: 'pick-door', x: 17, y: 5 }],
+  [{ a: 'pick-door', x: 17, y: 5 }],
+  [],
+  [[12, 1]],
+  [{ a: 'take', x: 11, y: 2 }, [14, 1]],
+  [[16, 9]],
+  [[22, 13]],
+  [[23, 13]],
+];
