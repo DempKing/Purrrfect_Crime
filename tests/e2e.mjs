@@ -24,7 +24,9 @@ await page.waitForFunction(() => window.__pc);
 await page.waitForTimeout(400);
 const shot = (name) => page.screenshot({ path: join(out, name) });
 await shot('01-title.png');
-await page.click('#new');
+await page.click('[data-new="0"]');
+await shot('01b-difficulty.png');
+await page.click('[data-difficulty="casual"]');
 await page.waitForTimeout(900);
 
 const idle = () => page.waitForFunction(() => !window.__pc.busy, null, { timeout: 15000 }).then(() => page.waitForTimeout(200));
@@ -108,6 +110,9 @@ const afterLair = await page.evaluate(() => ({ catnip: window.__pc.profile.catni
 
 // --- The Night Gallery --------------------------------------------------------------------------------
 await page.click('[data-job="1"]');
+await page.waitForSelector('.briefing');
+await shot('11b-briefing-no-table.png');
+await page.click('#go');
 await page.waitForTimeout(900);
 await playRoute(route('NIGHT_GALLERY_ROUTE'), { 13: '12-night-smash.png' });
 const nightEnd = await page.evaluate(() => ({ status: window.__pc.state.status, turn: window.__pc.state.turn }));
@@ -123,12 +128,40 @@ const sold = await page.evaluate(() => ({ catnip: window.__pc.profile.catnip, st
 await page.click('[data-tab="papers"]');
 await shot('15-front-pages.png');
 
-// --- Get caught on purpose, then quit back to the lair ---------------------------------------------------
+// --- Spend it: an attribute, a skill, two rooms -------------------------------------------------------
+await page.click('[data-tab="leo"]');
+await page.click('[data-raise="pockets"]');
+await page.click('[data-learn="blend"]');
+await shot('16-leo.png');
+await page.click('[data-tab="lair"]');
+await page.click('[data-upgrade="workshop"]');
+await page.click('[data-upgrade="planning"]');
+await shot('17-lair-rooms.png');
+const spent = await page.evaluate(() => ({ catnip: window.__pc.profile.catnip, pockets: window.__pc.profile.attributes.pockets, skills: window.__pc.profile.skills, rooms: window.__pc.profile.rooms }));
+
+// --- Replay with the new kit: a bottle cap and undo, the checkpoint, caught, back to the checkpoint -------
 await page.click('[data-tab="heists"]');
 await page.click('[data-job="1"]');
-await page.waitForTimeout(600);
+await page.waitForSelector('.briefing .plan');
+await shot('18-briefing-plan.png');
+await page.click('#go');
+await page.waitForTimeout(900);
+const kit = await page.evaluate(() => ({ spaces: window.__pc.state.perks.spaces, blend: window.__pc.state.perks.blend, caps: window.__pc.state.charges['bottle-cap'] }));
+await page.click('[data-ability="bottle-cap"]');
+await page.waitForTimeout(300);
+await shot('19-aiming.png');
+await clickTile(4, 12);
+const afterCap = await page.evaluate(() => ({ caps: window.__pc.state.charges['bottle-cap'], ap: window.__pc.state.ap }));
+await page.click('#undo');
+await page.waitForTimeout(200);
+const afterUndo = await page.evaluate(() => ({ caps: window.__pc.state.charges['bottle-cap'], ap: window.__pc.state.ap }));
+// The known route as far as the side gallery, where the checkpoint is.
+await playRoute(route('NIGHT_GALLERY_ROUTE').slice(0, 15));
+await action('pick-door', 17, 5); // open the side gallery's door, so the guards can get in
+const atCheckpoint = await page.evaluate(() => ({ checkpoint: window.__pc.checkpoint, turn: window.__pc.state.turn, inventory: window.__pc.state.inventory.length }));
+await shot('20-checkpoint.png');
 // Step into danger (a guard's view, a camera or a laser) until Leo is caught, by a guard or the lockdown.
-for (let i = 0; i < 20 && (await page.evaluate(() => window.__pc.state.status)) === 'playing'; i++) {
+for (let i = 0; i < 40 && (await page.evaluate(() => window.__pc.state.status)) === 'playing'; i++) {
   const t = await page.evaluate(() => window.__pc.dangerTile());
   if (t) await clickTile(t.x, t.y);
   if ((await page.evaluate(() => window.__pc.state.status)) !== 'playing') break;
@@ -137,26 +170,36 @@ for (let i = 0; i < 20 && (await page.evaluate(() => window.__pc.state.status)) 
 }
 await page.waitForTimeout(1200);
 const caughtStatus = await page.evaluate(() => window.__pc.state.status);
-await shot('16-caught.png');
-await page.click('#quit2');
+await shot('21-caught.png');
+await page.click('#from-checkpoint');
+await page.waitForTimeout(400);
+const restored = await page.evaluate(() => ({ status: window.__pc.state.status, turn: window.__pc.state.turn, inventory: window.__pc.state.inventory.length }));
+await page.click('#quit');
 await page.waitForSelector('.lair');
 
-// --- The save survives a reload ------------------------------------------------------------------------
+// --- Save & quit, then continue from the title ----------------------------------------------------------
+await page.click('#lair-quit');
+await page.waitForSelector('[data-play="0"]');
+await shot('22-title-slots.png');
 await page.reload();
 await page.waitForFunction(() => window.__pc);
-await page.click('#continue');
+await page.click('[data-play="0"]');
 await page.waitForSelector('.lair');
-const reloaded = await page.evaluate(() => ({ catnip: window.__pc.profile.catnip, heists: window.__pc.profile.heists, papers: window.__pc.profile.papers.length }));
+const reloaded = await page.evaluate(() => ({ catnip: window.__pc.profile.catnip, heists: window.__pc.profile.heists, papers: window.__pc.profile.papers.length, skills: window.__pc.profile.skills.length }));
 
 // --- Phone layout ----------------------------------------------------------------------------------------
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(300);
-await shot('17-phone-lair.png');
-await page.click('[data-job="0"]');
+await shot('23-phone-lair.png');
+await page.click('[data-tab="leo"]');
+await shot('24-phone-leo.png');
+await page.click('[data-tab="heists"]');
+await page.click('[data-job="1"]');
+await page.click('#go');
 await page.waitForTimeout(800);
-await shot('18-phone-heist.png');
+await shot('25-phone-heist.png');
 
-const results = { tutorialEnd, tips: [...tips], afterLair, nightEnd, sold, caughtStatus, reloaded };
+const results = { tutorialEnd, tips: [...tips], afterLair, nightEnd, sold, spent, kit, afterCap, afterUndo, atCheckpoint, caughtStatus, restored, reloaded };
 console.log(JSON.stringify(results, null, 1));
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors');
 await browser.close();
@@ -166,6 +209,11 @@ const ok =
   afterLair.lair && afterLair.catnip === 0 && afterLair.stash === 0 &&
   nightEnd.status === 'escaped' && nightEnd.turn === 24 &&
   sold.stash === 0 && sold.catnip > 0 && sold.sold === sold.catnip &&
-  caughtStatus === 'caught' &&
-  reloaded.heists === 2 && reloaded.papers === 2 && reloaded.catnip === sold.catnip;
+  spent.pockets === 1 && spent.skills.includes('blend') && spent.rooms.workshop === 1 && spent.rooms.planning === 1 &&
+  spent.catnip === sold.catnip - 150 - 300 - 300 - 400 &&
+  kit.spaces === 7 && kit.blend && kit.caps === 1 &&
+  afterCap.caps === 0 && afterCap.ap === 1 && afterUndo.caps === 1 && afterUndo.ap === 2 &&
+  atCheckpoint.checkpoint && caughtStatus === 'caught' &&
+  restored.status === 'playing' && restored.turn === 13 && restored.inventory === 0 && // Leo reached the paw print on turn 13, before stealing anything
+  reloaded.heists === 2 && reloaded.papers === 2 && reloaded.catnip === spent.catnip && reloaded.skills === 1;
 process.exit(errors.length || !ok ? 1 : 0);

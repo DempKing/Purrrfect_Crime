@@ -1,11 +1,13 @@
-// The screens between heists, built as plain DOM over the game canvas: the title, the narrator,
-// the calling card, the morning paper, the heist report, the city map and the lair.
-import type { LevelDef, LootCategory } from '../core/level';
+// The screens between heists, built as plain DOM over the game canvas: the title and save slots,
+// the narrator, the calling card, the morning paper, the heist report, the city map, the lair and
+// the briefing before a heist.
+import { DIFFICULTIES, parseLevel, type Difficulty, type LevelDef, type LootCategory } from '../core/level';
 import type { Paper } from '../meta/newspaper';
 import { MASTHEAD } from '../meta/newspaper';
 import {
   LAIR_PRICE,
   DEMAND_BONUS,
+  collectorWants,
   demand,
   fenceRate,
   playerLevel,
@@ -14,6 +16,23 @@ import {
   type HeistReport,
   type Profile,
 } from '../meta/profile';
+import {
+  ATTRIBUTES,
+  DIFFICULTY,
+  ROOMS,
+  SKILLS,
+  TREES,
+  attributeCost,
+  attributePoints,
+  canLearn,
+  canRaise,
+  canUpgrade,
+  lairCondition,
+  upgradeCost,
+  type Attribute,
+  type Room,
+  type SkillId,
+} from '../meta/progression';
 
 const root = () => document.getElementById('screens')!;
 const esc = (t: string) => t.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -56,31 +75,66 @@ function on(el: HTMLElement, sel: string, fn: (e: Event) => void): void {
   el.querySelectorAll<HTMLElement>(sel).forEach((b) => b.addEventListener('click', fn));
 }
 
-// --- Title -----------------------------------------------------------------------------------
+// --- Title and save slots ---------------------------------------------------------------------
 
-export function titleScreen(hasSave: boolean, onNew: () => void, onContinue: () => void): void {
+export interface TitleCallbacks {
+  onPlay: (slot: number) => void;
+  onNew: (slot: number, difficulty: Difficulty) => void;
+  onDelete: (slot: number) => void;
+}
+
+function slotSummary(p: Profile): string {
+  const where = !p.tutorialDone ? 'In the tutorial' : !p.lairOwned ? 'Looking for a lair' : `Day ${p.day} · ${p.heists} heist${p.heists === 1 ? '' : 's'}`;
+  return `${DIFFICULTY[p.difficulty].name} · level ${playerLevel(p.xp)} · ${where} · ${p.catnip.toLocaleString('en-US')} Catnip`;
+}
+
+export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void {
   const el = show(
     `<div class="card big title-card">
-      <div class="kicker">Prototype M2 · vertical slice</div>
+      <div class="kicker">Prototype M3 · progression</div>
       <h1>Purrrfect Crime</h1>
       <p>Leo Tuxedo is new in town, sharply dressed and short of Catnip. The museums are full of treasures
         and the guards are half asleep. Time to make a name for himself.</p>
-      <div class="row-buttons">
-        ${hasSave ? '<button id="continue" class="primary">Continue</button>' : ''}
-        <button id="new" class="${hasSave ? '' : 'primary'}">New game</button>
+      <div class="slots">
+        ${slots
+          .map((p, i) =>
+            p
+              ? `<div class="slot"><div><b>Game ${i + 1}</b><br><span class="small">${slotSummary(p)}</span></div>
+                  <div class="row-buttons"><button class="primary" data-play="${i}">Continue</button><button data-delete="${i}">Delete</button></div></div>`
+              : `<div class="slot empty"><div><b>Game ${i + 1}</b><br><span class="small">Empty</span></div>
+                  <div class="row-buttons"><button data-new="${i}">New game</button></div></div>`,
+          )
+          .join('')}
       </div>
-      ${hasSave ? '<p class="small">Starting a new game replaces your saved one.</p>' : ''}
-      <p class="small">Placeholder art throughout. Generated sprites replace it later. Progress saves in this browser.</p>
+      <p class="small">Placeholder art throughout. Generated sprites replace it later. Games save in this browser.</p>
     </div>`,
     'overlay',
   );
-  on(el, '#continue', onContinue);
-  let armed = !hasSave;
-  on(el, '#new', (e) => {
-    if (armed) return onNew();
-    armed = true;
-    (e.currentTarget as HTMLElement).textContent = 'Really start again?';
+  on(el, '[data-play]', (e) => cb.onPlay(Number((e.currentTarget as HTMLElement).dataset.play)));
+  on(el, '[data-new]', (e) => difficultyPicker(Number((e.currentTarget as HTMLElement).dataset.new), cb, slots));
+  on(el, '[data-delete]', (e) => {
+    const b = e.currentTarget as HTMLElement;
+    if (b.dataset.armed) return cb.onDelete(Number(b.dataset.delete));
+    b.dataset.armed = '1';
+    b.textContent = 'Really delete?';
   });
+}
+
+function difficultyPicker(slot: number, cb: TitleCallbacks, slots: (Profile | null)[]): void {
+  const el = show(
+    `<div class="card big">
+      <div class="kicker">Game ${slot + 1} · new game</div>
+      <h1>How hard?</h1>
+      <p>You choose once, for the whole game. It can't be changed later.</p>
+      <div class="difficulties">
+        ${DIFFICULTIES.map((d) => `<button class="difficulty ${d === 'casual' ? 'primary' : ''}" data-difficulty="${d}"><b>${DIFFICULTY[d].name}</b><span>${esc(DIFFICULTY[d].blurb)}</span></button>`).join('')}
+      </div>
+      <div class="row-buttons"><button id="back">Back</button></div>
+    </div>`,
+    'overlay',
+  );
+  on(el, '[data-difficulty]', (e) => cb.onNew(slot, (e.currentTarget as HTMLElement).dataset.difficulty as Difficulty));
+  on(el, '#back', () => titleScreen(slots, cb));
 }
 
 // --- The narrator, between heists --------------------------------------------------------------
@@ -204,15 +258,22 @@ export interface LairCallbacks {
   onSell: (id: number) => void;
   onSellAll: () => void;
   onPaper: (index: number) => void;
+  onRaise: (id: Attribute) => void;
+  onLearn: (id: SkillId) => void;
+  onUpgrade: (id: Room) => void;
+  onQuit: () => void;
 }
 
-export type LairTab = 'heists' | 'market' | 'papers' | 'upgrades';
+export type LairTab = 'heists' | 'leo' | 'market' | 'lair' | 'papers';
+
+const pips = (n: number, of: number) => `<span class="pips">${Array.from({ length: of }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
 
 export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): void {
   const lvl = playerLevel(p.xp);
   const into = p.xp - xpForLevel(lvl);
   const need = xpForLevel(lvl + 1) - xpForLevel(lvl);
   const wanted = demand(p.day);
+  const points = attributePoints(p);
 
   const heists = cb.jobs
     .map((def, i) => {
@@ -228,41 +289,95 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     })
     .join('');
 
+  const attributes = ATTRIBUTES.map((a) => {
+    const rank = p.attributes[a.id];
+    const why = canRaise(p, a.id);
+    const next = a.ranks[rank];
+    return `<div class="up"><div><b>${a.name}</b> ${pips(rank, a.ranks.length)}<br><span class="small">${esc(a.blurb)}</span>
+        ${next ? `<br><span class="small next">Next: ${esc(next)}</span>` : ''}</div>
+      ${next ? `<button data-raise="${a.id}" ${why ? 'disabled' : ''} title="${esc(why ?? '')}">${catnip(attributeCost(p, a.id))}</button>` : '<span class="badge">max</span>'}</div>`;
+  }).join('');
+  const trees = TREES.map(
+    (t) => `<div class="tree"><h3>${t.name} <span class="small">${t.blurb}</span></h3>
+      ${SKILLS.filter((s) => s.tree === t.id)
+        .map((s) => {
+          const owned = p.skills.includes(s.id);
+          const why = canLearn(p, s.id);
+          return `<div class="skill ${owned ? 'owned' : ''} ${s.later ? 'later' : ''}"><div><b>${s.name}</b> <span class="small">level ${s.level}</span><br><span class="small">${esc(s.text)}</span>
+            ${!owned && why && why !== 'Not enough Catnip.' ? `<br><span class="small warn">${esc(why)}</span>` : ''}</div>
+            ${owned ? '<span class="badge">learned</span>' : `<button data-learn="${s.id}" ${why ? 'disabled' : ''} title="${esc(why ?? '')}">${catnip(s.cost)}</button>`}</div>`;
+        })
+        .join('')}</div>`,
+  ).join('');
+  const leo = `
+    <p>Attribute points: <b>${points}</b> <span class="small">(one per level, plus Catnip for training)</span></p>
+    <div class="ups">${attributes}</div>
+    <h2 class="section">Skills</h2>
+    <div class="trees">${trees}</div>`;
+
+  const collector = collectorWants(p);
   const stash = p.stash
     .map(
-      (s) => `<tr><td><b>${esc(s.name)}</b>${s.centrepiece ? ' <span class="badge">centrepiece</span>' : ''}${s.hot ? ' <span class="badge hot">hot</span>' : ''}<br><span class="small">${CATEGORY_NAMES[s.category]} · ${esc(s.levelName)} · est. ${money(s.value)}</span></td>
+      (s) => `<tr><td><b>${esc(s.name)}</b>${s.centrepiece ? ' <span class="badge">centrepiece</span>' : ''}${s.hot ? ' <span class="badge hot">hot</span>' : ''}${s.id === collector ? ' <span class="badge new">collector ×1.5</span>' : ''}<br><span class="small">${CATEGORY_NAMES[s.category]} · ${esc(s.levelName)} · est. ${money(s.value)}</span></td>
         <td class="price">${catnip(priceOf(p, s))}${s.category === wanted ? ' <span class="badge">+25%</span>' : ''}</td>
         <td><button data-sell="${s.id}">Sell</button></td></tr>`,
     )
     .join('');
+  const office = p.rooms.fence ? ` The Fence's Office adds ${p.rooms.fence * 5}%.` : '';
   const market = `
     <p class="demand">This week's buyers want <b>${CATEGORY_NAMES[wanted]}</b>: +${Math.round(DEMAND_BONUS * 100)}%. Demand changes every three days (one heist is one day).</p>
-    <p class="small">The fence pays one Catnip per $10 of an item's estimated value, minus his cut: you get ${Math.round(fenceRate(lvl) * 100)}% at your level, 2% more each level. Hold things for a better week, or sell now.</p>
+    <p class="small">The fence pays one Catnip per $10 of an item's estimated value, minus his cut: you get ${Math.round(fenceRate(lvl) * 100)}% at your level, 2% more each level.${office} Hold things for a better week, or sell now.</p>
     ${p.stash.length ? `<table class="stash">${stash}</table><div class="row-buttons"><button id="sell-all" class="primary">Sell everything (${catnip(p.stash.reduce((n, s) => n + priceOf(p, s), 0))})</button></div>` : '<p>The stash is empty. Go steal something.</p>'}
     <p class="small">Lifetime sales: ${catnip(p.soldTotal)} Catnip.</p>`;
+
+  const rooms = ROOMS.map((r) => {
+    const tier = p.rooms[r.id];
+    const cost = upgradeCost(p, r.id);
+    const why = canUpgrade(p, r.id);
+    const now = tier ? r.tiers[tier - 1].text : 'Not built yet.';
+    const next = r.tiers[tier];
+    return `<div class="up"><div><b>${r.name}</b> ${pips(tier, r.tiers.length)}<br><span class="small">${esc(now)}</span>
+        ${next ? `<br><span class="small next">${tier ? 'Next' : 'Build'}: ${esc(next.text)}</span>` : ''}</div>
+      ${cost !== null ? `<button data-upgrade="${r.id}" ${why ? 'disabled' : ''} title="${esc(why ?? '')}">${catnip(cost)}</button>` : '<span class="badge">max</span>'}</div>`;
+  }).join('');
+  const trophies = Object.entries(p.records)
+    .filter(([, r]) => r.centrepiece)
+    .map(([id]) => {
+      const def = cb.jobs.find((j) => j.id === id);
+      const c = def?.loot.find((l) => def.map[l.at.y][l.at.x] === 'G');
+      return c ? `<li>${esc(c.name)} <span class="small">· ${esc(def!.name)}${p.records[id].flawless ? ' · flawless' : ''}</span></li>` : '';
+    })
+    .join('');
+  const lairTab = `
+    <p class="small">Every upgrade fixes up the building a little more.</p>
+    <div class="ups">${rooms}</div>
+    ${p.rooms.trophy ? `<h2 class="section">Trophy Room</h2>${trophies ? `<ul class="trophies">${trophies}</ul>` : '<p class="small">Empty shelves, waiting for centrepieces.</p>'}` : ''}`;
 
   const papers = p.papers.length
     ? p.papers.map((pp, i) => `<button class="paper-link" data-paper="${i}"><span class="small">Day ${pp.day} · ${esc(pp.place)}</span><br><b>${esc(pp.headline)}</b></button>`).join('')
     : '<p>No front pages yet.</p>';
 
-  const upgrades = `<p>The building is a wreck: boarded windows, a leaky roof and one flickering bulb. Upgrades for the planning table,
-    workshop, fence's office, gym, trophy room and mailbox, plus Leo's attributes and skills, arrive in the next milestone.</p>`;
-
-  const body = { heists, market, papers, upgrades }[tab];
+  const body = { heists, leo, market, lair: lairTab, papers }[tab];
+  const names: Record<LairTab, string> = {
+    heists: 'Heists',
+    leo: `Leo${points ? ` (${points})` : ''}`,
+    market: `Black market${p.stash.length ? ` (${p.stash.length})` : ''}`,
+    lair: 'Lair',
+    papers: 'Front pages',
+  };
   const el = show(
     `<div class="lair">
       <header class="lair-head">
-        <div class="lair-art" aria-hidden="true">${LAIR_SVG}</div>
+        <div class="lair-art" aria-hidden="true">${lairSvg(lairCondition(p), p.rooms.mailbox > 0)}</div>
         <div class="lair-stats">
           <div class="title">Leo's lair</div>
           <div>Level <b>${lvl}</b> <span class="xpbar small-bar"><span style="width:${Math.min(100, (into / need) * 100)}%"></span></span> <span class="small">${into}/${need} XP</span></div>
-          <div>Catnip ${catnip(p.catnip)} · Day ${p.day} · Heists ${p.heists}</div>
+          <div>Catnip ${catnip(p.catnip)} · Day ${p.day} · ${DIFFICULTY[p.difficulty].name}</div>
         </div>
+        <button id="lair-quit" class="quit" title="Back to the title screen">Save &amp; quit</button>
       </header>
       <nav class="tabs">
-        ${(['heists', 'market', 'papers', 'upgrades'] as LairTab[])
-          .map((t) => `<button data-tab="${t}" class="${t === tab ? 'on' : ''}">${{ heists: 'Heists', market: `Black market${p.stash.length ? ` (${p.stash.length})` : ''}`, papers: 'Front pages', upgrades: 'Upgrades' }[t]}</button>`)
-          .join('')}
+        ${(Object.keys(names) as LairTab[]).map((t) => `<button data-tab="${t}" class="${t === tab ? 'on' : ''}">${names[t]}</button>`).join('')}
       </nav>
       <section class="tab-body">${body}</section>
     </div>`,
@@ -272,14 +387,78 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   on(el, '[data-sell]', (e) => cb.onSell(Number((e.currentTarget as HTMLElement).dataset.sell)));
   on(el, '#sell-all', cb.onSellAll);
   on(el, '[data-paper]', (e) => cb.onPaper(Number((e.currentTarget as HTMLElement).dataset.paper)));
+  on(el, '[data-raise]', (e) => cb.onRaise((e.currentTarget as HTMLElement).dataset.raise as Attribute));
+  on(el, '[data-learn]', (e) => cb.onLearn((e.currentTarget as HTMLElement).dataset.learn as SkillId));
+  on(el, '[data-upgrade]', (e) => cb.onUpgrade((e.currentTarget as HTMLElement).dataset.upgrade as Room));
+  on(el, '#lair-quit', cb.onQuit);
 }
 
-/** The run-down lair, placeholder: boarded windows, a crooked sign, one lit window. */
-const LAIR_SVG = `<svg viewBox="0 0 120 90">
+/** The lair, placeholder art that fixes itself up as rooms are built: boards come off, lights go on, a neon sign. */
+function lairSvg(condition: number, mailbox: boolean): string {
+  const c = condition;
+  const wall = c > 0.5 ? '#5b5170' : '#4a3f4f';
+  const window = (x: number, lit: boolean, boarded: boolean) =>
+    `<rect x="${x}" y="38" width="16" height="14" fill="${lit ? '#f2c46b' : '#2a2230'}" opacity="${lit ? 0.9 : 1}"/>` + (boarded ? `<path d="M${x - 1} 40 L${x + 17} 50 M${x - 1} 48 L${x + 17} 42" stroke="#8a6a45" stroke-width="3"/>` : '');
+  return `<svg viewBox="0 0 120 90">
   <rect x="0" y="0" width="120" height="90" fill="#141a2e"/><circle cx="100" cy="16" r="8" fill="#e9e3c9"/>
-  <rect x="18" y="26" width="84" height="60" fill="#4a3f4f" stroke="#2a2230"/><path d="M14 28 L60 8 L106 28Z" fill="#3a2f3f"/>
-  <rect x="28" y="38" width="16" height="14" fill="#2a2230"/><path d="M27 40 L45 50 M27 48 L45 42" stroke="#8a6a45" stroke-width="3"/>
-  <rect x="76" y="38" width="16" height="14" fill="#f2c46b" opacity="0.85"/>
-  <rect x="52" y="60" width="16" height="26" fill="#2a2230"/>
-  <rect x="34" y="18" width="30" height="7" fill="#6b4b2a" transform="rotate(-6 49 21)"/>
+  <rect x="18" y="26" width="84" height="60" fill="${wall}" stroke="#2a2230"/><path d="M14 28 L60 8 L106 28Z" fill="${c > 0.3 ? '#4a3a52' : '#3a2f3f'}"/>
+  ${window(28, c > 0.15, c < 0.15)}${window(76, true, false)}${c > 0.4 ? window(52, true, false).replace('y="38"', 'y="34"') : ''}
+  <rect x="52" y="60" width="16" height="26" fill="${c > 0.6 ? '#6b2a2a' : '#2a2230'}"/>
+  ${c > 0.75 ? '<text x="60" y="22" text-anchor="middle" font-size="8" fill="#ff5ad1" font-family="Trebuchet MS, sans-serif" style="filter:drop-shadow(0 0 2px #ff5ad1)">LEO’S</text>' : '<rect x="34" y="18" width="30" height="7" fill="#6b4b2a" transform="rotate(-6 49 21)"/>'}
+  ${mailbox ? '<rect x="76" y="70" width="8" height="8" fill="#a83232"/><rect x="79" y="78" width="2" height="8" fill="#555"/>' : ''}
 </svg>`;
+}
+
+// --- The briefing: what the Planning Table knows -----------------------------------------------------
+
+export function briefing(def: LevelDef, p: Profile, onStart: () => void, onBack: () => void): void {
+  const tier = p.rooms.planning;
+  const level = parseLevel(def, p.difficulty);
+  const rec = p.records[def.id];
+  const S = 16;
+  const cells: string[] = [];
+  if (tier >= 1)
+    for (let y = 0; y < level.h; y++)
+      for (let x = 0; x < level.w; x++) {
+        const t = level.tiles[y][x];
+        const fill = t === 'wall' || t === 'panel' || t === 'fuse' ? '#3b4366' : t === 'pillar' ? '#59608a' : t === 'exit' ? '#2f7d5b' : t === 'door' ? '#8a6a45' : t === 'marble' ? '#2a3150' : '#1f2540';
+        cells.push(`<rect x="${x * S}" y="${y * S}" width="${S}" height="${S}" fill="${fill}"/>`);
+        if (level.ducts[y][x]) cells.push(`<rect x="${x * S + 5}" y="${y * S + 5}" width="6" height="6" fill="#5ec8ff" opacity="0.5"/>`);
+        if (t === 'laser') cells.push(`<line x1="${x * S}" y1="${y * S + 8}" x2="${x * S + S}" y2="${y * S + 8}" stroke="#ff2a2a" stroke-width="2"/>`);
+        if (t === 'panel' || t === 'fuse') cells.push(`<rect x="${x * S + 4}" y="${y * S + 4}" width="8" height="8" fill="${t === 'panel' ? '#55d6c2' : '#f2c94c'}"/>`);
+      }
+  const marks: string[] = [];
+  if (tier >= 1) {
+    for (const l of def.loot) marks.push(`<circle cx="${l.at.x * S + 8}" cy="${l.at.y * S + 8}" r="${def.map[l.at.y][l.at.x] === 'G' ? 6 : 4}" fill="${def.map[l.at.y][l.at.x] === 'G' ? '#f2c46b' : '#9fe8ff'}"/>`);
+    marks.push(`<text x="${level.start.x * S + 8}" y="${level.start.y * S + 12}" text-anchor="middle" font-size="11" fill="#fff">L</text>`);
+    if (def.checkpoint && DIFFICULTY[p.difficulty].checkpoints) marks.push(`<text x="${def.checkpoint.x * S + 8}" y="${def.checkpoint.y * S + 12}" text-anchor="middle" font-size="11">🐾</text>`);
+  }
+  if (tier >= 2) {
+    for (const lamp of level.lamps) marks.push(`<circle cx="${lamp.at.x * S + 8}" cy="${lamp.at.y * S + 8}" r="${lamp.radius * S}" fill="#ffd27a" opacity="0.12"/><circle cx="${lamp.at.x * S + 8}" cy="${lamp.at.y * S + 8}" r="3" fill="#ffd27a"/>`);
+    for (const c of level.cameras) marks.push(`<rect x="${c.at.x * S + 3}" y="${c.at.y * S + 3}" width="10" height="10" rx="2" fill="#c77dff"/>`);
+  }
+  if (tier >= 3)
+    for (const g of level.guards) {
+      const pts = [g.start, ...g.route].map((q) => `${q.x * S + 8},${q.y * S + 8}`).join(' ');
+      marks.push(`<polyline points="${pts}" fill="none" stroke="#ff8a5a" stroke-width="2" stroke-dasharray="4 3"/><circle cx="${g.start.x * S + 8}" cy="${g.start.y * S + 8}" r="4" fill="#ff8a5a"/>`);
+    }
+  const plan = tier
+    ? `<svg class="plan" viewBox="0 0 ${level.w * S} ${level.h * S}">${cells.join('')}${marks.join('')}</svg>
+       <p class="small legend"><span style="color:#f2c46b">●</span> centrepiece · <span style="color:#9fe8ff">●</span> loot · <span style="color:#5ec8ff">■</span> vents · <span style="color:#ff2a2a">—</span> lasers${tier >= 2 ? ' · <span style="color:#c77dff">■</span> cameras · <span style="color:#ffd27a">●</span> lamps' : ''}${tier >= 3 ? ' · <span style="color:#ff8a5a">- -</span> guard routes' : ''}</p>`
+    : '<p class="small">Build a Planning Table at the lair to see the floor plan before you go in.</p>';
+  const rumour = tier >= 1 ? '<p class="small"><b>Rumour board:</b> no rival thieves are after this one.</p>' : '';
+  const el = show(
+    `<div class="card big briefing">
+      <div class="kicker">Briefing · ${DIFFICULTY[p.difficulty].name}</div>
+      <h1>${esc(def.name)}</h1>
+      <p>${esc(def.objective)}</p>
+      <p class="small">${def.loot.length} pieces of loot · ${level.guards.length} guard${level.guards.length === 1 ? '' : 's'}${tier >= 2 ? ` · ${level.cameras.length} camera${level.cameras.length === 1 ? '' : 's'}` : ''}${rec ? ` · best ${rec.bestTurns} turns` : ''}</p>
+      ${plan}
+      ${rumour}
+      <div class="row-buttons"><button id="go" class="primary">Start the heist</button><button id="back">Back to the lair</button></div>
+    </div>`,
+    'overlay',
+  );
+  on(el, '#go', onStart);
+  on(el, '#back', onBack);
+}

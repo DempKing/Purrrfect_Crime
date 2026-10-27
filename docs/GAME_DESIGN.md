@@ -226,18 +226,22 @@ lost), and achievements for beating each one.
 
 ### 7.2 Attributes (bought with attribute points and Catnip)
 
-| Attribute | Effect |
-| --- | --- |
-| **Agility** | Move range per AP, climbing, vent crawl speed. |
-| **Stealth** | Smaller sight profile, slower detection meter fill. |
-| **Quiet Paws** | Less noise from every action. |
-| **Dexterity** | Lockpicking and safe-cracking difficulty, interact AP refunds. |
-| **Pockets** | Extra inventory spaces. |
-| **Perception** | Spots traps and pressure plates, longer hover preview of guard routes. |
+Each rank costs one attribute point (Leo gets one per level) and `150 × (rank + 1)` Catnip, less the
+Scratching Tower's discount.
+
+| Attribute | Ranks | Effect |
+| --- | --- | --- |
+| **Agility** | 5 | +1 tile per AP at ranks 1, 3 and 5; cheaper vent crawling at ranks 2 and 4. |
+| **Stealth** | 5 | Guards and cameras make Leo out from 7% less far per rank. |
+| **Quiet Paws** | 5 | Every noise Leo makes is 12% smaller per rank. |
+| **Dexterity** | 3 | Cases open in one go; doors in one go; picking makes no sound. |
+| **Pockets** | 4 | +1 inventory space per rank. |
+| **Perception** | 2 | Guard footprints show one more turn ahead per rank. (Traps and pressure plates arrive with M4.) |
 
 ### 7.3 Skills (Catnip + level requirement)
 
-Three trees, roughly 8 skills each, with prerequisites inside each tree:
+Three trees of five skills, each needing the one before it in its tree (in Acrobat, everything needs
+Pounce). Once-a-heist skills get a second charge from the Workshop's third tier.
 
 - **Shadow:** *Blend* (Dim counts as Dark), *Ghost Step* (one move per level makes no noise),
   *Decoy Card* (drop a calling card that distracts), *Smoke Pellet* (lvl 12: blocks sight for 2 turns),
@@ -248,12 +252,38 @@ Three trees, roughly 8 skills each, with prerequisites inside each tree:
   *Tightrope* (cross gaps), *Cat Nap* (lvl 15: wait out a guard's whole route while hidden), *Nine Lives*
   (lvl 25: survive being caught once per heist; not on Legendary).
 
+As built in M3:
+
+| Skill | Level | Catnip | In the game |
+| --- | --- | --- | --- |
+| Blend | 2 | 300 | Dim light counts as dark when guards look for Leo. |
+| Ghost Step | 4 | 500 | The first noisy move of a heist is silent. |
+| Decoy Card | 7 | 900 | Once a heist: a card up to 5 tiles away; the first guard to see it goes to look. |
+| Smoke Pellet | 12 | 1,600 | Once a heist: a 3×3 cloud that blocks sight for two turns. |
+| Vanish | 20 | 3,000 | The first time a guard glimpses Leo, it doesn't count. |
+| Camera Loop | 3 | 400 | Once a heist: a camera within 7 tiles sees nothing for three turns. |
+| Laser Mirror | 5 | 600 | The first laser Leo breaks is ignored. |
+| Keycard Clone | 8 | 1,000 | Doors open in one go. |
+| Fuse Kit | 11 | 1,400 | Once a heist: all lasers off for three turns, from anywhere. |
+| EMP Collar | 18 | 2,800 | Once a heist: cameras within 5 tiles and all lasers off for two turns. |
+| Pounce | 3 | 400 | 1 AP, unlimited: leap two tiles over a laser, case or lamp. Landing on a live laser trips it. |
+| Ceiling Climb | 6 | 800 | Locked until the levels with rafters (M4). |
+| Tightrope | 9 | 1,100 | Locked until the rooftop levels (M4). |
+| Cat Nap | 15 | 2,200 | Once a heist: guards can't notice Leo for two of their turns (unless they walk into him). |
+| Nine Lives | 25 | 4,000 | Once a heist, a catch doesn't count: Leo stops and the guard is dazed for a turn; a lockdown gets three more turns. Not on Legendary. |
+
 ## 8. The lair
 
 - After the tutorial, Leo buys an **abandoned building** for his lair. It starts run-down, and each upgrade
   visibly improves it (windows, lights, furniture, a neon sign).
 - **Buying the first lair unlocks the black market**, which runs out of the lair's back room.
 - Upgrade rooms (each with 3 tiers):
+
+Costs per tier: Planning Table 400 / 1,200 / 2,500; Workshop 300 / 900 / 2,000 (1, 2, 3 bottle caps per
+heist; tier 3 also gives a spare charge of each once-a-heist skill); Fence's Office 500 / 1,500 / 3,000
+(+5% / +10% / +15%, and from tier 2 a collector pays ×1.5 for one stash item a day); Scratching Tower
+400 / 1,200 / 2,400 (attributes 15% / 30% / 45% cheaper); Trophy Room 600 / 1,500 / 3,000 (+5% / +10% /
++15% XP as fame); Mailbox 200 (one tier). The lair's picture fixes itself up as rooms are built.
 
 | Room | Effect |
 | --- | --- |
@@ -360,7 +390,8 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | Loot value and XP | ×1 | ×1.4 | ×1.9 | ×2.5 |
 
   The extra guards, cameras and traps on harder difficulties are **placed by hand per level**, not at
-  random, so every difficulty still reads fairly.
+  random, so every difficulty still reads fairly. Each level keeps a known winning route that the tests
+  play on every difficulty. The tutorial is the same on all four.
 
 | District | Levels (working names) |
 | --- | --- |

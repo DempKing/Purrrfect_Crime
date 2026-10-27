@@ -11,7 +11,7 @@
 
   <header class="hud">
     <div class="card status">
-      <div class="title">Purrrfect Crime <span class="tag">prototype M2</span></div>
+      <div class="title">Purrrfect Crime <span class="tag">prototype M3</span></div>
       <div class="small" id="level-name"></div>
       <div class="row">
         <span>Turn <b id="turn">1</b></span>
@@ -23,6 +23,7 @@
     <div class="buttons">
       <button id="rotate-left" title="Turn the camera (Q)">⟲ Q</button>
       <button id="rotate-right" title="Turn the camera (E)">E ⟳</button>
+      <button id="undo" class="hidden" title="Undo this turn (Z)">Undo</button>
       <button id="end" class="primary" title="End your turn (Space)">End turn</button>
       <button id="restart" title="Restart the level (R)">Restart</button>
       <button id="quit" title="Leave the heist">Quit</button>
@@ -41,6 +42,7 @@
         <div class="row-buttons"><button id="narrator-ok" class="primary">Got it</button><button id="narrator-hide">Hide tips</button></div>
       </div>
     </div>
+    <div id="abilities" class="abilities hidden"></div>
     <div id="actions" class="actions hidden"></div>
     <div class="message" id="message"></div>
   </footer>
@@ -57,6 +59,8 @@
       <li><b>Security:</b> the camera panel shuts off the cameras and the alarm; the fuse box shuts off the lasers. A camera sighting, a broken laser or a guard finding an empty case starts a 5-turn lockdown countdown.</li>
       <li><b>Vents:</b> step onto a grate and climb in. Nobody sees you in the ducts, but crawling is slow.</li>
       <li><b>Inventory:</b> 6 spaces. Bigger pieces take up more of them.</li>
+      <li><b>Gadgets and skills</b> (the teal row above the actions): bottle caps from the Workshop, and skills like Pounce, Camera Loop and Smoke Pellet. Click one, then click a highlighted tile. Esc cancels.</li>
+      <li><b>Checkpoint</b> (Casual and Professional): the chalk paw print. Reach it and, if you're caught, you can start again from there. <b>Undo</b> (Z) takes back your whole turn.</li>
       <li><b>Escape:</b> walk onto the green exit with something in your inventory.</li>
     </ul>
   </aside>
@@ -69,6 +73,7 @@
       <p id="caught-why"></p>
       <p class="small">The guard grins. Leo sighs. Back to the start.</p>
       <div class="row-buttons">
+        <button id="from-checkpoint" class="primary hidden">From the checkpoint</button>
         <button id="again" class="primary">Try again (R)</button>
         <button id="quit2">Quit</button>
       </div>

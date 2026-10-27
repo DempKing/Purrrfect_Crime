@@ -12,12 +12,13 @@ import {
   completeHeist,
   demand,
   fenceRate,
-  loadProfile,
+  loadSlot,
+  loadSlots,
   narratorBuysTutorialLoot,
   newProfile,
   playerLevel,
   priceOf,
-  saveProfile,
+  saveSlot,
   sell,
   xpForLevel,
   type StashItem,
@@ -190,17 +191,37 @@ test('the same day and heist always print the same paper', () => {
 
 // --- saving ------------------------------------------------------------------------------------------
 
-test('profiles save and load as JSON, and a broken or missing save loads as nothing', () => {
+function memoryStore() {
   const store = new Map<string, string>();
-  const storage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) };
-  const p = newProfile();
+  return { store, getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) };
+}
+
+test('three save slots: save, load, and a broken or missing slot loads as nothing', () => {
+  const m = memoryStore();
+  const p = newProfile('mastermind');
   p.catnip = 1234;
-  saveProfile(storage, p);
-  assert.equal(loadProfile(storage)?.catnip, 1234);
-  store.set('purrrfect-crime-save-v1', '{not json');
-  assert.equal(loadProfile(storage), null);
-  assert.equal(loadProfile(null), null);
-  saveProfile({ setItem: () => { throw new Error('full'); } }, p);
+  saveSlot(m, 1, p);
+  assert.equal(loadSlot(m, 1)?.catnip, 1234);
+  assert.equal(loadSlot(m, 1)?.difficulty, 'mastermind');
+  assert.equal(loadSlot(m, 0), null);
+  m.store.set('purrrfect-crime-slot-3', '{not json');
+  assert.equal(loadSlot(m, 2), null);
+  assert.equal(loadSlot(null, 0), null);
+  saveSlot({ setItem: () => { throw new Error('full'); } }, 0, p);
+});
+
+test('an M2 save moves into the first empty slot as a Casual game, with no attributes, skills or rooms', () => {
+  const m = memoryStore();
+  saveSlot(m, 0, newProfile('legendary'));
+  m.store.set('purrrfect-crime-save-v1', JSON.stringify({ version: 1, day: 5, catnip: 777, xp: 900, tutorialDone: true, narratorPaid: true, lairOwned: true, stash: [], nextId: 9, heists: 4, soldTotal: 300, records: {}, papers: [] }));
+  const slots = loadSlots(m);
+  assert.equal(slots[0]?.difficulty, 'legendary');
+  assert.equal(slots[1]?.catnip, 777);
+  assert.equal(slots[1]?.difficulty, 'casual');
+  assert.equal(slots[1]?.version, 2);
+  assert.deepEqual(slots[1]?.skills, []);
+  assert.equal(slots[1]?.rooms.planning, 0);
+  assert.equal(m.store.has('purrrfect-crime-save-v1'), false);
 });
 
 test('every paper has text in every story, whatever the day', async () => {

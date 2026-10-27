@@ -1,6 +1,6 @@
 // Searches every way a heist can play out to prove a level can be beaten, and how quickly.
 // The guards are deterministic, so a state is just Leo, the loot and where each guard is.
-import { apCost, canSteal, endTurn, leoReach, moveLeo, newHeist, steal, type State } from './game';
+import { moveAp, canSteal, endTurn, leoReach, moveLeo, newHeist, steal, type State } from './game';
 import type { Level, Point } from './level';
 
 function stateKey(s: State): string {
@@ -41,7 +41,7 @@ function moves(level: Level, s: State): { s: State; to: Point }[] {
   const out: { s: State; to: Point }[] = [{ s: structuredClone(s), to: s.leo }];
   const reach = leoReach(level, s);
   for (const [k, c] of reach.cost) {
-    if (c === 0 || apCost(c) > s.ap) continue;
+    if (c === 0 || moveAp(s, c) > s.ap) continue;
     const [x, y] = k.split(',').map(Number);
     const n = structuredClone(s);
     const r = moveLeo(level, n, { x, y });
