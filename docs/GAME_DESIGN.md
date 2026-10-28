@@ -520,8 +520,7 @@ in headless Chromium from the game's 2:1 camera, turned 0°, 45° … 315°, lit
 warm key from the top left), with a dark ink outline so they sit with the drawn characters. The game picks
 the frame from the prop's facing and the camera's turn, and tints it by the light on its tile. In use so
 far: security cameras, crates and crate stacks, desks, and whatever hangs on the walls in each district
-(pictures, mirrors and clocks in the museums and mansions; lifebuoys and lanterns at the harbour; fuse boxes
-and fire alarms downtown). Wall pieces are decoration only and go on about one wall face in five.
+(pictures and mirrors in the museums and mansions; lifebuoys at the harbour; fuse boxes downtown). Wall pieces are decoration only and go on about one wall face in five.
 
 ### 12.1b Characters and their animation
 
@@ -551,8 +550,7 @@ NightClaw's gothic stone. Creaky boards and pressure plates have their own drawi
 Lamps on the map are ceiling lights: a pendant on a cord over a statue, a bust or a plant (a pedestal where it
 needs one), with its beam and pool of light. The tile still can't be walked through, and switching the light
 off dims what's under it. Display cases and plinths have small spots over them, and paintings and mirrors have
-brass picture lights washing the wall. No lamps stand on the floor or hang on the walls. Flat wall pieces (an oil portrait and a tapestry, the opera's curtain swags, a
-station clock and a cuckoo clock, portholes and a ship's wheel, NightClaw's stained glass, a tool shelf, a
+brass picture lights washing the wall. No lamps stand on the floor or hang on the walls. Flat wall pieces (an oil portrait and a tapestry, the opera's curtain swags, portholes and a ship's wheel, NightClaw's stained glass, a tool shelf, a
 monitor, arched night windows) are laid on the wall faces with the 3D ones, themed by district and by heist;
 the Aquarium's lights hang over its fish tanks and jellyfish columns.
 

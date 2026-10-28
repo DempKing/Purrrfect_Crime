@@ -174,7 +174,7 @@ const PICTURES = [
   ['legend_leo', 560], ['boss_nightclaw', 420],
   ...['decoy', 'smoke', 'emp', 'sardine', 'treat'].map((g) => [`g_${g}`, 64]),
   // Flat pieces for the heists: things that hang on walls, and the aquarium's tanks.
-  ...['manor', 'museum', 'opera', 'rail', 'toy', 'aquarium', 'fish', 'lair', 'warehouse', 'lab'].map((w) => [`wd_${w}`, 210]),
+  ...['manor', 'museum', 'opera', 'aquarium', 'fish', 'lair', 'warehouse', 'lab'].map((w) => [`wd_${w}`, 210]),
   ['spr_window', 210], ['spr_tank', 260], ['spr_tanktall', 260], ['spr_statue', 240],
 ];
 mkdirSync(join(root, 'art/sprites/pics'), { recursive: true });
