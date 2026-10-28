@@ -344,3 +344,39 @@ test('older saves start with no letters', async () => {
   delete old.letters;
   assert.deepEqual(upgradeProfile(old)!.letters, []);
 });
+
+// --- The endgame ---------------------------------------------------------------------------------------
+
+test('Letter 4 comes once every centrepiece in the city has been taken flawlessly, after Letter 3', async () => {
+  const { CHALLENGE_LEVELS, challengeProgress, deliverLetters, hasLetter, openMusicBox } = await import('../src/meta/letters');
+  const p = newProfile();
+  assert.equal(CHALLENGE_LEVELS.length, 25, 'the tutorial and all five districts');
+  for (const l of CHALLENGE_LEVELS) p.records[l.id] = { clears: 1, bestTurns: 10, centrepiece: true, flawless: true };
+  deliverLetters(p);
+  assert.ok(!hasLetter(p, 4), 'not before Letter 3');
+  openMusicBox(p);
+  p.records[CHALLENGE_LEVELS[7].id].flawless = false;
+  deliverLetters(p);
+  assert.ok(!hasLetter(p, 4), 'one messy heist still to redo');
+  assert.deepEqual(challengeProgress(p), { done: 24, of: 25 });
+  p.records[CHALLENGE_LEVELS[7].id].flawless = true;
+  deliverLetters(p);
+  assert.ok(hasLetter(p, 4));
+});
+
+test('the finale: tapping NightClaw makes Leo Legendary; the collar isn’t for sale; the paper says so', async () => {
+  const { NIGHTCLAW_LAIR } = await import('../src/levels/midnight');
+  const { SOLUTIONS } = await import('../src/levels/solutions');
+  const lair = parseLevel(NIGHTCLAW_LAIR);
+  const s = play(lair, SOLUTIONS[NIGHTCLAW_LAIR.id]);
+  assert.equal(s.status, 'escaped');
+  assert.ok(s.tagged);
+  const p = newProfile();
+  const r = completeHeist(p, lair, s);
+  assert.ok(r.finale && p.legendary);
+  assert.equal(r.paper.headline, 'NIGHTCLAW’S SUCCESSOR?');
+  assert.ok(!p.stash.some((i) => i.levelId === NIGHTCLAW_LAIR.id && i.centrepiece), 'the collar stays on the shelf');
+  assert.ok(p.records[NIGHTCLAW_LAIR.id].centrepiece);
+  const again = completeHeist(p, lair, play(lair, SOLUTIONS[NIGHTCLAW_LAIR.id]));
+  assert.ok(!again.finale, 'the ending plays once');
+});

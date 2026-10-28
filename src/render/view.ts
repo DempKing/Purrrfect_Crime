@@ -287,7 +287,9 @@ export class HeistView {
       items.push({
         depth: project(p, a.x, a.y).depth + 0.05,
         draw: (g) =>
-          s.guards[i].kind === 'robo'
+          s.guards[i].kind === 'nightclaw'
+            ? this.drawNightClaw(g, a, s.guards[i], s.status === 'caught' && s.caughtBy === s.guards[i].name)
+            : s.guards[i].kind === 'robo'
             ? this.drawRobo(g, a, s.guards[i], roboOff(s, s.guards[i]), s.status === 'caught' && s.caughtBy === s.guards[i].name)
             : this.drawGuard(g, a, s.guards[i], s.status === 'caught' && s.caughtBy === s.guards[i].name),
       }),
@@ -776,6 +778,44 @@ export class HeistView {
     // Name tag.
     const name = RIVALS[id].name;
     g.roundRect(hx - name.length * 2.6, hy - 36, name.length * 5.2, 12, 4).fill({ color: COL.rival, alpha: 0.85 });
+  }
+
+  /** NightClaw: a tall, lean old black cat in a long coat and top hat, grey at the muzzle, with gold eyes. */
+  private drawNightClaw(g: Graphics, a: Actor, guard: Guard, grinning: boolean): void {
+    const s = project(this.proj, a.x, a.y);
+    const f = this.face(a);
+    const front = f.y > -0.2;
+    const by = s.y - a.bob * 0.5;
+    g.ellipse(s.x, s.y, 18, 8).fill({ color: 0x000000, alpha: 0.4 });
+    // His tail, curling up behind him.
+    g.moveTo(s.x - f.x * 10, by - 12).bezierCurveTo(s.x - f.x * 34, by - 14, s.x - f.x * 30, by - 52, s.x - f.x * 18, by - 58).stroke({ width: 5, color: 0x121218, cap: 'round' });
+    // The coat, swirling.
+    g.poly([s.x - 16, by - 4, s.x + 16, by - 4, s.x + 10, by - 40, s.x - 10, by - 40]).fill({ color: 0x241a36 }).stroke({ width: 2, color: 0x0a0a10 });
+    g.poly([s.x - 4, by - 40, s.x + 4, by - 40, s.x, by - 24]).fill({ color: 0xe8e2d0 });
+    const hx = s.x + f.x * 3;
+    const hy = by - 52;
+    g.poly([hx - 12, hy - 5, hx - 9, hy - 20, hx - 2, hy - 9]).fill({ color: 0x121218 }).stroke({ width: 2, color: 0x000000 });
+    g.poly([hx + 12, hy - 5, hx + 9, hy - 20, hx + 2, hy - 9]).fill({ color: 0x121218 }).stroke({ width: 2, color: 0x000000 });
+    g.circle(hx, hy, 12).fill({ color: 0x121218 }).stroke({ width: 2, color: 0x000000 });
+    // The top hat.
+    g.ellipse(hx, hy - 12, 15, 4).fill({ color: 0x0a0a10 });
+    g.rect(hx - 9, hy - 30, 18, 18).fill({ color: 0x0a0a10 });
+    g.rect(hx - 9, hy - 16, 18, 3).fill({ color: 0x6b2a5a });
+    if (front) {
+      const glint = 0.75 + Math.sin(this.time * 2) * 0.25;
+      g.ellipse(hx + f.x * 6 - 5, hy - 2, 2.8, 2.2).fill({ color: 0xf2c46b, alpha: glint });
+      g.ellipse(hx + f.x * 6 + 5, hy - 2, 2.8, 2.2).fill({ color: 0xf2c46b, alpha: glint });
+      g.circle(hx + f.x * 6 + 5, hy - 2, 5).stroke({ width: 1.2, color: 0xd9b36c });
+      g.ellipse(hx + f.x * 7, hy + 5, 6, 3.5).fill({ color: 0x8a8f9c });
+      for (const side of [-1, 1]) g.moveTo(hx + f.x * 7 + side * 4, hy + 5).lineTo(hx + f.x * 7 + side * 16, hy + 3).stroke({ width: 1, color: 0xd8dbe2 });
+      if (grinning) g.moveTo(hx + f.x * 7 - 4, hy + 8).quadraticCurveTo(hx + f.x * 7, hy + 11, hx + f.x * 7 + 4, hy + 8).stroke({ width: 1.5, color: 0xd8dbe2 });
+    }
+    const mark = grinning || guard.mode === 'searching' ? '!' : guard.mode === 'suspicious' ? '?' : '';
+    if (!mark) return;
+    const top = hy - 58 + Math.sin(this.time * 6) * 2;
+    g.roundRect(hx - 10, top, 20, 24, 5).fill({ color: mark === '!' ? 0xb05cff : 0xd9b8ff }).stroke({ width: 2, color: 0xffffff });
+    if (mark === '!') g.rect(hx - 2, top + 4, 4, 11).fill({ color: 0xffffff }).rect(hx - 2, top + 17, 4, 3).fill({ color: 0xffffff });
+    else g.circle(hx, top + 12, 4).stroke({ width: 3, color: 0x2a1a3a });
   }
 
   /** A guard (drawn as a bulldog): stocky, tan, peaked cap, torch. Shows ? when suspicious, ! when searching. */

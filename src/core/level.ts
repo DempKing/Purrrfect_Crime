@@ -44,9 +44,10 @@ export interface Point {
  * watch: walks a route. sleepy: dozes at his post, wakes to noise. captain: sees further and calls nearby
  * guards when he's suspicious. sniffer: short-sighted, but smells Leo through walls within 2 tiles.
  * robo: never sleeps, hears nothing, ignores decoys and empty cases, but sees Leo's heat in any light; the
- * fuse box powers it down.
+ * fuse box powers it down. nightclaw: NightClaw himself, in his lair: quick, with a cat's eyes for the dark,
+ * and one sighting is all it takes.
  */
-export type GuardKind = 'watch' | 'sleepy' | 'captain' | 'sniffer' | 'robo';
+export type GuardKind = 'watch' | 'sleepy' | 'captain' | 'sniffer' | 'robo' | 'nightclaw';
 
 export interface GuardDef {
   name: string;
@@ -83,6 +84,8 @@ export interface LootDef {
   value: number; // the newspaper's estimate, in dollars
   space: number; // inventory spaces it takes up
   category: LootCategory;
+  /** What it turns out to be once it's in Leo's paws, if that's a surprise. */
+  revealed?: string;
 }
 
 export interface LevelDef {
@@ -140,6 +143,8 @@ export interface LevelDef {
   tip?: string;
   /** NightClaw's challenge museum: opened by Letter 2, and its centrepiece holds Letter 3. */
   challenge?: boolean;
+  /** NightClaw's Lair: opened by Letter 4. The heist ends when Leo, with the prize, taps NightClaw on the shoulder. */
+  finale?: boolean;
   /** Base XP for a successful heist, and the turn count that earns a speed bonus. */
   xp?: number;
   par?: number;

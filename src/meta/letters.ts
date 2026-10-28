@@ -1,8 +1,11 @@
 // NightClaw's letters. The first two come from two triggers, in whichever order Leo reaches them (ten
-// heists, and 10,000 Catnip sold on the black market); the third is hidden inside the challenge item.
+// heists, and 10,000 Catnip sold on the black market); the third is hidden inside the challenge item, and
+// the fourth comes when his challenge is done.
+import type { LevelDef } from '../core/level';
+import { ALL_LEVELS } from '../levels';
 import type { Profile } from './profile';
 
-export type LetterId = 1 | 2 | 3;
+export type LetterId = 1 | 2 | 3 | 4;
 
 export interface Letter {
   id: LetterId;
@@ -43,7 +46,28 @@ export const LETTERS: Record<LetterId, { title: string; body: string[] }> = {
       'Do that, and I will write one last time.',
     ],
   },
+  4: {
+    title: 'An invitation',
+    body: [
+      'Leo,',
+      'Every centrepiece in the city, and not one of them missed. I have not seen work like it since I was young, and I was very good.',
+      'One test is left. My lair is in the old bell tower on Moon Street; the door will not be locked, but nothing else will be easy. In it is the thing I treasure most. Take it, and then come and find me. If I see you first, we will try again another night.',
+      'I will be waiting.',
+    ],
+  },
 };
+
+/** The NightClaw Challenge: every heist in the city, its centrepiece taken in a flawless heist. */
+export const CHALLENGE_LEVELS: LevelDef[] = ALL_LEVELS.filter((l) => !l.challenge && !l.finale);
+
+export function challengeProgress(p: Profile): { done: number; of: number } {
+  return { done: CHALLENGE_LEVELS.filter((l) => p.records[l.id]?.flawless).length, of: CHALLENGE_LEVELS.length };
+}
+
+export function challengeDone(p: Profile): boolean {
+  const { done, of } = challengeProgress(p);
+  return done === of;
+}
 
 export const hasLetter = (p: Profile, id: LetterId) => p.letters.some((l) => l.id === id);
 
@@ -59,6 +83,11 @@ export function deliverLetters(p: Profile): LetterId[] {
       p.letters.push({ id, day: p.day, read: false });
       out.push(id);
     }
+  // The challenge done: the invitation to his lair.
+  if (hasLetter(p, 3) && !hasLetter(p, 4) && challengeDone(p)) {
+    p.letters.push({ id: 4, day: p.day, read: false });
+    out.push(4);
+  }
   return out;
 }
 

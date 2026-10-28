@@ -127,7 +127,7 @@ function stateKey(s: State): string {
   ]);
 }
 
-const USEFUL: ActionKind[] = ['pick-door', 'swipe-card', 'read-notes', 'turn-dials', 'lights', 'panel', 'fuse', 'enter-vent', 'exit-vent', 'climb-up', 'climb-down', 'drop'];
+const USEFUL: ActionKind[] = ['pick-door', 'swipe-card', 'read-notes', 'turn-dials', 'lights', 'tap', 'panel', 'fuse', 'enter-vent', 'exit-vent', 'climb-up', 'climb-down', 'drop'];
 
 export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?: number; clean?: boolean; weight?: number; turns?: number } = {}): { plan: RouteStep[][]; s: State; expanded: number } | null {
   const centre = level.def.loot.findIndex((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y);
@@ -151,10 +151,19 @@ export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?:
       const to = distanceMap(level, e.goals);
       return { ...e, to, onward: Math.min(...e.goals.map((g) => toCentre[g.y][g.x])) };
     });
+  // The finale ends at NightClaw, wherever he is, not at the exit.
+  const toNightClaw = new Map<string, number[][]>();
+  const afterCentre = (s: State) => {
+    const nc = level.def.finale ? s.guards.find((g) => g.kind === 'nightclaw') : undefined;
+    if (!nc) return toExit[s.leo.y][s.leo.x];
+    const k = `${nc.x},${nc.y}`;
+    if (!toNightClaw.has(k)) toNightClaw.set(k, distanceMap(level, [{ x: nc.x, y: nc.y }]));
+    return toNightClaw.get(k)![s.leo.y][s.leo.x];
+  };
   const h = (s: State) => {
     const has = s.inventory.includes(centre);
     const todo = has ? [] : errands.filter((e) => !e.done(s));
-    let here = has ? toExit[s.leo.y][s.leo.x] : toCentre[s.leo.y][s.leo.x] + centreToExit;
+    let here = has ? afterCentre(s) : toCentre[s.leo.y][s.leo.x] + centreToExit;
     if (todo.length) here = todo[0].to[s.leo.y][s.leo.x] + todo[0].onward + centreToExit + (todo.length > 1 ? 10 : 0);
     return here / 5 + (has ? 0 : 1) + todo.length;
   };

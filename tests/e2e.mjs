@@ -211,19 +211,57 @@ await page.waitForSelector('.lair');
 const challenge = await page.evaluate(() => [...document.querySelectorAll('.district')].map((d) => d.textContent));
 await shot('24-challenge-heist.png');
 
+// --- The endgame: the challenge done, Letter 4, NightClaw's Lair, the ending ---------------------------------
+await page.evaluate(() => {
+  const p = window.__pc.profile;
+  for (const l of window.__pc.levels) if (!l.challenge && !l.finale) p.records[l.id] = { clears: 1, bestTurns: 10, centrepiece: true, flawless: true };
+  p.letters.push({ id: 3, day: p.day, read: true });
+});
+await page.click('[data-job="1"]');
+await page.click('#back');
+await page.waitForSelector('.letter');
+const letter4 = await page.textContent('.letter .kicker');
+await page.click('#letter-ok');
+await page.waitForSelector('.lair');
+const lairIndex = await page.evaluate(() => window.__pc.levels.findIndex((l) => l.finale));
+await page.click(`[data-job="${lairIndex}"]`);
+await page.click('#go');
+await page.waitForTimeout(800);
+await shot('25-nightclaw-lair.png');
+await playRoute(solution('nc-lair'), { 14: '26-creeping-up.png' });
+await page.waitForSelector('.scene', { timeout: 15000 });
+await shot('27-nightclaw-speaks.png');
+for (let i = 0; i < 5; i++) await page.click('#next');
+await page.waitForSelector('.legendary');
+await shot('28-legendary.png');
+await page.click('#legend-ok');
+await page.waitForSelector('.credits');
+await page.waitForTimeout(3000);
+await shot('28b-credits.png');
+await page.click('#credits-ok');
+await page.waitForSelector('.paper');
+const finalHeadline = await page.textContent('.paper h2');
+await page.waitForTimeout(1800);
+await shot('29-successor.png');
+await page.click('#paper-ok');
+await page.click('#report-ok');
+await page.waitForSelector('.lair');
+const legendary = await page.evaluate(() => ({ legendary: window.__pc.profile.legendary, badge: !!document.querySelector('.badge.legend') }));
+await shot('30-legendary-lair.png');
+
 // --- Phone layout ----------------------------------------------------------------------------------------
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(300);
-await shot('25-phone-lair.png');
+await shot('31-phone-lair.png');
 await page.click('[data-tab="leo"]');
-await shot('26-phone-leo.png');
+await shot('32-phone-leo.png');
 await page.click('[data-tab="heists"]');
 await page.click('[data-job="1"]');
 await page.click('#go');
 await page.waitForTimeout(800);
-await shot('27-phone-heist.png');
+await shot('33-phone-heist.png');
 
-const results = { tutorialEnd, tips: [...tips], afterLair, coinEnd, sold, spent, kit, afterCap, caughtStatus, race, reloaded, letterTitles, challenge };
+const results = { tutorialEnd, tips: [...tips], afterLair, coinEnd, sold, spent, kit, afterCap, caughtStatus, race, reloaded, letterTitles, challenge, letter4, finalHeadline, legendary };
 console.log(JSON.stringify(results, null, 1));
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors');
 await browser.close();
@@ -239,5 +277,6 @@ const ok =
   afterCap.caps === 0 && afterCap.ap === 1 && caughtStatus === 'caught' &&
   race.status === 'playing' && (race.phase === 'in' || race.phase === 'leaving' || race.phase === 'gone') && /Luna Luck/.test(race.hud) &&
   reloaded.heists === 2 && reloaded.papers === 2 && reloaded.catnip === spent.catnip && reloaded.skills === 1 &&
-  /Letter 1/.test(letterTitles[0]) && /Letter 2/.test(letterTitles[1]) && challenge.some((d) => /NightClaw/.test(d));
+  /Letter 1/.test(letterTitles[0]) && /Letter 2/.test(letterTitles[1]) && challenge.some((d) => /NightClaw/.test(d)) &&
+  /Letter 4/.test(letter4) && /SUCCESSOR/.test(finalHeadline) && legendary.legendary && legendary.badge;
 process.exit(errors.length || !ok ? 1 : 0);
