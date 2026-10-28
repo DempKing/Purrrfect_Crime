@@ -41,6 +41,17 @@ const COL = {
   beam: 0xd9a066,
 };
 
+// The overlay colours, and the colour-blind friendly set (Okabe–Ito): blue and yellow for reach, vermilion
+// for what guards see (hatched, so it doesn't rely on colour), reddish purple for cameras.
+const STANDARD = { reach1: COL.reach1, reach2: COL.reach2, vision: COL.vision, camera: COL.camera, warn: COL.warn, danger: COL.danger, path: COL.path };
+const COLOURBLIND = { reach1: 0x0072b2, reach2: 0xf0e442, vision: 0xd55e00, camera: 0xcc79a7, warn: 0xf0e442, danger: 0xd55e00, path: 0xffffff };
+let hatchVision = false;
+
+export function setPalette(palette: 'standard' | 'colourblind'): void {
+  Object.assign(COL, palette === 'colourblind' ? COLOURBLIND : STANDARD);
+  hatchVision = palette === 'colourblind';
+}
+
 /** Placeholder looks for the four rivals until their sprites arrive. */
 const RIVAL_LOOKS: Record<RivalId, { fur: number; patch?: number; eyes: number; mask: number }> = {
   mittens: { fur: 0xf2f0ea, patch: 0xd9822b, eyes: 0x5fbf5f, mask: 0x1b1b22 },
@@ -149,7 +160,10 @@ export class HeistView {
           this.diamond(f, x, y, 0.4, COL.target, 0.28 + Math.sin(this.time * 5) * 0.08);
           this.diamondOutline(f, x, y, COL.target, 1.5, 0.12, 0.8);
         }
-        if (ov.vision.has(k)) this.diamond(f, x, y, 0.47, COL.vision, 0.32);
+        if (ov.vision.has(k)) {
+          this.diamond(f, x, y, 0.47, COL.vision, 0.32);
+          if (hatchVision) this.hatch(f, x, y, COL.vision);
+        }
         if (!inVent && !inRafters) {
           if (ov.reach1.has(k)) this.diamond(f, x, y, 0.38, COL.reach1, 0.3);
           else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.38, COL.reach2, 0.26);
@@ -669,6 +683,18 @@ export class HeistView {
       g.roundRect(hx - 10, top, 20, 22, 5).fill({ color: 0xff3b30 }).stroke({ width: 2, color: 0xffffff });
       g.rect(hx - 2, top + 4, 4, 9).fill({ color: 0xffffff });
       g.rect(hx - 2, top + 15, 4, 3).fill({ color: 0xffffff });
+    }
+  }
+
+  /** Diagonal stripes across a tile, so a seen tile reads without colour. */
+  private hatch(g: Graphics, x: number, y: number, color: number): void {
+    for (const t of [0.25, 0.5, 0.75]) {
+      const a = project(this.proj, x + t, y + 0.05);
+      const b = project(this.proj, x + 0.05, y + t);
+      const c = project(this.proj, x + 0.95, y + t);
+      const d = project(this.proj, x + t, y + 0.95);
+      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1.5, color, alpha: 0.8 });
+      g.moveTo(c.x, c.y).lineTo(d.x, d.y).stroke({ width: 1.5, color, alpha: 0.8 });
     }
   }
 

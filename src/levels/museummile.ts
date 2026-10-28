@@ -22,7 +22,7 @@ export const NATURAL_HISTORY: LevelDef = {
     { x: 28, y: 4, w: 1, h: 11 },
   ],
   xp: 260,
-  par: 30,
+  par: 17,
   rivalEntrances: [{ x: 28, y: 1 }, { x: 1, y: 13 }],
   map: [
     '##############################',
@@ -113,7 +113,7 @@ export const EGYPTIAN_WING: LevelDef = {
     { x: 1, y: 13, w: 3, h: 2 },
   ],
   xp: 280,
-  par: 30,
+  par: 19,
   rivalEntrances: [{ x: 26, y: 14 }, { x: 22, y: 3 }],
   map: [
     '############################',
@@ -183,7 +183,7 @@ export const MODERN_ART: LevelDef = {
     { x: 18, y: 8, w: 3, h: 4 },
   ],
   xp: 300,
-  par: 30,
+  par: 17,
   rivalEntrances: [{ x: 19, y: 1 }, { x: 26, y: 16 }],
   map: [
     '############################',
@@ -259,7 +259,7 @@ export const GEM_HALL: LevelDef = {
     { x: 6, y: 13, w: 3, h: 3 },
   ],
   xp: 320,
-  par: 32,
+  par: 36,
   rivalEntrances: [{ x: 26, y: 7 }, { x: 1, y: 7 }],
   map: [
     '################F###C#######',
@@ -330,7 +330,7 @@ export const PLANETARIUM: LevelDef = {
     { x: 23, y: 6, w: 1, h: 4 },
   ],
   xp: 340,
-  par: 32,
+  par: 17,
   rivalEntrances: [{ x: 26, y: 13 }, { x: 8, y: 3 }],
   map: [
     '############################',

@@ -25,6 +25,17 @@ await page.waitForFunction(() => window.__pc);
 await page.waitForTimeout(400);
 const shot = (name) => page.screenshot({ path: join(out, name) });
 await shot('01-title.png');
+
+// --- Settings: open from the title, change them, and they apply at once and are remembered -----------------
+await page.click('#title-settings');
+await page.waitForSelector('.settings');
+await page.click('[data-toggle="largeText"]');
+await page.click('[data-choice="palette"][data-value="colourblind"]');
+await shot('01b-settings.png');
+const settingsApplied = await page.evaluate(() => ({ large: document.body.classList.contains('large-text'), saved: JSON.parse(localStorage.getItem('purrrfect-crime-settings')) }));
+await page.click('[data-toggle="largeText"]');
+await page.click('#settings-ok');
+await page.waitForSelector('[data-new="0"]');
 await page.click('[data-new="0"]');
 await page.waitForTimeout(900);
 
@@ -260,8 +271,21 @@ await page.click('[data-job="1"]');
 await page.click('#go');
 await page.waitForTimeout(800);
 await shot('33-phone-heist.png');
+// The keyboard: an arrow key puts the cursor next to Leo, Enter moves him there.
+const before = await page.evaluate(() => ({ ...window.__pc.state.leo }));
+let keyboardMsg = '';
+for (const k of ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp']) {
+  await page.keyboard.press(k);
+  keyboardMsg = await page.textContent('#message');
+  if (/Enter: move/.test(keyboardMsg)) break;
+}
+await page.keyboard.press('Enter');
+await page.waitForTimeout(600); await idle();
+const after = await page.evaluate(() => ({ ...window.__pc.state.leo }));
+const keyboard = { moved: before.x !== after.x || before.y !== after.y, msg: keyboardMsg };
+const earned = await page.evaluate(() => window.__pc.profile.achievements);
 
-const results = { tutorialEnd, tips: [...tips], afterLair, coinEnd, sold, spent, kit, afterCap, caughtStatus, race, reloaded, letterTitles, challenge, letter4, finalHeadline, legendary };
+const results = { tutorialEnd, tips: [...tips], afterLair, coinEnd, sold, spent, kit, afterCap, caughtStatus, race, reloaded, letterTitles, challenge, letter4, finalHeadline, legendary, settingsApplied, keyboard, earned };
 console.log(JSON.stringify(results, null, 1));
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors');
 await browser.close();
@@ -278,5 +302,7 @@ const ok =
   race.status === 'playing' && (race.phase === 'in' || race.phase === 'leaving' || race.phase === 'gone') && /Luna Luck/.test(race.hud) &&
   reloaded.heists === 2 && reloaded.papers === 2 && reloaded.catnip === spent.catnip && reloaded.skills === 1 &&
   /Letter 1/.test(letterTitles[0]) && /Letter 2/.test(letterTitles[1]) && challenge.some((d) => /NightClaw/.test(d)) &&
-  /Letter 4/.test(letter4) && /SUCCESSOR/.test(finalHeadline) && legendary.legendary && legendary.badge;
+  /Letter 4/.test(letter4) && /SUCCESSOR/.test(finalHeadline) && legendary.legendary && legendary.badge &&
+  settingsApplied.large && settingsApplied.saved.palette === 'colourblind' && keyboard.moved &&
+  ['first-night', 'home', 'legendary'].every((a) => earned.includes(a));
 process.exit(errors.length || !ok ? 1 : 0);

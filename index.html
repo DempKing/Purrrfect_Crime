@@ -27,12 +27,14 @@
       <button id="end" class="primary" title="End your turn (Space)">End turn</button>
       <button id="restart" title="Restart the level (R)">Restart</button>
       <button id="quit" title="Leave the heist">Quit</button>
-      <button id="help-toggle" title="How to play">?</button>
+      <button id="settings-btn" title="Settings: sound, speed, accessibility" aria-label="Settings">⚙</button>
+      <button id="help-toggle" title="How to play" aria-label="How to play">?</button>
     </div>
   </header>
 
-  <div id="alarm" class="alarm hidden"></div>
-  <div id="banner"></div>
+  <div id="alarm" class="alarm hidden" role="alert"></div>
+  <div id="banner" aria-live="polite"></div>
+  <div id="toasts" aria-live="polite"></div>
   <footer class="bottom">
     <div id="narrator" class="narrator card hidden">
       <div class="narrator-face" id="narrator-face"></div>
@@ -44,12 +46,13 @@
     </div>
     <div id="abilities" class="abilities hidden"></div>
     <div id="actions" class="actions hidden"></div>
-    <div class="message" id="message"></div>
+    <div class="message" id="message" role="status" aria-live="polite"></div>
   </footer>
 
   <aside id="help" class="card help hidden">
     <b>How to play</b>
     <ul>
+      <li><b>Keyboard:</b> the arrow keys move a cursor, Enter moves Leo there or does what's there, Space ends the turn. The ⚙ button has sound, speed and accessibility settings.</li>
       <li><b>Move:</b> click a tile. Blue costs 1 action point, yellow costs both (a loud dash). On a phone, tap once to preview and again to move.</li>
       <li><b>Path colours:</b> white is safe, yellow means a guard will notice something and come to look, red means caught or alarm.</li>
       <li><b>Shadows hide you.</b> Guards see 6 tiles into lamplight, 4 into moonlight and barely past their nose in the dark. Being right next to one, or standing in lamplight in front of one, gets you caught.</li>

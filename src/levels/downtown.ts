@@ -22,7 +22,7 @@ export const GRAND_BANK: LevelDef = {
     { x: 17, y: 9, w: 6, h: 1 },
   ],
   xp: 500,
-  par: 36,
+  par: 24,
   rivalEntrances: [{ x: 26, y: 13 }, { x: 26, y: 3 }],
   map: [
     '############################',
@@ -107,7 +107,7 @@ export const CASINO: LevelDef = {
     { x: 16, y: 13, w: 9, h: 1 },
   ],
   xp: 520,
-  par: 36,
+  par: 30,
   rivalEntrances: [{ x: 26, y: 15 }, { x: 26, y: 1 }],
   map: [
     '############################',
@@ -177,7 +177,7 @@ export const MINT: LevelDef = {
     { x: 1, y: 16, w: 3, h: 1 },
   ],
   xp: 540,
-  par: 38,
+  par: 19,
   rivalEntrances: [{ x: 26, y: 1 }, { x: 1, y: 1 }],
   map: [
     '############################',
@@ -248,7 +248,7 @@ export const MISCHIEF: LevelDef = {
     { x: 1, y: 1, w: 1, h: 4 },
   ],
   xp: 560,
-  par: 38,
+  par: 18,
   rivalEntrances: [{ x: 26, y: 13 }, { x: 1, y: 1 }],
   map: [
     '############################',
@@ -321,7 +321,7 @@ export const TREASURY: LevelDef = {
     { x: 19, y: 8, w: 1, h: 2 },
   ],
   xp: 600,
-  par: 40,
+  par: 34,
   rivalEntrances: [{ x: 26, y: 13 }, { x: 1, y: 1 }],
   map: [
     '############################',

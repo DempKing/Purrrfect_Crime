@@ -254,3 +254,29 @@ h2.section.district:first-child { margin-top: 0; }
 @media (prefers-reduced-motion: reduce) { .credits .roll { animation: none; } }
 .legendary .row-buttons { justify-content: center; }
 .credits .row-buttons { justify-content: center; }
+
+/* Settings. */
+.settings { max-width: 560px; }
+.setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 10px 0; }
+.setting input[type='range'] { flex: 1; max-width: 240px; accent-color: var(--yellow); }
+.setting output { width: 3.5em; text-align: right; font-variant-numeric: tabular-nums; }
+.setting input[type='checkbox'] { width: 22px; height: 22px; accent-color: var(--yellow); flex: none; }
+.seg { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.seg button.on { background: var(--yellow); color: #1b1b22; }
+.lair-buttons { display: flex; gap: 8px; }
+button:focus-visible { outline: 3px solid #5ef0ff; outline-offset: 2px; }
+
+/* Achievements. */
+#toasts { position: fixed; right: 16px; bottom: 16px; z-index: 50; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { background: var(--panel); border: 1px solid var(--yellow); border-radius: 10px; padding: 10px 14px; max-width: 280px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); animation: toast-in 0.4s ease-out both; transition: opacity 0.6s, transform 0.6s; }
+.toast.gone { opacity: 0; transform: translateX(40px); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+.achievements { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.achievement { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; opacity: 0.55; }
+.achievement.got { opacity: 1; border-color: var(--yellow); }
+
+/* Accessibility. */
+body.large-text { font-size: 19px; }
+body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+.setting > span:first-child { flex: 0 0 9em; }
+.setting:has(input[type="checkbox"]) > span:first-child { flex: 1; }

@@ -10,7 +10,8 @@
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/test.mjs",
-    "solve": "esbuild tools/solve.ts --bundle --platform=node --outfile=.solve/solve.cjs --log-level=warning && node --max-old-space-size=8000 .solve/solve.cjs"
+    "solve": "esbuild tools/solve.ts --bundle --platform=node --outfile=.solve/solve.cjs --log-level=warning && node --max-old-space-size=8000 .solve/solve.cjs",
+    "balance": "esbuild tools/balance.ts --bundle --platform=node --outfile=.solve/balance.cjs --log-level=warning && node .solve/balance.cjs"
   },
   "devDependencies": {
     "@types/node": "22.15.0",

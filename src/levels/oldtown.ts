@@ -99,7 +99,7 @@ export const CLOCKTOWER: LevelDef = {
   objective: 'Take the Brass Astrolabe from the clock chamber and leave by the back door.',
   ambient: 'dark',
   xp: 150,
-  par: 24,
+  par: 20,
   map: [
     '############################',
     '######################....L#',
@@ -241,7 +241,7 @@ export const OPERA_HOUSE: LevelDef = {
   objective: 'Steal the Phantom’s Mask from the costume vault and walk out the front doors.',
   ambient: 'dark',
   xp: 220,
-  par: 28,
+  par: 24,
   map: [
     '############################',
     '#.....#............#......L#',
