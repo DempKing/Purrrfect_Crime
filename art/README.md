@@ -40,3 +40,8 @@ The web uploader takes at most 100 files at a time, and 25 MB per file. For a bi
 camera at eight turns, with an ink outline, into a sprite strip in `art/sprites/` (plus `manifest.json`).
 Per-model settings (size, wall or floor, which way is the front) are in `tools/bake/catalog.json`; the
 props the game uses, and which district gets what, are listed in `src/render/props.ts`.
+
+Drawn characters (`anim_<name>_idle|a|b.webp`: standing, and the two halves of a stride, facing left) and
+loot pictures (`loot_*.webp`) are prepared by `node tools/prep-art.mjs`: trimmed, scaled, given a pale rim,
+with each frame's feet marked, into `art/sprites/chars/` and `art/sprites/loot/`. Which loot gets which
+picture is in `src/render/characters.ts`.

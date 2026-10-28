@@ -19,6 +19,7 @@ import {
   key,
   leoReach,
   lightNow,
+  lightMap,
   moveLeo,
   newHeist,
   pathTo,
@@ -45,8 +46,9 @@ import { learn, perksFor, raise, upgrade } from './meta/progression';
 import { deliverLetters } from './meta/letters';
 import { TUTORIAL, advance, type TutorialEvents } from './meta/tutorial';
 import * as screens from './ui/screens';
+import { loadCharacters } from './render/characters';
 import { loadProps } from './render/props';
-import { HeistView, setPalette, type Actor, type Overlay, type Ripple } from './render/view';
+import { HeistView, setPalette, type Actor, type Gait, type Overlay, type Ripple } from './render/view';
 import { project, screenDir, unproject } from './render/iso';
 import { Sound, soundsInLog, type Sfx, type Tension } from './audio';
 import { SPEED_FACTOR, loadSettings, saveSettings, type Settings } from './settings';
@@ -78,7 +80,8 @@ const sound = new Sound();
 const prefersReducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const settings: Settings = loadSettings(storage(), prefersReducedMotion);
 /** Animation time, scaled by the speed setting. */
-const anim = (seconds: number) => seconds * SPEED_FACTOR[settings.speed];
+let slowMotion = 1; // for the browser tests, to catch animations mid-step
+const anim = (seconds: number) => seconds * SPEED_FACTOR[settings.speed] * slowMotion;
 
 function applySettings(): void {
   document.body.classList.toggle('large-text', settings.largeText);
@@ -156,6 +159,7 @@ interface Segment {
   t: number;
   dur: number;
   leap?: boolean; // a Pounce: a high arc instead of a walk
+  gait?: Gait;
 }
 let queue: Segment[] = [];
 let busy = false;
@@ -290,12 +294,16 @@ function act(tile: Point): void {
   const segs: Segment[] = [];
   const crawl = state.layer === 'vent' ? 1.4 : 1; // beams are walked at the usual pace
   const layer = state.layer;
+  // Leo crawls in the vents, runs when he dashes, and creeps when he's heading into the dark.
+  const dark = lightMap(level, state.lampsOff);
+  const dash = apBefore - state.ap >= 2;
   for (let i = 1; i < res.path.length; i++) {
     const p = res.path[i - 1];
     const q = res.path[i];
     const t = level.tiles[q.y][q.x];
     const step: Sfx = layer === 'vent' ? 'vent' : t === 'marble' ? 'step-marble' : 'step-carpet';
-    segs.push({ who: 'leo', from: p, to: q, facing: faceToward(p, q), t: 0, dur: anim((p.x !== q.x && p.y !== q.y ? 0.17 : 0.12) * crawl), sfx: layer === 'vent' && i % 2 ? undefined : step });
+    const gait: Gait = layer === 'vent' ? 'crawl' : dash ? 'run' : layer === 'floor' && dark[q.y][q.x] === 0 ? 'sneak' : 'walk';
+    segs.push({ who: 'leo', from: p, to: q, facing: faceToward(p, q), t: 0, dur: anim((p.x !== q.x && p.y !== q.y ? 0.17 : 0.12) * crawl * (gait === 'sneak' ? 1.25 : 1)), sfx: layer === 'vent' && i % 2 ? undefined : step, gait });
   }
   play(segs, afterLeoActs);
 }
@@ -325,6 +333,7 @@ function runAction(a: Action): void {
   };
   const snd = actionSound[a.kind];
   if (snd) sfx(snd);
+  if (a.kind !== 'enter-vent' && a.kind !== 'exit-vent' && a.kind !== 'climb-up' && a.kind !== 'climb-down' && a.kind !== 'drop') leo.work = 1;
   if (state.inventory.length && a.kind !== 'take' && /^Got /.test(state.log.join(' '))) sfx('take');
   selected = null;
   version++;
@@ -399,11 +408,12 @@ function doEndTurn(): void {
       const from = rivalWasIn ? rivalAt : { x: s.to.x, y: s.to.y };
       rivalWasIn = true;
       rivalAt = { x: s.to.x, y: s.to.y };
-      return { who: -1, from, to: { x: s.to.x, y: s.to.y }, facing: s.to.facing, t: 0, dur: anim(0.16) };
+      return { who: -1, from, to: { x: s.to.x, y: s.to.y }, facing: s.to.facing, t: 0, dur: anim(0.16), gait: 'run' };
     }
     const from = last[s.guard];
     last[s.guard] = { x: s.to.x, y: s.to.y };
-    return { who: s.guard, from, to: { x: s.to.x, y: s.to.y }, facing: s.to.facing, t: 0, dur: anim(0.22) };
+    const hurry = state.guards[s.guard]?.mode === 'searching';
+    return { who: s.guard, from, to: { x: s.to.x, y: s.to.y }, facing: s.to.facing, t: 0, dur: anim(hurry ? 0.17 : 0.22), gait: hurry ? 'run' : 'walk' };
   });
   busy = segs.length > 0;
   updateHud();
@@ -795,7 +805,7 @@ const world = new Container();
 
 async function boot(): Promise<void> {
   await app.init({ resizeTo: window, background: 0x0a0c18, antialias: true, resolution: Math.min(2, window.devicePixelRatio || 1), autoDensity: true });
-  loadProps().catch((e) => console.error('Sprites failed to load', e));
+  Promise.all([loadProps(), loadCharacters()]).catch((e) => console.error('Sprites failed to load', e));
   $('stage').appendChild(app.canvas);
   world.addChild(view.root);
   app.stage.addChild(world);
@@ -891,6 +901,11 @@ async function boot(): Promise<void> {
       return targeting;
     },
     screenOf: (x: number, y: number) => world.toGlobal(project(view.proj, x + 0.5, y + 0.5)),
+    set slowMotion(k: number) {
+      slowMotion = k;
+    },
+    /** Where Leo is drawn right now, mid-step included. */
+    leoOnScreen: () => world.toGlobal(project(view.proj, leo.x, leo.y)),
     /** A tile Leo can reach this turn where he'd be caught or set off the alarm. */
     dangerTile: () => {
       for (const [k, cost] of leoReach(level, state).cost) {
@@ -914,13 +929,21 @@ async function boot(): Promise<void> {
       seg.t += dt / seg.dur;
       const k = Math.min(1, seg.t);
       const a = seg.who === 'leo' ? leo : seg.who === -1 ? rival : guards[seg.who];
-      a.x = seg.from.x + 0.5 + (seg.to.x - seg.from.x) * k;
-      a.y = seg.from.y + 0.5 + (seg.to.y - seg.from.y) * k;
+      const x = seg.from.x + 0.5 + (seg.to.x - seg.from.x) * k;
+      const y = seg.from.y + 0.5 + (seg.to.y - seg.from.y) * k;
+      // The stride follows the distance covered (two frames a tile), so feet don't slide.
+      if (seg.t > dt / seg.dur) a.phase = (a.phase ?? 0) + Math.hypot(x - a.x, y - a.y);
+      a.x = x;
+      a.y = y;
       a.facing = seg.facing;
-      a.bob = Math.abs(Math.sin(k * Math.PI)) * (seg.leap ? 34 : 4);
+      a.gait = seg.leap ? 'leap' : seg.gait ?? 'walk';
+      a.leapT = k;
+      a.bob = seg.leap ? Math.sin(k * Math.PI) * 34 : 0;
       if (seg.t >= 1) {
         a.bob = 0;
         queue.shift();
+        // Between two steps of the same walk, keep the gait, so there's no flash of standing still.
+        if (queue[0]?.who !== seg.who) a.gait = undefined;
         if (!queue.length) {
           busy = false;
           const done = afterAnim;

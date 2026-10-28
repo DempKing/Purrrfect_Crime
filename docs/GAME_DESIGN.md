@@ -523,6 +523,20 @@ far: security cameras, crates and crate stacks, desks, and whatever hangs on the
 (pictures, mirrors and clocks in the museums and mansions; lifebuoys and lanterns at the harbour; fuse boxes
 and fire alarms downtown). Wall pieces are decoration only and go on about one wall face in five.
 
+### 12.1b Characters and their animation
+
+Each character has three drawings: standing, and the two halves of a stride (Leo, the bulldog guards, the
+guard dog for sniffers, the Robo-Guards, NightClaw, and the four rivals; Professor Paws uses the "prof"
+drawings). The game animates them from those: breathing while they stand; striding, two frames a tile, with
+a bob (the stride follows the distance covered, so feet don't slide); running, leaning in with dust behind
+(Leo's dashes, searching guards, rivals); sneaking, crouched low, when Leo heads into the dark; crawling flat
+in the vents; stretched along the arc of a Pounce; swaying as he climbs to and from the rafters; ducking down
+into a crate to hide; and fidgeting head-down while he picks a lock, cracks a safe or lifts loot. Sleeping
+guards slump; switched-off robots sag. Characters are darker in shadow. Loot with a picture shows it in its
+case or on its plinth, hops into Leo's bag when taken, and appears in the fence's ledger and the report.
+Turning round (walking toward or away from the camera) would want back and three-quarter drawings; until
+then the side views are mirrored.
+
 ### 12.2 Audio, settings and accessibility as built (M6)
 
 - **Audio** is synthesised in the browser (Web Audio), so there are no files to load: a swing loop of
