@@ -533,8 +533,9 @@ in the vents; stretched along the arc of a Pounce; swaying as he climbs to and f
 into a crate to hide; and fidgeting head-down while he picks a lock, cracks a safe or lifts loot. Sleeping
 guards slump; switched-off robots sag. Characters are darker in shadow. Loot with a picture shows it in its
 case or on its plinth, hops into Leo's bag when taken, and appears in the fence's ledger and the report.
-Turning round (walking toward or away from the camera) would want back and three-quarter drawings; until
-then the side views are mirrored.
+Standing characters use the front view only when facing roughly towards the camera, and otherwise stand side
+on, turned the way they face, so a guard never seems to look one way while watching the other; guards' torches
+throw a beam on the floor the way they're looking. Back and three-quarter drawings would still help.
 
 ### 12.1c Floors and walls
 

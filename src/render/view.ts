@@ -440,7 +440,7 @@ export class HeistView {
     g: Graphics,
     name: CharName,
     a: Actor,
-    o: { lift?: number; alpha?: number; tint?: number; crawl?: boolean; hide?: number; asleep?: boolean; off?: boolean; scale?: number } = {},
+    o: { lift?: number; alpha?: number; tint?: number; crawl?: boolean; hide?: number; asleep?: boolean; off?: boolean; scale?: number; torch?: boolean } = {},
   ): { x: number; top: number } | null {
     const still = charFrame(name, 'idle');
     if (!still) return null;
@@ -452,7 +452,9 @@ export class HeistView {
     const cycle = (a.phase ?? 0) * 2;
     const half = cycle % 1;
     const hop = Math.abs(Math.sin(half * Math.PI));
-    let frame: CharFrameName = a.gait ? (Math.floor(cycle) % 2 ? 'b' : 'a') : 'idle';
+    // Standing: the front view only when facing more or less towards the camera; otherwise side on, turned
+    // the way they face, so nobody seems to look one way while watching the other.
+    let frame: CharFrameName = a.gait ? (Math.floor(cycle) % 2 ? 'b' : 'a') : f.y > 0.3 ? 'idle' : 'b';
     let sx = 1;
     let sy = 1;
     let lean = 0;
@@ -530,6 +532,21 @@ export class HeistView {
     if (o.crawl) g.ellipse(s.x, s.y - 4, 26, 13).stroke({ width: 2, color: COL.duct, alpha: 0.9 });
     else g.ellipse(s.x, s.y, 18 * scale * (gait === 'crawl' ? 1.3 : 1), 8 * scale).fill({ color: 0x000000, alpha: 0.35 * (1 - Math.min(0.7, a.bob / 50)) });
     // The drawings face left: mirror them to face right, and lean into the way they're going.
+    if (o.torch) {
+      // The torch's beam on the floor, out the way the guard is looking.
+      const d = DIRS[a.facing];
+      const len = Math.hypot(d.x, d.y);
+      const ux = d.x / len;
+      const uy = d.y / len;
+      const at = (along: number, side: number) => project(this.proj, a.x + ux * along - uy * side, a.y + uy * along + ux * side);
+      const p0 = at(0.25, -0.08);
+      const p1 = at(0.25, 0.08);
+      const p2 = at(2.1, 0.75);
+      const p3 = at(2.1, -0.75);
+      g.poly([p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y]).fill({ color: 0xfff1b8, alpha: 0.13 });
+      const c = at(1.6, 0);
+      g.ellipse(c.x, c.y, 26, 13).fill({ color: 0xfff1b8, alpha: 0.07 });
+    }
     const m = new Matrix().scale(-dir * sx * scale, sy * scale).rotate(lean * dir).translate(s.x + dx, by);
     g.save();
     g.setTransform(m);
@@ -1410,7 +1427,7 @@ export class HeistView {
   /** A guard (drawn as a bulldog): stocky, tan, peaked cap, torch. Shows ? when suspicious, ! when searching. */
   private drawGuard(g: Graphics, a: Actor, guard: Guard, grinning: boolean): void {
     const sniffer = guard.kind === 'sniffer';
-    const r = this.figure(g, sniffer ? 'dog' : 'guard', a, { asleep: guard.asleep, tint: this.actorTint(a), scale: guard.kind === 'captain' ? 1.12 : 1 });
+    const r = this.figure(g, sniffer ? 'dog' : 'guard', a, { asleep: guard.asleep, tint: this.actorTint(a), scale: guard.kind === 'captain' ? 1.12 : 1, torch: !sniffer && !guard.asleep });
     if (r) {
       if (guard.kind === 'captain') {
         // The captain's gold star, worn on the cap.
