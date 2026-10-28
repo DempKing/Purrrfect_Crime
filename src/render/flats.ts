@@ -48,7 +48,7 @@ export async function loadFlats(): Promise<void> {
   if (textures.size) return;
   await Promise.all(
     (Object.keys(FILES) as FlatName[]).map(async (name) => {
-      const tex: Texture = await Assets.load({ src: FILES[name], loadParser: 'loadTextures' });
+      const tex: Texture = await Assets.load({ src: FILES[name], parser: 'texture' });
       textures.set(name, tex);
     }),
   );

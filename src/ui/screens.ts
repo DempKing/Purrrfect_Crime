@@ -340,10 +340,9 @@ export function newspaper(paper: Paper, spin: boolean, done: () => void, button 
   on(el, '#paper-ok', done);
 }
 
-/** A small picture of a piece of loot, where it has one. */
-function lootPic(name: string): string {
-  const url = lootPictureUrl(name);
-  return url ? `<img class="loot-pic" src="${url}" alt="">` : '';
+/** A small picture of a piece of loot: its painting, or a drawing of it. */
+function lootPic(name: string, category?: LootCategory): string {
+  return `<img class="loot-pic" src="${lootPictureUrl(name, category)}" alt="">`;
 }
 
 /** The night's snapshot: Leo on the rooftop with the prize, or the rival who beat him to it. */
@@ -372,7 +371,7 @@ export function heistReport(r: HeistReport, p: Profile, done: () => void): void 
       ${r.levelAfter > r.levelBefore ? `<p class="levelup"><span class="stamp">Level ${r.levelAfter}</span> The fences pay ${Math.round(fenceRate(r.levelAfter) * 100)}% now.</p>` : ''}
       <div class="xpbar"><span style="width:${Math.min(100, (into / need) * 100)}%"></span></div>
       <p class="small">Level ${lvl} · ${into}/${need} XP to level ${lvl + 1}</p>
-      ${r.items.some((i) => lootPictureUrl(i.name)) ? `<div class="evidence">${r.items.map((i) => (lootPictureUrl(i.name) ? `<figure>${lootPic(i.name)}<figcaption>${esc(i.name)}</figcaption></figure>` : '')).join('')}</div>` : ''}
+      ${r.items.length ? `<div class="evidence">${r.items.map((i) => `<figure>${lootPic(i.name)}<figcaption>${esc(i.name)}</figcaption></figure>`).join('')}</div>` : ''}
       <p>${r.items.length ? `${r.items.length} piece${r.items.length === 1 ? '' : 's'} went to the stash${r.replay ? ', but this is a replay, so the fences call it hot and pay half' : ''}.` : 'Nothing to sell this time.'}</p>
       <div class="row-buttons"><button id="report-ok" class="primary">Continue</button></div>
     </div>`,
@@ -571,7 +570,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   const collector = collectorWants(p);
   const stash = p.stash
     .map(
-      (s) => `<tr><td>${lootPic(s.name)}<b>${esc(s.name)}</b>${s.centrepiece ? ' <span class="badge">centrepiece</span>' : ''}${s.hot ? ' <span class="badge hot">hot</span>' : ''}${s.id === collector ? ' <span class="badge new">collector ×1.5</span>' : ''}<br><span class="small">${CATEGORY_NAMES[s.category]} · ${esc(s.levelName)} · est. ${money(s.value)}</span></td>
+      (s) => `<tr><td>${lootPic(s.name, s.category)}<b>${esc(s.name)}</b>${s.centrepiece ? ' <span class="badge">centrepiece</span>' : ''}${s.hot ? ' <span class="badge hot">hot</span>' : ''}${s.id === collector ? ' <span class="badge new">collector ×1.5</span>' : ''}<br><span class="small">${CATEGORY_NAMES[s.category]} · ${esc(s.levelName)} · est. ${money(s.value)}</span></td>
         <td class="price"><span class="hand">${priceOf(p, s).toLocaleString('en-US')}</span>${s.category === wanted ? ' <span class="badge">+25%</span>' : ''}</td>
         <td><button data-sell="${s.id}">Sell</button></td></tr>`,
     )

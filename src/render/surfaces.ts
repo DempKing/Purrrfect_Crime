@@ -151,7 +151,7 @@ export async function loadSurfaces(): Promise<void> {
   if (textures.size) return;
   await Promise.all(
     (Object.keys(FILES) as SurfaceName[]).map(async (name) => {
-      const tex: Texture = await Assets.load({ src: FILES[name], loadParser: 'loadTextures' });
+      const tex: Texture = await Assets.load({ src: FILES[name], parser: 'texture' });
       // Repeating, and smoothed when drawn small, so floors don't shimmer as the camera turns.
       tex.source.style.addressMode = 'repeat';
       tex.source.style.mipmapFilter = 'linear';
