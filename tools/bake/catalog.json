@@ -11,13 +11,6 @@
   "fit": 0.85,
   "height": 50
  },
- "hanging_picture_frame_01": {
-  "mount": "wall",
-  "tilesPerMetre": 1.76,
-  "fit": 0.85,
-  "height": 50,
-  "yaw": 180
- },
  "ornate_mirror_01": {
   "mount": "wall",
   "tilesPerMetre": 1.6,
@@ -35,12 +28,6 @@
   "tilesPerMetre": 3.52,
   "fit": 0.85,
   "height": 56
- },
- "street_lamp_02": {
-  "mount": "wall",
-  "tilesPerMetre": 0.96,
-  "fit": 0.85,
-  "height": 58
  },
  "lifebuoy": {
   "mount": "wall",
@@ -77,5 +64,45 @@
  "ClassicConsole_01": {
   "fit": 0.95,
   "tilesPerMetre": 1
+ },
+ "marble_bust_01": {
+  "tilesPerMetre": 1.4,
+  "fit": 0.45
+ },
+ "gothic_statue": {
+  "tilesPerMetre": 0.55,
+  "fit": 0.7
+ },
+ "horse_statue_01": {
+  "tilesPerMetre": 2,
+  "fit": 0.55
+ },
+ "concrete_cat_statue": {
+  "tilesPerMetre": 2,
+  "fit": 0.5
+ },
+ "mantel_clock_01": {
+  "tilesPerMetre": 2,
+  "fit": 0.5
+ },
+ "lambis_shell": {
+  "tilesPerMetre": 3,
+  "fit": 0.5
+ },
+ "treasure_chest": {
+  "tilesPerMetre": 1.2,
+  "fit": 0.75
+ },
+ "Lantern_01": {
+  "tilesPerMetre": 2.5,
+  "fit": 0.4
+ },
+ "potted_plant_01": {
+  "tilesPerMetre": 0.9,
+  "fit": 0.75
+ },
+ "potted_plant_02": {
+  "tilesPerMetre": 0.9,
+  "fit": 0.75
  }
 }

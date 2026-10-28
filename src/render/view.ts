@@ -6,7 +6,7 @@ import type { Level, Point } from '../core/level';
 import { DISTRICTS } from '../levels';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
 import { charFrame, lootPicture, type CharFrameName, type CharName } from './characters';
-import { frameFor, prop, WALL_DECOR, type PropName } from './props';
+import { EXHIBITS, frameFor, LIT_ON_WALL, prop, WALL_DECOR, type PropName } from './props';
 import { CREAK, lookFor, PLATE, surface, type FloorSkin, type Look, type WallSkin } from './surfaces';
 
 const WALL_H = 84;
@@ -277,6 +277,7 @@ export class HeistView {
 
     // Everything standing up, nearest last.
     const items: Drawable[] = [];
+    const ceiling: { x: number; y: number; on: boolean; lamp: boolean }[] = [];
     const leoDepth = project(p, leo.x, leo.y).depth;
     const lasersOn = lasersActive(level, s);
     for (let y = 0; y < level.h; y++)
@@ -304,7 +305,10 @@ export class HeistView {
                 if (t === 'switch') this.lightSwitch(g, x, y, h, (level.def.switches ?? []).some((w) => w.at.x === x && w.at.y === y && w.lamps.some((i) => s.lampsOff.includes(i))));
               },
             });
-        } else if (t === 'case') {
+        } else if (t === 'case' || t === 'plinth') {
+          ceiling.push({ x, y, on: true, lamp: false });
+        }
+        if (t === 'case') {
           const li = lootAt(level, x, y);
           const taken = li >= 0 && (s.inventory.includes(li) || s.rivalLoot.includes(li));
           const broken = s.smashed.includes(k);
@@ -314,7 +318,8 @@ export class HeistView {
           items.push({ depth: d, draw: (g) => this.plinth(g, x, y, li >= 0 && !s.inventory.includes(li) && !s.rivalLoot.includes(li), s.rivalLoot.includes(li)) });
         } else if (t === 'lamp') {
           const off = s.lampsOff.includes(level.lamps.findIndex((l) => l.at.x === x && l.at.y === y));
-          items.push({ depth: d, draw: (g) => this.lamp(g, x, y, !off) });
+          if (!this.exhibitUnderLight(items, d, x, y, !off)) items.push({ depth: d, draw: (g) => this.lamp(g, x, y, !off) });
+          ceiling.push({ x, y, on: !off, lamp: true });
         } else if (t === 'laser') {
           items.push({ depth: d + 0.3, draw: (g) => this.laser(g, x, y, lasersOn) });
         } else if (t === 'exit') {
@@ -381,6 +386,10 @@ export class HeistView {
     );
     items.sort((a, b) => a.depth - b.depth);
     for (const it of items) it.draw(o);
+
+    // The lights hang from the ceiling, above everything: a pendant over each lamp, a small spot over each
+    // case and plinth, each with its beam.
+    if (!inVent && !inRafters) for (const c of ceiling) this.ceilingLight(this.fx, c.x, c.y, c.on, c.lamp);
 
     // Smoke pellets: drifting grey puffs over each cloud's 3×3 tiles.
     for (const c of s.smoke)
@@ -585,7 +594,36 @@ export class HeistView {
       if (h > 0.2) return;
       const name = choices[Math.floor(h * 5 * choices.length)];
       const tint = this.tint(fx, fy);
-      items.push({ depth: d + 0.35, draw: (g) => void this.sprite(g, name, x + 0.5 + n.x * 0.5, y + 0.5 + n.y * 0.5, 0, Math.atan2(n.y, n.x) - Math.PI / 2, 1, tint) });
+      const bx = x + 0.5 + n.x * 0.5;
+      const by = y + 0.5 + n.y * 0.5;
+      items.push({
+        depth: d + 0.35,
+        draw: (g) => {
+          const lit = LIT_ON_WALL.has(name) && prop(name);
+          const top = lit ? 50 + lit.height / 2 + 6 : 0;
+          if (lit) {
+            // A wash of warm light down the wall from the picture light.
+            const a = project(this.proj, bx - n.y * 0.22, by + n.x * 0.22, top);
+            const b = project(this.proj, bx + n.y * 0.22, by - n.x * 0.22, top);
+            const c2 = project(this.proj, bx + n.y * 0.4, by - n.x * 0.4, top - 62);
+            const d2 = project(this.proj, bx - n.y * 0.4, by + n.x * 0.4, top - 62);
+            g.poly([a.x, a.y, b.x, b.y, c2.x, c2.y, d2.x, d2.y]).fill({ color: 0xffe2a0, alpha: 0.16 });
+          }
+          this.sprite(g, name, bx, by, 0, Math.atan2(n.y, n.x) - Math.PI / 2, 1, tint);
+          if (lit) {
+            // The brass picture light itself, on a short arm out from the wall.
+            const ox = bx + n.x * 0.07;
+            const oy = by + n.y * 0.07;
+            const l = project(this.proj, ox - n.y * 0.16, oy + n.x * 0.16, top + 4);
+            const r = project(this.proj, ox + n.y * 0.16, oy - n.x * 0.16, top + 4);
+            const w = project(this.proj, bx, by, top + 9);
+            const m = project(this.proj, ox, oy, top + 4);
+            g.moveTo(w.x, w.y).lineTo(m.x, m.y).stroke({ width: 1.5, color: 0x6b4f1e });
+            g.moveTo(l.x, l.y).lineTo(r.x, r.y).stroke({ width: 3.5, color: 0xc9a24a, cap: 'round' });
+            g.moveTo(l.x, l.y + 1.5).lineTo(r.x, r.y + 1.5).stroke({ width: 1.5, color: 0xfff1c0, alpha: 0.9, cap: 'round' });
+          }
+        },
+      });
     });
   }
 
@@ -711,6 +749,48 @@ export class HeistView {
       // Leo's calling card on the empty plinth.
       g.roundRect(sp.x - 9, sp.y - 2, 18, 11, 2).fill({ color: 0xf5f5f5 }).stroke({ width: 1, color: 0x222222 });
       g.circle(sp.x, sp.y + 3.5, 2.5).fill({ color: 0xd8262f });
+    }
+  }
+
+  /**
+   * What stands under a ceiling light: a statue, a bust, a plant, on a pedestal or not, picked for the district
+   * and the tile. Returns false (so the old standing lamp is drawn) until the sprites load.
+   */
+  private exhibitUnderLight(items: Drawable[], d: number, x: number, y: number, on: boolean): boolean {
+    const list = EXHIBITS[this.district] ?? EXHIBITS['old-town'];
+    const e = list[Math.floor(tileHash(x, y, 11) * list.length)];
+    if (!prop(e.model)) return false;
+    const turn = Math.floor(tileHash(x, y, 12) * 4) * (Math.PI / 2);
+    items.push({
+      depth: d,
+      draw: (g) => {
+        if (e.pedestal) this.prism(g, x + 0.24, y + 0.24, x + 0.76, y + 0.76, 28, 0xe9e3d3, 0xc9c2b0, 0xa49d8b, 1);
+        this.sprite(g, e.model, x + 0.5, y + 0.5, e.pedestal ? 28 : 0, turn, 1, on ? 0xfff6e6 : 0x8a8ea8);
+      },
+    });
+    return true;
+  }
+
+  /** A light hanging from the ceiling: a pendant over a lamp's tile, or a small spot over a case or plinth. */
+  private ceilingLight(g: Graphics, x: number, y: number, on: boolean, pendant: boolean): void {
+    const z = pendant ? 150 : 165;
+    const shade = project(this.proj, x + 0.5, y + 0.5, z);
+    const cord = project(this.proj, x + 0.5, y + 0.5, z + 70);
+    g.moveTo(cord.x, cord.y).lineTo(shade.x, shade.y - 6).stroke({ width: 1.5, color: 0x1a1a22, alpha: 0.8 });
+    if (on) {
+      // The beam: a soft cone down to the floor, or onto the case.
+      const foot = project(this.proj, x + 0.5, y + 0.5, pendant ? 0 : 34);
+      const r = pendant ? 42 : 22;
+      g.poly([shade.x - 5, shade.y + 3, shade.x + 5, shade.y + 3, foot.x + r, foot.y, foot.x - r, foot.y]).fill({ color: 0xffe9b8, alpha: pendant ? 0.07 : 0.06 });
+      g.ellipse(foot.x, foot.y, r, r / 2).fill({ color: 0xffe9b8, alpha: pendant ? 0.08 : 0.1 });
+    }
+    if (pendant) {
+      g.poly([shade.x - 4, shade.y - 7, shade.x + 4, shade.y - 7, shade.x + 12, shade.y + 3, shade.x - 12, shade.y + 3]).fill({ color: 0x2a2a30 }).stroke({ width: 1, color: 0xc9a24a, alpha: 0.8 });
+      g.ellipse(shade.x, shade.y + 3, 10, 3).fill({ color: on ? 0xfff1c0 : 0x4a4a50 });
+      if (on) g.circle(shade.x, shade.y + 4, 16).fill({ color: COL.lampGlow, alpha: 0.14 + Math.sin(this.time * 3 + x) * 0.02 });
+    } else {
+      g.roundRect(shade.x - 4, shade.y - 6, 8, 9, 2).fill({ color: 0x1c1c22 }).stroke({ width: 1, color: 0x55555e });
+      g.ellipse(shade.x, shade.y + 3, 3.5, 1.5).fill({ color: 0xfff1c0 });
     }
   }
 
