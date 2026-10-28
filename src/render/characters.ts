@@ -2,6 +2,9 @@
 // trimmed, scaled to the game, with each frame's feet marked. Three frames a character: standing, and the two
 // halves of a stride. The view animates them (see HeistView.figure).
 import { Assets, Texture } from 'pixi.js';
+import type { LootCategory } from '../core/level';
+import { lootIconUrl, lootSlug } from '../ui/lootIcons';
+import { NAMED_LOOT_ART } from './lootArt.gen';
 import data from '../../art/sprites/chars.json';
 import leo_idle from '../../art/sprites/chars/leo_idle.webp';
 import leo_a from '../../art/sprites/chars/leo_a.webp';
@@ -146,15 +149,37 @@ export function charFrame(name: CharName, frame: CharFrameName): CharFrame | und
 
 /** The picture for a piece of loot, by its name: texture, size in game pixels, and tint. */
 export function lootPicture(name: string): { tex: Texture; w: number; h: number; tint: number } | undefined {
+  const own = loot.get(`named:${lootSlug(name)}`);
+  if (own) return { ...own, tint: 0xffffff };
   const key = LOOT_PICTURES[name];
   const p = key ? loot.get(key) : undefined;
-  return p && { ...p, tint: LOOT_TINTS[name] ?? 0xffffff };
+  if (p) return { ...p, tint: LOOT_TINTS[name] ?? 0xffffff };
+  const icon = icons.get(name);
+  return icon && { tex: icon, w: 40, h: 40, tint: 0xffffff };
 }
 
-/** The picture's address, for the menus. */
-export function lootPictureUrl(name: string): string | undefined {
+/** The picture's address, for the menus: the painted one, or the drawn one. */
+export function lootPictureUrl(name: string, category?: LootCategory): string {
+  const own = NAMED_LOOT_ART[lootSlug(name)];
+  if (own) return own.url;
   const key = LOOT_PICTURES[name];
-  return key ? LOOT_FILES[key] : undefined;
+  return key ? LOOT_FILES[key] : lootIconUrl(name, category);
+}
+
+const icons = new Map<string, Texture>();
+
+/** Turns the drawn pictures for a heist's loot into textures, for the cases and plinths. */
+export async function loadLootIcons(list: { name: string; category: LootCategory }[]): Promise<void> {
+  await Promise.all(
+    list
+      .filter((l) => !LOOT_PICTURES[l.name] && !NAMED_LOOT_ART[lootSlug(l.name)] && !icons.has(l.name))
+      .map(async (l) => {
+        const img = new Image();
+        img.src = lootIconUrl(l.name, l.category);
+        await img.decode();
+        icons.set(l.name, Texture.from(img));
+      }),
+  );
 }
 
 export async function loadCharacters(): Promise<void> {
@@ -164,16 +189,23 @@ export async function loadCharacters(): Promise<void> {
   for (const [name, files] of Object.entries(CHAR_FILES))
     for (const [frame, src] of Object.entries(files))
       jobs.push(
-        Assets.load({ src, loadParser: 'loadTextures' }).then((tex: Texture) => {
+        Assets.load({ src, parser: 'texture' }).then((tex: Texture) => {
           const m = (data.chars as Record<string, Record<string, { w: number; h: number; ax: number; ay: number }>>)[name][frame];
           frames.set(`${name}_${frame}`, { tex, w: m.w / s, h: m.h / s, ax: m.ax / s, ay: m.ay / s });
         }),
       );
   for (const [key, src] of Object.entries(LOOT_FILES))
     jobs.push(
-      Assets.load({ src, loadParser: 'loadTextures' }).then((tex: Texture) => {
+      Assets.load({ src, parser: 'texture' }).then((tex: Texture) => {
         const m = (data.loot as Record<string, { w: number; h: number }>)[key];
         loot.set(key, { tex, w: m.w / s, h: m.h / s });
+      }),
+    );
+  // Pictures uploaded by the loot's own name come first.
+  for (const [key, art] of Object.entries(NAMED_LOOT_ART))
+    jobs.push(
+      Assets.load({ src: art.url, parser: 'texture' }).then((tex: Texture) => {
+        loot.set(`named:${key}`, { tex, w: art.w / s, h: art.h / s });
       }),
     );
   await Promise.all(jobs);

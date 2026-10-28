@@ -424,7 +424,7 @@ export class HeistView {
       const size = 1.25 - k * 0.65;
       const pic = lootPicture(level.def.loot[pop.li].name);
       this.fx.circle(sp.x, sp.y, 20 * size).fill({ color: 0xfff3c4, alpha: 0.25 * (1 - k) });
-      if (pic) this.fx.texture(pic.tex, pic.tint, sp.x - (pic.w * size) / 2, sp.y - (pic.h * size) / 2, pic.w * size, pic.h * size);
+      if (pic) this.fx.setFillStyle({ color: 0xffffff, alpha: 1 }).texture(pic.tex, pic.tint, sp.x - (pic.w * size) / 2, sp.y - (pic.h * size) / 2, pic.w * size, pic.h * size);
       else this.fx.poly([sp.x, sp.y - 9 * size, sp.x + 7 * size, sp.y, sp.x, sp.y + 6 * size, sp.x - 7 * size, sp.y]).fill({ color: LOOT_COLORS[pop.li % LOOT_COLORS.length] });
     }
     this.pops = this.pops.filter((q) => q.t < 1);
@@ -833,7 +833,8 @@ export class HeistView {
     const pic = li >= 0 ? lootPicture(this.lootName(li)) : undefined;
     if (!taken && pic) {
       const sp = project(this.proj, x + 0.5, y + 0.5, 34 + Math.sin(this.time * 1.6 + x) * 1.5);
-      const k = 26 / Math.max(pic.w, pic.h);
+      const k = 30 / Math.max(pic.w, pic.h);
+      g.setFillStyle({ color: 0xffffff, alpha: 1 });
       g.texture(pic.tex, pic.tint, sp.x - (pic.w * k) / 2, sp.y - (pic.h * k) / 2, pic.w * k, pic.h * k);
     } else if (!taken && li >= 0) {
       const sp = project(this.proj, x + 0.5, y + 0.5, 32);
@@ -859,6 +860,7 @@ export class HeistView {
       const k = 40 / Math.max(pic.w, pic.h);
       const y0 = sp.y - (pic.h * k) / 2 - 6 + Math.sin(this.time * 1.4) * 2;
       g.circle(sp.x, y0 + (pic.h * k) / 2, 26).fill({ color: 0xfff3c4, alpha: 0.14 + Math.sin(this.time * 2) * 0.04 });
+      g.setFillStyle({ color: 0xffffff, alpha: 1 });
       g.texture(pic.tex, pic.tint, sp.x - (pic.w * k) / 2, y0, pic.w * k, pic.h * k);
     } else if (hasGem) {
       const hue = [0x9fe8ff, 0xff9ff3, 0xb6ffb0, 0xffe39f][Math.floor(this.time * 2) % 4];

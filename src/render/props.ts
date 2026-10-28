@@ -78,7 +78,7 @@ export async function loadProps(): Promise<void> {
   await Promise.all(
     (Object.keys(FILES) as PropName[]).map(async (name) => {
       const m = (manifest as Record<string, { w: number; h: number; ax: number; ay: number; scale: number; size: { h: number } }>)[name];
-      const strip: Texture = await Assets.load({ src: FILES[name], loadParser: 'loadTextures' });
+      const strip: Texture = await Assets.load({ src: FILES[name], parser: 'texture' });
       const frames = Array.from({ length: 8 }, (_, i) => new Texture({ source: strip.source, frame: new Rectangle(i * m.w, 0, m.w, m.h) }));
       props.set(name, { frames, w: m.w / m.scale, h: m.h / m.scale, ax: m.ax / m.scale, ay: m.ay / m.scale, height: m.size.h });
     }),

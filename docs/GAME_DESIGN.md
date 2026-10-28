@@ -570,6 +570,11 @@ clock, and drawn clocks in the wall's plane (a Roman face, a skeleton of turning
 thirteen hours and a hand going backwards, a pendulum clock), all of different sizes and none agreeing on
 the time. Night windows only go in outside walls.
 
+Every piece of loot shows a picture of itself in its case, on its plinth, in the loot tag, the ledger and the
+report: a painted one where there is one, otherwise a drawing chosen from its name (coins, a framed painting
+with a scene to suit, cut gems in the right colour, pearls, crowns, pocket watches, scrolls, fossils,
+figurines in jade, gold or silver...). Paintings uploaded under the names in `art/LOOT_LIST.md` replace them.
+
 ### 12.2 Audio, settings and accessibility as built (M6)
 
 - **Audio** is synthesised in the browser (Web Audio), so there are no files to load: a swing loop of

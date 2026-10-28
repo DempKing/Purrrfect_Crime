@@ -46,3 +46,6 @@ loot pictures (`loot_*.webp`) are prepared by `node tools/prep-art.mjs`: trimmed
 with each frame's feet marked, into `art/sprites/chars/` and `art/sprites/loot/`. Which loot gets which
 picture is in `src/render/characters.ts`. Floor and wall textures go to `art/sprites/tex/` at 256 × 256; which
 heist uses which is in `src/render/surfaces.ts`.
+
+Every piece of loot without a painted picture gets a simple drawing made from its name (`src/ui/lootIcons.ts`).
+To replace one, upload a picture named as [LOOT_LIST.md](LOOT_LIST.md) says (`loot_<name>.webp` or `.png`).

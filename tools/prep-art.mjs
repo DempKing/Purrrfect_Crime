@@ -2,7 +2,7 @@
 // scales it to the character's height in the game, and writes art/sprites/chars/ (plus chars.json). Loot
 // pictures go to art/sprites/loot/ the same way. Usage: node tools/prep-art.mjs
 import { createRequire } from 'node:module';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -103,7 +103,7 @@ await page.evaluate(() => {
     return out.toDataURL('image/webp', 0.9);
   };
 });
-const dataUrl = (file) => `data:image/webp;base64,${readFileSync(file).toString('base64')}`;
+const dataUrl = (file) => `data:image/${file.endsWith('.png') ? 'png' : 'webp'};base64,${readFileSync(file).toString('base64')}`;
 const save = (file, url) => writeFileSync(file, Buffer.from(url.split(',')[1], 'base64'));
 
 mkdirSync(join(root, 'art/sprites/chars'), { recursive: true });
@@ -153,6 +153,31 @@ for (const p of pictures) {
   save(join(root, 'art/sprites/loot', `${p.key}.webp`), await page.evaluate((a) => window.resize(...a), [p.url, x0, y0, sw, sh, w, h]));
   loot[p.key] = { w, h };
 }
+// Loot pictures uploaded by name (art/models/loot_<name>.webp, the names listed in art/LOOT_LIST.md): picked up
+// automatically, and listed for the game in src/render/lootArt.gen.ts.
+const known = new Set([...Object.values(LOOT), 'loot_litter.webp']); // the litter tray isn't loot here
+const byName = readdirSync(src).filter((f) => /^loot_.+\.(webp|png)$/.test(f) && !known.has(f));
+const named = {};
+for (const file of byName) {
+  const key = file.slice(5).replace(/\.(webp|png)$/, '');
+  const url = dataUrl(join(src, file));
+  const b = await page.evaluate((u) => window.measure(u), url);
+  const sw = b.x1 - b.x0 + 1, sh = b.y1 - b.y0 + 1;
+  const k = (LOOT_SIZE * SCALE) / Math.max(sw, sh);
+  const w = Math.round(sw * k), h = Math.round(sh * k);
+  save(join(root, 'art/sprites/loot', `${key}.webp`), await page.evaluate((a) => window.resize(...a), [url, b.x0, b.y0, sw, sh, w, h]));
+  named[key] = { w, h };
+}
+const ident = (k) => `art_${k.replace(/[^a-z0-9]/gi, '_')}`;
+writeFileSync(
+  join(root, 'src/render/lootArt.gen.ts'),
+  `// Made by tools/prep-art.mjs: loot pictures uploaded by name (art/models/loot_<name>.webp). Don't edit.\n` +
+    Object.keys(named).map((k) => `import ${ident(k)} from '../../art/sprites/loot/${k}.webp';\n`).join('') +
+    `\nexport const NAMED_LOOT_ART: Record<string, { url: string; w: number; h: number }> = {\n` +
+    Object.entries(named).map(([k, v]) => `  '${k}': { url: ${ident(k)}, w: ${v.w}, h: ${v.h} },\n`).join('') +
+    `};\n`,
+);
+console.log(`loot pictures by name: ${byName.length}`);
 console.log(`loot: ${Object.keys(loot).length} pictures`);
 
 // Floor and wall textures: square, scaled to 256 so they stay crisp without shimmering.

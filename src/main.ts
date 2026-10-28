@@ -48,7 +48,7 @@ import { learn, perksFor, raise, upgrade } from './meta/progression';
 import { deliverLetters } from './meta/letters';
 import { TUTORIAL, advance, type TutorialEvents } from './meta/tutorial';
 import * as screens from './ui/screens';
-import { loadCharacters, lootPictureUrl } from './render/characters';
+import { loadCharacters, loadLootIcons, lootPictureUrl } from './render/characters';
 import { ABILITY_ICONS } from './ui/pictures';
 import { loadProps } from './render/props';
 import { loadSurfaces } from './render/surfaces';
@@ -398,7 +398,7 @@ function openLootMenu(target: Point): void {
     const closer = closerTo(target);
     if (closer) choices.push({ label: 'Walk closer', detail: `${moveAp(state, computed().reach.cost.get(key(closer.x, closer.y)) ?? 0)} AP`, run: () => walkTo(closer) });
   }
-  const pic = lootPictureUrl(loot.name);
+  const pic = lootPictureUrl(loot.name, loot.category);
   const box = $('loot-menu');
   box.innerHTML = `<div class="lm-head">${pic ? `<img src="${pic}" alt="">` : ''}<div><b>${loot.name}</b><span>est. $${loot.value.toLocaleString('en-US')} · ${loot.space} space${loot.space === 1 ? '' : 's'}</span></div></div>
     ${stand ? '' : '<p class="lm-note">Too far to reach and work on this turn. Leo needs to get beside it with an action point to spare.</p>'}
@@ -620,6 +620,7 @@ let rivalWasIn = false;
 function startHeist(def: LevelDef): void {
   rivalPlan = rivalPlanFor(def);
   level = parseLevel(def);
+  loadLootIcons(def.loot).catch((e) => console.error('Loot pictures failed', e));
   view.proj.cx = level.w / 2;
   view.proj.cy = level.h / 2;
   $('level-name').textContent = level.def.name;
