@@ -534,6 +534,25 @@ sprite sheets.
   the flawless route, and at least ten turns more. Second Wind moved from level 25 to 22, so that it's
   reachable a few heists after the story rather than twenty.
 
+### 12.3 Menus and the lair as built
+
+The menus look like props from a 1960s caper film, printed and handled, not like an app: paper grain,
+hard offset shadows, rubber stamps, things pinned slightly crooked. No glass panels, gradients-as-decor,
+rounded cards or emoji.
+
+- **Title:** a heist poster: a sunburst, the moon, a skyline and Leo on a ledge, with the Limelight logo.
+  Save slots are luggage tags.
+- **City map:** a printed street map, with the next job marked in red pencil.
+- **Lair:** a desk. A polaroid of the hideout, a brass nameplate and a stats card, then folder tabs:
+  heists are ruled index cards pinned to cork, stamped *Flawless* or *Cleared*; Leo is a police dossier
+  with a mugshot; the black market is the fence's ledger, with prices typed in blue; the lair rooms are
+  a blueprint; the letters are sealed envelopes; the front pages are clippings taped to cork.
+- **Briefing:** a case file with a sticky note and the floor plan as a blueprint. **Report:** a typed form
+  with a result stamp. **Caught:** a *Busted* stamp. **Letters:** handwriting. **Achievements:** telegrams.
+- **Fonts** (all SIL Open Font License, bundled into the page through Fontsource): Limelight (display),
+  Special Elite (typewriter), Oswald (poster labels and buttons), Libre Franklin (body text),
+  UnifrakturMaguntia (newspaper masthead) and Homemade Apple (handwriting).
+
 ## 13. Tech plan
 
 - **Stack:** TypeScript + PixiJS 8 (GPU rendering, which the night lighting, vision cones and camera

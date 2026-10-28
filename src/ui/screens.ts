@@ -1,6 +1,7 @@
 // The screens between heists, built as plain DOM over the game canvas: the title and save slots,
 // the narrator, the calling card, the morning paper, the heist report, the city map, the lair and
-// the briefing before a heist.
+// the briefing before a heist. They're dressed as things from a 1960s caper (a film poster, luggage
+// tags, index cards on cork, a ledger, blueprints, a manila case file); the look lives in styles.css.
 import { parseLevel, the, type LevelDef, type LootCategory } from '../core/level';
 import { RIVALS, type RivalPlan } from '../core/game';
 import type { Paper } from '../meta/newspaper';
@@ -41,6 +42,55 @@ const root = () => document.getElementById('screens')!;
 const esc = (t: string) => t.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const money = (n: number) => `$${n.toLocaleString('en-US')}`;
 const catnip = (n: number) => `<span class="nip">${n.toLocaleString('en-US')}</span>`;
+
+/** A small tilt for things laid on a desk or pinned to a board, the same for the same thing every time. */
+const tilt = (seed: string, max = 1.6) => {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  return (((h >>> 0) % 1000) / 1000 - 0.5) * 2 * max;
+};
+
+/** The title poster's scene: an Art Deco sunburst behind the moon, the skyline, and Leo on a ledge. */
+const POSTER_SVG = (() => {
+  const rays = Array.from({ length: 18 }, (_, i) => {
+    const a0 = (i / 18) * Math.PI * 2;
+    const a1 = a0 + Math.PI / 36;
+    const r = 900;
+    return `<path d="M610 150 L${610 + Math.cos(a0) * r} ${150 + Math.sin(a0) * r} L${610 + Math.cos(a1) * r} ${150 + Math.sin(a1) * r}Z"/>`;
+  }).join('');
+  // Two rows of buildings: [x, width, height]. The front row has lit windows.
+  const back = [[0, 70, 210], [60, 50, 260], [105, 80, 190], [180, 40, 300], [215, 90, 230], [300, 60, 270], [355, 100, 200], [450, 45, 320], [490, 80, 240], [565, 120, 180], [680, 55, 280], [730, 90, 220]];
+  const front = [[-10, 120, 140], [100, 70, 180], [165, 110, 120], [270, 60, 200], [325, 140, 150], [460, 70, 170], [525, 90, 110], [610, 200, 90]];
+  const windows = front
+    .flatMap(([x, w, h], bi) =>
+      Array.from({ length: 12 }, (_, k) => {
+        const col = k % 4;
+        const row = Math.floor(k / 4);
+        if ((bi * 7 + k * 3) % 5 > 1) return '';
+        return `<rect x="${x + 10 + col * ((w - 20) / 4)}" y="${500 - h + 16 + row * 26}" width="8" height="12"/>`;
+      }),
+    )
+    .join('');
+  return `<svg class="poster-scene" viewBox="0 0 800 500" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <rect width="800" height="500" fill="#141a33"/>
+    <g fill="#1a2242">${rays}</g>
+    <circle cx="610" cy="150" r="92" fill="#e9dcbc"/><circle cx="610" cy="150" r="104" fill="none" stroke="#e9dcbc" stroke-width="2" opacity="0.35"/>
+    <circle cx="582" cy="128" r="14" fill="#dccca5"/><circle cx="640" cy="176" r="9" fill="#dccca5"/><circle cx="628" cy="112" r="6" fill="#dccca5"/>
+    <g fill="#0f1429">${back.map(([x, w, h]) => `<rect x="${x}" y="${500 - h}" width="${w}" height="${h}"/>`).join('')}<rect x="190" y="160" width="20" height="40"/><path d="M455 180 L467 140 L479 180Z"/></g>
+    <g fill="#090c1a">${front.map(([x, w, h]) => `<rect x="${x}" y="${500 - h}" width="${w}" height="${h}"/>`).join('')}</g>
+    <g fill="#e9c46a" opacity="0.6">${windows}</g>
+    <g transform="translate(655 330)">
+      <path d="M44 72 C80 70 96 40 78 22 C70 14 60 22 66 30" fill="none" stroke="#06070d" stroke-width="9" stroke-linecap="round"/>
+      <path d="M10 80 C2 50 8 24 28 18 C48 12 62 30 60 56 C58 74 48 82 30 82Z" fill="#06070d"/>
+      <path d="M14 22 L12 -6 L30 10Z M40 10 L54 -6 L52 20Z" fill="#06070d"/>
+      <circle cx="33" cy="16" r="20" fill="#06070d"/>
+      <ellipse cx="25" cy="14" rx="3" ry="4" fill="#e9c46a"/><ellipse cx="40" cy="14" rx="3" ry="4" fill="#e9c46a"/>
+      <path d="M26 38 L33 64 L40 38Z" fill="#efe5cc"/>
+      <path d="M22 34 L33 40 L22 46Z M44 34 L33 40 L44 46Z" fill="#b3261e"/><circle cx="33" cy="40" r="3" fill="#7d1a15"/>
+    </g>
+    <rect x="560" y="410" width="260" height="14" fill="#06070d"/>
+  </svg>`;
+})();
 const CATEGORY_NAMES: Record<LootCategory, string> = { jewel: 'Jewels', painting: 'Paintings', artefact: 'Artefacts', curiosity: 'Curiosities' };
 
 /** The narrator: an old grey cat in a trilby, placeholder until the generated portrait arrives. */
@@ -62,6 +112,15 @@ export const NIGHTCLAW_SVG = `<svg class="portrait" viewBox="0 0 64 64" aria-hid
   <circle cx="40" cy="34" r="6.5" fill="none" stroke="#d9b36c" stroke-width="1.5"/><path d="M46 35 Q49 42 47 48" stroke="#d9b36c" fill="none"/>
   <ellipse cx="32" cy="45" rx="8" ry="5" fill="#8a8f9c"/><path d="M29 42 L35 42 L32 45Z" fill="#2a1a22"/>
   <path d="M10 42 L24 43 M10 47 L24 45 M54 42 L40 43 M54 47 L40 45" stroke="#d8dbe2" stroke-width="1"/>
+</svg>`;
+
+/** Leo's mugshot: a black cat in a white shirt front and a red bow tie. */
+const LEO_SVG = `<svg viewBox="0 0 64 64" aria-hidden="true">
+  <path d="M12 64 C12 46 20 40 32 40 C44 40 52 46 52 64Z" fill="#15151b"/><path d="M26 40 L32 64 L38 40Z" fill="#efe5cc"/>
+  <path d="M23 44 L32 48 L23 52Z M41 44 L32 48 L41 52Z" fill="#b3261e"/><circle cx="32" cy="48" r="2.5" fill="#7d1a15"/>
+  <circle cx="32" cy="27" r="15" fill="#15151b"/><path d="M18 22 L16 4 L28 14Z M46 22 L48 4 L36 14Z" fill="#15151b"/>
+  <ellipse cx="26" cy="26" rx="3" ry="3.6" fill="#e9c46a"/><ellipse cx="38" cy="26" rx="3" ry="3.6" fill="#e9c46a"/>
+  <path d="M29 33 L35 33 L32 36Z" fill="#c98a8f"/><path d="M14 33 L26 34 M14 37 L26 36 M50 33 L38 34 M50 37 L38 36" stroke="#cfc8b8" stroke-width="0.8"/>
 </svg>`;
 
 /** Leo's calling card: white, with his red bow tie. */
@@ -98,32 +157,32 @@ export interface TitleCallbacks {
 }
 
 function slotSummary(p: Profile): string {
-  const where = !p.tutorialDone ? 'In the tutorial' : !p.lairOwned ? 'Looking for a lair' : `${p.legendary ? 'Legendary · ' : ''}Day ${p.day} · ${p.heists} heist${p.heists === 1 ? '' : 's'}`;
-  return `Level ${playerLevel(p.xp)} · ${where} · ${p.catnip.toLocaleString('en-US')} Catnip`;
+  const where = !p.tutorialDone ? 'In the tutorial' : !p.lairOwned ? 'Looking for a lair' : `Day ${p.day} · ${p.heists} heist${p.heists === 1 ? '' : 's'}`;
+  return `Level ${playerLevel(p.xp)} · ${where}<br>${p.catnip.toLocaleString('en-US')} Catnip${p.legendary ? ' · <b>Legendary</b>' : ''}`;
 }
 
 export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void {
   const el = show(
-    `<div class="card big title-card">
-      <div class="kicker">Prototype M5 · The endgame</div>
-      <h1>Purrrfect Crime</h1>
-      <p>Leo Tuxedo is new in town, sharply dressed and short of Catnip. The museums are full of treasures
-        and the guards are half asleep. Time to make a name for himself.</p>
+    `${POSTER_SVG}
+    <div class="poster">
+      <p class="poster-presents">The Whisker Times presents</p>
+      <h1 class="logo"><span>Purrrfect</span><span>Crime</span></h1>
+      <p class="poster-tagline">One tuxedo. Twenty-five museums. Not one witness.</p>
       <div class="slots">
         ${slots
-          .map((p, i) =>
-            p
-              ? `<div class="slot"><div><b>Game ${i + 1}</b><br><span class="small">${slotSummary(p)}</span></div>
-                  <div class="row-buttons"><button class="primary" data-play="${i}">Continue</button><button data-delete="${i}">Delete</button></div></div>`
-              : `<div class="slot empty"><div><b>Game ${i + 1}</b><br><span class="small">Empty</span></div>
-                  <div class="row-buttons"><button data-new="${i}">New game</button></div></div>`,
-          )
+          .map((p, i) => {
+            const body = p
+              ? `<div class="tag-body"><span class="tag-no">Game ${i + 1}</span><span class="tag-info">${slotSummary(p)}</span></div>
+                  <div class="row-buttons"><button class="primary" data-play="${i}">Continue</button><button class="quiet" data-delete="${i}">Delete</button></div>`
+              : `<div class="tag-body"><span class="tag-no">Game ${i + 1}</span><span class="tag-info">Empty</span></div>
+                  <div class="row-buttons"><button class="primary" data-new="${i}">New game</button></div>`;
+            return `<div class="slot ${p ? '' : 'empty'}" style="--tilt:${tilt(`slot${i}`, 1.2)}deg"><span class="tag-hole"></span>${body}</div>`;
+          })
           .join('')}
       </div>
-      <div class="row-buttons"><button id="title-settings">Settings</button></div>
-      <p class="small">Placeholder art throughout. Generated sprites replace it later. Games save in this browser.</p>
+      <div class="poster-foot"><button id="title-settings" class="quiet">Settings</button><span>Prototype · placeholder art · games save in this browser</span></div>
     </div>`,
-    'overlay',
+    'title-screen',
   );
   on(el, '#title-settings', cb.onSettings);
   on(el, '[data-play]', (e) => cb.onPlay(Number((e.currentTarget as HTMLElement).dataset.play)));
@@ -149,8 +208,8 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
   const toggle = (id: keyof Settings, label: string, hint: string) =>
     `<label class="setting"><span>${label}<br><span class="small">${hint}</span></span><input type="checkbox" data-toggle="${id}" ${st[id] ? 'checked' : ''}></label>`;
   const el = show(
-    `<div class="card big settings" role="dialog" aria-label="Settings">
-      <div class="kicker">Settings</div>
+    `<div class="sheet settings" role="dialog" aria-label="Settings">
+      <h1 class="sheet-title">Settings</h1>
       <h2 class="section">Sound</h2>
       ${slider('master', 'Volume')}${slider('music', 'Music')}${slider('sfx', 'Sound effects')}
       <h2 class="section">Play</h2>
@@ -160,7 +219,7 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
       ${toggle('largeText', 'Larger text', 'Bigger text in the HUD and on every screen.')}
       ${toggle('reduceMotion', 'Reduce motion', 'No spinning newspapers or rolling credits; quicker animations.')}
       ${choice('palette', 'Colours', [['standard', 'Standard'], ['colourblind', 'Colour-blind friendly']])}
-      <p class="small">Keyboard: arrow keys move the cursor, Enter moves Leo there (or does what's there), Space ends the turn, 1–9 pick an action, Q and E turn the camera, Esc cancels.</p>
+      <p class="small note">Keyboard: arrow keys move the cursor, Enter moves Leo there (or does what's there), Space ends the turn, 1–9 pick an action, Q and E turn the camera, Esc cancels.</p>
       <div class="row-buttons"><button id="settings-ok" class="primary">Done</button></div>
     </div>`,
     'overlay',
@@ -195,7 +254,7 @@ export function toast(a: Achievement): void {
   const t = document.createElement('div');
   t.className = 'toast';
   t.setAttribute('role', 'status');
-  t.innerHTML = `<div class="kicker">Achievement</div><b>${esc(a.name)}</b><br><span class="small">${esc(a.text)}</span>`;
+  t.innerHTML = `<span class="tg-head">Telegram · achievement</span><b>${esc(a.name.toUpperCase())} STOP</b><span class="tg-body">${esc(a.text.replace(/\.$/, '').toUpperCase())} STOP</span>`;
   box.appendChild(t);
   setTimeout(() => t.classList.add('gone'), 4200);
   setTimeout(() => t.remove(), 5000);
@@ -206,7 +265,10 @@ export function toast(a: Achievement): void {
 /** A sequence of lines (the narrator's, unless someone else is speaking) with a Next button; the last button runs `done`. */
 export function narratorScene(lines: string[], last: string, done: () => void, speaker = { name: 'The narrator', portrait: NARRATOR_SVG }): void {
   let i = 0;
-  const el = show(`<div class="card big scene"><div class="speaker">${speaker.portrait}<div><div class="kicker">${esc(speaker.name)}</div><p id="line"></p></div></div><div class="row-buttons"><button id="next" class="primary"></button></div></div>`, 'overlay');
+  const el = show(
+    `<div class="scene caption-box"><div class="speaker"><div class="portrait-frame">${speaker.portrait}</div><div><span class="speaker-name">${esc(speaker.name)}</span><p id="line"></p></div></div><div class="row-buttons"><button id="next" class="primary"></button></div></div>`,
+    'overlay',
+  );
   const line = el.querySelector('#line')!;
   const next = el.querySelector<HTMLButtonElement>('#next')!;
   const render = () => {
@@ -226,8 +288,9 @@ export function narratorScene(lines: string[], last: string, done: () => void, s
 
 export function legendaryCard(done: () => void): void {
   const el = show(
-    `<div class="card big legendary"><div class="kicker">NightClaw names his successor</div><h1>Leo Tuxedo</h1><p class="legend-title">Legendary</p>
+    `<div class="legendary certificate"><p class="cert-small">Let it be known that NightClaw names his successor</p><h1>Leo Tuxedo</h1><p class="legend-title">Legendary</p>
       <p>The best thief this city has ever seen. Well, the best one still working.</p>
+      <p class="cert-sign">NightClaw</p>
       <div class="row-buttons"><button id="legend-ok" class="primary">Roll the credits</button></div></div>`,
     'overlay dark',
   );
@@ -249,7 +312,7 @@ export function credits(done: () => void): void {
   const el = show(
     `<div class="credits"><div class="roll">
       <h1>Purrrfect Crime</h1>
-      ${CREDITS.map(([who, what]) => `<p><b>${esc(who)}</b><br><span class="small">${esc(what)}</span></p>`).join('')}
+      ${CREDITS.map(([who, what]) => `<p><span class="credit-what">${esc(what)}</span><b>${esc(who)}</b></p>`).join('')}
       <p class="small">Free play continues: every heist is still there to replay, and the fences are still buying.</p>
       <div class="row-buttons"><button id="credits-ok" class="primary">Read the morning paper</button></div>
     </div></div>`,
@@ -261,7 +324,7 @@ export function credits(done: () => void): void {
 // --- The calling card and the paper ------------------------------------------------------------------
 
 export function callingCard(done: () => void): void {
-  show(`<div class="card-beat"><div class="calling-card">${CARD_SVG}</div><p>Leo leaves his calling card.</p></div>`, 'overlay dark');
+  show(`<div class="card-beat"><div class="calling-card">${CARD_SVG}</div><p>Leo leaves his calling card</p></div>`, 'overlay dark');
   setTimeout(done, 1900);
 }
 
@@ -296,15 +359,16 @@ export function heistReport(r: HeistReport, p: Profile, done: () => void): void 
   const into = p.xp - xpForLevel(lvl);
   const need = xpForLevel(lvl + 1) - xpForLevel(lvl);
   const el = show(
-    `<div class="card big report">
-      <div class="kicker">Heist report · ${esc(r.levelName)}</div>
-      <h1>${r.flawless ? 'Flawless.' : 'Got away.'} ${r.turns} turns.</h1>
+    `<div class="sheet report">
+      <p class="form-head"><span>Heist report</span><span>Day ${r.paper.day}</span></p>
+      <h1>${esc(r.levelName)}</h1>
+      <p class="report-result">${r.flawless ? '<span class="stamp blue">Flawless</span>' : '<span class="stamp">Got away</span>'} <span>${r.turns} turns</span></p>
       <table class="xp">${r.xp.map((l) => `<tr><td>${esc(l.label)}</td><td>+${l.amount} XP</td></tr>`).join('')}
         <tr class="total"><td>Total</td><td>+${r.xpTotal} XP</td></tr></table>
       ${r.rival ? `<p class="rival-line">${r.rival.won ? `You beat ${esc(RIVALS[r.rival.id].name)} to the prize.` : `${esc(RIVALS[r.rival.id].name)} got the centrepiece this time. Replay to take it yourself.`}</p>` : ''}
       ${r.ncWaiting ? '<p class="rival-line">You got out, but NightClaw is still waiting for you to find him. Creep up and tap him on the shoulder to finish it.</p>' : ''}
       ${r.finale ? '<p class="levelup">NightClaw’s collar has the top shelf of the Trophy Room to itself. It is not for sale.</p>' : ''}
-      ${r.levelAfter > r.levelBefore ? `<p class="levelup">Level up! Leo is now level ${r.levelAfter}. The fences pay ${Math.round(fenceRate(r.levelAfter) * 100)}% now.</p>` : ''}
+      ${r.levelAfter > r.levelBefore ? `<p class="levelup"><span class="stamp">Level ${r.levelAfter}</span> The fences pay ${Math.round(fenceRate(r.levelAfter) * 100)}% now.</p>` : ''}
       <div class="xpbar"><span style="width:${Math.min(100, (into / need) * 100)}%"></span></div>
       <p class="small">Level ${lvl} · ${into}/${need} XP to level ${lvl + 1}</p>
       <p>${r.items.length ? `${r.items.length} piece${r.items.length === 1 ? '' : 's'} went to the stash${r.replay ? ', but this is a replay, so the fences call it hot and pay half' : ''}.` : 'Nothing to sell this time.'}</p>
@@ -328,8 +392,8 @@ export function letter(l: Letter, p: Profile, done: () => void, button = 'Fold i
       <p class="small letter-how">${l.id === 3 ? 'Folded small, inside the music box:' : esc(delivery(p))}</p>
       <div class="letter">
         <div class="kicker">Letter ${l.id} · ${esc(L.title)} · day ${l.day}</div>
-        ${L.body.map((b) => `<p>${esc(b)}</p>`).join('')}
-        <p class="sign">— NC ${SEAL_SVG}</p>
+        <div class="hand-written">${L.body.map((b) => `<p>${esc(b)}</p>`).join('')}</div>
+        <p class="sign"><span class="hand-written">NC</span> ${SEAL_SVG}</p>
       </div>
       <div class="row-buttons"><button id="letter-ok" class="primary">${esc(button)}</button></div>
     </div>`,
@@ -341,31 +405,41 @@ export function letter(l: Letter, p: Profile, done: () => void, button = 'Fold i
 // --- The city map: buying the lair ---------------------------------------------------------------------
 
 export function cityMap(p: Profile, onBuy: () => void): void {
+  // A printed street map: blocks between the streets, the river along the bottom, district names.
   const blocks: string[] = [];
-  for (let r = 0; r < 4; r++)
+  for (let r = 0; r < 3; r++)
     for (let c = 0; c < 6; c++) {
-      const x = 20 + c * 95;
-      const y = 20 + r * 85;
-      blocks.push(`<rect x="${x}" y="${y}" width="80" height="68" rx="4" class="block"/>`);
+      const x = 24 + c * 94;
+      const y = 30 + r * 92;
+      // The landmarks, the park and the lair are drawn on their own.
+      if ((c === 1 && r === 0) || (c === 2 && r === 1) || (c === 4 && r === 1) || (c === 0 && r === 2)) continue;
+      blocks.push(`<rect x="${x}" y="${y}" width="78" height="74" class="block"/>`);
     }
   const el = show(
     `<div class="citymap">
-      <div class="card map-head"><div class="speaker">${NARRATOR_SVG}<p>Every thief needs a headquarters, kid. There's an abandoned building on the edge of Old Town. It's a wreck, but it's cheap. Click it.</p></div></div>
-      <svg viewBox="0 0 600 370" class="map-svg">
-        <rect width="600" height="370" fill="#141a2e"/>
+      <div class="caption-box map-head"><div class="speaker"><div class="portrait-frame">${NARRATOR_SVG}</div><div><span class="speaker-name">The narrator</span><p>Every thief needs a headquarters, kid. There's an abandoned building on the edge of Old Town. It's a wreck, but it's cheap. Find it on the map.</p></div></div></div>
+      <svg viewBox="0 0 600 380" class="map-svg">
+        <rect width="600" height="380" class="map-paper"/>
+        <path d="M0 330 C120 310 200 352 320 336 C430 322 520 348 600 330 L600 380 L0 380Z" class="river"/>
         ${blocks.join('')}
-        <text x="60" y="14" class="district">OLD TOWN</text><text x="250" y="14" class="district">MUSEUM MILE</text><text x="450" y="14" class="district">THE HEIGHTS</text>
-        <text x="60" y="366" class="district">HARBOUR</text><text x="420" y="366" class="district">DOWNTOWN</text>
-        <g class="landmark"><rect x="115" y="20" width="80" height="68" rx="4"/><text x="155" y="58">Corner Gallery</text></g>
-        <g class="landmark"><rect x="210" y="105" width="80" height="68" rx="4"/><text x="250" y="143">City Museum</text></g>
-        <g id="lair-building" class="for-sale" role="button" tabindex="0"><rect x="20" y="190" width="80" height="68" rx="4"/>
-          <text x="60" y="222">Abandoned</text><text x="60" y="236">building</text><text x="60" y="250" class="price">${LAIR_PRICE} Catnip</text></g>
+        <g class="park"><rect x="400" y="122" width="78" height="74"/><circle cx="425" cy="148" r="9"/><circle cx="452" cy="170" r="11"/><circle cx="440" cy="140" r="7"/></g>
+        <text x="80" y="20" class="district">OLD TOWN</text><text x="300" y="20" class="district">MUSEUM MILE</text><text x="510" y="20" class="district">THE HEIGHTS</text>
+        <text x="110" y="364" class="district">HARBOUR</text><text x="470" y="364" class="district">DOWNTOWN</text>
+        <text x="300" y="318" class="street">RIVER STREET</text>
+        <g class="landmark"><rect x="118" y="30" width="78" height="74"/><text x="157" y="70">Corner Gallery</text></g>
+        <g class="landmark"><rect x="212" y="122" width="78" height="74"/><text x="251" y="162">City Museum</text></g>
+        <g id="lair-building" class="for-sale" role="button" tabindex="0" aria-label="The abandoned building, for sale"><rect x="24" y="214" width="78" height="74"/>
+          <text x="63" y="246">Abandoned</text><text x="63" y="260">building</text></g>
+        <g class="marked" aria-hidden="true">
+          <path d="M14 250 C10 214 40 202 66 205 C100 208 116 230 110 258 C104 290 64 300 36 292 C18 286 12 268 16 248" class="marker"/>
+          <text x="140" y="300" class="scribble">for sale! ${LAIR_PRICE} Catnip</text><path d="M136 292 C122 286 112 280 106 272" class="marker thin"/></g>
+        <path d="M560 40 L560 70 M552 48 L560 36 L568 48" class="compass"/><text x="560" y="84" class="street">N</text>
       </svg>
-      <div id="buy-box" class="card buy-box hidden"><p>Buy the abandoned building for ${catnip(LAIR_PRICE)} Catnip? It will be your lair.</p>
-        <div class="row-buttons"><button id="buy" class="primary">Buy it</button><button id="not-yet">Not yet</button></div></div>
+      <div id="buy-box" class="note-card buy-box hidden"><p>Buy the abandoned building for ${catnip(LAIR_PRICE)} Catnip? It will be your lair.</p>
+        <div class="row-buttons"><button id="buy" class="primary">Buy it</button><button id="not-yet" class="quiet">Not yet</button></div></div>
       <p class="small">You have ${catnip(p.catnip)} Catnip.</p>
     </div>`,
-    'overlay',
+    'overlay desk-bg',
   );
   const b = el.querySelector('#lair-building')!;
   const box = el.querySelector('#buy-box')!;
@@ -412,30 +486,40 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     const i = cb.jobs.indexOf(def);
     const rec = p.records[def.id];
     const centre = def.loot.find((l) => def.map[l.at.y][l.at.x] === 'G');
+    const t = tilt(def.id);
     if (!unlocked(i))
-      return `<div class="job locked"><div><b>${esc(def.name)}</b> <span class="badge">locked</span><p class="small">${def.finale ? 'NightClaw will write when his challenge is done.' : `Clear ${esc(cb.jobs[i - 1].name)} first.`}</p></div></div>`;
-    return `<div class="job">
-        <div><b>${esc(def.name)}</b>${rec ? ' <span class="badge">cleared</span>' : ' <span class="badge new">new</span>'}
-          <p class="small">${esc(def.objective)}</p>
-          <p class="small">${def.loot.length} piece${def.loot.length === 1 ? '' : 's'} of loot${centre ? ` · centrepiece: ${esc(centre.name)}${rec?.centrepiece ? ' ✓' : ''}` : ''}${rec ? ` · best ${rec.bestTurns} turns${rec.flawless ? ' · flawless ✓' : ''}` : ''}</p>
-          ${rec?.lostTo ? `<p class="small rival-line">${esc(RIVALS[rec.lostTo].name)} got away with ${the(esc(centre?.name ?? 'centrepiece'))}. Replay to steal it yourself.</p>` : ''}
-          ${p.rivals[def.id] && p.rooms.planning >= 1 ? `<p class="small rival-line">Rumour: ${esc(RIVALS[p.rivals[def.id]!.id].name)} is after ${the(esc(centre?.name ?? 'centrepiece'))}.</p>` : ''}
-          ${rec ? '<p class="small warn">Replay: the loot is back on display, but the fences will call it hot and pay half.</p>' : ''}</div>
+      return `<article class="job locked" style="--tilt:${t}deg"><span class="pin"></span><h3>${esc(def.name)}</h3><p class="typed">${def.finale ? 'NightClaw will write when his challenge is done.' : `Clear ${esc(cb.jobs[i - 1].name)} first.`}</p></article>`;
+    const rumour = p.rivals[def.id] && p.rooms.planning >= 1 ? p.rivals[def.id]! : null;
+    return `<article class="job" style="--tilt:${t}deg">
+        <span class="pin"></span>
+        ${rec ? `<span class="stamp ${rec.flawless ? 'blue' : ''}">${rec.flawless ? 'Flawless' : 'Cleared'}</span>` : '<span class="stamp new">New</span>'}
+        <h3>${esc(def.name)}</h3>
+        <p class="objective">${esc(def.objective)}</p>
+        <ul class="facts">
+          <li>${def.loot.length} piece${def.loot.length === 1 ? '' : 's'} of loot</li>
+          ${centre ? `<li>Prize: ${esc(centre.name)}${rec?.centrepiece ? ' <span class="tick">✓</span>' : ''}</li>` : ''}
+          ${rec ? `<li>Best: ${rec.bestTurns} turns</li>` : ''}
+        </ul>
+        ${rec?.lostTo ? `<p class="scrawl rival-line">${esc(RIVALS[rec.lostTo].name)} got away with ${the(esc(centre?.name ?? 'centrepiece'))}. Replay to steal it yourself.</p>` : ''}
+        ${rumour ? `<p class="scrawl rival-line">Rumour: ${esc(RIVALS[rumour.id].name)} is after ${the(esc(centre?.name ?? 'centrepiece'))}.</p>` : ''}
+        ${rec ? '<p class="small warn">Replay: the loot is back, but the fences will call it hot and pay half.</p>' : ''}
         <button class="primary" data-job="${i}">${rec ? 'Replay' : 'Plan the heist'}</button>
-      </div>`;
+      </article>`;
   };
   const progress = challengeProgress(p);
   const challenge = p.legendary
-    ? '<div class="card challenge"><b>Leo Tuxedo, Legendary.</b><p class="small">NightClaw has retired. The city is yours: every heist can be replayed, and the fences are still buying.</p></div>'
+    ? '<div class="challenge note-card"><b>Leo Tuxedo, Legendary.</b><p>NightClaw has retired. The city is yours: every heist can be replayed, and the fences are still buying.</p></div>'
     : hasLetter(p, 4)
-      ? '<div class="card challenge"><b>The NightClaw Challenge: done.</b><p class="small">Every centrepiece, every one flawless. NightClaw is waiting in his lair.</p></div>'
+      ? '<div class="challenge note-card"><b>The NightClaw Challenge: done.</b><p>Every centrepiece, every one flawless. NightClaw is waiting in his lair.</p></div>'
       : hasLetter(p, 3)
-        ? `<div class="card challenge"><b>The NightClaw Challenge</b> ${pips(progress.done, progress.of)}<p class="small">${progress.done} of ${progress.of} centrepieces taken in a flawless heist (never seen, no alarms). NightClaw wants every one.</p></div>`
+        ? `<div class="challenge note-card"><b>The NightClaw Challenge</b> ${pips(progress.done, progress.of)}<p>${progress.done} of ${progress.of} centrepieces taken in a flawless heist (never seen, no alarms). NightClaw wants every one.</p></div>`
         : '';
-  const heists = challenge + cb.districts
-    .filter((d) => d.levels.some((l) => unlocked(cb.jobs.indexOf(l))))
-    .map((d) => `<h2 class="section district">${esc(d.name)}</h2>${d.levels.map(job).join('')}`)
-    .join('');
+  const heists =
+    challenge +
+    cb.districts
+      .filter((d) => d.levels.some((l) => unlocked(cb.jobs.indexOf(l))))
+      .map((d) => `<section class="district-board"><h2 class="section district" style="--tilt:${tilt(d.id, 2)}deg">${esc(d.name)}</h2><div class="cards">${d.levels.map(job).join('')}</div></section>`)
+      .join('');
 
   const attributes = ATTRIBUTES.map((a) => {
     const rank = p.attributes[a.id];
@@ -443,7 +527,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     const next = a.ranks[rank];
     return `<div class="up"><div><b>${a.name}</b> ${pips(rank, a.ranks.length)}<br><span class="small">${esc(a.blurb)}</span>
         ${next ? `<br><span class="small next">Next: ${esc(next)}</span>` : ''}</div>
-      ${next ? `<button data-raise="${a.id}" ${why ? 'disabled' : ''} title="${esc(why ?? '')}">${catnip(attributeCost(p, a.id))}</button>` : '<span class="badge">max</span>'}</div>`;
+      ${next ? `<button data-raise="${a.id}" ${why ? 'disabled' : ''} title="${esc(why ?? '')}">${catnip(attributeCost(p, a.id))}</button>` : '<span class="stamp small-stamp">Max</span>'}</div>`;
   }).join('');
   const trees = TREES.map(
     (t) => `<div class="tree"><h3>${t.name} <span class="small">${t.blurb}</span></h3>
@@ -453,7 +537,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
           const why = canLearn(p, s.id);
           return `<div class="skill ${owned ? 'owned' : ''} ${s.later ? 'later' : ''}"><div><b>${s.name}</b> <span class="small">level ${s.level}</span><br><span class="small">${esc(s.text)}</span>
             ${!owned && why && why !== 'Not enough Catnip.' ? `<br><span class="small warn">${esc(why)}</span>` : ''}</div>
-            ${owned ? '<span class="badge">learned</span>' : `<button data-learn="${s.id}" ${why ? 'disabled' : ''} title="${esc(why ?? '')}">${catnip(s.cost)}</button>`}</div>`;
+            ${owned ? '<span class="stamp small-stamp blue">Learned</span>' : `<button data-learn="${s.id}" ${why ? 'disabled' : ''} title="${esc(why ?? '')}">${catnip(s.cost)}</button>`}</div>`;
         })
         .join('')}</div>`,
   ).join('');
@@ -461,7 +545,16 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     .map(([id, r]) => `<li>${esc(RIVALS[id].name)}: beaten ${r.won} time${r.won === 1 ? '' : 's'}, lost ${r.lost}</li>`)
     .join('');
   const leo = `
-    <p>Attribute points: <b>${points}</b> <span class="small">(one per level, plus Catnip for training)</span></p>
+    <div class="dossier-head">
+      <div class="mugshot">${LEO_SVG}<span class="mug-board">L. TUXEDO · ${String(lvl).padStart(2, '0')}</span></div>
+      <dl class="typed facts-sheet">
+        <dt>Subject</dt><dd>Leo Tuxedo</dd>
+        <dt>Known as</dt><dd>${p.legendary ? 'Legendary' : 'The tuxedo cat'}</dd>
+        <dt>Level</dt><dd>${lvl}</dd>
+        <dt>Points to spend</dt><dd>${points} <span class="small">(one a level, plus Catnip for training)</span></dd>
+      </dl>
+    </div>
+    <h2 class="section">Attributes</h2>
     <div class="ups">${attributes}</div>
     <h2 class="section">Skills</h2>
     <div class="trees">${trees}</div>
@@ -469,22 +562,23 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     <h2 class="section">Achievements <span class="small">${p.achievements.length} of ${ACHIEVEMENTS.length}</span></h2>
     <div class="achievements">${ACHIEVEMENTS.map((a) => {
       const got = p.achievements.includes(a.id);
-      return `<div class="achievement ${got ? 'got' : ''}"><b>${got || !a.secret ? esc(a.name) : 'A secret'}</b><br><span class="small">${got || !a.secret ? esc(a.text) : 'Keep going.'}</span></div>`;
+      const shown = got || !a.secret;
+      return `<div class="achievement ${got ? 'got' : ''}"><span class="medal" aria-hidden="true">${shown ? esc(a.name.replace(/^(The|A|An) /, '').slice(0, 1)) : '?'}</span><div><b>${shown ? esc(a.name) : 'A secret'}</b><br><span class="small">${shown ? esc(a.text) : 'Keep going.'}</span></div></div>`;
     }).join('')}</div>`;
 
   const collector = collectorWants(p);
   const stash = p.stash
     .map(
       (s) => `<tr><td><b>${esc(s.name)}</b>${s.centrepiece ? ' <span class="badge">centrepiece</span>' : ''}${s.hot ? ' <span class="badge hot">hot</span>' : ''}${s.id === collector ? ' <span class="badge new">collector ×1.5</span>' : ''}<br><span class="small">${CATEGORY_NAMES[s.category]} · ${esc(s.levelName)} · est. ${money(s.value)}</span></td>
-        <td class="price">${catnip(priceOf(p, s))}${s.category === wanted ? ' <span class="badge">+25%</span>' : ''}</td>
+        <td class="price"><span class="hand">${priceOf(p, s).toLocaleString('en-US')}</span>${s.category === wanted ? ' <span class="badge">+25%</span>' : ''}</td>
         <td><button data-sell="${s.id}">Sell</button></td></tr>`,
     )
     .join('');
   const office = p.rooms.fence ? ` The Fence's Office adds ${p.rooms.fence * 5}%.` : '';
   const market = `
-    <p class="demand">This week's buyers want <b>${CATEGORY_NAMES[wanted]}</b>: +${Math.round(DEMAND_BONUS * 100)}%. Demand changes every three days (one heist is one day).</p>
-    <p class="small">The fence pays one Catnip per $10 of an item's estimated value, minus his cut: you get ${Math.round(fenceRate(lvl) * 100)}% at your level, 2% more each level.${office} Hold things for a better week, or sell now.</p>
-    ${p.stash.length ? `<table class="stash">${stash}</table><div class="row-buttons"><button id="sell-all" class="primary">Sell everything (${catnip(p.stash.reduce((n, s) => n + priceOf(p, s), 0))})</button></div>` : '<p>The stash is empty. Go steal something.</p>'}
+    <div class="ledger-head"><h2 class="section">The fence’s book</h2><p class="demand note-card">Wanted this week: <b>${CATEGORY_NAMES[wanted]}</b>, +${Math.round(DEMAND_BONUS * 100)}%. Demand changes every three days (one heist is one day).</p></div>
+    <p class="small">One Catnip per $10 of estimated value, minus the fence's cut: you get ${Math.round(fenceRate(lvl) * 100)}% at your level, 2% more each level.${office} Hold things for a better week, or sell now.</p>
+    ${p.stash.length ? `<table class="stash"><thead><tr><th>Item</th><th class="price">Catnip</th><th></th></tr></thead>${stash}</table><div class="row-buttons"><button id="sell-all" class="primary">Sell everything (${catnip(p.stash.reduce((n, s) => n + priceOf(p, s), 0))})</button></div>` : '<p class="hand empty-ledger">Nothing to sell. Go steal something.</p>'}
     <p class="small">Lifetime sales: ${catnip(p.soldTotal)} Catnip.</p>`;
 
   const rooms = ROOMS.map((r) => {
@@ -493,9 +587,9 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     const why = canUpgrade(p, r.id);
     const now = tier ? r.tiers[tier - 1].text : 'Not built yet.';
     const next = r.tiers[tier];
-    return `<div class="up"><div><b>${r.name}</b> ${pips(tier, r.tiers.length)}<br><span class="small">${esc(now)}</span>
+    return `<div class="up room ${tier ? 'built' : ''}"><div><b>${r.name}</b> ${pips(tier, r.tiers.length)}<br><span class="small">${esc(now)}</span>
         ${next ? `<br><span class="small next">${tier ? 'Next' : 'Build'}: ${esc(next.text)}</span>` : ''}</div>
-      ${cost !== null ? `<button data-upgrade="${r.id}" ${why ? 'disabled' : ''} title="${esc(why ?? '')}">${catnip(cost)}</button>` : '<span class="badge">max</span>'}</div>`;
+      ${cost !== null ? `<button data-upgrade="${r.id}" ${why ? 'disabled' : ''} title="${esc(why ?? '')}">${catnip(cost)}</button>` : '<span class="stamp small-stamp">Done</span>'}</div>`;
   }).join('');
   const trophies = Object.entries(p.records)
     .filter(([, r]) => r.centrepiece)
@@ -506,17 +600,17 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     })
     .join('');
   const letters = p.letters.length
-    ? `<h2 class="section">Letters</h2>${p.letters.map((l, i) => `<button class="paper-link" data-letter="${i}"><span class="small">Day ${l.day} · signed NC</span><br><b>Letter ${l.id}: ${esc(LETTERS[l.id].title)}</b></button>`).join('')}`
+    ? `<h2 class="section">Letters</h2><div class="envelopes">${p.letters.map((l, i) => `<button class="paper-link envelope" data-letter="${i}" style="--tilt:${tilt(`letter${i}`, 2)}deg"><span class="small">Day ${l.day}</span><b>Letter ${l.id}: ${esc(LETTERS[l.id].title)}</b>${SEAL_SVG}</button>`).join('')}</div>`
     : '';
   const lairTab = `
-    <p class="small">Every upgrade fixes up the building a little more.</p>
+    <p class="blueprint-title">Plans for the lair <span>every upgrade fixes the building up a little more</span></p>
     <div class="ups">${rooms}</div>
     ${letters}
     ${p.rooms.trophy ? `<h2 class="section">Trophy Room</h2>${trophies ? `<ul class="trophies">${trophies}</ul>` : '<p class="small">Empty shelves, waiting for centrepieces.</p>'}` : ''}`;
 
   const papers = p.papers.length
-    ? p.papers.map((pp, i) => `<button class="paper-link" data-paper="${i}"><span class="small">Day ${pp.day} · ${esc(pp.place)}</span><br><b>${esc(pp.headline)}</b></button>`).join('')
-    : '<p>No front pages yet.</p>';
+    ? `<div class="clippings">${p.papers.map((pp, i) => `<button class="paper-link clipping" data-paper="${i}" style="--tilt:${tilt(`paper${pp.day}`, 2.5)}deg"><span class="clip-mast">${MASTHEAD}</span><span class="small">Day ${pp.day} · ${esc(pp.place)}</span><b>${esc(pp.headline)}</b></button>`).join('')}</div>`
+    : '<p class="hand">No front pages yet.</p>';
 
   const body = { heists, leo, market, lair: lairTab, papers }[tab];
   const names: Record<LairTab, string> = {
@@ -529,19 +623,24 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   const el = show(
     `<div class="lair">
       <header class="lair-head">
-        <div class="lair-art" aria-hidden="true">${lairSvg(lairCondition(p), p.rooms.mailbox > 0)}</div>
-        <div class="lair-stats">
-          <div class="title">Leo's lair${p.legendary ? ' <span class="badge legend">Legendary</span>' : ''}</div>
-          <div>Level <b>${lvl}</b> <span class="xpbar small-bar"><span style="width:${Math.min(100, (into / need) * 100)}%"></span></span> <span class="small">${into}/${need} XP</span></div>
-          <div>Catnip ${catnip(p.catnip)} · Day ${p.day} · Heists ${p.heists}</div>
+        <figure class="polaroid" aria-hidden="true">${lairSvg(lairCondition(p), p.rooms.mailbox > 0)}<figcaption>Home sweet hideout</figcaption></figure>
+        <div class="lair-id">
+          <h1 class="nameplate">Leo’s Lair</h1>
+          ${p.legendary ? '<span class="badge legend stamp blue">Legendary</span>' : ''}
+          <dl class="lair-stats typed">
+            <dt>Level</dt><dd>${lvl} <span class="xpbar small-bar"><span style="width:${Math.min(100, (into / need) * 100)}%"></span></span> <span class="small">${into}/${need} XP</span></dd>
+            <dt>Catnip</dt><dd>${catnip(p.catnip)}</dd>
+            <dt>Day</dt><dd>${p.day} · ${p.heists} heist${p.heists === 1 ? '' : 's'}</dd>
+          </dl>
         </div>
-        <div class="lair-buttons"><button id="lair-settings" title="Sound, speed, accessibility">Settings</button><button id="lair-quit" class="quit" title="Back to the title screen">Save &amp; quit</button></div>
+        <div class="lair-buttons"><button id="lair-settings" class="quiet" title="Sound, speed, accessibility">Settings</button><button id="lair-quit" class="quiet" title="Back to the title screen">Save &amp; quit</button></div>
       </header>
-      <nav class="tabs">
-        ${(Object.keys(names) as LairTab[]).map((t) => `<button data-tab="${t}" class="${t === tab ? 'on' : ''}">${names[t]}</button>`).join('')}
+      <nav class="tabs" role="tablist">
+        ${(Object.keys(names) as LairTab[]).map((t) => `<button role="tab" aria-selected="${t === tab}" data-tab="${t}" class="${t === tab ? 'on' : ''}">${names[t]}</button>`).join('')}
       </nav>
-      <section class="tab-body">${body}</section>
+      <section class="tab-body tab-${tab}">${body}</section>
     </div>`,
+    'lair-screen',
   );
   on(el, '[data-tab]', (e) => lair(p, cb, (e.currentTarget as HTMLElement).dataset.tab as LairTab));
   on(el, '[data-job]', (e) => cb.onHeist(cb.jobs[Number((e.currentTarget as HTMLElement).dataset.job)]));
@@ -584,20 +683,26 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
     for (let y = 0; y < level.h; y++)
       for (let x = 0; x < level.w; x++) {
         const t = level.tiles[y][x];
+        // Drawn like a blueprint: white walls on blue paper.
         const fill =
-          t === 'wall' || t === 'panel' || t === 'fuse'
-            ? '#3b4366'
-            : ({ pillar: '#59608a', stack: '#86643a', exit: '#2f7d5b', door: '#8a6a45', marble: '#2a3150', keydoor: '#8a93a8', vault: '#c0c6d4', glass: '#5b88a8', kennel: '#9c4a2a', desk: '#7a5634', keycard: '#5ef0ff', crate: '#a07a48', tidal: '#9a8056', switch: '#e6e0d0', 'belt-e': '#3a3c44', 'belt-w': '#3a3c44', paint: '#e0314b', gap: def.gaps === 'water' ? '#0f2a44' : '#06070d', wire: def.gaps === 'water' ? '#0f2a44' : '#06070d' } as Record<string, string>)[t] ?? '#1f2540';
+          t === 'wall' || t === 'panel' || t === 'fuse' || t === 'switch'
+            ? '#dce9f5'
+            : ({ pillar: '#a9c2db', stack: '#a9c2db', exit: '#f0e442', door: '#e9c46a', marble: '#2d5f92', keydoor: '#e9c46a', vault: '#e9c46a', glass: '#7fb0d8', kennel: '#c9772f', desk: '#a9c2db', keycard: '#f0e442', crate: '#c9a66b', tidal: '#3f6f8e', 'belt-e': '#16385c', 'belt-w': '#16385c', paint: '#e0314b', gap: '#0f2a44', wire: '#0f2a44' } as Record<string, string>)[t] ?? '#24538a';
         cells.push(`<rect x="${x * S}" y="${y * S}" width="${S}" height="${S}" fill="${fill}"/>`);
-        if (level.ducts[y][x]) cells.push(`<rect x="${x * S + 5}" y="${y * S + 5}" width="6" height="6" fill="#5ec8ff" opacity="0.5"/>`);
+        if (level.ducts[y][x]) cells.push(`<rect x="${x * S + 5}" y="${y * S + 5}" width="6" height="6" fill="none" stroke="#dce9f5" stroke-dasharray="2 1" opacity="0.8"/>`);
         if (t === 'wire') cells.push(`<line x1="${x * S}" y1="${y * S + 8}" x2="${x * S + S}" y2="${y * S + 8}" stroke="#c8ccd8" stroke-width="1.5"/>`);
         if (t === 'laser') cells.push(`<line x1="${x * S}" y1="${y * S + 8}" x2="${x * S + S}" y2="${y * S + 8}" stroke="#ff2a2a" stroke-width="2"/>`);
         if (t === 'panel' || t === 'fuse') cells.push(`<rect x="${x * S + 4}" y="${y * S + 4}" width="8" height="8" fill="${t === 'panel' ? '#55d6c2' : '#f2c94c'}"/>`);
       }
   const marks: string[] = [];
   if (tier >= 1) {
-    for (const l of def.loot) marks.push(`<circle cx="${l.at.x * S + 8}" cy="${l.at.y * S + 8}" r="${def.map[l.at.y][l.at.x] === 'G' ? 6 : 4}" fill="${def.map[l.at.y][l.at.x] === 'G' ? '#f2c46b' : '#9fe8ff'}"/>`);
-    marks.push(`<text x="${level.start.x * S + 8}" y="${level.start.y * S + 12}" text-anchor="middle" font-size="11" fill="#fff">L</text>`);
+    for (const l of def.loot)
+      marks.push(
+        def.map[l.at.y][l.at.x] === 'G'
+          ? `<circle cx="${l.at.x * S + 8}" cy="${l.at.y * S + 8}" r="11" fill="none" stroke="#e0314b" stroke-width="2.5"/><circle cx="${l.at.x * S + 8}" cy="${l.at.y * S + 8}" r="4" fill="#f0e442"/>`
+          : `<circle cx="${l.at.x * S + 8}" cy="${l.at.y * S + 8}" r="3.5" fill="#f7f1e0"/>`,
+      );
+    marks.push(`<text x="${level.start.x * S + 8}" y="${level.start.y * S + 13}" text-anchor="middle" font-size="13" font-weight="700" fill="#f0e442">L</text>`);
   }
   if (tier >= 2) {
     for (const lamp of level.lamps) marks.push(`<circle cx="${lamp.at.x * S + 8}" cy="${lamp.at.y * S + 8}" r="${lamp.radius * S}" fill="#ffd27a" opacity="0.12"/><circle cx="${lamp.at.x * S + 8}" cy="${lamp.at.y * S + 8}" r="3" fill="#ffd27a"/>`);
@@ -619,21 +724,28 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
         : '<p class="small"><b>Rumour board:</b> no rival thieves are after this one.</p>';
   const plan = tier
     ? `<svg class="plan" viewBox="0 0 ${level.w * S} ${level.h * S}">${cells.join('')}${marks.join('')}</svg>
-       <p class="small legend"><span style="color:#f2c46b">●</span> centrepiece · <span style="color:#9fe8ff">●</span> loot · <span style="color:#5ec8ff">■</span> vents · <span style="color:#ff2a2a">—</span> lasers${tier >= 2 ? ' · <span style="color:#c77dff">■</span> cameras · <span style="color:#ffd27a">●</span> lamps' : ''}${tier >= 3 ? ' · <span style="color:#ff8a5a">- -</span> guard routes' : ''}</p>`
+       <p class="small legend">red ring: the prize · dots: loot · dashed squares: vents · red lines: lasers${tier >= 2 ? ' · purple: cameras · yellow: lamps' : ''}${tier >= 3 ? ' · orange dashes: guard routes' : ''}</p>`
     : '<p class="small">Build a Planning Table at the lair to see the floor plan before you go in.</p>';
   const el = show(
-    `<div class="card big briefing">
-      <div class="kicker">Briefing</div>
-      <h1>${esc(def.name)}</h1>
-      <p>${esc(def.objective)}</p>
-      <p class="small">${def.loot.length} pieces of loot · ${level.guards.length} guard${level.guards.length === 1 ? '' : 's'}${tier >= 2 ? ` · ${level.cameras.length} camera${level.cameras.length === 1 ? '' : 's'}` : ''}${rec ? ` · best ${rec.bestTurns} turns` : ''}</p>
-      ${def.tip ? `<p class="tip"><b>New here:</b> ${esc(def.tip)}</p>` : ''}
-      <p class="small"><b>On duty:</b> ${level.guards.map((g) => `${esc(g.name)}${g.kind && g.kind !== 'watch' ? ` (${{ sleepy: 'sleepy', captain: 'captain', sniffer: 'sniffer', robo: 'Robo-Guard', nightclaw: 'the legend himself' }[g.kind]})` : ''}`).join(', ')}</p>
-      ${plan}
-      ${rumour}
-      <div class="row-buttons"><button id="go" class="primary">Start the heist</button><button id="back">Back to the lair</button></div>
+    `<div class="briefing case-file">
+      <span class="file-tab">Case file · ${esc(def.id.toUpperCase())}</span>
+      <div class="file-page">
+        ${rec ? `<span class="stamp ${rec.flawless ? 'blue' : ''}">${rec.flawless ? 'Flawless' : 'Cleared'}</span>` : '<span class="stamp">Confidential</span>'}
+        <h1>${esc(def.name)}</h1>
+        <p class="typed objective">${esc(def.objective)}</p>
+        ${def.tip ? `<p class="tip sticky"><b>New here</b> ${esc(def.tip)}</p>` : ''}
+        <dl class="typed facts-sheet">
+          <dt>Loot</dt><dd>${def.loot.length} pieces</dd>
+          <dt>Guards</dt><dd>${level.guards.map((g) => `${esc(g.name)}${g.kind && g.kind !== 'watch' ? ` (${{ sleepy: 'sleepy', captain: 'captain', sniffer: 'sniffer', robo: 'Robo-Guard', nightclaw: 'the legend himself' }[g.kind]})` : ''}`).join(', ')}</dd>
+          ${tier >= 2 ? `<dt>Cameras</dt><dd>${level.cameras.length}</dd>` : ''}
+          ${rec ? `<dt>Best</dt><dd>${rec.bestTurns} turns</dd>` : ''}
+        </dl>
+        ${plan}
+        ${rumour}
+        <div class="row-buttons"><button id="go" class="primary">Start the heist</button><button id="back" class="quiet">Back to the lair</button></div>
+      </div>
     </div>`,
-    'overlay',
+    'overlay desk-bg',
   );
   on(el, '#go', onStart);
   on(el, '#back', onBack);

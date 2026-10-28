@@ -22,7 +22,23 @@ const result = await esbuild.build({
   logLevel: 'warning',
 });
 const js = result.outputFiles[0].text.replace(/<\/script>/g, '<\\/script>');
-const css = readFileSync(join(root, 'src/styles.css'), 'utf8');
+// The fonts (all SIL Open Font License), inlined so the game looks the same offline and in Electron.
+const FONTS = [
+  ['Limelight', 'limelight', [400]], // Art Deco headlines
+  ['Special Elite', 'special-elite', [400]], // the typewriter: case files, stamps, ledgers
+  ['Libre Franklin', 'libre-franklin', [400, 600, 800]], // reading text
+  ['Oswald', 'oswald', [500, 600]], // poster lettering: buttons, labels
+  ['UnifrakturMaguntia', 'unifrakturmaguntia', [400]], // the newspaper's masthead
+  ['Homemade Apple', 'homemade-apple', [400]], // handwriting: NightClaw, the fence's prices
+];
+const fontFaces = FONTS.flatMap(([family, pkg, weights]) =>
+  weights.map((w) => {
+    const file = join(root, 'node_modules/@fontsource', pkg, 'files', `${pkg}-latin-${w}-normal.woff2`);
+    const data = readFileSync(file).toString('base64');
+    return `@font-face { font-family: '${family}'; font-style: normal; font-weight: ${w}; font-display: swap; src: url(data:font/woff2;base64,${data}) format('woff2'); }`;
+  }),
+).join('\n');
+const css = fontFaces + '\n' + readFileSync(join(root, 'src/styles.css'), 'utf8');
 const html = readFileSync(join(root, 'index.html'), 'utf8')
   .replace('<!-- STYLES -->', () => `<style>\n${css}\n</style>`)
   .replace('<!-- SCRIPT -->', () => `<script>${js}</script>`);
