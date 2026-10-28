@@ -36,4 +36,7 @@ The web uploader takes at most 100 files at a time, and 25 MB per file. For a bi
   side branch and a pull request, and nothing reaches the game until that's merged.
 - For hundreds of files, GitHub Desktop (or `git push`) has no file-count limit, and allows up to 100 MB per file.
 
-`art/models/` holds 3D models (`.glb`); they're rendered into isometric sprites from four angles.
+`art/models/` holds 3D models (`.glb`). `node tools/bake.mjs [name ...]` renders each one from the game's
+camera at eight turns, with an ink outline, into a sprite strip in `art/sprites/` (plus `manifest.json`).
+Per-model settings (size, wall or floor, which way is the front) are in `tools/bake/catalog.json`; the
+props the game uses, and which district gets what, are listed in `src/render/props.ts`.

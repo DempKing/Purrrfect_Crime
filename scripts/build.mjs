@@ -19,7 +19,7 @@ const result = await esbuild.build({
   target: ['chrome110', 'safari16', 'firefox110'],
   minify: !dev,
   sourcemap: dev ? 'inline' : false,
-  logLevel: 'warning',
+  logLevel: 'warning', loader: { '.webp': 'dataurl' },
 });
 const js = result.outputFiles[0].text.replace(/<\/script>/g, '<\\/script>');
 // The fonts (all SIL Open Font License), inlined so the game looks the same offline and in Electron.

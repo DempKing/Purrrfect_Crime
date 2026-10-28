@@ -513,6 +513,16 @@ sprite sheets.
   a big-band chase stinger when an alarm trips. Footstep sounds change with the floor type; guard snores
   and grumbles; the newspaper's spinning-press whoosh.
 
+### 12.1a 3D models as sprites
+
+Props can come as 3D models (`art/models/*.glb`) instead of drawn sprites. `tools/bake.mjs` renders each
+in headless Chromium from the game's 2:1 camera, turned 0°, 45° … 315°, lit for night (a cool fill and a
+warm key from the top left), with a dark ink outline so they sit with the drawn characters. The game picks
+the frame from the prop's facing and the camera's turn, and tints it by the light on its tile. In use so
+far: security cameras, crates and crate stacks, desks, and whatever hangs on the walls in each district
+(pictures, mirrors and clocks in the museums and mansions; lifebuoys and lanterns at the harbour; fuse boxes
+and fire alarms downtown). Wall pieces are decoration only and go on about one wall face in five.
+
 ### 12.2 Audio, settings and accessibility as built (M6)
 
 - **Audio** is synthesised in the browser (Web Audio), so there are no files to load: a swing loop of

@@ -1,0 +1,81 @@
+{
+ "fancy_picture_frame_01": {
+  "mount": "wall",
+  "tilesPerMetre": 1.76,
+  "fit": 0.85,
+  "height": 50
+ },
+ "fancy_picture_frame_02": {
+  "mount": "wall",
+  "tilesPerMetre": 1.76,
+  "fit": 0.85,
+  "height": 50
+ },
+ "hanging_picture_frame_01": {
+  "mount": "wall",
+  "tilesPerMetre": 1.76,
+  "fit": 0.85,
+  "height": 50,
+  "yaw": 180
+ },
+ "ornate_mirror_01": {
+  "mount": "wall",
+  "tilesPerMetre": 1.6,
+  "fit": 0.85,
+  "height": 46
+ },
+ "wall_clock": {
+  "mount": "wall",
+  "tilesPerMetre": 2.56,
+  "fit": 0.85,
+  "height": 58
+ },
+ "fire_alarm": {
+  "mount": "wall",
+  "tilesPerMetre": 3.52,
+  "fit": 0.85,
+  "height": 56
+ },
+ "street_lamp_02": {
+  "mount": "wall",
+  "tilesPerMetre": 0.96,
+  "fit": 0.85,
+  "height": 58
+ },
+ "lifebuoy": {
+  "mount": "wall",
+  "tilesPerMetre": 1.6,
+  "fit": 0.85,
+  "height": 48
+ },
+ "power_box_01": {
+  "mount": "wall",
+  "tilesPerMetre": 1.28,
+  "fit": 0.85,
+  "height": 44
+ },
+ "security_camera_01": {
+  "tilesPerMetre": 1.4,
+  "fit": 0.6
+ },
+ "wooden_crate_01": {
+  "tilesPerMetre": 3,
+  "fit": 0.82
+ },
+ "wooden_crate_02": {
+  "tilesPerMetre": 3,
+  "fit": 0.9
+ },
+ "wooden_military_crate": {
+  "tilesPerMetre": 3,
+  "fit": 0.9
+ },
+ "metal_office_desk": {
+  "fit": 0.95,
+  "tilesPerMetre": 1
+ },
+ "ClassicConsole_01": {
+  "fit": 0.95,
+  "tilesPerMetre": 1
+ }
+}
