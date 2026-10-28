@@ -23,7 +23,7 @@ const RIM = 0;
 const LOOT = {
   bell: 'loot_bell.webp', bowl: 'loot_bowl.webp', clockwork: 'loot_clock.webp', cream: 'loot_cream.webp', cushion: 'loot_cushion.webp',
   jelly: 'loot_jelly.webp', map: 'loot_map.webp', mask: 'loot_mask.webp', mice: 'loot_mice.webp', moon: 'loot_moon.webp',
-  perch: 'loot_perch.webp', pharaoh: 'loot_pharaoh.webp',
+  perch: 'loot_perch.webp', pharaoh: 'loot_pharaoh.webp', spr_statue: 'spr_statue.webp',
 };
 const MODEL_LOOT = ['mantel_clock_01', 'treasure_chest', 'marble_bust_01', 'horse_statue_01', 'gothic_statue', 'concrete_cat_statue', 'lambis_shell', 'tea_set_01', 'Ukulele_01', 'Lantern_01', 'vintage_suitcase', 'garden_gnome', 'rubber_duck_toy', 'strawberry_chocolate_cake', 'retro_multimeter', 'wicker_basket_02'];
 const LOOT_SIZE = 40;

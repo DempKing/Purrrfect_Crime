@@ -5,6 +5,7 @@ import { Assets, Texture } from 'pixi.js';
 import type { LootCategory } from '../core/level';
 import { lootIconUrl, lootSlug } from '../ui/lootIcons';
 import { NAMED_LOOT_ART } from './lootArt.gen';
+import { EXHIBIT_PICTURES } from '../core/exhibits';
 import data from '../../art/sprites/chars.json';
 import leo_idle from '../../art/sprites/chars/leo_idle.webp';
 import leo_a from '../../art/sprites/chars/leo_a.webp';
@@ -51,6 +52,7 @@ import loot_mask from '../../art/sprites/loot/mask.webp';
 import loot_moon from '../../art/sprites/loot/moon.webp';
 import loot_perch from '../../art/sprites/loot/perch.webp';
 import loot_pharaoh from '../../art/sprites/loot/pharaoh.webp';
+import loot_spr_statue from '../../art/sprites/loot/spr_statue.webp';
 import loot_treasure_chest from '../../art/sprites/loot/treasure_chest.webp';
 import loot_vintage_suitcase from '../../art/sprites/loot/vintage_suitcase.webp';
 import loot_wicker_basket_02 from '../../art/sprites/loot/wicker_basket_02.webp';
@@ -81,6 +83,7 @@ const LOOT_FILES: Record<string, string> = {
   mantel_clock_01: loot_mantel_clock_01,
   map: loot_map,
   marble_bust_01: loot_marble_bust_01,
+  spr_statue: loot_spr_statue,
   mask: loot_mask,
   moon: loot_moon,
   perch: loot_perch,
@@ -151,7 +154,7 @@ export function charFrame(name: CharName, frame: CharFrameName): CharFrame | und
 export function lootPicture(name: string): { tex: Texture; w: number; h: number; tint: number } | undefined {
   const own = loot.get(`named:${lootSlug(name)}`);
   if (own) return { ...own, tint: 0xffffff };
-  const key = LOOT_PICTURES[name];
+  const key = LOOT_PICTURES[name] ?? EXHIBIT_PICTURES[name];
   const p = key ? loot.get(key) : undefined;
   if (p) return { ...p, tint: LOOT_TINTS[name] ?? 0xffffff };
   const icon = icons.get(name);
@@ -162,7 +165,7 @@ export function lootPicture(name: string): { tex: Texture; w: number; h: number;
 export function lootPictureUrl(name: string, category?: LootCategory): string {
   const own = NAMED_LOOT_ART[lootSlug(name)];
   if (own) return own.url;
-  const key = LOOT_PICTURES[name];
+  const key = LOOT_PICTURES[name] ?? EXHIBIT_PICTURES[name];
   return key ? LOOT_FILES[key] : lootIconUrl(name, category);
 }
 
@@ -172,7 +175,7 @@ const icons = new Map<string, Texture>();
 export async function loadLootIcons(list: { name: string; category: LootCategory }[]): Promise<void> {
   await Promise.all(
     list
-      .filter((l) => !LOOT_PICTURES[l.name] && !NAMED_LOOT_ART[lootSlug(l.name)] && !icons.has(l.name))
+      .filter((l) => !LOOT_PICTURES[l.name] && !EXHIBIT_PICTURES[l.name] && !NAMED_LOOT_ART[lootSlug(l.name)] && !icons.has(l.name))
       .map(async (l) => {
         const img = new Image();
         img.src = lootIconUrl(l.name, l.category);

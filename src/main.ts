@@ -322,11 +322,11 @@ function act(tile: Point): void {
 
 // --- loot: click it for what Leo can do -------------------------------------------------------------
 
-/** The piece of loot on a tile, if it's still there to be had (in a case, on a plinth, in a safe). */
+/** The piece of loot on a tile, if it's still there to be had (in a case, on a plinth, in a safe, under a light). */
 function lootHere(t: Point): number | null {
   if (!level || !state || state.layer !== 'floor') return null;
   const tile = tileNow(level, state, t.x, t.y);
-  if (tile !== 'case' && tile !== 'plinth' && tile !== 'safe') return null;
+  if (tile !== 'case' && tile !== 'plinth' && tile !== 'safe' && tile !== 'lamp') return null;
   const li = lootAt(level, t.x, t.y);
   return li >= 0 && !state.inventory.includes(li) && !state.rivalLoot.includes(li) ? li : null;
 }

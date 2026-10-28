@@ -983,6 +983,7 @@ export function actionsHere(level: Level, s: State): Action[] {
           out.push({ kind: 'crack-safe', at: p, label: s.perks.safeCracks > 1 ? `Crack the safe (${done}/${s.perks.safeCracks})` : `Crack the safe and take ${the(loot.name)}`, ap: 1, noise: 0, blocked: noRoom });
         }
         if (t === 'plinth' && loot && !taken) out.push({ kind: 'take', at: p, label: `Take ${loot.name}`, ap: 1, noise: 0, blocked: noRoom });
+        if (t === 'lamp' && loot && !taken) out.push({ kind: 'take', at: p, label: `Take ${the(loot.name)} from under the light`, ap: 1, noise: 0, blocked: noRoom });
         if (t === 'door' && near4(L, p)) out.push({ kind: 'pick-door', at: p, label: s.perks.doorPicks > 1 ? `Pick the door lock (${s.picks[k] ?? 0}/${s.perks.doorPicks})` : 'Open the door', ap: 1, noise: s.perks.silentPicks ? 0 : NOISE.pick });
         if (t === 'keydoor' && near4(L, p))
           out.push({ kind: 'swipe-card', at: p, label: s.card === 'leo' ? 'Swipe the keycard' : 'Open it with the cloned card', ap: 1, noise: 0, blocked: s.card === 'leo' || s.perks.masterKey ? undefined : s.card === 'rival' ? 'A rival swiped the keycard.' : 'Needs the keycard: it’s somewhere in the building.' });

@@ -550,7 +550,10 @@ NightClaw's gothic stone. Creaky boards and pressure plates have their own drawi
 
 Lamps on the map are ceiling lights: a pendant on a cord over a statue, a bust or a plant (a pedestal where it
 needs one), with its beam and pool of light. The tile still can't be walked through, and switching the light
-off dims what's under it. Display cases and plinths have small spots over them, and paintings and mirrors have
+off dims what's under it. Anything small enough to carry is loot as well (`src/core/exhibits.ts`): busts,
+bronze horses, mantel clocks and stone cat idols on pedestals, conch shells, ship's lanterns and sea chests,
+worth $600–$2,000 each. It stands in the light, so taking it is a risk. Life-size statues, plants,
+grandfather clocks and fish tanks are furniture. Display cases and plinths have small spots over them, and paintings and mirrors have
 brass picture lights washing the wall. No lamps stand on the floor or hang on the walls. Flat wall pieces (an oil portrait and a tapestry, the opera's curtain swags, portholes and a ship's wheel, NightClaw's stained glass, a tool shelf, a
 monitor, arched night windows) are laid on the wall faces with the 3D ones, themed by district and by heist;
 the Aquarium's lights hang over its fish tanks and jellyfish columns.

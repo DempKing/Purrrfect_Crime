@@ -4,6 +4,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseLevel, type GuardDef, type LevelDef } from '../src/core/level';
 import { BASE_PERKS, actionsHere, roboOff, beaconTiles, danger, doAction, endTurn, flooded, guardSees, guardView, key, leoReach, lightNow, makeNoise, motionTrip, moveLeo, newHeist, planRival, useAbility, type Perks, type RivalPlan, type State } from '../src/core/game';
+import { ALL_LEVELS } from '../src/levels';
+import { exhibitLoot } from '../src/core/exhibits';
 
 const MAP = [
   '##################',
@@ -592,4 +594,22 @@ test('NightClaw sees through the dark, catches Leo on sight, and can be tapped o
   moveLeo(level, seen, { x: 7, y: 3 });
   assert.equal(seen.status, 'caught');
   assert.equal(seen.caughtBy, 'NightClaw');
+});
+
+test('what stands on a pedestal under a light can be stolen', () => {
+  const def = ALL_LEVELS.find((l) => l.id === 'l1-coin-museum')!;
+  const level = parseLevel(def);
+  const extra = exhibitLoot(def);
+  assert.ok(extra.length > 0, 'the coin museum has an exhibit under a light');
+  assert.equal(level.def.loot.length, def.loot.length + extra.length);
+  const at = extra[0].at;
+  const li = level.def.loot.findIndex((l) => l.at.x === at.x && l.at.y === at.y);
+  const s = newHeist(level);
+  s.leo = { x: at.x, y: at.y + 1 };
+  const take = actionsHere(level, s).find((a) => a.kind === 'take' && a.at.x === at.x && a.at.y === at.y);
+  assert.ok(take, 'Leo can take it from beside it');
+  assert.ok(doAction(level, s, 'take', at));
+  assert.ok(s.inventory.includes(li));
+  // Life-size statues, plants, grandfather clocks and tanks stay put.
+  assert.ok(exhibitLoot(ALL_LEVELS.find((l) => l.id === 'l19-aquarium')!).length === 0);
 });
