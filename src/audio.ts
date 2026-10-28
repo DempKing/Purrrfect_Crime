@@ -4,6 +4,9 @@
 // won't start audio before then), and silent where Web Audio isn't available.
 
 export type Sfx =
+  | 'tick'
+  | 'coin'
+  | 'levelup'
   | 'step-carpet'
   | 'step-marble'
   | 'creak'
@@ -41,6 +44,22 @@ const BARS = [
 ];
 const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 
+/** Which music fits where. Each scene plays art/music/<scene>.mp3 if it's there (see art/music/README.md). */
+export type MusicScene = 'title' | 'lair' | 'market' | 'planning' | 'heist' | 'alert' | 'chase' | 'report' | 'finale';
+/** If a scene's track is missing, the next one along that has one. */
+const MUSIC_FALLBACK: Record<MusicScene, MusicScene[]> = {
+  title: ['title', 'lair'],
+  lair: ['lair', 'title'],
+  market: ['market', 'lair', 'title'],
+  planning: ['planning', 'lair', 'title'],
+  heist: ['heist'],
+  alert: ['alert', 'heist'],
+  chase: ['chase', 'alert', 'heist'],
+  report: ['report', 'lair', 'title'],
+  finale: ['finale', 'heist'],
+};
+const HEIST_SCENES: MusicScene[] = ['heist', 'alert', 'chase', 'finale'];
+
 export class Sound {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -52,6 +71,11 @@ export class Sound {
   private nextAt = 0;
   private timer = 0;
   private levels = { master: 0.8, music: 0.6, sfx: 0.8 };
+  private scene: MusicScene | null = null;
+  private finale = false;
+  private tracks = new Map<MusicScene, { el: HTMLAudioElement; ok: boolean | null; vol: number }>();
+  private playing: MusicScene | null = null;
+  private fadeTimer = 0;
 
   /** Starts the audio context; call from a user gesture. Safe to call again. */
   unlock(): void {
@@ -75,6 +99,7 @@ export class Sound {
       const d = this.noise.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       this.applyLevels();
+      this.pickTrack();
       this.nextAt = ctx.currentTime + 0.1;
       this.timer = window.setInterval(() => this.schedule(), 25);
     } catch {
@@ -88,6 +113,7 @@ export class Sound {
   }
 
   private applyLevels(): void {
+    for (const t of this.tracks.values()) t.el.volume = this.trackVolume(t.vol);
     if (!this.ctx || !this.master || !this.musicBus || !this.sfxBus) return;
     const t = this.ctx.currentTime;
     this.master.gain.setTargetAtTime(this.levels.master, t, 0.05);
@@ -95,8 +121,80 @@ export class Sound {
     this.sfxBus.gain.setTargetAtTime(this.levels.sfx, t, 0.05);
   }
 
+  /** In a heist: calm, suspicious, chase. Picks the heist's music to match. */
   setTension(t: Tension): void {
     this.tension = t;
+    if (t > 0) this.setScene(this.finale && t < 3 ? 'finale' : t >= 3 ? 'chase' : t >= 2 ? 'alert' : 'heist');
+  }
+
+  /** NightClaw's places get their own heist music. */
+  setFinale(on: boolean): void {
+    this.finale = on;
+  }
+
+  /** Changes the music for a screen, crossfading. Takes effect once audio is unlocked by a click or key. */
+  setScene(scene: MusicScene): void {
+    if (scene === this.scene) return;
+    this.scene = scene;
+    if (!HEIST_SCENES.includes(scene)) this.tension = 0;
+    this.pickTrack();
+  }
+
+  private track(scene: MusicScene) {
+    let t = this.tracks.get(scene);
+    if (!t) {
+      const el = new Audio();
+      el.loop = true;
+      el.preload = 'auto';
+      const entry = { el, ok: null as boolean | null, vol: 0 };
+      el.addEventListener('canplaythrough', () => {
+        if (entry.ok === null) {
+          entry.ok = true;
+          this.pickTrack();
+        }
+      }, { once: true });
+      el.addEventListener('error', () => {
+        entry.ok = false;
+        this.pickTrack();
+      }, { once: true });
+      el.src = `music/${scene}.mp3`;
+      t = entry;
+      this.tracks.set(scene, t);
+    }
+    return t;
+  }
+
+  /** The first track in the scene's list that exists; while one is still being checked, waits for it. */
+  private pickTrack(): void {
+    if (!this.ctx || !this.scene) return;
+    for (const s of MUSIC_FALLBACK[this.scene]) {
+      const t = this.track(s);
+      if (t.ok === null) return;
+      if (t.ok) return this.fadeTo(s);
+    }
+    this.fadeTo(null); // no file: the synthesised music in a heist, quiet elsewhere
+  }
+
+  private trackVolume(v: number): number {
+    return Math.max(0, Math.min(1, v * this.levels.master * this.levels.music));
+  }
+
+  /** Fades the playing track out and another in, over a second or so. */
+  private fadeTo(scene: MusicScene | null): void {
+    this.playing = scene;
+    window.clearInterval(this.fadeTimer);
+    this.fadeTimer = window.setInterval(() => {
+      let busy = false;
+      for (const [s, t] of this.tracks) {
+        const want = s === this.playing ? 1 : 0;
+        if (want && t.el.paused) void t.el.play().catch(() => {});
+        t.vol += Math.max(-0.05, Math.min(0.05, want - t.vol));
+        t.el.volume = this.trackVolume(t.vol);
+        if (!want && t.vol <= 0 && !t.el.paused) t.el.pause();
+        if (t.vol !== want) busy = true;
+      }
+      if (!busy) window.clearInterval(this.fadeTimer);
+    }, 50);
   }
 
   stop(): void {
@@ -148,7 +246,8 @@ export class Sound {
     const ctx = this.ctx;
     if (!ctx || !this.musicBus) return;
     while (this.nextAt < ctx.currentTime + 0.12) {
-      if (this.tension > 0) this.playEighth(this.nextAt, this.beat);
+      // The synthesised band plays in heists that have no music file.
+      if (this.tension > 0 && !this.playing && this.scene && HEIST_SCENES.includes(this.scene)) this.playEighth(this.nextAt, this.beat);
       const chase = this.tension === 3;
       const eighth = 60 / (chase ? BPM.chase : BPM.calm) / 2;
       // Swing: long-short eighths.
@@ -253,6 +352,21 @@ export class Sound {
         return this.tone(b, 'sine', 300, t + 0.18, 0.08, 0.2);
       case 'achievement':
         [84, 88, 91, 96].forEach((n, i) => this.tone(b, 'triangle', midi(n), t + i * 0.07, 0.4, 0.07));
+        return;
+      case 'tick':
+        // A counter clicking over.
+        this.tone(b, 'square', 1800, t, 0.03, 0.04);
+        return;
+      case 'coin':
+        // Two bright notes, like a coin into the bag.
+        this.tone(b, 'square', midi(88), t, 0.07, 0.05);
+        this.tone(b, 'square', midi(95), t + 0.06, 0.22, 0.05);
+        return;
+      case 'levelup':
+        // A rising arpeggio and a held major chord.
+        [72, 76, 79, 84, 88, 91].forEach((n, i) => this.tone(b, 'triangle', midi(n), t + i * 0.06, 0.35, 0.09));
+        [84, 88, 91, 96].forEach((n) => this.tone(b, 'sawtooth', midi(n), t + 0.4, 0.9, 0.025, undefined, 0.02));
+        this.hiss(b, t + 0.4, 0.6, 0.05, 'highpass', 6000);
         return;
     }
   }

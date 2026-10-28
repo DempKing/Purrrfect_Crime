@@ -59,7 +59,7 @@ src/core/      the rules, with no drawing: level parsing, movement and action po
                and patrols, the turn order, and a solver that searches every way a heist can go
 src/levels/    level maps (text grids) and guard routes
 src/render/    PixiJS isometric renderer: projection, rotating camera, grey-box art
-src/ui/        the menus, lair, briefing and reports (a 1960s caper look: see design §12.3)
+src/ui/        the menus, lair, planning board and reports (a cartoon caper look: see design §12.3)
 src/main.ts    input, animation, turn flow and the HUD
 tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 ```
@@ -73,10 +73,11 @@ tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 | [docs/ORIGINAL_BRIEF.md](docs/ORIGINAL_BRIEF.md) | The original pitch and decisions, word for word |
 | [art/README.md](art/README.md) | Where generated sprites go and how to upload them |
 
-## Fonts
+## Fonts and music
 
-Limelight, Special Elite, Oswald, Libre Franklin, UnifrakturMaguntia and Homemade Apple, all under the
-SIL Open Font License 1.1, bundled from Fontsource.
+Fonts: Luckiest Guy, Nunito, Patrick Hand, UnifrakturMaguntia and Homemade Apple, all under the SIL Open
+Font License 1.1, bundled from Fontsource. Music: see [art/music/README.md](art/music/README.md); each track's
+credit is listed in `art/music/credits.json` and shown in the end credits.
 
 ## Platforms
 

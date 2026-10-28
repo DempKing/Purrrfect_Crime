@@ -1,7 +1,7 @@
 // Builds the game into dist/: one self-contained index.html (script and styles inlined), so the
 // same file works on GitHub Pages, opened from disk, or wrapped by Electron later.
 import * as esbuild from 'esbuild';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -24,12 +24,11 @@ const result = await esbuild.build({
 const js = result.outputFiles[0].text.replace(/<\/script>/g, '<\\/script>');
 // The fonts (all SIL Open Font License), inlined so the game looks the same offline and in Electron.
 const FONTS = [
-  ['Limelight', 'limelight', [400]], // Art Deco headlines
-  ['Special Elite', 'special-elite', [400]], // the typewriter: case files, stamps, ledgers
-  ['Libre Franklin', 'libre-franklin', [400, 600, 800]], // reading text
-  ['Oswald', 'oswald', [500, 600]], // poster lettering: buttons, labels
+  ['Luckiest Guy', 'luckiest-guy', [400]], // chunky cartoon headlines and buttons
+  ['Nunito', 'nunito', [400, 600, 700, 800, 900]], // everything you read
+  ['Patrick Hand', 'patrick-hand', [400]], // notes on the planning board
   ['UnifrakturMaguntia', 'unifrakturmaguntia', [400]], // the newspaper's masthead
-  ['Homemade Apple', 'homemade-apple', [400]], // handwriting: NightClaw, the fence's prices
+  ['Homemade Apple', 'homemade-apple', [400]], // NightClaw's handwriting
 ];
 const fontFaces = FONTS.flatMap(([family, pkg, weights]) =>
   weights.map((w) => {
@@ -39,8 +38,16 @@ const fontFaces = FONTS.flatMap(([family, pkg, weights]) =>
   }),
 ).join('\n');
 const css = fontFaces + '\n' + readFileSync(join(root, 'src/styles.css'), 'utf8');
+// Music is too big to inline: the tracks in art/music/ ship beside the page, in dist/music/, with their credits.
+const music = join(root, 'art/music');
+const musicCredits = existsSync(join(music, 'credits.json')) ? JSON.parse(readFileSync(join(music, 'credits.json'), 'utf8')) : [];
+if (existsSync(music)) {
+  const tracks = readdirSync(music).filter((f) => /\.(mp3|ogg)$/.test(f));
+  if (tracks.length) mkdirSync(join(out, 'music'), { recursive: true });
+  for (const f of tracks) copyFileSync(join(music, f), join(out, 'music', f));
+}
 const html = readFileSync(join(root, 'index.html'), 'utf8')
   .replace('<!-- STYLES -->', () => `<style>\n${css}\n</style>`)
-  .replace('<!-- SCRIPT -->', () => `<script>${js}</script>`);
+  .replace('<!-- SCRIPT -->', () => `<script>window.MUSIC_CREDITS=${JSON.stringify(musicCredits)};</script><script>${js}</script>`);
 writeFileSync(join(out, 'index.html'), html);
 console.log(`Built dist/index.html (${Math.round(html.length / 1024)} KB)`);

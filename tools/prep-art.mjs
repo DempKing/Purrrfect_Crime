@@ -196,7 +196,7 @@ const PICTURES = [
   ...['clock', 'moon', 'pearl', 'prism', 'seed'].map((v) => [`win_leo_${v}`, 520]),
   ...['luna', 'mittens', 'sammy', 'prof'].map((r) => [`win_${r}_moon`, 520]),
   ...['leo', 'luna', 'mittens', 'sammy', 'prof'].map((c) => [`cat_${c}`, 300]),
-  ['legend_leo', 560], ['boss_nightclaw', 420],
+  ['legend_leo', 560], ['keyart', 1600], ['boss_nightclaw', 420],
   ...['decoy', 'smoke', 'emp', 'sardine', 'treat'].map((g) => [`g_${g}`, 64]),
   // Flat pieces for the heists: things that hang on walls, and the aquarium's tanks.
   ...['manor', 'museum', 'opera', 'rail', 'toy', 'aquarium', 'fish', 'lair', 'warehouse', 'lab'].map((w) => [`wd_${w}`, 210]),

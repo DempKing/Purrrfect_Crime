@@ -477,11 +477,47 @@ function walkTo(tile: Point, then?: () => void): void {
   });
 }
 
+let lastHaul = 0;
+
+/** Words that pop up off a tile and float away: a loot value, a crash, a lock giving. */
+function floatText(at: Point, text: string, cls = ''): void {
+  const p = world.toGlobal(project(view.proj, at.x + 0.5, at.y + 0.5, 60));
+  // Several at once stack upwards rather than on top of each other.
+  const stack = $('floaters').childElementCount;
+  p.y -= stack * 34;
+  const el = document.createElement('div');
+  el.className = `floater ${cls}`;
+  el.textContent = text;
+  el.style.left = `${p.x}px`;
+  el.style.top = `${p.y}px`;
+  $('floaters').appendChild(el);
+  window.setTimeout(() => el.remove(), 1900);
+}
+
+function shake(): void {
+  const st = $('stage');
+  st.classList.remove('shake');
+  void st.offsetWidth;
+  st.classList.add('shake');
+}
+
 function runAction(a: Action): void {
   if (busy || state.status !== 'playing') return;
   if (a.blocked) return say(a.blocked);
   state.log = [];
+  const invBefore = [...state.inventory];
   if (!doAction(level, state, a.kind, a.at)) return say('Leo can’t do that right now.');
+  // The payoff, right where it happened.
+  for (const li of state.inventory.filter((i) => !invBefore.includes(i))) {
+    const l = level.def.loot[li];
+    const centre = !!level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y;
+    floatText(l.at, `+$${l.value.toLocaleString('en-US')}`, centre ? 'big' : '');
+    sfx('coin');
+  }
+  if (a.kind === 'smash-case') {
+    floatText(a.at, 'CRASH!', 'red');
+    shake();
+  } else if ((a.kind === 'pick-case' || a.kind === 'pick-door' || a.kind === 'crack-safe') && state.inventory.length === invBefore.length) floatText(a.at, a.kind === 'crack-safe' ? 'clunk…' : 'click…', 'small');
   const actionSound: Partial<Record<Action['kind'], Sfx>> = {
     'pick-case': 'pick',
     'pick-door': 'pick',
@@ -617,7 +653,14 @@ function rivalPlanFor(def: LevelDef): RivalPlan | null {
 let rivalPlan: RivalPlan | null = null;
 let rivalWasIn = false;
 
+/** The heist report, with its own music. */
+function showReport(r: ReturnType<typeof completeHeist>): void {
+  sound.setScene('report');
+  screens.heistReport(r, profile, goOn);
+}
+
 function startHeist(def: LevelDef): void {
+  sound.setFinale(def.id.startsWith('nc-'));
   rivalPlan = rivalPlanFor(def);
   level = parseLevel(def);
   loadLootIcons(def.loot).catch((e) => console.error('Loot pictures failed', e));
@@ -643,7 +686,7 @@ function leaveHeist(): void {
   targeting = null;
   $('narrator').classList.add('hidden');
   document.body.classList.add('meta');
-  sound.setTension(1);
+  sound.setScene('lair');
 }
 
 // --- between heists ---------------------------------------------------------------------------
@@ -668,7 +711,7 @@ function ending(r: ReturnType<typeof completeHeist>): void {
       'He lifts his hat. “Goodnight, Leo. Legendary suits you.” And he’s gone, out of the belfry window, into the dark.',
     ],
     'Legendary?',
-    () => screens.legendaryCard(() => screens.credits(() => screens.newspaper(r.paper, true, () => screens.heistReport(r, profile, goOn)))),
+    () => screens.legendaryCard(() => screens.credits(() => screens.newspaper(r.paper, true, () => showReport(r)))),
     nc,
   );
 }
@@ -708,7 +751,39 @@ function cityMap(): void {
   });
 }
 
+const photos = new Map<string, Promise<string>>();
+
+/** A photo of a heist's building for the planning board: the game draws the level, from behind Leo, off screen. */
+function levelPhoto(def: LevelDef): Promise<string> {
+  const cached = photos.get(def.id);
+  if (cached) return cached;
+  const shot = (async () => {
+    await Promise.all([loadProps(), loadCharacters(), loadSurfaces(), loadFlats(), loadLootIcons(def.loot)]);
+    const lv = parseLevel(def);
+    const st = newHeist(lv, perksFor(profile), null);
+    const v = new HeistView();
+    let best = 0;
+    for (let k = 0; k < 4; k++) if (project({ angle: (k * Math.PI) / 2, cx: lv.w / 2, cy: lv.h / 2 }, st.leo.x + 0.5, st.leo.y + 0.5).depth > project({ angle: (best * Math.PI) / 2, cx: lv.w / 2, cy: lv.h / 2 }, st.leo.x + 0.5, st.leo.y + 0.5).depth) best = k;
+    v.proj = { angle: (best * Math.PI) / 2, cx: lv.w / 2, cy: lv.h / 2 };
+    v.time = 2;
+    const actor = (x: number, y: number, facing: number) => ({ x: x + 0.5, y: y + 0.5, facing, bob: 0 });
+    const none: Overlay = { reach1: new Set(), reach2: new Set(), vision: new Set(), cameraVision: new Set(), footprints: [], rivalPath: [], path: [], pathDanger: new Map(), hover: null, targets: new Set() };
+    v.draw(lv, st, none, actor(st.leo.x, st.leo.y, 2), st.guards.map((g) => actor(g.x, g.y, g.facing)), [], undefined);
+    const holder = new Container();
+    holder.addChild(v.root);
+    const b = holder.getLocalBounds();
+    v.root.scale.set(Math.min(1, 900 / b.width));
+    const url = await app.renderer.extract.base64({ target: holder, format: 'png' });
+    holder.destroy({ children: true });
+    return url;
+  })();
+  photos.set(def.id, shot);
+  shot.catch(() => photos.delete(def.id));
+  return shot;
+}
+
 function showLair(tab: screens.LairTab = 'heists'): void {
+  sound.setScene(tab === 'market' ? 'market' : 'lair');
   leaveHeist();
   // NightClaw's letters wait at the door until they've been read.
   deliverLetters(profile);
@@ -728,7 +803,7 @@ function showLair(tab: screens.LairTab = 'heists'): void {
     {
       jobs: JOBS,
       districts: DISTRICTS,
-      onHeist: (def) => screens.briefing(def, profile, rivalPlanFor(def), () => startHeist(def), () => showLair()),
+      onHeist: (def) => (sound.setScene('planning'), screens.briefing(def, profile, rivalPlanFor(def), () => startHeist(def), () => showLair(), levelPhoto(def))),
       onSell: (id) => {
         sell(profile, id);
         persist();
@@ -770,6 +845,7 @@ function quit(): void {
 
 function showTitle(): void {
   leaveHeist();
+  sound.setScene('title');
   screens.titleScreen(loadSlots(storage()), {
     onPlay: (i) => {
       const p = loadSlot(storage(), i);
@@ -793,6 +869,7 @@ function showTitle(): void {
 }
 
 function restart(): void {
+  lastHaul = 0;
   closeLootMenu();
   state = newHeist(level, perksFor(profile), rivalPlan);
   rivalWasIn = false;
@@ -841,7 +918,9 @@ function updateHud(): void {
   $('turn').textContent = String(state.turn);
   $('ap').innerHTML = Array.from({ length: AP_PER_TURN }, (_, i) => `<span class="pip ${i < state.ap ? 'on' : ''}"></span>`).join('');
   const extras = [state.card === 'leo' ? 'keycard' : '', state.combination ? 'the combination' : ''].filter(Boolean).join(', ');
-  $('inventory').innerHTML = `Inventory <b>${inventoryUsed(level, state)}/${state.perks.spaces}</b> · ${money(inventoryValue(level, state))}${extras ? ` · ${extras}` : ''}`;
+  const haulNow = inventoryValue(level, state);
+  $('inventory').innerHTML = `Inventory <b>${inventoryUsed(level, state)}/${state.perks.spaces}</b> · <span class="haul-now${haulNow > lastHaul ? ' bump' : ''}">${money(haulNow)}</span>${extras ? ` · ${extras}` : ''}`;
+  lastHaul = haulNow;
   // The race, if there is one. Before they arrive, only a good Planning Table says when.
   const r = state.rival;
   const rl = $('rival');
@@ -879,7 +958,7 @@ function updateHud(): void {
   } else hide('alarm');
   ($('end') as HTMLButtonElement).disabled = busy || state.status !== 'playing';
   const tension: Tension = state.status !== 'playing' ? 1 : state.alarm !== null ? 3 : state.guards.some((g) => !g.asleep && g.mode !== 'patrol') ? 2 : 1;
-  sound.setTension(tension);
+  if (inHeist) sound.setTension(tension);
 
   // Gadgets and active skills, with what's left of each.
   const ab = $('abilities');
@@ -940,7 +1019,7 @@ function escaped(): void {
     if (level.def.finale && done.tagged && !profile.legendary) return ending(report());
     screens.callingCard(() => {
       const r = report();
-      screens.newspaper(r.paper, true, () => screens.heistReport(r, profile, goOn));
+      screens.newspaper(r.paper, true, () => showReport(r));
     });
   }, 500);
 }
@@ -980,6 +1059,7 @@ const world = new Container();
 
 async function boot(): Promise<void> {
   await app.init({ resizeTo: window, background: 0x0a0c18, antialias: true, resolution: Math.min(2, window.devicePixelRatio || 1), autoDensity: true });
+  screens.setScreenSound((n) => sound.play(n));
   Promise.all([loadProps(), loadCharacters(), loadSurfaces(), loadFlats()]).catch((e) => console.error('Sprites failed to load', e));
   $('stage').appendChild(app.canvas);
   world.addChild(view.root);

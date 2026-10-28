@@ -602,26 +602,29 @@ figurines in jade, gold or silver...). Paintings uploaded under the names in `ar
 
 ### 12.3 Menus and the lair as built
 
-The menus look like props from a 1960s caper film, printed and handled, not like an app: paper grain,
-hard offset shadows, rubber stamps, things pinned slightly crooked. No glass panels, gradients-as-decor,
-rounded cards or emoji.
+A Saturday-morning cartoon caper, not a noir: thick ink outlines, flat saturated colour on a deep purple
+and blue night, hard comic shadows, chunky lettering (Luckiest Guy) and friendly reading type (Nunito),
+with notes in a marker hand (Patrick Hand). Results are stickers, not rubber stamps.
 
-- **Title:** a heist poster: a sunburst, the moon, a skyline and Leo on a ledge, with the Limelight logo.
-  Save slots are luggage tags.
-- **City map:** a printed street map, with the next job marked in red pencil.
-- **Lair:** a desk. A polaroid of the hideout, a brass nameplate and a stats card, then folder tabs:
-  heists are ruled index cards pinned to cork, stamped *Flawless* or *Cleared*; Leo is a police dossier
-  with a mugshot; the black market is the fence's ledger, with prices typed in blue; the lair rooms are
-  a blueprint; the letters are sealed envelopes; the front pages are clippings taped to cork.
-- **Briefing:** a case file with a sticky note and the floor plan as a blueprint. **Report:** a typed form
-  with a result stamp. **Caught:** a *Busted* stamp. **Letters:** handwriting. **Achievements:** telegrams.
-- **Illustrations** from the art: the heist report has a snapshot of Leo on the rooftop with the prize (a
-  clock, moon, pearl, prism or golden seed, by what the prize is), or the rival who beat him to it; Leo's
-  dossier has his mugshot in black and white; a rival on the rumour board has theirs; NightClaw speaks with his
-  portrait; the Legendary certificate has Leo enthroned; some gadgets have icons on their buttons.
-- **Fonts** (all SIL Open Font License, bundled into the page through Fontsource): Limelight (display),
-  Special Elite (typewriter), Oswald (poster labels and buttons), Libre Franklin (body text),
-  UnifrakturMaguntia (newspaper masthead) and Homemade Apple (handwriting).
+- **Title:** the crew key art behind the logo and the save slots.
+- **Lair:** heists as cards pinned to a green board, Leo's file, the fence's book, the lair's blueprint, the
+  letters and the front pages, each on its own coloured tab.
+- **Planning board** (before a heist): a cork board with a photo of the building (the game draws the actual
+  level, from behind Leo), a polaroid of the prize and its value, the floor plan, sticky notes for the plan
+  and the tips, a mugshot card for every guard with what they're like (and their beat, with a good Planning
+  Table), the rumour about rivals, the other loot worth a look, and red string between the clues. What's on
+  it grows with the Planning Table.
+- **Heist report:** a score screen that plays out. Each XP line slides in and counts up into the total, the
+  level badge's bar fills from where Leo was, and every level crossed bursts with confetti and a fanfare;
+  then the haul drops in piece by piece with its value rolling up. A click skips to the end.
+- **In a heist:** loot values pop off the case when Leo takes something ("+$5,200", bigger for the
+  centrepiece), a smash says CRASH! and shakes the screen, a lock that needs another go says "click…", and
+  the haul in the corner bumps up.
+- **Music:** a track per screen (title, lair, black market, planning board, heist, suspicious, alarm,
+  report, NightClaw), crossfading as you move between them; see `art/music/README.md`. Without a file,
+  heists fall back to the synthesised band.
+- **Fonts** (SIL Open Font License, bundled through Fontsource): Luckiest Guy, Nunito, Patrick Hand,
+  UnifrakturMaguntia (newspaper masthead) and Homemade Apple (NightClaw's letters).
 
 ## 13. Tech plan
 
