@@ -10,6 +10,7 @@ import { ACHIEVEMENTS, type Achievement } from '../meta/achievements';
 import type { Settings } from '../settings';
 import { MASTHEAD } from '../meta/newspaper';
 import { lootPictureUrl } from '../render/characters';
+import { LEGEND_PICTURE, NIGHTCLAW_PICTURE, portrait, rivalRooftop, rooftopPicture } from './pictures';
 import {
   LAIR_PRICE,
   DEMAND_BONUS,
@@ -105,24 +106,8 @@ export const NARRATOR_SVG = `<svg class="portrait" viewBox="0 0 64 64" aria-hidd
   <path d="M10 40 L22 41 M10 45 L22 43 M54 40 L42 41 M54 45 L42 43" stroke="#d8dbe2" stroke-width="1"/>
 </svg>`;
 
-/** NightClaw: an old black cat in a top hat, grey at the muzzle, a monocle over one gold eye. */
-export const NIGHTCLAW_SVG = `<svg class="portrait" viewBox="0 0 64 64" aria-hidden="true">
-  <circle cx="32" cy="36" r="21" fill="#16161c"/><path d="M14 26 L16 8 L27 19Z M50 26 L48 8 L37 19Z" fill="#16161c"/>
-  <ellipse cx="32" cy="16" rx="22" ry="4" fill="#0a0a10"/><rect x="20" y="0" width="24" height="16" fill="#0a0a10"/><rect x="20" y="11" width="24" height="3" fill="#6b2a5a"/>
-  <ellipse cx="24" cy="34" rx="3.5" ry="3" fill="#f2c46b"/><ellipse cx="40" cy="34" rx="3.5" ry="3" fill="#f2c46b"/>
-  <circle cx="40" cy="34" r="6.5" fill="none" stroke="#d9b36c" stroke-width="1.5"/><path d="M46 35 Q49 42 47 48" stroke="#d9b36c" fill="none"/>
-  <ellipse cx="32" cy="45" rx="8" ry="5" fill="#8a8f9c"/><path d="M29 42 L35 42 L32 45Z" fill="#2a1a22"/>
-  <path d="M10 42 L24 43 M10 47 L24 45 M54 42 L40 43 M54 47 L40 45" stroke="#d8dbe2" stroke-width="1"/>
-</svg>`;
-
-/** Leo's mugshot: a black cat in a white shirt front and a red bow tie. */
-const LEO_SVG = `<svg viewBox="0 0 64 64" aria-hidden="true">
-  <path d="M12 64 C12 46 20 40 32 40 C44 40 52 46 52 64Z" fill="#15151b"/><path d="M26 40 L32 64 L38 40Z" fill="#efe5cc"/>
-  <path d="M23 44 L32 48 L23 52Z M41 44 L32 48 L41 52Z" fill="#b3261e"/><circle cx="32" cy="48" r="2.5" fill="#7d1a15"/>
-  <circle cx="32" cy="27" r="15" fill="#15151b"/><path d="M18 22 L16 4 L28 14Z M46 22 L48 4 L36 14Z" fill="#15151b"/>
-  <ellipse cx="26" cy="26" rx="3" ry="3.6" fill="#e9c46a"/><ellipse cx="38" cy="26" rx="3" ry="3.6" fill="#e9c46a"/>
-  <path d="M29 33 L35 33 L32 36Z" fill="#c98a8f"/><path d="M14 33 L26 34 M14 37 L26 36 M50 33 L38 34 M50 37 L38 36" stroke="#cfc8b8" stroke-width="0.8"/>
-</svg>`;
+/** NightClaw's portrait, for when he speaks. */
+export const NIGHTCLAW_SVG = `<img class="portrait" src="${NIGHTCLAW_PICTURE}" alt="">`;
 
 /** Leo's calling card: white, with his red bow tie. */
 const CARD_SVG = `<svg viewBox="0 0 120 76" class="card-svg" aria-hidden="true">
@@ -289,7 +274,7 @@ export function narratorScene(lines: string[], last: string, done: () => void, s
 
 export function legendaryCard(done: () => void): void {
   const el = show(
-    `<div class="legendary certificate"><p class="cert-small">Let it be known that NightClaw names his successor</p><h1>Leo Tuxedo</h1><p class="legend-title">Legendary</p>
+    `<div class="legendary certificate"><img class="cert-portrait" src="${LEGEND_PICTURE}" alt=""><p class="cert-small">Let it be known that NightClaw names his successor</p><h1>Leo Tuxedo</h1><p class="legend-title">Legendary</p>
       <p>The best thief this city has ever seen. Well, the best one still working.</p>
       <p class="cert-sign">NightClaw</p>
       <div class="row-buttons"><button id="legend-ok" class="primary">Roll the credits</button></div></div>`,
@@ -361,6 +346,14 @@ function lootPic(name: string): string {
   return url ? `<img class="loot-pic" src="${url}" alt="">` : '';
 }
 
+/** The night's snapshot: Leo on the rooftop with the prize, or the rival who beat him to it. */
+function reportPhoto(r: HeistReport): string {
+  const prize = r.items.find((i) => i.centrepiece);
+  if (r.rival && !r.rival.won) return `<figure class="report-photo"><img src="${rivalRooftop(r.rival.id)}" alt=""><figcaption>${esc(RIVALS[r.rival.id].name)}, with the prize. Next time.</figcaption></figure>`;
+  if (!prize) return '';
+  return `<figure class="report-photo"><img src="${rooftopPicture(prize.name)}" alt=""><figcaption>Leo and ${the(esc(prize.name))}, on the rooftop</figcaption></figure>`;
+}
+
 export function heistReport(r: HeistReport, p: Profile, done: () => void): void {
   const lvl = playerLevel(p.xp);
   const into = p.xp - xpForLevel(lvl);
@@ -369,6 +362,7 @@ export function heistReport(r: HeistReport, p: Profile, done: () => void): void 
     `<div class="sheet report">
       <p class="form-head"><span>Heist report</span><span>Day ${r.paper.day}</span></p>
       <h1>${esc(r.levelName)}</h1>
+      ${reportPhoto(r)}
       <p class="report-result">${r.flawless ? '<span class="stamp blue">Flawless</span>' : '<span class="stamp">Got away</span>'} <span>${r.turns} turns</span></p>
       <table class="xp">${r.xp.map((l) => `<tr><td>${esc(l.label)}</td><td>+${l.amount} XP</td></tr>`).join('')}
         <tr class="total"><td>Total</td><td>+${r.xpTotal} XP</td></tr></table>
@@ -554,7 +548,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     .join('');
   const leo = `
     <div class="dossier-head">
-      <div class="mugshot">${LEO_SVG}<span class="mug-board">L. TUXEDO · ${String(lvl).padStart(2, '0')}</span></div>
+      <div class="mugshot"><img src="${portrait('leo')}" alt="Leo Tuxedo's mugshot"><span class="mug-board">L. TUXEDO · ${String(lvl).padStart(2, '0')}</span></div>
       <dl class="typed facts-sheet">
         <dt>Subject</dt><dd>Leo Tuxedo</dd>
         <dt>Known as</dt><dd>${p.legendary ? 'Legendary' : 'The tuxedo cat'}</dd>
@@ -728,7 +722,7 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
     tier < 1
       ? ''
       : rival
-        ? `<p class="rumour"><b>Rumour board:</b> word is ${esc(RIVALS[rival.id].name)} has an eye on ${the(esc(centre))} tonight.${tier >= 2 && entrance ? ` They’ll come in on turn ${rival.arrive}, by the spot marked R.` : ' A better Planning Table would tell you when, and where they’ll come in.'} Get it first.</p>`
+        ? `<p class="rumour"><img class="rival-mug" src="${portrait(rival.id)}" alt=""><b>Rumour board:</b> word is ${esc(RIVALS[rival.id].name)} has an eye on ${the(esc(centre))} tonight.${tier >= 2 && entrance ? ` They’ll come in on turn ${rival.arrive}, by the spot marked R.` : ' A better Planning Table would tell you when, and where they’ll come in.'} Get it first.</p>`
         : '<p class="small"><b>Rumour board:</b> no rival thieves are after this one.</p>';
   const plan = tier
     ? `<svg class="plan" viewBox="0 0 ${level.w * S} ${level.h * S}">${cells.join('')}${marks.join('')}</svg>
