@@ -23,10 +23,17 @@ art/props/        display cases, plinths, paintings, furniture
 art/loot/         item icons, in-world sprites, newspaper photos
 art/security/     cameras, lasers, plates, panels, vault doors
 art/screens/      city map, lair stages, newspaper, letters, ending art
+art/models/       3D models (.glb), rendered into sprites
 ```
 
 ## Uploading
 
-On github.com, open this repository and use **Add file → Upload files**. GitHub takes up to 100 files and
-25 MB per file per upload, so a big set goes up in a few rounds. Zips are fine too (keep each under
-25 MB); they'll be unpacked into the folders above.
+The web uploader takes at most 100 files at a time, and 25 MB per file. For a big set:
+
+- **Zip it.** Put the files in a few zips of up to 25 MB each and upload the zips; they'll be unpacked into
+  the folders above. Open a folder first (for example `art/models/`) so the files land there.
+- At the bottom of the upload page, choose **Commit directly to the main branch**. The other option makes a
+  side branch and a pull request, and nothing reaches the game until that's merged.
+- For hundreds of files, GitHub Desktop (or `git push`) has no file-count limit, and allows up to 100 MB per file.
+
+`art/models/` holds 3D models (`.glb`); they're rendered into isometric sprites from four angles.
