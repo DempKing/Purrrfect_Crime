@@ -582,6 +582,10 @@ rounded cards or emoji.
   a blueprint; the letters are sealed envelopes; the front pages are clippings taped to cork.
 - **Briefing:** a case file with a sticky note and the floor plan as a blueprint. **Report:** a typed form
   with a result stamp. **Caught:** a *Busted* stamp. **Letters:** handwriting. **Achievements:** telegrams.
+- **Illustrations** from the art: the heist report has a snapshot of Leo on the rooftop with the prize (a
+  clock, moon, pearl, prism or golden seed, by what the prize is), or the rival who beat him to it; Leo's
+  dossier has his mugshot in black and white; a rival on the rumour board has theirs; NightClaw speaks with his
+  portrait; the Legendary certificate has Leo enthroned; some gadgets have icons on their buttons.
 - **Fonts** (all SIL Open Font License, bundled into the page through Fontsource): Limelight (display),
   Special Elite (typewriter), Oswald (poster labels and buttons), Libre Franklin (body text),
   UnifrakturMaguntia (newspaper masthead) and Homemade Apple (handwriting).

@@ -47,6 +47,7 @@ import { deliverLetters } from './meta/letters';
 import { TUTORIAL, advance, type TutorialEvents } from './meta/tutorial';
 import * as screens from './ui/screens';
 import { loadCharacters } from './render/characters';
+import { ABILITY_ICONS } from './ui/pictures';
 import { loadProps } from './render/props';
 import { loadSurfaces } from './render/surfaces';
 import { HeistView, setPalette, type Actor, type Gait, type Overlay, type Ripple } from './render/view';
@@ -718,7 +719,8 @@ function updateHud(): void {
     b.dataset.ability = a.kind;
     b.disabled = busy || (!!a.blocked && targeting !== a.kind);
     b.title = a.blocked ?? `${a.ap} action point`;
-    b.innerHTML = `${a.name}${a.left < 99 ? ` <span class="count">×${a.left}</span>` : ''}`;
+    const icon = ABILITY_ICONS[a.kind];
+    b.innerHTML = `${icon ? `<img class="ab-icon" src="${icon}" alt="">` : ''}${a.name}${a.left < 99 ? ` <span class="count">×${a.left}</span>` : ''}`;
     b.addEventListener('click', () => startAbility(a.kind));
     ab.appendChild(b);
   }

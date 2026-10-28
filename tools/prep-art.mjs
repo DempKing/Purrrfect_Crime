@@ -165,5 +165,22 @@ for (const name of TEXTURES) {
   save(join(root, 'art/sprites/tex', `${name}.webp`), await page.evaluate((a) => window.resize(...a), [url, 0, 0, b.w, b.h, 256, 256]));
 }
 console.log(`textures: ${TEXTURES.length}`);
+
+// Illustrations for the menus, scaled to fit their spot: [file, longest side in pixels].
+const PICTURES = [
+  ...['clock', 'moon', 'pearl', 'prism', 'seed'].map((v) => [`win_leo_${v}`, 520]),
+  ...['luna', 'mittens', 'sammy', 'prof'].map((r) => [`win_${r}_moon`, 520]),
+  ...['leo', 'luna', 'mittens', 'sammy', 'prof'].map((c) => [`cat_${c}`, 300]),
+  ['legend_leo', 560], ['boss_nightclaw', 420],
+  ...['decoy', 'smoke', 'emp', 'sardine', 'treat'].map((g) => [`g_${g}`, 64]),
+];
+mkdirSync(join(root, 'art/sprites/pics'), { recursive: true });
+for (const [name, size] of PICTURES) {
+  const url = dataUrl(join(src, `${name}.webp`));
+  const b = await page.evaluate((u) => window.measure(u), url);
+  const k = size / Math.max(b.w, b.h);
+  save(join(root, 'art/sprites/pics', `${name}.webp`), await page.evaluate((a) => window.resize(...a), [url, 0, 0, b.w, b.h, Math.round(b.w * k), Math.round(b.h * k)]));
+}
+console.log(`pictures: ${PICTURES.length}`);
 writeFileSync(join(root, 'art/sprites/chars.json'), JSON.stringify({ scale: SCALE, chars, loot }, null, 1) + '\n');
 await browser.close();
