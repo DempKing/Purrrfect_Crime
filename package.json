@@ -21,8 +21,10 @@
     "@fontsource/special-elite": "5.3.0",
     "@fontsource/unifrakturmaguntia": "5.3.0",
     "@types/node": "22.15.0",
+    "@types/three": "0.170.0",
     "esbuild": "0.24.2",
     "pixi.js": "8.21.0",
+    "three": "0.170.0",
     "typescript": "5.9.3"
   }
 }

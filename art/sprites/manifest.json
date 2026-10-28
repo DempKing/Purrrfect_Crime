@@ -1,0 +1,1302 @@
+{
+ "ClassicConsole_01": {
+  "w": 142,
+  "h": 147,
+  "ax": 71,
+  "ay": 107.4,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.95,
+   "d": 0.36,
+   "h": 34
+  }
+ },
+ "CoffeeCart_01": {
+  "w": 243,
+  "h": 277,
+  "ax": 121.3,
+  "ay": 213,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.6,
+   "d": 0.79,
+   "h": 75
+  }
+ },
+ "GothicCabinet_01": {
+  "w": 231,
+  "h": 344,
+  "ax": 115.4,
+  "ay": 283,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.38,
+   "d": 0.89,
+   "h": 111
+  }
+ },
+ "Lantern_01": {
+  "w": 30,
+  "h": 50,
+  "ax": 14.9,
+  "ay": 38.4,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.1,
+   "d": 0.08,
+   "h": 14
+  }
+ },
+ "Shelf_01": {
+  "w": 122,
+  "h": 264,
+  "ax": 61,
+  "ay": 229.4,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.8,
+   "d": 0.21,
+   "h": 98
+  }
+ },
+ "Sofa_01": {
+  "w": 185,
+  "h": 174,
+  "ax": 92.1,
+  "ay": 124.2,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.26,
+   "d": 0.53,
+   "h": 37
+  }
+ },
+ "Ukulele_01": {
+  "w": 33,
+  "h": 73,
+  "ax": 16.2,
+  "ay": 60.9,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.14,
+   "d": 0.04,
+   "h": 25
+  }
+ },
+ "WetFloorSign_01": {
+  "w": 64,
+  "h": 98,
+  "ax": 31.8,
+  "ay": 78.4,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.24,
+   "d": 0.29,
+   "h": 30
+  }
+ },
+ "WoodenTable_02": {
+  "w": 60,
+  "h": 76,
+  "ax": 29.6,
+  "ay": 57.3,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.24,
+   "d": 0.24,
+   "h": 20
+  }
+ },
+ "classic_laptop": {
+  "w": 101,
+  "h": 108,
+  "ax": 50.2,
+  "ay": 79.4,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.52,
+   "d": 0.39,
+   "h": 26
+  }
+ },
+ "coffee_table_round_01": {
+  "w": 213,
+  "h": 160,
+  "ax": 106.4,
+  "ay": 102.7,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.04,
+   "d": 1.04,
+   "h": 23
+  }
+ },
+ "concrete_cat_statue": {
+  "w": 44,
+  "h": 56,
+  "ax": 22,
+  "ay": 40.9,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.12,
+   "d": 0.2,
+   "h": 13
+  }
+ },
+ "concrete_road_barrier": {
+  "w": 181,
+  "h": 176,
+  "ax": 90.4,
+  "ay": 126.6,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.24,
+   "d": 0.51,
+   "h": 39
+  }
+ },
+ "covered_car": {
+  "w": 231,
+  "h": 183,
+  "ax": 115.1,
+  "ay": 121.4,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.65,
+   "d": 1.6,
+   "h": 30
+  }
+ },
+ "croissant": {
+  "w": 35,
+  "h": 30,
+  "ax": 17.4,
+  "ay": 17.8,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.16,
+   "d": 0.06,
+   "h": 3
+  }
+ },
+ "dining_chair_02": {
+  "w": 91,
+  "h": 144,
+  "ax": 45.3,
+  "ay": 117.5,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.35,
+   "d": 0.46,
+   "h": 46
+  }
+ },
+ "dining_table": {
+  "w": 262,
+  "h": 211,
+  "ax": 130.6,
+  "ay": 141.7,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.6,
+   "d": 0.99,
+   "h": 37
+  }
+ },
+ "drawer_cabinet": {
+  "w": 139,
+  "h": 253,
+  "ax": 69.1,
+  "ay": 214.7,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.91,
+   "d": 0.39,
+   "h": 88
+  }
+ },
+ "drill_press_01": {
+  "w": 87,
+  "h": 135,
+  "ax": 43.1,
+  "ay": 109.6,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.28,
+   "d": 0.48,
+   "h": 42
+  }
+ },
+ "exterior_aircon_unit": {
+  "w": 209,
+  "h": 199,
+  "ax": 104.3,
+  "ay": 142.7,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.44,
+   "d": 0.3,
+   "h": 44
+  }
+ },
+ "fancy_picture_frame_01": {
+  "w": 129,
+  "h": 181,
+  "ax": 64.2,
+  "ay": 173.8,
+  "scale": 2,
+  "mount": "wall",
+  "size": {
+   "w": 0.85,
+   "d": 0.03,
+   "h": 38
+  }
+ },
+ "fancy_picture_frame_02": {
+  "w": 129,
+  "h": 201,
+  "ax": 64.2,
+  "ay": 193.7,
+  "scale": 2,
+  "mount": "wall",
+  "size": {
+   "w": 0.85,
+   "d": 0.11,
+   "h": 58
+  }
+ },
+ "fire_alarm": {
+  "w": 65,
+  "h": 168,
+  "ax": 32.2,
+  "ay": 161.1,
+  "scale": 2,
+  "mount": "wall",
+  "size": {
+   "w": 0.35,
+   "d": 0.09,
+   "h": 30
+  }
+ },
+ "fire_hydrant": {
+  "w": 108,
+  "h": 136,
+  "ax": 54,
+  "ay": 105.4,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.7,
+   "d": 0.25,
+   "h": 38
+  }
+ },
+ "garden_gnome": {
+  "w": 49,
+  "h": 88,
+  "ax": 24.5,
+  "ay": 71.8,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.21,
+   "d": 0.17,
+   "h": 28
+  }
+ },
+ "gothic_coffee_table": {
+  "w": 235,
+  "h": 177,
+  "ax": 117.3,
+  "ay": 114.5,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.15,
+   "d": 1.15,
+   "h": 26
+  }
+ },
+ "gothic_statue": {
+  "w": 247,
+  "h": 294,
+  "ax": 123.3,
+  "ay": 228.6,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.18,
+   "d": 1.25,
+   "h": 82
+  }
+ },
+ "hand_truck": {
+  "w": 112,
+  "h": 195,
+  "ax": 55.9,
+  "ay": 163.1,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.47,
+   "d": 0.55,
+   "h": 66
+  }
+ },
+ "hanging_picture_frame_01": {
+  "w": 129,
+  "h": 213,
+  "ax": 64.2,
+  "ay": 206.1,
+  "scale": 2,
+  "mount": "wall",
+  "size": {
+   "w": 0.85,
+   "d": 0.02,
+   "h": 71
+  }
+ },
+ "horse_statue_01": {
+  "w": 34,
+  "h": 45,
+  "ax": 17,
+  "ay": 32.6,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.13,
+   "d": 0.09,
+   "h": 10
+  }
+ },
+ "industrial_microscope": {
+  "w": 68,
+  "h": 84,
+  "ax": 33.9,
+  "ay": 63.6,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.17,
+   "d": 0.4,
+   "h": 22
+  }
+ },
+ "industrial_pastic_container": {
+  "w": 97,
+  "h": 95,
+  "ax": 48.3,
+  "ay": 66.8,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.37,
+   "d": 0.51,
+   "h": 20
+  }
+ },
+ "industrial_storage_cart": {
+  "w": 221,
+  "h": 247,
+  "ax": 110.4,
+  "ay": 188,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.28,
+   "d": 0.88,
+   "h": 65
+  }
+ },
+ "island_tree_01": {
+  "w": 318,
+  "h": 362,
+  "ax": 158.8,
+  "ay": 278.8,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.57,
+   "d": 1.6,
+   "h": 98
+  }
+ },
+ "korean_fire_extinguisher_01": {
+  "w": 63,
+  "h": 100,
+  "ax": 31.4,
+  "ay": 80.9,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.22,
+   "d": 0.29,
+   "h": 31
+  }
+ },
+ "lambis_shell": {
+  "w": 30,
+  "h": 26,
+  "ax": 14.7,
+  "ay": 15,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.11,
+   "d": 0.06,
+   "h": 2
+  }
+ },
+ "lifebuoy": {
+  "w": 129,
+  "h": 192,
+  "ax": 64.2,
+  "ay": 185,
+  "scale": 2,
+  "mount": "wall",
+  "size": {
+   "w": 0.85,
+   "d": 0.17,
+   "h": 54
+  }
+ },
+ "lion_head": {
+  "w": 54,
+  "h": 75,
+  "ax": 26.8,
+  "ay": 57.7,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.26,
+   "d": 0.17,
+   "h": 21
+  }
+ },
+ "mantel_clock_01": {
+  "w": 51,
+  "h": 47,
+  "ax": 25.1,
+  "ay": 30.9,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.27,
+   "d": 0.1,
+   "h": 8
+  }
+ },
+ "marble_bust_01": {
+  "w": 57,
+  "h": 84,
+  "ax": 28.4,
+  "ay": 65.9,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.22,
+   "d": 0.24,
+   "h": 24
+  }
+ },
+ "medical_box": {
+  "w": 81,
+  "h": 56,
+  "ax": 40.1,
+  "ay": 32.5,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.42,
+   "d": 0.28,
+   "h": 5
+  }
+ },
+ "metal_jerrycan": {
+  "w": 54,
+  "h": 76,
+  "ax": 26.5,
+  "ay": 59.3,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.28,
+   "d": 0.14,
+   "h": 21
+  }
+ },
+ "metal_office_desk": {
+  "w": 148,
+  "h": 125,
+  "ax": 73.7,
+  "ay": 84.1,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.95,
+   "d": 0.45,
+   "h": 22
+  }
+ },
+ "metal_tool_chest": {
+  "w": 97,
+  "h": 117,
+  "ax": 48.5,
+  "ay": 88.8,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.55,
+   "d": 0.33,
+   "h": 31
+  }
+ },
+ "metal_toolbox": {
+  "w": 65,
+  "h": 68,
+  "ax": 32.2,
+  "ay": 48,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.32,
+   "d": 0.22,
+   "h": 14
+  }
+ },
+ "metal_trash_can": {
+  "w": 226,
+  "h": 233,
+  "ax": 112.6,
+  "ay": 173.4,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.56,
+   "d": 0.45,
+   "h": 57
+  }
+ },
+ "modular_street_seating": {
+  "w": 231,
+  "h": 163,
+  "ax": 115.1,
+  "ay": 102,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.6,
+   "d": 0.28,
+   "h": 21
+  }
+ },
+ "old_military_compressor": {
+  "w": 195,
+  "h": 215,
+  "ax": 97.5,
+  "ay": 162.9,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.48,
+   "d": 1.34,
+   "h": 55
+  }
+ },
+ "old_military_crate": {
+  "w": 228,
+  "h": 149,
+  "ax": 113.7,
+  "ay": 88.4,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.45,
+   "d": 0.78,
+   "h": 14
+  }
+ },
+ "old_tyre": {
+  "w": 79,
+  "h": 103,
+  "ax": 39.1,
+  "ay": 79.2,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.48,
+   "d": 0.13,
+   "h": 28
+  }
+ },
+ "ornate_mirror_01": {
+  "w": 119,
+  "h": 206,
+  "ax": 59.3,
+  "ay": 194.9,
+  "scale": 2,
+  "mount": "wall",
+  "size": {
+   "w": 0.78,
+   "d": 0.04,
+   "h": 70
+  }
+ },
+ "painted_wooden_bench": {
+  "w": 141,
+  "h": 161,
+  "ax": 70.3,
+  "ay": 122.1,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.93,
+   "d": 0.4,
+   "h": 42
+  }
+ },
+ "painted_wooden_cabinet": {
+  "w": 153,
+  "h": 194,
+  "ax": 76.1,
+  "ay": 152.4,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.96,
+   "d": 0.49,
+   "h": 56
+  }
+ },
+ "painted_wooden_shelves": {
+  "w": 81,
+  "h": 153,
+  "ax": 40.2,
+  "ay": 129.2,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.41,
+   "d": 0.29,
+   "h": 53
+  }
+ },
+ "painted_wooden_table": {
+  "w": 240,
+  "h": 202,
+  "ax": 119.6,
+  "ay": 138,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.6,
+   "d": 0.76,
+   "h": 37
+  }
+ },
+ "planter_box_01": {
+  "w": 115,
+  "h": 104,
+  "ax": 57.4,
+  "ay": 71.9,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.73,
+   "d": 0.33,
+   "h": 20
+  }
+ },
+ "planter_box_02": {
+  "w": 149,
+  "h": 124,
+  "ax": 74.5,
+  "ay": 83.1,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1,
+   "d": 0.37,
+   "h": 21
+  }
+ },
+ "plastic_bottle_gallon": {
+  "w": 36,
+  "h": 51,
+  "ax": 17.7,
+  "ay": 37.9,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.13,
+   "d": 0.1,
+   "h": 13
+  }
+ },
+ "plastic_crate_03": {
+  "w": 71,
+  "h": 67,
+  "ax": 35.1,
+  "ay": 45.8,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.38,
+   "d": 0.21,
+   "h": 13
+  }
+ },
+ "portable_generator": {
+  "w": 120,
+  "h": 121,
+  "ax": 59.6,
+  "ay": 87.3,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.65,
+   "d": 0.45,
+   "h": 27
+  }
+ },
+ "potted_plant_01": {
+  "w": 107,
+  "h": 187,
+  "ax": 53.4,
+  "ay": 156.9,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.47,
+   "d": 0.51,
+   "h": 63
+  }
+ },
+ "potted_plant_02": {
+  "w": 118,
+  "h": 145,
+  "ax": 58.7,
+  "ay": 111.7,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.56,
+   "d": 0.53,
+   "h": 40
+  }
+ },
+ "power_box_01": {
+  "w": 226,
+  "h": 195,
+  "ax": 112.6,
+  "ay": 185.4,
+  "scale": 2,
+  "mount": "wall",
+  "size": {
+   "w": 0.65,
+   "d": 0.78,
+   "h": 38
+  }
+ },
+ "propane_tank": {
+  "w": 65,
+  "h": 92,
+  "ax": 32.4,
+  "ay": 71.5,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.27,
+   "d": 0.27,
+   "h": 26
+  }
+ },
+ "retro_multimeter": {
+  "w": 46,
+  "h": 56,
+  "ax": 22.6,
+  "ay": 40.7,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.17,
+   "d": 0.16,
+   "h": 13
+  }
+ },
+ "round_wooden_table_01": {
+  "w": 228,
+  "h": 216,
+  "ax": 114,
+  "ay": 154.8,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.12,
+   "d": 1.12,
+   "h": 47
+  }
+ },
+ "rubber_duck_toy": {
+  "w": 53,
+  "h": 60,
+  "ax": 26.2,
+  "ay": 43.2,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.17,
+   "d": 0.24,
+   "h": 13
+  }
+ },
+ "security_camera_01": {
+  "w": 95,
+  "h": 91,
+  "ax": 47.2,
+  "ay": 63.3,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.18,
+   "d": 0.6,
+   "h": 18
+  }
+ },
+ "shrub_01": {
+  "w": 231,
+  "h": 151,
+  "ax": 115.1,
+  "ay": 89.6,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.6,
+   "d": 0.14,
+   "h": 14
+  }
+ },
+ "shrub_02": {
+  "w": 231,
+  "h": 239,
+  "ax": 115.1,
+  "ay": 177.9,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.6,
+   "d": 0.65,
+   "h": 59
+  }
+ },
+ "shrub_04": {
+  "w": 77,
+  "h": 66,
+  "ax": 38.2,
+  "ay": 43,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.47,
+   "d": 0.12,
+   "h": 10
+  }
+ },
+ "small_wooden_table_01": {
+  "w": 118,
+  "h": 116,
+  "ax": 58.6,
+  "ay": 82.7,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.73,
+   "d": 0.35,
+   "h": 25
+  }
+ },
+ "sofa_02": {
+  "w": 215,
+  "h": 181,
+  "ax": 107.3,
+  "ay": 123.6,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.45,
+   "d": 0.65,
+   "h": 33
+  }
+ },
+ "standing_chalkboard_01": {
+  "w": 142,
+  "h": 220,
+  "ax": 70.9,
+  "ay": 180.7,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.74,
+   "d": 0.61,
+   "h": 71
+  }
+ },
+ "steel_frame_shelves_01": {
+  "w": 237,
+  "h": 492,
+  "ax": 118.4,
+  "ay": 429.4,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.6,
+   "d": 0.73,
+   "h": 183
+  }
+ },
+ "steel_frame_shelves_02": {
+  "w": 98,
+  "h": 257,
+  "ax": 48.6,
+  "ay": 229,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.47,
+   "d": 0.4,
+   "h": 101
+  }
+ },
+ "steel_frame_shelves_03": {
+  "w": 231,
+  "h": 307,
+  "ax": 115.1,
+  "ay": 245.8,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.6,
+   "d": 0.49,
+   "h": 92
+  }
+ },
+ "strawberry_chocolate_cake": {
+  "w": 51,
+  "h": 40,
+  "ax": 25.1,
+  "ay": 23.3,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.2,
+   "d": 0.19,
+   "h": 4
+  }
+ },
+ "street_lamp_01": {
+  "w": 97,
+  "h": 419,
+  "ax": 48.4,
+  "ay": 391.5,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.56,
+   "d": 0.31,
+   "h": 182
+  }
+ },
+ "street_lamp_02": {
+  "w": 224,
+  "h": 308,
+  "ax": 111.6,
+  "ay": 269.6,
+  "scale": 2,
+  "mount": "wall",
+  "size": {
+   "w": 0.37,
+   "d": 0.77,
+   "h": 95
+  }
+ },
+ "tea_set_01": {
+  "w": 121,
+  "h": 83,
+  "ax": 60.4,
+  "ay": 48.9,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.73,
+   "d": 0.39,
+   "h": 8
+  }
+ },
+ "tool_cart": {
+  "w": 169,
+  "h": 182,
+  "ax": 84.3,
+  "ay": 136.2,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.02,
+   "d": 0.6,
+   "h": 45
+  }
+ },
+ "treasure_chest": {
+  "w": 127,
+  "h": 129,
+  "ax": 63.4,
+  "ay": 93.2,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.77,
+   "d": 0.42,
+   "h": 29
+  }
+ },
+ "tree_small_02": {
+  "w": 273,
+  "h": 346,
+  "ax": 136.2,
+  "ay": 273.9,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.1,
+   "d": 1.6,
+   "h": 101
+  }
+ },
+ "utility_box_01": {
+  "w": 87,
+  "h": 155,
+  "ax": 43.1,
+  "ay": 130.2,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.42,
+   "d": 0.35,
+   "h": 53
+  }
+ },
+ "vintage_cabinet_01": {
+  "w": 231,
+  "h": 330,
+  "ax": 115.1,
+  "ay": 268.8,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.6,
+   "d": 0.53,
+   "h": 104
+  }
+ },
+ "vintage_grandfather_clock_01": {
+  "w": 94,
+  "h": 260,
+  "ax": 46.9,
+  "ay": 232.7,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.5,
+   "d": 0.34,
+   "h": 103
+  }
+ },
+ "vintage_suitcase": {
+  "w": 188,
+  "h": 154,
+  "ax": 93.8,
+  "ay": 103.6,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.29,
+   "d": 0.19,
+   "h": 27
+  }
+ },
+ "wall_clock": {
+  "w": 125,
+  "h": 206,
+  "ax": 62.2,
+  "ay": 198.6,
+  "scale": 2,
+  "mount": "wall",
+  "size": {
+   "w": 0.82,
+   "d": 0.12,
+   "h": 48
+  }
+ },
+ "wicker_basket_02": {
+  "w": 60,
+  "h": 55,
+  "ax": 29.6,
+  "ay": 36.9,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.28,
+   "d": 0.2,
+   "h": 9
+  }
+ },
+ "wine_barrel_01": {
+  "w": 129,
+  "h": 153,
+  "ax": 64,
+  "ay": 117.2,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.59,
+   "d": 0.6,
+   "h": 41
+  }
+ },
+ "wooden_barrels_01": {
+  "w": 283,
+  "h": 189,
+  "ax": 141.1,
+  "ay": 114.4,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.6,
+   "d": 1.21,
+   "h": 20
+  }
+ },
+ "wooden_bookshelf_worn": {
+  "w": 164,
+  "h": 283,
+  "ax": 81.6,
+  "ay": 238.1,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.1,
+   "d": 0.47,
+   "h": 97
+  }
+ },
+ "wooden_bucket_02": {
+  "w": 108,
+  "h": 94,
+  "ax": 53.8,
+  "ay": 63.1,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.49,
+   "d": 0.49,
+   "h": 16
+  }
+ },
+ "wooden_crate_01": {
+  "w": 131,
+  "h": 113,
+  "ax": 65.4,
+  "ay": 76.8,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.82,
+   "d": 0.41,
+   "h": 20
+  }
+ },
+ "wooden_crate_02": {
+  "w": 139,
+  "h": 118,
+  "ax": 69.3,
+  "ay": 80,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.41,
+   "d": 0.9,
+   "h": 21
+  }
+ },
+ "wooden_display_shelves_01": {
+  "w": 131,
+  "h": 218,
+  "ax": 65,
+  "ay": 182.1,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.3,
+   "d": 0.86,
+   "h": 73
+  }
+ },
+ "wooden_military_crate": {
+  "w": 136,
+  "h": 114,
+  "ax": 67.8,
+  "ay": 76.7,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.9,
+   "d": 0.38,
+   "h": 20
+  }
+ },
+ "wooden_picnic_table": {
+  "w": 281,
+  "h": 194,
+  "ax": 140.2,
+  "ay": 119.8,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 1.19,
+   "d": 1.6,
+   "h": 23
+  }
+ },
+ "worn_metal_rack": {
+  "w": 130,
+  "h": 250,
+  "ax": 64.7,
+  "ay": 214.3,
+  "scale": 2,
+  "mount": "floor",
+  "size": {
+   "w": 0.73,
+   "d": 0.48,
+   "h": 89
+  }
+ }
+}

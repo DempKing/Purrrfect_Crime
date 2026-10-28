@@ -3,7 +3,9 @@
 import { Container, Graphics } from 'pixi.js';
 import { DIRS, PRINT_TURNS, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, roboOff, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
 import type { Level, Point } from '../core/level';
+import { DISTRICTS } from '../levels';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
+import { frameFor, prop, WALL_DECOR, type PropName } from './props';
 
 const WALL_H = 84;
 const STUB_H = 12;
@@ -93,6 +95,20 @@ export interface Ripple {
   t: number; // 0..1
 }
 
+/** A tile's own number, for picking props: the same tile always gets the same one. */
+function tileHash(x: number, y: number, salt = 0): number {
+  let h = (x * 73856093) ^ (y * 19349663) ^ (salt * 83492791);
+  h = Math.imul(h ^ (h >>> 13), 0x5bd1e995);
+  return ((h ^ (h >>> 15)) >>> 0) / 4294967296;
+}
+
+const NEIGHBOURS = [
+  { x: 1, y: 0 },
+  { x: 0, y: 1 },
+  { x: -1, y: 0 },
+  { x: 0, y: -1 },
+];
+
 interface Drawable {
   depth: number;
   draw: (g: Graphics) => void;
@@ -105,6 +121,9 @@ export class HeistView {
   private fx = new Graphics();
   proj: Projector = { angle: 0, cx: 0, cy: 0 };
   time = 0;
+  private district = '';
+  private districtOf = '';
+  private light: number[][] = [];
 
   constructor() {
     this.root.addChild(this.floor, this.objects, this.fx);
@@ -118,6 +137,11 @@ export class HeistView {
     o.clear();
     this.fx.clear();
     const light = lightMap(level, s.lampsOff);
+    this.light = light;
+    if (this.districtOf !== level.def.id) {
+      this.districtOf = level.def.id;
+      this.district = DISTRICTS.find((d) => d.levels.some((l) => l.id === level.def.id))?.id ?? 'old-town';
+    }
     const beam = beaconTiles(level, s);
     const inVent = s.layer === 'vent';
     const inRafters = s.layer === 'rafter';
@@ -227,6 +251,7 @@ export class HeistView {
           const near = inVent || inRafters || (Math.hypot(x + 0.5 - leo.x, y + 0.5 - leo.y) < 3.6 && d > leoDepth + 0.2) || this.nearOuterWall(level, x, y);
           const h = near ? STUB_H : t === 'pillar' ? WALL_H - 6 : WALL_H;
           const a = near ? 0.75 : 1;
+          if (t === 'wall' && !near) this.wallDecor(level, s, x, y, d, items);
           if (t === 'stack') items.push({ depth: d, draw: (g) => this.crateStack(g, x, y, near ? STUB_H : WALL_H - 20, a) });
           else if (t === 'pillar') items.push({ depth: d, draw: (g) => this.prism(g, x + 0.22, y + 0.22, x + 0.78, y + 0.78, h, 0xe6e0d0, COL.pillar, 0x948f82, a) });
           else if (t === 'door') items.push({ depth: d, draw: (g) => this.door(g, x, y, near ? STUB_H : WALL_H - 10, a, s.picks[k] ?? 0) });
@@ -326,6 +351,44 @@ export class HeistView {
       const R = Math.max(0.15, r.r * r.t);
       this.fx.ellipse(sp.x, sp.y, (R * TILE_W) / Math.SQRT2, (R * TILE_H) / Math.SQRT2).stroke({ width: 3, color: 0xfff0b0, alpha: (1 - r.t) * 0.85 });
     }
+  }
+
+  /** A baked sprite standing at (x, y) on the grid, `z` px up, turned `turn` radians (0: its front faces grid +y).
+   * Returns false, drawing nothing, until the sprites have loaded. */
+  private sprite(g: Graphics, name: PropName, x: number, y: number, z: number, turn: number, alpha = 1, tint = 0xffffff): boolean {
+    const pr = prop(name);
+    if (!pr) return false;
+    const sp = project(this.proj, x, y, z);
+    g.setFillStyle({ color: 0xffffff, alpha });
+    g.texture(pr.frames[frameFor(turn, this.proj.angle)], tint, sp.x - pr.ax, sp.y - pr.ay, pr.w, pr.h);
+    g.setFillStyle({ color: 0xffffff, alpha: 1 });
+    return true;
+  }
+
+  /** Props are lit like the floor they stand on: dim in the dark, brightest under a lamp. */
+  private tint(x: number, y: number): number {
+    const l = this.light[y]?.[x] ?? 1;
+    return l === 0 ? 0x7d84a0 : l === 1 ? 0xdcdbe6 : 0xffffff;
+  }
+
+  /** Now and then, something hangs on a wall face the camera can see: pictures, clocks, lifebuoys, fuse boxes. */
+  private wallDecor(level: Level, s: State, x: number, y: number, d: number, items: Drawable[]): void {
+    const choices = WALL_DECOR[this.district] ?? WALL_DECOR['old-town'];
+    const c = Math.cos(this.proj.angle);
+    const sn = Math.sin(this.proj.angle);
+    NEIGHBOURS.forEach((n, i) => {
+      const fx = x + n.x;
+      const fy = y + n.y;
+      if (fx < 0 || fy < 0 || fx >= level.w || fy >= level.h) return;
+      const t = tileNow(level, s, fx, fy);
+      if (t !== 'floor' && t !== 'marble' && t !== 'squeaky' && t !== 'grate' && t !== 'plate') return;
+      if (c * n.x - sn * n.y + (sn * n.x + c * n.y) <= 0.3) return; // the face turned away from the camera
+      const h = tileHash(x, y, i);
+      if (h > 0.2) return;
+      const name = choices[Math.floor(h * 5 * choices.length)];
+      const tint = this.tint(fx, fy);
+      items.push({ depth: d + 0.35, draw: (g) => void this.sprite(g, name, x + 0.5 + n.x * 0.5, y + 0.5 + n.y * 0.5, 0, Math.atan2(n.y, n.x) - Math.PI / 2, 1, tint) });
+    });
   }
 
   /** Outer walls on the two sides facing the camera are always cut down, so the room is never hidden. */
@@ -467,6 +530,10 @@ export class HeistView {
   private camera(g: Graphics, at: Point, facing: number, off: boolean): void {
     const d = screenDir(this.proj, DIRS[facing].x, DIRS[facing].y);
     const sp = project(this.proj, at.x + 0.5, at.y + 0.5, 74);
+    if (this.sprite(g, 'security_camera_01', at.x + 0.5, at.y + 0.5, 62, Math.atan2(DIRS[facing].y, DIRS[facing].x) - Math.PI / 2, 1, off ? 0x6a6e7a : 0xffffff)) {
+      if (!off && Math.sin(this.time * 5) > 0) g.circle(sp.x, sp.y - 2, 2.5).fill({ color: 0xff3b30 });
+      return;
+    }
     g.roundRect(sp.x - 9, sp.y - 6, 18, 12, 3).fill({ color: 0x2b2f3d }).stroke({ width: 1.5, color: 0x0d0f16 });
     g.moveTo(sp.x, sp.y).lineTo(sp.x + d.x * 14, sp.y + d.y * 14).stroke({ width: 7, color: 0x3b4052 });
     g.circle(sp.x + d.x * 15, sp.y + d.y * 15, 3.5).fill({ color: off ? 0x444444 : 0x9fd7ff });
@@ -569,22 +636,27 @@ export class HeistView {
 
   /** A desk, with the combination somewhere in it (papers on top until Leo finds it). */
   private desk(g: Graphics, x: number, y: number, found: boolean): void {
-    this.prism(g, x + 0.08, y + 0.2, x + 0.92, y + 0.8, 24, 0x7a5634, 0x5e4228, 0x4a341f, 1);
-    const c = project(this.proj, x + 0.5, y + 0.5, 25);
+    const model: PropName = this.district === 'downtown' || this.district === 'harbour' ? 'metal_office_desk' : 'ClassicConsole_01';
+    const drawn = this.sprite(g, model, x + 0.5, y + 0.5, 0, 0, 1, this.tint(x, y));
+    if (!drawn) this.prism(g, x + 0.08, y + 0.2, x + 0.92, y + 0.8, 24, 0x7a5634, 0x5e4228, 0x4a341f, 1);
+    const c = project(this.proj, x + 0.5, y + 0.5, drawn ? (prop(model)?.height ?? 24) + 1 : 25);
     if (!found) g.poly([c.x - 8, c.y, c.x, c.y - 4, c.x + 8, c.y, c.x, c.y + 4]).fill({ color: 0xf7f4ec }).stroke({ width: 1, color: 0x8a8578 });
     g.circle(c.x + 10, c.y - 2, 3).fill({ color: 0xf2c46b, alpha: 0.9 });
   }
 
   /** A wooden crate with its lid off. With Leo inside, two eyes peek over the edge. */
   private crate(g: Graphics, x: number, y: number, leoInside: boolean): void {
-    this.prism(g, x + 0.1, y + 0.1, x + 0.9, y + 0.9, 30, 0x3a2a18, 0xa07a48, 0x86643a, 1);
-    for (const t of [0.35, 0.65]) {
-      const a = project(this.proj, x + 0.1, y + t, 30);
-      const b = project(this.proj, x + 0.9, y + t, 30);
-      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1, color: 0x5e4428, alpha: 0.8 });
+    const drawn = this.sprite(g, 'wooden_crate_01', x + 0.5, y + 0.5, 0, Math.floor(tileHash(x, y) * 4) * (Math.PI / 2), 1, this.tint(x, y));
+    if (!drawn) {
+      this.prism(g, x + 0.1, y + 0.1, x + 0.9, y + 0.9, 30, 0x3a2a18, 0xa07a48, 0x86643a, 1);
+      for (const t of [0.35, 0.65]) {
+        const a = project(this.proj, x + 0.1, y + t, 30);
+        const b = project(this.proj, x + 0.9, y + t, 30);
+        g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1, color: 0x5e4428, alpha: 0.8 });
+      }
     }
     if (leoInside) {
-      const c = project(this.proj, x + 0.5, y + 0.5, 32);
+      const c = project(this.proj, x + 0.5, y + 0.5, drawn ? (prop('wooden_crate_01')?.height ?? 30) + 2 : 32);
       const blink = Math.sin(this.time * 2) > 0.95;
       for (const dx of [-4, 4]) g.ellipse(c.x + dx, c.y, 2.5, blink ? 0.5 : 2.5).fill({ color: 0xe9d36b });
       g.poly([c.x - 9, c.y - 2, c.x - 6, c.y - 9, c.x - 3, c.y - 3]).fill({ color: 0x1b1b22 });
@@ -594,6 +666,17 @@ export class HeistView {
 
   /** Crates stacked high, each a little askew. */
   private crateStack(g: Graphics, x: number, y: number, h: number, alpha: number): void {
+    const a = prop('wooden_crate_02');
+    const b = prop('wooden_military_crate');
+    if (a && b) {
+      let z = 0;
+      for (let i = 0; z < h - 6; i++) {
+        const name: PropName = tileHash(x, y, i) < 0.5 ? 'wooden_crate_02' : 'wooden_military_crate';
+        this.sprite(g, name, x + 0.5, y + 0.5, z, Math.floor(tileHash(x, y, i + 3) * 4) * (Math.PI / 2), alpha, this.tint(x, y));
+        z += Math.max(10, (name === 'wooden_crate_02' ? a : b).height);
+      }
+      return;
+    }
     const n = Math.max(1, Math.round(h / 22));
     for (let i = 0; i < n; i++) {
       const o = ((x * 3 + y * 5 + i * 7) % 3) * 0.03;

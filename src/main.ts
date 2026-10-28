@@ -45,6 +45,7 @@ import { learn, perksFor, raise, upgrade } from './meta/progression';
 import { deliverLetters } from './meta/letters';
 import { TUTORIAL, advance, type TutorialEvents } from './meta/tutorial';
 import * as screens from './ui/screens';
+import { loadProps } from './render/props';
 import { HeistView, setPalette, type Actor, type Overlay, type Ripple } from './render/view';
 import { project, screenDir, unproject } from './render/iso';
 import { Sound, soundsInLog, type Sfx, type Tension } from './audio';
@@ -794,6 +795,7 @@ const world = new Container();
 
 async function boot(): Promise<void> {
   await app.init({ resizeTo: window, background: 0x0a0c18, antialias: true, resolution: Math.min(2, window.devicePixelRatio || 1), autoDensity: true });
+  loadProps().catch((e) => console.error('Sprites failed to load', e));
   $('stage').appendChild(app.canvas);
   world.addChild(view.root);
   app.stage.addChild(world);

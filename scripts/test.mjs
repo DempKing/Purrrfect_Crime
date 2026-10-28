@@ -9,7 +9,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outdir = join(root, '.test-build');
 rmSync(outdir, { recursive: true, force: true });
 const entries = readdirSync(join(root, 'tests')).filter((f) => f.endsWith('.test.ts')).map((f) => join(root, 'tests', f));
-await esbuild.build({ entryPoints: entries, bundle: true, platform: 'node', format: 'esm', outdir, outExtension: { '.js': '.mjs' }, logLevel: 'warning' });
+await esbuild.build({ entryPoints: entries, bundle: true, platform: 'node', format: 'esm', outdir, outExtension: { '.js': '.mjs' }, logLevel: 'warning', loader: { '.webp': 'dataurl' } });
 const files = readdirSync(outdir).map((f) => join(outdir, f));
 const res = spawnSync(process.execPath, ['--test', ...files], { stdio: 'inherit' });
 process.exit(res.status ?? 1);
