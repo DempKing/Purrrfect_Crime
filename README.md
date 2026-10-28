@@ -7,7 +7,7 @@ and catch the eye of the legendary **NightClaw**.
 
 There's no combat: stay hidden in the shadows and vents. Get caught and you restart the level.
 
-**Status:** prototype M4 complete (content), placeholder art; M5 (the endgame) is next. There's **one mode, the hardest**: no
+**Status:** prototype M5: the whole story is playable, start to credits, with placeholder art. There's **one mode, the hardest**: no
 difficulty choice, no checkpoints, no undo, and every level is designed to be beaten flawlessly.
 **All five districts are built (25 levels)**: after the
 tutorial come the Cobblestone Coin Museum (a sleepy guard, creaky floorboards, a safe), the Clocktower
@@ -22,7 +22,9 @@ Lighthouse Collection), the tide (the Shipwreck Museum), a fish market where sni
 (the Fish Market Bank) and light switches (the Aquarium Gala). Downtown brings the Robo-Guards (the Grand
 Bank), slot machines that drown out noise (Casino Royale-Paws), conveyor belts (the Mint), wet paint and
 paw prints (the Museum of Modern Mischief) and a time-locked vault (City Hall Treasury). **NightClaw's letters** arrive after ten heists and 10,000 Catnip of sales; the
-second opens his challenge museum, the Midnight Museum. **Rival thieves** (Mittens, Luna, Sammy and
+second opens his challenge museum, the Midnight Museum; the third sets the NightClaw Challenge (every
+centrepiece, flawlessly); the fourth invites Leo to **NightClaw's Lair**, where NightClaw himself is
+waiting. Creep up on him, and the ending, credits and free play follow. **Rival thieves** (Mittens, Luna, Sammy and
 Professor Paws) sometimes race Leo for the centrepiece, with a warning on the lair's rumour board. Each
 level opens when the one before it is cleared. Underneath is M3's progression (save slots, attributes,
 skill trees, lair rooms, the briefing) and the M2 slice (narrator, newspaper, black market).
@@ -82,5 +84,5 @@ tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 | M2 ✓ (art pending) | Vertical slice: the tutorial level with real art, narrator, calling card and newspaper, black market, lair |
 | M3 ✓ | Progression: attributes, skill trees, lair upgrades, saves |
 | M4 ✓ | Content: levels 1–25, rivals, all guard types, NightClaw's first letters, the challenge museum |
-| M5 | Endgame: the NightClaw Challenge, NightClaw's Lair, ending |
+| M5 ✓ (art pending) | Endgame: the NightClaw Challenge, NightClaw's Lair, ending |
 | M6 | Ship: Steam, settings, accessibility, balance and polish |

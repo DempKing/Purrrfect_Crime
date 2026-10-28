@@ -28,7 +28,7 @@ export const VAULT_DIALS = 2;
 /** A guard dog barks at Leo within this many tiles (not in vents or the rafters). */
 export const BARK_RANGE = 2;
 /** How far guard types see, as a share of a night-watch guard. */
-export const KIND_SIGHT: Record<GuardKind, number> = { watch: 1, sleepy: 1, captain: 1.25, sniffer: 0.6, robo: 1 };
+export const KIND_SIGHT: Record<GuardKind, number> = { watch: 1, sleepy: 1, captain: 1.25, sniffer: 0.6, robo: 1, nightclaw: 1 };
 /** How far a Robo-Guard's heat scanner picks Leo up, in any light. */
 export const ROBO_RANGE = 4;
 /** Steps of wet paw prints after walking through paint, and how many turns a print takes to dry. */
@@ -230,6 +230,7 @@ export interface State {
   /** Who has the level's keycard: nobody yet, Leo, or a rival who swiped it. */
   card: 'leo' | 'rival' | null;
   combination: boolean; // Leo has read the vault's combination
+  tagged: boolean; // the finale: Leo crept up on NightClaw and tapped him on the shoulder
   lampsOff: number[]; // lamps switched off at a light switch (indexes into the level's lamps)
   wetPaws: number; // steps of paw prints still to leave, after walking through wet paint
   prints: { x: number; y: number; turns: number }[]; // paw prints, drying
@@ -289,6 +290,7 @@ export function newHeist(level: Level, perks: Perks = BASE_PERKS, rival: RivalPl
     rivalBeaten: false,
     card: null,
     combination: false,
+    tagged: false,
     lampsOff: [],
     wetPaws: 0,
     prints: [],
@@ -567,10 +569,11 @@ function inCone(from: Point, facing: number, x: number, y: number, range: number
  * How far away Leo can be made out on x,y. Stealth shortens it and Blend makes dim light count as dark;
  * neither helps an empty display case, which is what `thing` is for.
  */
-function sightRange(level: Level, s: State, x: number, y: number, thing: boolean): number {
+function sightRange(level: Level, s: State, x: number, y: number, thing: boolean, catsEyes = false): number {
   const light = lightNow(level, s, x, y);
-  if (thing) return rangeFor(light);
-  return rangeFor(s.perks.blend && light === 1 ? 0 : light) * s.perks.sight;
+  const up = (l: Light): Light => (catsEyes ? (Math.min(2, l + 1) as Light) : l);
+  if (thing) return rangeFor(up(light));
+  return rangeFor(up(s.perks.blend && light === 1 ? 0 : light)) * s.perks.sight;
 }
 
 /** Whether a guard can make out Leo (or, with `thing`, an object) at x,y, given the light there. */
@@ -578,7 +581,8 @@ export function guardSees(level: Level, s: State, g: { x: number; y: number; fac
   if (g.asleep || inSmoke(s, x, y) || roboOff(s, g)) return false;
   // A robot's heat scanner sees a warm cat in any light, but not an empty case.
   if (g.kind === 'robo' && thing) return false;
-  const range = g.kind === 'robo' ? ROBO_RANGE * s.perks.sight : sightRange(level, s, x, y, thing) * KIND_SIGHT[g.kind ?? 'watch'];
+  // NightClaw has a cat's eyes: to him the dark is only dim, and dim as good as lit.
+  const range = g.kind === 'robo' ? ROBO_RANGE * s.perks.sight : sightRange(level, s, x, y, thing, g.kind === 'nightclaw') * KIND_SIGHT[g.kind ?? 'watch'];
   if (!inCone(g, g.facing, x, y, range)) return false;
   return clearLine(level, g, { x, y }, blocksSight, s);
 }
@@ -637,6 +641,7 @@ function spotted(level: Level, s: State, g: Guard, p: Point): boolean {
   }
   s.seen = true;
   const close = Math.hypot(p.x - g.x, p.y - g.y) <= 2;
+  if (g.kind === 'nightclaw') return catchLeo(s, g.name, '“Not tonight, Leo.” He tips his hat');
   if (g.kind === 'robo') {
     if (close) return catchLeo(s, g.name, 'heat signature confirmed');
     triggerAlarm(s, p, `${g.name} picked up Leo’s heat signature`);
@@ -681,7 +686,7 @@ const canSmell = (level: Level, s: State, g: Guard, p: Point) =>
 function captainCalls(s: State, g: Guard, p: Point): void {
   if (g.kind !== 'captain') return;
   for (const o of s.guards) {
-    if (o === g || o.mode === 'searching' || o.kind === 'robo' || Math.hypot(o.x - g.x, o.y - g.y) > CAPTAIN_CALL) continue;
+    if (o === g || o.mode === 'searching' || o.kind === 'robo' || o.kind === 'nightclaw' || Math.hypot(o.x - g.x, o.y - g.y) > CAPTAIN_CALL) continue;
     if (o.mode === 'patrol') s.log.push(`${g.name} whistles: ${o.name} comes to help.`);
     o.asleep = false;
     o.mode = 'suspicious';
@@ -907,6 +912,7 @@ export type ActionKind =
   | 'read-notes'
   | 'turn-dials'
   | 'lights'
+  | 'tap'
   | 'panel'
   | 'fuse'
   | 'enter-vent'
@@ -942,6 +948,18 @@ export function actionsHere(level: Level, s: State): Action[] {
   } else {
     if (tileAt(level, L.x, L.y) === 'grate') out.push({ kind: 'enter-vent', at: L, label: 'Climb into the vent', ap: 1, noise: 0 });
     if (tileAt(level, L.x, L.y) === 'ladder') out.push({ kind: 'climb-up', at: L, label: 'Climb up to the rafters', ap: 1, noise: 0, blocked: s.perks.ceilingClimb ? undefined : 'Needs the Ceiling Climb skill (Acrobat).' });
+    // The finale: NightClaw, unaware, right beside Leo, and the prize in Leo's paws.
+    const nc = level.def.finale ? s.guards.find((g) => g.kind === 'nightclaw' && near8(L, g)) : undefined;
+    const prize = level.plinth ? lootAt(level, level.plinth.x, level.plinth.y) : -1;
+    if (nc)
+      out.push({
+        kind: 'tap',
+        at: { x: nc.x, y: nc.y },
+        label: 'Tap NightClaw on the shoulder',
+        ap: 1,
+        noise: 0,
+        blocked: !s.inventory.includes(prize) ? 'Not yet: take his prized possession first.' : nc.mode !== 'patrol' ? 'He’s on his guard. Wait until he isn’t.' : undefined,
+      });
     for (let y = L.y - 1; y <= L.y + 1; y++)
       for (let x = L.x - 1; x <= L.x + 1; x++) {
         const p = { x, y };
@@ -995,7 +1013,8 @@ export function actionsHere(level: Level, s: State): Action[] {
 function take(level: Level, s: State, at: Point): void {
   const li = lootAt(level, at.x, at.y);
   s.inventory.push(li);
-  s.log.push(`Got ${the(level.def.loot[li].name)}.`);
+  const l = level.def.loot[li];
+  s.log.push(l.revealed ? `Got it. It isn’t treasure at all: it’s ${l.revealed}.` : `Got ${the(l.name)}.`);
   // Beaten to it: a rival after the centrepiece gives up.
   const r = s.rival;
   if (r && r.phase !== 'gone' && level.plinth && at.x === level.plinth.x && at.y === level.plinth.y) {
@@ -1033,6 +1052,11 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
     case 'swipe-card':
       s.openDoors.push(k);
       s.log.push('Beep. The light turns green and the door slides open.');
+      break;
+    case 'tap':
+      s.tagged = true;
+      s.status = 'escaped';
+      s.log.push('Tap, tap. NightClaw turns round, very slowly, and smiles.');
       break;
     case 'lights': {
       const sw = (level.def.switches ?? []).find((w) => w.at.x === at.x && w.at.y === at.y)!;
@@ -1365,7 +1389,7 @@ function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
       continue;
     }
     let sawLeo = false;
-    const steps = g.mode === 'searching' ? SEARCH_STEPS : GUARD_STEPS;
+    const steps = g.mode === 'searching' || g.kind === 'nightclaw' ? SEARCH_STEPS : GUARD_STEPS;
     for (let i = 0; i < steps && s.status === 'playing'; i++) {
       const others = new Set(s.guards.filter((o) => o !== g).map((o) => key(o.x, o.y)));
       if (g.mode === 'patrol') {
@@ -1660,7 +1684,7 @@ export function danger(level: Level, s: State, p: Point): 0 | 1 | 2 {
   for (const g of s.guards) {
     if (canSmell(level, s, g, p)) worst = g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 1.5 ? 2 : (Math.max(worst, 1) as 0 | 1 | 2);
     if (!guardSees(level, s, g, p.x, p.y)) continue;
-    const caught = g.kind === 'robo' || g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 2 || lightNow(level, s, p.x, p.y) === 2;
+    const caught = g.kind === 'robo' || g.kind === 'nightclaw' || g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 2 || lightNow(level, s, p.x, p.y) === 2;
     worst = caught ? 2 : Math.max(worst, 1) as 0 | 1 | 2;
   }
   return worst;

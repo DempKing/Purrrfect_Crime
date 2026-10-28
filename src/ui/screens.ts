@@ -4,7 +4,7 @@
 import { parseLevel, the, type LevelDef, type LootCategory } from '../core/level';
 import { RIVALS, type RivalPlan } from '../core/game';
 import type { Paper } from '../meta/newspaper';
-import { LETTERS, delivery, hasLetter, type Letter } from '../meta/letters';
+import { LETTERS, challengeProgress, delivery, hasLetter, type Letter } from '../meta/letters';
 import { MASTHEAD } from '../meta/newspaper';
 import {
   LAIR_PRICE,
@@ -52,6 +52,16 @@ export const NARRATOR_SVG = `<svg class="portrait" viewBox="0 0 64 64" aria-hidd
   <path d="M10 40 L22 41 M10 45 L22 43 M54 40 L42 41 M54 45 L42 43" stroke="#d8dbe2" stroke-width="1"/>
 </svg>`;
 
+/** NightClaw: an old black cat in a top hat, grey at the muzzle, a monocle over one gold eye. */
+export const NIGHTCLAW_SVG = `<svg class="portrait" viewBox="0 0 64 64" aria-hidden="true">
+  <circle cx="32" cy="36" r="21" fill="#16161c"/><path d="M14 26 L16 8 L27 19Z M50 26 L48 8 L37 19Z" fill="#16161c"/>
+  <ellipse cx="32" cy="16" rx="22" ry="4" fill="#0a0a10"/><rect x="20" y="0" width="24" height="16" fill="#0a0a10"/><rect x="20" y="11" width="24" height="3" fill="#6b2a5a"/>
+  <ellipse cx="24" cy="34" rx="3.5" ry="3" fill="#f2c46b"/><ellipse cx="40" cy="34" rx="3.5" ry="3" fill="#f2c46b"/>
+  <circle cx="40" cy="34" r="6.5" fill="none" stroke="#d9b36c" stroke-width="1.5"/><path d="M46 35 Q49 42 47 48" stroke="#d9b36c" fill="none"/>
+  <ellipse cx="32" cy="45" rx="8" ry="5" fill="#8a8f9c"/><path d="M29 42 L35 42 L32 45Z" fill="#2a1a22"/>
+  <path d="M10 42 L24 43 M10 47 L24 45 M54 42 L40 43 M54 47 L40 45" stroke="#d8dbe2" stroke-width="1"/>
+</svg>`;
+
 /** Leo's calling card: white, with his red bow tie. */
 const CARD_SVG = `<svg viewBox="0 0 120 76" class="card-svg" aria-hidden="true">
   <rect x="2" y="2" width="116" height="72" rx="6" fill="#f7f4ec" stroke="#1b1b22" stroke-width="2"/>
@@ -85,14 +95,14 @@ export interface TitleCallbacks {
 }
 
 function slotSummary(p: Profile): string {
-  const where = !p.tutorialDone ? 'In the tutorial' : !p.lairOwned ? 'Looking for a lair' : `Day ${p.day} · ${p.heists} heist${p.heists === 1 ? '' : 's'}`;
+  const where = !p.tutorialDone ? 'In the tutorial' : !p.lairOwned ? 'Looking for a lair' : `${p.legendary ? 'Legendary · ' : ''}Day ${p.day} · ${p.heists} heist${p.heists === 1 ? '' : 's'}`;
   return `Level ${playerLevel(p.xp)} · ${where} · ${p.catnip.toLocaleString('en-US')} Catnip`;
 }
 
 export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void {
   const el = show(
     `<div class="card big title-card">
-      <div class="kicker">Prototype M4 · Downtown</div>
+      <div class="kicker">Prototype M5 · The endgame</div>
       <h1>Purrrfect Crime</h1>
       <p>Leo Tuxedo is new in town, sharply dressed and short of Catnip. The museums are full of treasures
         and the guards are half asleep. Time to make a name for himself.</p>
@@ -123,10 +133,10 @@ export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void
 
 // --- The narrator, between heists --------------------------------------------------------------
 
-/** A sequence of narrator lines with a Next button; the last button runs `done`. */
-export function narratorScene(lines: string[], last: string, done: () => void): void {
+/** A sequence of lines (the narrator's, unless someone else is speaking) with a Next button; the last button runs `done`. */
+export function narratorScene(lines: string[], last: string, done: () => void, speaker = { name: 'The narrator', portrait: NARRATOR_SVG }): void {
   let i = 0;
-  const el = show(`<div class="card big scene"><div class="speaker">${NARRATOR_SVG}<div><div class="kicker">The narrator</div><p id="line"></p></div></div><div class="row-buttons"><button id="next" class="primary"></button></div></div>`, 'overlay');
+  const el = show(`<div class="card big scene"><div class="speaker">${speaker.portrait}<div><div class="kicker">${esc(speaker.name)}</div><p id="line"></p></div></div><div class="row-buttons"><button id="next" class="primary"></button></div></div>`, 'overlay');
   const line = el.querySelector('#line')!;
   const next = el.querySelector<HTMLButtonElement>('#next')!;
   const render = () => {
@@ -140,6 +150,42 @@ export function narratorScene(lines: string[], last: string, done: () => void): 
     } else done();
   });
   render();
+}
+
+// --- The ending -------------------------------------------------------------------------------------------
+
+export function legendaryCard(done: () => void): void {
+  const el = show(
+    `<div class="card big legendary"><div class="kicker">NightClaw names his successor</div><h1>Leo Tuxedo</h1><p class="legend-title">Legendary</p>
+      <p>The best thief this city has ever seen. Well, the best one still working.</p>
+      <div class="row-buttons"><button id="legend-ok" class="primary">Roll the credits</button></div></div>`,
+    'overlay dark',
+  );
+  on(el, '#legend-ok', done);
+}
+
+export const CREDITS: [string, string][] = [
+  ['Leo Tuxedo', 'as himself'],
+  ['NightClaw', 'retired'],
+  ['Mischief Mittens · Luna Luck · Sammy Swipes · Professor Paws', 'the competition'],
+  ['The Guards of the city', 'who never once saw a thing'],
+  ['The narrator', 'who bought the first pearl'],
+  ['The Whisker Times', 'for the front pages'],
+  ['Made by', 'DempKing, with Claude'],
+  ['And you', 'for playing, flawlessly'],
+];
+
+export function credits(done: () => void): void {
+  const el = show(
+    `<div class="credits"><div class="roll">
+      <h1>Purrrfect Crime</h1>
+      ${CREDITS.map(([who, what]) => `<p><b>${esc(who)}</b><br><span class="small">${esc(what)}</span></p>`).join('')}
+      <p class="small">Free play continues: every heist is still there to replay, and the fences are still buying.</p>
+      <div class="row-buttons"><button id="credits-ok" class="primary">Read the morning paper</button></div>
+    </div></div>`,
+    'overlay dark',
+  );
+  on(el, '#credits-ok', done);
 }
 
 // --- The calling card and the paper ------------------------------------------------------------------
@@ -186,6 +232,8 @@ export function heistReport(r: HeistReport, p: Profile, done: () => void): void 
       <table class="xp">${r.xp.map((l) => `<tr><td>${esc(l.label)}</td><td>+${l.amount} XP</td></tr>`).join('')}
         <tr class="total"><td>Total</td><td>+${r.xpTotal} XP</td></tr></table>
       ${r.rival ? `<p class="rival-line">${r.rival.won ? `You beat ${esc(RIVALS[r.rival.id].name)} to the prize.` : `${esc(RIVALS[r.rival.id].name)} got the centrepiece this time. Replay to take it yourself.`}</p>` : ''}
+      ${r.ncWaiting ? '<p class="rival-line">You got out, but NightClaw is still waiting for you to find him. Creep up and tap him on the shoulder to finish it.</p>' : ''}
+      ${r.finale ? '<p class="levelup">NightClaw’s collar has the top shelf of the Trophy Room to itself. It is not for sale.</p>' : ''}
       ${r.levelAfter > r.levelBefore ? `<p class="levelup">Level up! Leo is now level ${r.levelAfter}. The fences pay ${Math.round(fenceRate(r.levelAfter) * 100)}% now.</p>` : ''}
       <div class="xpbar"><span style="width:${Math.min(100, (into / need) * 100)}%"></span></div>
       <p class="small">Level ${lvl} · ${into}/${need} XP to level ${lvl + 1}</p>
@@ -288,13 +336,13 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   // A heist opens once the one before it is cleared; anything already cleared stays open. NightClaw's
   // challenge opens with his second letter.
   const unlocked = (i: number) =>
-    cb.jobs[i].challenge ? hasLetter(p, 2) : i === 0 || !!p.records[cb.jobs[i].id] || !!p.records[cb.jobs[i - 1].id];
+    cb.jobs[i].finale ? hasLetter(p, 4) : cb.jobs[i].challenge ? hasLetter(p, 2) : i === 0 || !!p.records[cb.jobs[i].id] || !!p.records[cb.jobs[i - 1].id];
   const job = (def: LevelDef) => {
     const i = cb.jobs.indexOf(def);
     const rec = p.records[def.id];
     const centre = def.loot.find((l) => def.map[l.at.y][l.at.x] === 'G');
     if (!unlocked(i))
-      return `<div class="job locked"><div><b>${esc(def.name)}</b> <span class="badge">locked</span><p class="small">Clear ${esc(cb.jobs[i - 1].name)} first.</p></div></div>`;
+      return `<div class="job locked"><div><b>${esc(def.name)}</b> <span class="badge">locked</span><p class="small">${def.finale ? 'NightClaw will write when his challenge is done.' : `Clear ${esc(cb.jobs[i - 1].name)} first.`}</p></div></div>`;
     return `<div class="job">
         <div><b>${esc(def.name)}</b>${rec ? ' <span class="badge">cleared</span>' : ' <span class="badge new">new</span>'}
           <p class="small">${esc(def.objective)}</p>
@@ -305,11 +353,14 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
         <button class="primary" data-job="${i}">${rec ? 'Replay' : 'Plan the heist'}</button>
       </div>`;
   };
-  const campaign = cb.jobs.slice(1).filter((d) => !d.challenge);
-  const flawless = campaign.filter((d) => p.records[d.id]?.flawless).length;
-  const challenge = hasLetter(p, 3)
-    ? `<div class="card challenge"><b>The NightClaw Challenge</b> ${pips(flawless, campaign.length)}<p class="small">${flawless} of ${campaign.length} centrepieces taken in a flawless heist (never seen, no alarms). NightClaw wants every one.</p></div>`
-    : '';
+  const progress = challengeProgress(p);
+  const challenge = p.legendary
+    ? '<div class="card challenge"><b>Leo Tuxedo, Legendary.</b><p class="small">NightClaw has retired. The city is yours: every heist can be replayed, and the fences are still buying.</p></div>'
+    : hasLetter(p, 4)
+      ? '<div class="card challenge"><b>The NightClaw Challenge: done.</b><p class="small">Every centrepiece, every one flawless. NightClaw is waiting in his lair.</p></div>'
+      : hasLetter(p, 3)
+        ? `<div class="card challenge"><b>The NightClaw Challenge</b> ${pips(progress.done, progress.of)}<p class="small">${progress.done} of ${progress.of} centrepieces taken in a flawless heist (never seen, no alarms). NightClaw wants every one.</p></div>`
+        : '';
   const heists = challenge + cb.districts
     .filter((d) => d.levels.some((l) => unlocked(cb.jobs.indexOf(l))))
     .map((d) => `<h2 class="section district">${esc(d.name)}</h2>${d.levels.map(job).join('')}`)
@@ -375,7 +426,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     .map(([id]) => {
       const def = cb.jobs.find((j) => j.id === id);
       const c = def?.loot.find((l) => def.map[l.at.y][l.at.x] === 'G');
-      return c ? `<li>${esc(c.name)} <span class="small">· ${esc(def!.name)}${p.records[id].flawless ? ' · flawless' : ''}</span></li>` : '';
+      return c ? `<li>${esc(c.revealed ? 'NightClaw’s old collar' : c.name)} <span class="small">· ${esc(def!.name)}${p.records[id].flawless ? ' · flawless' : ''}</span></li>` : '';
     })
     .join('');
   const letters = p.letters.length
@@ -404,7 +455,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
       <header class="lair-head">
         <div class="lair-art" aria-hidden="true">${lairSvg(lairCondition(p), p.rooms.mailbox > 0)}</div>
         <div class="lair-stats">
-          <div class="title">Leo's lair</div>
+          <div class="title">Leo's lair${p.legendary ? ' <span class="badge legend">Legendary</span>' : ''}</div>
           <div>Level <b>${lvl}</b> <span class="xpbar small-bar"><span style="width:${Math.min(100, (into / need) * 100)}%"></span></span> <span class="small">${into}/${need} XP</span></div>
           <div>Catnip ${catnip(p.catnip)} · Day ${p.day} · Heists ${p.heists}</div>
         </div>
@@ -500,7 +551,7 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
       <p>${esc(def.objective)}</p>
       <p class="small">${def.loot.length} pieces of loot · ${level.guards.length} guard${level.guards.length === 1 ? '' : 's'}${tier >= 2 ? ` · ${level.cameras.length} camera${level.cameras.length === 1 ? '' : 's'}` : ''}${rec ? ` · best ${rec.bestTurns} turns` : ''}</p>
       ${def.tip ? `<p class="tip"><b>New here:</b> ${esc(def.tip)}</p>` : ''}
-      <p class="small"><b>On duty:</b> ${level.guards.map((g) => `${esc(g.name)}${g.kind && g.kind !== 'watch' ? ` (${{ sleepy: 'sleepy', captain: 'captain', sniffer: 'sniffer', robo: 'Robo-Guard' }[g.kind]})` : ''}`).join(', ')}</p>
+      <p class="small"><b>On duty:</b> ${level.guards.map((g) => `${esc(g.name)}${g.kind && g.kind !== 'watch' ? ` (${{ sleepy: 'sleepy', captain: 'captain', sniffer: 'sniffer', robo: 'Robo-Guard', nightclaw: 'the legend himself' }[g.kind]})` : ''}`).join(', ')}</p>
       ${plan}
       ${rumour}
       <div class="row-buttons"><button id="go" class="primary">Start the heist</button><button id="back">Back to the lair</button></div>

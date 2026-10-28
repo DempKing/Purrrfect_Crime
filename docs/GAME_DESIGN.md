@@ -360,6 +360,16 @@ Museum*; its centrepiece is the *Midnight Music Box*, and Letter 3 is folded ins
 the heist list shows the challenge's progress: centrepieces taken in a flawless heist, out of every
 level after the tutorial.
 
+**As built (M5):** the challenge counts all 25 levels, the tutorial included. When every one has its
+centrepiece taken in a flawless heist, **Letter 4** arrives and **NightClaw's Lair** (the old bell tower on
+Moon Street) opens on the heist list. There NightClaw stalks the belfry hall himself: he moves five tiles a
+turn, sees the dark as dim and dim as lit, and one sighting is a catch. His prized possession is shown as
+just that until Leo picks it up. The heist ends when Leo, holding it, taps NightClaw on the shoulder while
+he's unaware (on his rounds, not suspicious); getting out by the door instead books the loot but leaves
+him waiting. The first tap plays the ending: NightClaw's farewell, the Legendary title, the credits and
+the "NIGHTCLAW'S SUCCESSOR?" front page. Then free play: every heist stays open, the save and the lair
+are marked Legendary, and the collar sits in the Trophy Room (it can't be sold).
+
 ### 9.3 Calling card and newspaper
 
 - At the end of every successful heist, Leo **automatically leaves his calling card** at the scene, a
@@ -440,6 +450,7 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | 23 | The Museum of Modern Mischief | Wet paint and paw prints; the Whoopee Cushion Floor. |
 | 24 | City Hall Treasury | A time-locked vault, with everything Downtown has besides. |
 | NC | The Midnight Museum | NightClaw's challenge (opened by Letter 2): every mechanic so far, in one building. |
+| NC | NightClaw's Lair | The finale (opened by Letter 4): NightClaw himself, and a tap on the shoulder to end it. |
 
 Guards standing still at a post still notice empty displays, decoy cards and paw prints. Guards who hear a noise from something they can't stand on (a kennel, a case, a crate) go to the open
 tile beside it nearest them. Each level opens when the one before it is cleared. Guard types as built: **sleepy** guards see

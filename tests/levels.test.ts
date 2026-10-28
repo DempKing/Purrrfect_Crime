@@ -43,6 +43,10 @@ test('NightClaw’s challenge museum is the only challenge level, and has no riv
   const challenges = ALL_LEVELS.filter((l) => l.challenge);
   assert.deepEqual(challenges.map((l) => l.id), ['nc-midnight-museum']);
   assert.ok(!challenges[0].rivalEntrances?.length);
+  const finales = ALL_LEVELS.filter((l) => l.finale);
+  assert.deepEqual(finales.map((l) => l.id), ['nc-lair']);
+  assert.ok(!finales[0].rivalEntrances?.length, 'no rivals in NightClaw’s lair');
+  assert.ok(finales[0].guards.some((g) => g.kind === 'nightclaw'));
 });
 
 test('level ids are unique and every district has levels', () => {

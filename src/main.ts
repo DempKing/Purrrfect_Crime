@@ -1,4 +1,4 @@
-// Prototype M4: content. One mode, the hardest: no checkpoints, no undo. Save slots; Leo's attributes, skills
+// Prototype M5: the whole story, start to credits. One mode, the hardest: no checkpoints, no undo. Save slots; Leo's attributes, skills
 // and gadgets in the heist; the lair's rooms; the briefing; rival thieves; NightClaw's letters. Built on the M2 slice
 // (tutorial, narrator, paper, black market) and the M1 sandbox.
 import { Application, Container } from 'pixi.js';
@@ -401,6 +401,23 @@ function goOn(): void {
   showLair();
 }
 
+/** The end of the story: NightClaw's farewell, the title, the credits, and the morning paper. */
+function ending(r: ReturnType<typeof completeHeist>): void {
+  const nc = { name: 'NightClaw', portrait: screens.NIGHTCLAW_SVG };
+  screens.narratorScene(
+    [
+      '“Tap, tap.” He doesn’t jump. He turns round slowly, and for a long moment he just looks at you.',
+      '“Do you know how long it has been since anyone crept up on me? Neither do I. Long enough to forget what it feels like.”',
+      'He nods at what’s in your paw. “You found it. That collar is the only thing I never stole. I wore it when I was a kitten, before I was anybody. The tag says Midnight: that was my name, once.”',
+      '“Keep it. You have earned it, and I have no more use for it. The city needs a thief who is better than its locks, and it has one now.”',
+      'He lifts his hat. “Goodnight, Leo. Legendary suits you.” And he’s gone, out of the belfry window, into the dark.',
+    ],
+    'Legendary?',
+    () => screens.legendaryCard(() => screens.credits(() => screens.newspaper(r.paper, true, () => screens.heistReport(r, profile, goOn)))),
+    nc,
+  );
+}
+
 function narratorPays(): void {
   leaveHeist();
   screens.narratorScene(
@@ -646,12 +663,17 @@ function escaped(): void {
   setTimeout(() => {
     if (state !== done) return;
     leaveHeist();
-    screens.callingCard(() => {
-      const report = completeHeist(profile, level, done);
+    const report = () => {
+      const r = completeHeist(profile, level, done);
       if (tutorial) profile.tutorialDone = true;
       tutorial = null;
       persist();
-      screens.newspaper(report.paper, true, () => screens.heistReport(report, profile, goOn));
+      return r;
+    };
+    if (level.def.finale && done.tagged && !profile.legendary) return ending(report());
+    screens.callingCard(() => {
+      const r = report();
+      screens.newspaper(r.paper, true, () => screens.heistReport(r, profile, goOn));
     });
   }, 500);
 }
@@ -736,6 +758,7 @@ async function boot(): Promise<void> {
       return tutorial ? TUTORIAL[tutorial.step]?.id ?? 'done' : null;
     },
     startHeist: (id: string) => startHeist(JOBS.find((j) => j.id === id)!),
+    levels: JOBS.map((j) => ({ id: j.id, challenge: !!j.challenge, finale: !!j.finale })),
     get slot() {
       return slot;
     },

@@ -240,4 +240,17 @@ h2.section.district:first-child { margin-top: 0; }
 .letter .kicker { color: #9a8fb5; }
 .letter .sign { text-align: right; font-style: italic; display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
 .letter .seal { width: 36px; height: 36px; }
-.challenge { border-left: 3px solid #b9a7d9; margin-bottom: 12px; }
+.challenge { border-left: 3px solid #b9a7d9; margin-bottom: 12px; padding: 10px 14px; }
+
+/* The ending. */
+.legendary { text-align: center; border: 1px solid #f2c46b; box-shadow: 0 0 40px rgba(242, 196, 107, 0.25); }
+.legend-title { font-family: Georgia, serif; font-size: 2.2em; letter-spacing: 0.3em; text-transform: uppercase; color: #f2c46b; margin: 4px 0 12px; }
+.badge.legend { background: #f2c46b; color: #1b1b22; }
+.credits { max-width: 520px; margin: 0 auto; padding: 4vh 16px; text-align: center; color: #ddd7ea; }
+.credits .roll { animation: roll 14s ease-out both; }
+.credits .roll h1 { font-family: Georgia, serif; color: #f2c46b; }
+.credits .roll p { margin: 10px 0; }
+@keyframes roll { from { transform: translateY(40vh); opacity: 0; } 15% { opacity: 1; } to { transform: translateY(0); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .credits .roll { animation: none; } }
+.legendary .row-buttons { justify-content: center; }
+.credits .row-buttons { justify-content: center; }

@@ -137,3 +137,21 @@ export function writePaper(f: HeistFacts): Paper {
 
   return { day: f.day, levelId: f.levelId, place: f.place, headline, subhead, photos, total, stories };
 }
+
+/** The morning after Leo crept up on NightClaw. */
+export function finalePaper(day: number): Paper {
+  return {
+    day,
+    levelId: 'nc-lair',
+    place: 'the old bell tower',
+    headline: 'NIGHTCLAW’S SUCCESSOR?',
+    subhead: 'A note pinned to the door of the old bell tower on Moon Street says the legendary NightClaw has retired. It is signed with a claw mark, and it names a successor: a young cat in a tuxedo.',
+    photos: [],
+    total: 0,
+    stories: [
+      { title: 'The end of an era', body: 'For forty years NightClaw was the thief this city told its kittens about. Detectives who spent their careers chasing him say they will miss him. One cried.' },
+      { title: 'Who is the Tuxedo Cat?', body: 'Every museum in the city has had a visit, and every centrepiece has gone, with not one guard who could swear they saw him. Curators are advised to check under their plinths.' },
+      { title: 'Bell tower empty', body: 'Police who searched the tower found only an empty armchair, a cooling cup of milk and, on a velvet cushion, the dent where something small and precious used to lie.' },
+    ],
+  };
+}
