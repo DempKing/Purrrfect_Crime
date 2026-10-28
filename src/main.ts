@@ -45,8 +45,11 @@ import { learn, perksFor, raise, upgrade } from './meta/progression';
 import { deliverLetters } from './meta/letters';
 import { TUTORIAL, advance, type TutorialEvents } from './meta/tutorial';
 import * as screens from './ui/screens';
-import { HeistView, type Actor, type Overlay, type Ripple } from './render/view';
-import { project, unproject } from './render/iso';
+import { HeistView, setPalette, type Actor, type Overlay, type Ripple } from './render/view';
+import { project, screenDir, unproject } from './render/iso';
+import { Sound, soundsInLog, type Sfx, type Tension } from './audio';
+import { SPEED_FACTOR, loadSettings, saveSettings, type Settings } from './settings';
+import { checkAchievements } from './meta/achievements';
 
 /** Heists on offer at the lair, in order. The tutorial can be replayed like any other. */
 const JOBS: LevelDef[] = ALL_LEVELS;
@@ -67,6 +70,45 @@ function storage(): Storage | null {
 let slot = 0;
 let profile: Profile = newProfile();
 const persist = () => saveSlot(storage(), slot, profile);
+
+// --- settings and sound ------------------------------------------------------------------------
+
+const sound = new Sound();
+const prefersReducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const settings: Settings = loadSettings(storage(), prefersReducedMotion);
+/** Animation time, scaled by the speed setting. */
+const anim = (seconds: number) => seconds * SPEED_FACTOR[settings.speed];
+
+function applySettings(): void {
+  document.body.classList.toggle('large-text', settings.largeText);
+  document.body.classList.toggle('reduce-motion', settings.reduceMotion);
+  sound.setLevels(settings.master, settings.music, settings.sfx);
+  setPalette(settings.palette);
+  version++;
+}
+
+function changeSettings(s: Settings): void {
+  Object.assign(settings, s);
+  saveSettings(storage(), settings);
+  applySettings();
+}
+
+function sfx(...names: Sfx[]): void {
+  names.forEach((n, i) => sound.play(n, i * 0.12));
+}
+
+/** Achievements just earned: saved, and announced. */
+function award(r: Parameters<typeof checkAchievements>[1] = null): void {
+  const fresh = checkAchievements(profile, r);
+  if (!fresh.length) return;
+  persist();
+  fresh.forEach((a, i) =>
+    setTimeout(() => {
+      sfx('achievement');
+      screens.toast(a);
+    }, i * 900),
+  );
+}
 
 // --- the narrator's tutorial ------------------------------------------------------------------
 
@@ -106,6 +148,7 @@ function syncActors(): void {
 
 interface Segment {
   who: 'leo' | number;
+  sfx?: Sfx; // played as the step starts
   from: Point;
   to: Point;
   facing: number;
@@ -245,10 +288,13 @@ function act(tile: Point): void {
   version++;
   const segs: Segment[] = [];
   const crawl = state.layer === 'vent' ? 1.4 : 1; // beams are walked at the usual pace
+  const layer = state.layer;
   for (let i = 1; i < res.path.length; i++) {
     const p = res.path[i - 1];
     const q = res.path[i];
-    segs.push({ who: 'leo', from: p, to: q, facing: faceToward(p, q), t: 0, dur: (p.x !== q.x && p.y !== q.y ? 0.17 : 0.12) * crawl });
+    const t = level.tiles[q.y][q.x];
+    const step: Sfx = layer === 'vent' ? 'vent' : t === 'marble' ? 'step-marble' : 'step-carpet';
+    segs.push({ who: 'leo', from: p, to: q, facing: faceToward(p, q), t: 0, dur: anim((p.x !== q.x && p.y !== q.y ? 0.17 : 0.12) * crawl), sfx: layer === 'vent' && i % 2 ? undefined : step });
   }
   play(segs, afterLeoActs);
 }
@@ -258,6 +304,27 @@ function runAction(a: Action): void {
   if (a.blocked) return say(a.blocked);
   state.log = [];
   if (!doAction(level, state, a.kind, a.at)) return say('Leo can’t do that right now.');
+  const actionSound: Partial<Record<Action['kind'], Sfx>> = {
+    'pick-case': 'pick',
+    'pick-door': 'pick',
+    take: 'take',
+    'crack-safe': 'dials',
+    'swipe-card': 'beep',
+    'read-notes': 'click',
+    'turn-dials': 'dials',
+    lights: 'click',
+    panel: 'click',
+    fuse: 'click',
+    'enter-vent': 'vent',
+    'exit-vent': 'vent',
+    'climb-up': 'door',
+    'climb-down': 'door',
+    drop: 'door',
+    tap: 'tap',
+  };
+  const snd = actionSound[a.kind];
+  if (snd) sfx(snd);
+  if (state.inventory.length && a.kind !== 'take' && /^Got /.test(state.log.join(' '))) sfx('take');
   selected = null;
   version++;
   afterLeoActs();
@@ -297,7 +364,8 @@ function runAbility(kind: Ability, at?: Point): void {
   }
   selected = null;
   version++;
-  if (kind === 'pounce') return play([{ who: 'leo', from, to: { ...state.leo }, facing: faceToward(from, state.leo), t: 0, dur: 0.35, leap: true }], afterLeoActs);
+  sfx(kind === 'bottle-cap' ? 'clink' : kind === 'pounce' ? 'pounce' : kind === 'smoke' ? 'whoosh' : 'beep');
+  if (kind === 'pounce') return play([{ who: 'leo', from, to: { ...state.leo }, facing: faceToward(from, state.leo), t: 0, dur: anim(0.35), leap: true }], afterLeoActs);
   afterLeoActs();
   if (at) leo.facing = faceToward(state.leo, at);
 }
@@ -307,10 +375,11 @@ function afterLeoActs(): void {
   syncActors();
   updateHud();
   if (state.log.length) say(state.log.join(' '));
+  sfx(...soundsInLog(state.log));
   tutorialUpdate();
   if (state.status === 'caught') return caught();
   if (state.status === 'escaped') return escaped();
-  if (state.ap <= 0) setTimeout(() => !busy && state.status === 'playing' && state.ap <= 0 && doEndTurn(), 450);
+  if (state.ap <= 0) setTimeout(() => !busy && state.status === 'playing' && state.ap <= 0 && doEndTurn(), anim(450) + 50);
 }
 
 function doEndTurn(): void {
@@ -329,14 +398,15 @@ function doEndTurn(): void {
       const from = rivalWasIn ? rivalAt : { x: s.to.x, y: s.to.y };
       rivalWasIn = true;
       rivalAt = { x: s.to.x, y: s.to.y };
-      return { who: -1, from, to: { x: s.to.x, y: s.to.y }, facing: s.to.facing, t: 0, dur: 0.16 };
+      return { who: -1, from, to: { x: s.to.x, y: s.to.y }, facing: s.to.facing, t: 0, dur: anim(0.16) };
     }
     const from = last[s.guard];
     last[s.guard] = { x: s.to.x, y: s.to.y };
-    return { who: s.guard, from, to: { x: s.to.x, y: s.to.y }, facing: s.to.facing, t: 0, dur: 0.22 };
+    return { who: s.guard, from, to: { x: s.to.x, y: s.to.y }, facing: s.to.facing, t: 0, dur: anim(0.22) };
   });
   busy = segs.length > 0;
   updateHud();
+  sfx(...soundsInLog(state.log));
   play(segs, () => {
     syncActors();
     updateHud();
@@ -347,7 +417,7 @@ function doEndTurn(): void {
     // Still asleep after a Cat Nap: the guards go again.
     if (state.ap <= 0) {
       banner('Zzz…');
-      setTimeout(() => !busy && state.status === 'playing' && state.ap <= 0 && doEndTurn(), 700);
+      setTimeout(() => !busy && state.status === 'playing' && state.ap <= 0 && doEndTurn(), anim(700) + 50);
       return;
     }
     banner(state.alarm !== null ? `Alarm! ${state.alarm} turns` : 'Your turn');
@@ -372,7 +442,7 @@ function startHeist(def: LevelDef): void {
   view.proj.cx = level.w / 2;
   view.proj.cy = level.h / 2;
   $('level-name').textContent = level.def.name;
-  tutorial = def.id === CORNER_GALLERY.id && !profile.tutorialDone ? { step: 0, ev: { moved: false, dashed: false, rotated: false, onMarble: false }, hidden: false } : null;
+  tutorial = def.id === CORNER_GALLERY.id && !profile.tutorialDone ? { step: 0, ev: { moved: false, dashed: false, rotated: false, onMarble: false }, hidden: !settings.hints } : null;
   screens.hideScreens();
   inHeist = true;
   document.body.classList.remove('meta');
@@ -389,6 +459,7 @@ function leaveHeist(): void {
   targeting = null;
   $('narrator').classList.add('hidden');
   document.body.classList.add('meta');
+  sound.setTension(1);
 }
 
 // --- between heists ---------------------------------------------------------------------------
@@ -457,9 +528,11 @@ function showLair(tab: screens.LairTab = 'heists'): void {
   leaveHeist();
   // NightClaw's letters wait at the door until they've been read.
   deliverLetters(profile);
+  award();
   const unread = profile.letters.find((l) => !l.read);
   if (unread) {
     persist();
+    sfx('chime');
     return screens.letter(unread, profile, () => {
       unread.read = true;
       persist();
@@ -499,6 +572,7 @@ function showLair(tab: screens.LairTab = 'heists'): void {
         showLair('lair');
       },
       onLetter: (i) => screens.letter(profile.letters[i], profile, () => showLair('lair'), 'Back to the lair'),
+      onSettings: () => screens.settingsScreen(settings, changeSettings, () => showLair(tab)),
       onQuit: showTitle,
     },
     tab,
@@ -530,6 +604,7 @@ function showTitle(): void {
       deleteSlot(storage(), i);
       showTitle();
     },
+    onSettings: () => screens.settingsScreen(settings, changeSettings, showTitle),
   });
 }
 
@@ -618,6 +693,8 @@ function updateHud(): void {
     show('alarm');
   } else hide('alarm');
   ($('end') as HTMLButtonElement).disabled = busy || state.status !== 'playing';
+  const tension: Tension = state.status !== 'playing' ? 1 : state.alarm !== null ? 3 : state.guards.some((g) => !g.asleep && g.mode !== 'patrol') ? 2 : 1;
+  sound.setTension(tension);
 
   // Gadgets and active skills, with what's left of each.
   const ab = $('abilities');
@@ -653,6 +730,7 @@ function updateHud(): void {
 }
 
 function caught(): void {
+  sfx('caught');
   $('caught-who').textContent = state.caughtBy ?? 'A guard';
   $('caught-why').textContent = state.caughtWhy ? `${state.caughtWhy}.` : '';
   setTimeout(() => show('caught'), 600);
@@ -668,8 +746,11 @@ function escaped(): void {
       if (tutorial) profile.tutorialDone = true;
       tutorial = null;
       persist();
+      award(r);
+      sfx('whoosh');
       return r;
     };
+    sfx('escape');
     if (level.def.finale && done.tagged && !profile.legendary) return ending(report());
     screens.callingCard(() => {
       const r = report();
@@ -677,6 +758,35 @@ function escaped(): void {
     });
   }, 500);
 }
+/**
+ * The keyboard cursor: the arrow keys move it across the screen, whichever way the camera faces (each key
+ * picks the grid direction that looks most like it on screen). It starts on Leo, or on the target when aiming.
+ */
+function moveCursor(sx: number, sy: number): void {
+  if (busy || state.status !== 'playing') return;
+  const from = selected ?? { ...state.leo };
+  let best = { x: 0, y: 0 };
+  let score = -Infinity;
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
+    const d = screenDir(view.proj, dx, dy);
+    const len = Math.hypot(d.x, d.y) || 1;
+    const sc = (d.x * sx + d.y * sy) / len;
+    if (sc > score) {
+      score = sc;
+      best = { x: dx, y: dy };
+    }
+  }
+  selected = { x: Math.min(level.w - 1, Math.max(0, from.x + best.x)), y: Math.min(level.h - 1, Math.max(0, from.y + best.y)) };
+  const a = clickAction(selected);
+  const cost = computed().reach.cost.get(key(selected.x, selected.y));
+  say(a ? `${a.label}: press Enter.` : cost !== undefined && cost > 0 ? `Enter: move here (${moveAp(state, cost)} action point${moveAp(state, cost) === 1 ? '' : 's'}).` : 'Leo can’t get there this turn.');
+}
+
+/** The settings, opened mid-heist: the heist waits underneath. */
+function openSettingsInHeist(): void {
+  screens.settingsScreen(settings, changeSettings, () => screens.hideScreens());
+}
+
 // --- boot -------------------------------------------------------------------------------------
 
 const app = new Application();
@@ -724,11 +834,24 @@ async function boot(): Promise<void> {
     tutorialUpdate();
   });
   $('help-toggle').addEventListener('click', () => $('help').classList.toggle('hidden'));
+  $('settings-btn').addEventListener('click', openSettingsInHeist);
+  // Browsers only allow sound after the player has done something.
+  for (const ev of ['pointerdown', 'keydown'] as const) window.addEventListener(ev, () => sound.unlock(), { passive: true });
   window.addEventListener('keydown', (e) => {
-    if (!inHeist) return;
-    if (e.key === 'q' || e.key === 'Q') turnCamera(1);
+    // Nothing reaches the heist while a screen (the settings, say) is open over it.
+    if (!inHeist || !$('screens').classList.contains('hidden')) return;
+    if (e.target instanceof HTMLInputElement) return;
+    const arrows: Record<string, [number, number]> = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+    if (e.key in arrows) {
+      e.preventDefault();
+      moveCursor(...arrows[e.key]);
+    } else if (e.key === 'q' || e.key === 'Q') turnCamera(1);
     else if (e.key === 'e' || e.key === 'E') turnCamera(-1);
-    else if (e.key === ' ' || e.key === 'Enter') {
+    else if (e.key === 'Enter' && selected && state.status === 'playing') {
+      e.preventDefault();
+      const t = selected;
+      act(t);
+    } else if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       if (state.status === 'playing') doEndTurn();
       else restart();
@@ -776,6 +899,7 @@ async function boot(): Promise<void> {
     },
   };
 
+  applySettings();
   showTitle();
 
   app.ticker.add((tk) => {
@@ -784,6 +908,7 @@ async function boot(): Promise<void> {
     view.proj.angle += (targetAngle - view.proj.angle) * (1 - Math.exp(-dt * 10));
     if (queue.length) {
       const seg = queue[0];
+      if (seg.t === 0 && seg.sfx) sound.play(seg.sfx);
       seg.t += dt / seg.dur;
       const k = Math.min(1, seg.t);
       const a = seg.who === 'leo' ? leo : seg.who === -1 ? rival : guards[seg.who];

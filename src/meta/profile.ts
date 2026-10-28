@@ -61,6 +61,8 @@ export interface Profile {
   letters: Letter[];
   /** Leo crept up on NightClaw in his lair, and NightClaw named him Legendary. */
   legendary: boolean;
+  /** Achievement ids earned (see meta/achievements.ts). */
+  achievements: string[];
 }
 
 export function newProfile(): Profile {
@@ -86,6 +88,7 @@ export function newProfile(): Profile {
     rivalRecord: {},
     letters: [],
     legendary: false,
+    achievements: [],
   };
 }
 
@@ -184,6 +187,10 @@ export interface HeistReport {
   finale: boolean;
   /** Out of NightClaw's lair without tapping him on the shoulder: he's still waiting. */
   ncWaiting: boolean;
+  /** For the achievements: inventory spaces filled and available, and the heist's par. */
+  spacesUsed: number;
+  spaces: number;
+  par: number | undefined;
   rival: { id: RivalId; won: boolean } | null;
   levelId: string;
   levelName: string;
@@ -271,7 +278,13 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
   });
   p.papers.unshift(paper);
   p.day++;
-  return { finale: firstFinale, ncWaiting: !!def.finale && !s.tagged, rival, levelId: def.id, levelName: def.name, turns: s.turn, items, total, centrepiece, flawless, replay, xp, xpTotal, levelBefore, levelAfter: playerLevel(p.xp), paper };
+  return {
+    spacesUsed: s.inventory.reduce((n, i) => n + def.loot[i].space, 0),
+    spaces: s.perks.spaces,
+    par: def.par,
+    finale: firstFinale,
+    ncWaiting: !!def.finale && !s.tagged,
+    rival, levelId: def.id, levelName: def.name, turns: s.turn, items, total, centrepiece, flawless, replay, xp, xpTotal, levelBefore, levelAfter: playerLevel(p.xp), paper };
 }
 
 // --- Saving: three slots ---------------------------------------------------------------------
@@ -293,7 +306,17 @@ export function upgradeProfile(raw: unknown): Profile | null {
   const { difficulty: _difficulty, ...rest } = p as typeof p & { difficulty?: string };
   void _difficulty;
   const skills = (p.skills ?? []).map((id) => ((id as string) === 'nine-lives' ? 'second-wind' : id));
-  return { ...fresh, ...rest, version: 2, attributes: { ...fresh.attributes, ...p.attributes }, rooms: { ...fresh.rooms, ...p.rooms }, skills };
+  return {
+    ...fresh,
+    ...rest,
+    version: 2,
+    attributes: { ...fresh.attributes, ...p.attributes },
+    rooms: { ...fresh.rooms, ...p.rooms },
+    skills,
+    letters: p.letters ?? [],
+    achievements: p.achievements ?? [],
+    legendary: p.legendary ?? false,
+  };
 }
 
 export function loadSlot(storage: Pick<Storage, 'getItem'> | null, slot: number): Profile | null {

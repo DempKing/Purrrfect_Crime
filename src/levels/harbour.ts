@@ -23,7 +23,7 @@ export const CUSTOMS_WAREHOUSE: LevelDef = {
     { x: 1, y: 16, w: 3, h: 1 },
   ],
   xp: 400,
-  par: 32,
+  par: 30,
   rivalEntrances: [{ x: 26, y: 15 }, { x: 22, y: 1 }],
   map: [
     '############################',
@@ -101,7 +101,7 @@ export const LIGHTHOUSE: LevelDef = {
     { x: 23, y: 10, w: 4, h: 2 },
   ],
   xp: 420,
-  par: 32,
+  par: 19,
   beacon: { at: { x: 13, y: 8 }, range: 11, facing: 0 },
   rivalEntrances: [{ x: 26, y: 5 }, { x: 1, y: 12 }],
   map: [
@@ -188,7 +188,7 @@ export const SHIPWRECK: LevelDef = {
   gaps: 'water',
   tide: { period: 3, high: true },
   xp: 440,
-  par: 34,
+  par: 22,
   rivalEntrances: [{ x: 2, y: 16 }, { x: 26, y: 1 }],
   map: [
     '############################',
@@ -254,7 +254,7 @@ export const FISH_BANK: LevelDef = {
   ambient: 'dark',
   fishy: [{ x: 1, y: 11, w: 26, h: 6 }],
   xp: 460,
-  par: 36,
+  par: 26,
   rivalEntrances: [{ x: 26, y: 11 }, { x: 26, y: 3 }],
   map: [
     '############################',
@@ -321,7 +321,7 @@ export const AQUARIUM: LevelDef = {
   ambient: 'dark',
   gaps: 'water',
   xp: 480,
-  par: 36,
+  par: 50,
   rivalEntrances: [{ x: 26, y: 16 }, { x: 26, y: 5 }],
   map: [
     '############################',

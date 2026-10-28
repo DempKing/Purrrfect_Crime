@@ -263,7 +263,7 @@ Pounce). Once-a-heist skills get a second charge from the Workshop's third tier.
   *EMP Collar* (lvl 18: disables every device in a radius for 1 turn).
 - **Acrobat:** *Pounce* (jump 2 tiles), *Ceiling Climb* (crawl along rafters as a second route),
   *Tightrope* (cross gaps), *Cat Nap* (lvl 15: wait out a guard's whole route while hidden), *Second Wind*
-  (lvl 25: one extra action point once per heist).
+  (lvl 22: one extra action point once per heist).
 
 As built in M3:
 
@@ -283,7 +283,7 @@ As built in M3:
 | Ceiling Climb | 6 | 800 | Locked until the levels with rafters (M4). |
 | Tightrope | 9 | 1,100 | Walk the wires over rooftop gaps and water, where no guard can follow. |
 | Cat Nap | 15 | 2,200 | Once a heist: guards can't notice Leo for two of their turns (unless they walk into him). |
-| Second Wind | 25 | 4,000 | Once a heist, with 1 action point or fewer left: free, +1 action point this turn. (It replaced Nine Lives when the game went to one mode, where a catch is always a catch.) |
+| Second Wind | 22 | 4,000 | Once a heist, with 1 action point or fewer left: free, +1 action point this turn. (It replaced Nine Lives when the game went to one mode, where a catch is always a catch.) |
 
 ## 8. The lair
 
@@ -512,6 +512,27 @@ sprite sheets.
 - **Audio:** sneaky jazz (upright bass, brushed drums) that adds layers as suspicion rises, and switches to
   a big-band chase stinger when an alarm trips. Footstep sounds change with the floor type; guard snores
   and grumbles; the newspaper's spinning-press whoosh.
+
+### 12.2 Audio, settings and accessibility as built (M6)
+
+- **Audio** is synthesised in the browser (Web Audio), so there are no files to load: a swing loop of
+  walking bass, ride cymbal and brushes; vibraphone chords join when any guard is suspicious; an alarm
+  switches to a faster big-band chase with brass stabs. Effects: footsteps by floor, lock picks, safes and
+  dials, glass, card readers, switches, vents, bottle caps, barks, splashes, robots, the alarm, the sad
+  trombone when caught, the newspaper's whoosh, letters and achievements. Audio starts on the first click
+  or key press, as browsers require.
+- **Settings** (kept per browser, not per save): volume, music and effects levels; animation speed
+  (normal, fast, instant); tutorial tips; larger text; reduced motion (it follows the system setting at
+  first); and a colour-blind friendly palette (Okabe–Ito colours, with guard sight hatched so it doesn't
+  rely on colour at all). Open from the title screen, the lair, or ⚙ in a heist.
+- **Keyboard play:** the arrow keys move a cursor across the screen (whichever way the camera faces),
+  Enter moves Leo there or does what's there, Space ends the turn, 1–9 pick an action. The message line
+  and alarm are announced to screen readers.
+- **Achievements:** 24, from the first night to Legendary (story ones stay hidden until earned), with a
+  notice when one is earned and a list on the Leo tab. Each has a Steam API name for the Steam build.
+- **Balance:** `npm run balance` writes [BALANCE.md](BALANCE.md) from the solver's routes. Par is twice
+  the flawless route, and at least ten turns more. Second Wind moved from level 25 to 22, so that it's
+  reachable a few heists after the story rather than twenty.
 
 ## 13. Tech plan
 

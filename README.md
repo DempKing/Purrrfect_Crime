@@ -7,7 +7,7 @@ and catch the eye of the legendary **NightClaw**.
 
 There's no combat: stay hidden in the shadows and vents. Get caught and you restart the level.
 
-**Status:** prototype M5: the whole story is playable, start to credits, with placeholder art. There's **one mode, the hardest**: no
+**Status:** prototype M6 in progress: the whole story is playable, start to credits, with synthesised sound and music, settings (volume, speed, larger text, reduced motion, a colour-blind palette), keyboard play and achievements. The art is still placeholder. There's **one mode, the hardest**: no
 difficulty choice, no checkpoints, no undo, and every level is designed to be beaten flawlessly.
 **All five districts are built (25 levels)**: after the
 tutorial come the Cobblestone Coin Museum (a sleepy guard, creaky floorboards, a safe), the Clocktower
@@ -47,6 +47,7 @@ npm run dev        # builds with source maps and serves on http://localhost:8100
 npm run build      # dist/index.html: one self-contained file
 npm test           # rules, skills, progression, market and newspaper tests, plus a flawless route through every level
 npm run solve -- l1-coin-museum --clean --write   # find (and save) flawless routes while designing a level
+npm run balance    # docs/BALANCE.md: every level's route against its par, and the XP and Catnip curve
 npm run typecheck
 node tests/e2e.mjs # plays the built game in a headless browser (needs Playwright)
 ```
@@ -67,6 +68,7 @@ tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 | Document | What's in it |
 | --- | --- |
 | [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md) | The full design: turns and camera, stealth, security, rivals, loot and the black market, progression, the lair, story and NightClaw's letters, tutorial, 25 levels, art and sprite spec, tech plan, milestones, decisions |
+| [docs/BALANCE.md](docs/BALANCE.md) | The balance report: each level's flawless route, par, XP and loot |
 | [docs/ORIGINAL_BRIEF.md](docs/ORIGINAL_BRIEF.md) | The original pitch and decisions, word for word |
 | [art/README.md](art/README.md) | Where generated sprites go and how to upload them |
 
@@ -85,4 +87,4 @@ tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 | M3 ✓ | Progression: attributes, skill trees, lair upgrades, saves |
 | M4 ✓ | Content: levels 1–25, rivals, all guard types, NightClaw's first letters, the challenge museum |
 | M5 ✓ (art pending) | Endgame: the NightClaw Challenge, NightClaw's Lair, ending |
-| M6 | Ship: Steam, settings, accessibility, balance and polish |
+| M6 (settings ✓, sound ✓, accessibility ✓, achievements ✓, balance ✓) | Ship: Steam, settings, accessibility, balance and polish |

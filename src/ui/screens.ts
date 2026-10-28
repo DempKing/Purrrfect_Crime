@@ -5,6 +5,8 @@ import { parseLevel, the, type LevelDef, type LootCategory } from '../core/level
 import { RIVALS, type RivalPlan } from '../core/game';
 import type { Paper } from '../meta/newspaper';
 import { LETTERS, challengeProgress, delivery, hasLetter, type Letter } from '../meta/letters';
+import { ACHIEVEMENTS, type Achievement } from '../meta/achievements';
+import type { Settings } from '../settings';
 import { MASTHEAD } from '../meta/newspaper';
 import {
   LAIR_PRICE,
@@ -92,6 +94,7 @@ export interface TitleCallbacks {
   onPlay: (slot: number) => void;
   onNew: (slot: number) => void;
   onDelete: (slot: number) => void;
+  onSettings: () => void;
 }
 
 function slotSummary(p: Profile): string {
@@ -117,10 +120,12 @@ export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void
           )
           .join('')}
       </div>
+      <div class="row-buttons"><button id="title-settings">Settings</button></div>
       <p class="small">Placeholder art throughout. Generated sprites replace it later. Games save in this browser.</p>
     </div>`,
     'overlay',
   );
+  on(el, '#title-settings', cb.onSettings);
   on(el, '[data-play]', (e) => cb.onPlay(Number((e.currentTarget as HTMLElement).dataset.play)));
   on(el, '[data-new]', (e) => cb.onNew(Number((e.currentTarget as HTMLElement).dataset.new)));
   on(el, '[data-delete]', (e) => {
@@ -129,6 +134,71 @@ export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void
     b.dataset.armed = '1';
     b.textContent = 'Really delete?';
   });
+}
+
+// --- Settings ---------------------------------------------------------------------------------------------
+
+/** The settings panel. Every change applies at once (`onChange`); `onClose` goes back to whatever was open. */
+export function settingsScreen(st: Settings, onChange: (s: Settings) => void, onClose: () => void): void {
+  const slider = (id: keyof Settings, label: string) =>
+    `<label class="setting"><span>${label}</span><input type="range" min="0" max="100" step="5" data-range="${id}" value="${Math.round((st[id] as number) * 100)}" aria-label="${label}"><output>${Math.round((st[id] as number) * 100)}%</output></label>`;
+  const choice = (id: keyof Settings, label: string, options: [string, string][]) =>
+    `<div class="setting"><span id="lbl-${id}">${label}</span><div class="seg" role="radiogroup" aria-labelledby="lbl-${id}">${options
+      .map(([v, l]) => `<button role="radio" aria-checked="${st[id] === v}" class="${st[id] === v ? 'on' : ''}" data-choice="${id}" data-value="${v}">${l}</button>`)
+      .join('')}</div></div>`;
+  const toggle = (id: keyof Settings, label: string, hint: string) =>
+    `<label class="setting"><span>${label}<br><span class="small">${hint}</span></span><input type="checkbox" data-toggle="${id}" ${st[id] ? 'checked' : ''}></label>`;
+  const el = show(
+    `<div class="card big settings" role="dialog" aria-label="Settings">
+      <div class="kicker">Settings</div>
+      <h2 class="section">Sound</h2>
+      ${slider('master', 'Volume')}${slider('music', 'Music')}${slider('sfx', 'Sound effects')}
+      <h2 class="section">Play</h2>
+      ${choice('speed', 'Animation speed', [['normal', 'Normal'], ['fast', 'Fast'], ['instant', 'Instant']])}
+      ${toggle('hints', 'Tutorial tips', 'The narrator’s tips during the first heist.')}
+      <h2 class="section">Accessibility</h2>
+      ${toggle('largeText', 'Larger text', 'Bigger text in the HUD and on every screen.')}
+      ${toggle('reduceMotion', 'Reduce motion', 'No spinning newspapers or rolling credits; quicker animations.')}
+      ${choice('palette', 'Colours', [['standard', 'Standard'], ['colourblind', 'Colour-blind friendly']])}
+      <p class="small">Keyboard: arrow keys move the cursor, Enter moves Leo there (or does what's there), Space ends the turn, 1–9 pick an action, Q and E turn the camera, Esc cancels.</p>
+      <div class="row-buttons"><button id="settings-ok" class="primary">Done</button></div>
+    </div>`,
+    'overlay',
+  );
+  const change = (patch: Partial<Settings>) => {
+    Object.assign(st, patch);
+    onChange(st);
+  };
+  el.querySelectorAll<HTMLInputElement>('[data-range]').forEach((i) =>
+    i.addEventListener('input', () => {
+      i.nextElementSibling!.textContent = `${i.value}%`;
+      change({ [i.dataset.range!]: Number(i.value) / 100 } as Partial<Settings>);
+    }),
+  );
+  el.querySelectorAll<HTMLInputElement>('[data-toggle]').forEach((i) => i.addEventListener('change', () => change({ [i.dataset.toggle!]: i.checked } as Partial<Settings>)));
+  on(el, '[data-choice]', (e) => {
+    const b = e.currentTarget as HTMLElement;
+    change({ [b.dataset.choice!]: b.dataset.value } as Partial<Settings>);
+    b.parentElement!.querySelectorAll('button').forEach((x) => {
+      x.classList.toggle('on', x === b);
+      x.setAttribute('aria-checked', String(x === b));
+    });
+  });
+  on(el, '#settings-ok', onClose);
+  el.querySelector<HTMLElement>('#settings-ok')?.focus();
+}
+
+/** A little card in the corner: an achievement unlocked. */
+export function toast(a: Achievement): void {
+  const box = document.getElementById('toasts');
+  if (!box) return;
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.setAttribute('role', 'status');
+  t.innerHTML = `<div class="kicker">Achievement</div><b>${esc(a.name)}</b><br><span class="small">${esc(a.text)}</span>`;
+  box.appendChild(t);
+  setTimeout(() => t.classList.add('gone'), 4200);
+  setTimeout(() => t.remove(), 5000);
 }
 
 // --- The narrator, between heists --------------------------------------------------------------
@@ -319,6 +389,7 @@ export interface LairCallbacks {
   onLearn: (id: SkillId) => void;
   onUpgrade: (id: Room) => void;
   onLetter: (index: number) => void;
+  onSettings: () => void;
   onQuit: () => void;
 }
 
@@ -394,7 +465,12 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     <div class="ups">${attributes}</div>
     <h2 class="section">Skills</h2>
     <div class="trees">${trees}</div>
-    ${rivalry ? `<h2 class="section">Rivals</h2><ul class="trophies">${rivalry}</ul>` : ''}`;
+    ${rivalry ? `<h2 class="section">Rivals</h2><ul class="trophies">${rivalry}</ul>` : ''}
+    <h2 class="section">Achievements <span class="small">${p.achievements.length} of ${ACHIEVEMENTS.length}</span></h2>
+    <div class="achievements">${ACHIEVEMENTS.map((a) => {
+      const got = p.achievements.includes(a.id);
+      return `<div class="achievement ${got ? 'got' : ''}"><b>${got || !a.secret ? esc(a.name) : 'A secret'}</b><br><span class="small">${got || !a.secret ? esc(a.text) : 'Keep going.'}</span></div>`;
+    }).join('')}</div>`;
 
   const collector = collectorWants(p);
   const stash = p.stash
@@ -459,7 +535,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
           <div>Level <b>${lvl}</b> <span class="xpbar small-bar"><span style="width:${Math.min(100, (into / need) * 100)}%"></span></span> <span class="small">${into}/${need} XP</span></div>
           <div>Catnip ${catnip(p.catnip)} · Day ${p.day} · Heists ${p.heists}</div>
         </div>
-        <button id="lair-quit" class="quit" title="Back to the title screen">Save &amp; quit</button>
+        <div class="lair-buttons"><button id="lair-settings" title="Sound, speed, accessibility">Settings</button><button id="lair-quit" class="quit" title="Back to the title screen">Save &amp; quit</button></div>
       </header>
       <nav class="tabs">
         ${(Object.keys(names) as LairTab[]).map((t) => `<button data-tab="${t}" class="${t === tab ? 'on' : ''}">${names[t]}</button>`).join('')}
@@ -477,6 +553,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   on(el, '[data-upgrade]', (e) => cb.onUpgrade((e.currentTarget as HTMLElement).dataset.upgrade as Room));
   on(el, '[data-letter]', (e) => cb.onLetter(Number((e.currentTarget as HTMLElement).dataset.letter)));
   on(el, '#lair-quit', cb.onQuit);
+  on(el, '#lair-settings', cb.onSettings);
 }
 
 /** The lair, placeholder art that fixes itself up as rooms are built: boards come off, lights go on, a neon sign. */

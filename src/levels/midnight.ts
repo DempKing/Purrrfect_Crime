@@ -18,7 +18,7 @@ export const MIDNIGHT_MUSEUM: LevelDef = {
   objective: 'Steal the Midnight Music Box from the vault in the Midnight Wing, and leave by the skylight.',
   ambient: 'dark',
   xp: 500,
-  par: 40,
+  par: 42,
   map: [
     '##############################',
     '##############################',
@@ -90,7 +90,7 @@ export const NIGHTCLAW_LAIR: LevelDef = {
   objective: 'Steal NightClaw’s prized possession, then creep up on him and tap him on the shoulder.',
   ambient: 'dark',
   xp: 800,
-  par: 40,
+  par: 34,
   map: [
     '##############################',
     '#...L...D.#..^.^...#......D..#',

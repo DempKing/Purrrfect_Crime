@@ -16,7 +16,7 @@ export const MANSION: LevelDef = {
   objective: 'Find the keycard, take the Fabergé Fish from the gallery, and leave through the ballroom.',
   ambient: 'dark',
   xp: 300,
-  par: 30,
+  par: 24,
   rivalEntrances: [{ x: 26, y: 16 }, { x: 1, y: 8 }],
   map: [
     '############################',
@@ -102,7 +102,7 @@ export const SKY_GARDEN: LevelDef = {
     { x: 25, y: 12, w: 2, h: 3 },
   ],
   xp: 320,
-  par: 30,
+  par: 19,
   rivalEntrances: [{ x: 26, y: 4 }, { x: 9, y: 1 }],
   map: [
     '############################',
@@ -170,7 +170,7 @@ export const GLASS_TOWER: LevelDef = {
     { x: 26, y: 5, w: 1, h: 7 }, // curtains by the service stairs
   ],
   xp: 340,
-  par: 30,
+  par: 19,
   rivalEntrances: [{ x: 26, y: 1 }, { x: 1, y: 1 }],
   map: [
     '############################',
@@ -256,7 +256,7 @@ export const YACHT_CLUB: LevelDef = {
   ambient: 'dark',
   gaps: 'water',
   xp: 360,
-  par: 32,
+  par: 36,
   rivalEntrances: [{ x: 26, y: 7 }, { x: 12, y: 16 }],
   map: [
     '############################',
@@ -315,7 +315,7 @@ export const OBSERVATORY: LevelDef = {
   objective: 'Find the combination, open the vault and take the Comet Diamond, then get out over the east wall.',
   ambient: 'dark',
   xp: 380,
-  par: 34,
+  par: 32,
   rivalEntrances: [{ x: 26, y: 13 }, { x: 26, y: 1 }],
   map: [
     '############################',
