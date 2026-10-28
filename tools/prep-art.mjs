@@ -17,8 +17,8 @@ const SCALE = 3;
 /** Each character's height in game pixels, standing. */
 const CHARACTERS = { leo: 62, luna: 60, mittens: 60, sammy: 60, prof: 58, guard: 74, dog: 46, robot: 80, nightclaw: 84 };
 const FRAMES = ['idle', 'a', 'b'];
-/** The moonlight rim round each character, in stored pixels. */
-const RIM = 4;
+/** A pale rim round each character, in stored pixels (0: none; it made them look like cut-outs). */
+const RIM = 0;
 /** Loot pictures: drawn ones, plus a few of the 3D models' sprites (frame 1, turned 45°). Longest side in game px. */
 const LOOT = {
   bell: 'loot_bell.webp', bowl: 'loot_bowl.webp', clockwork: 'loot_clock.webp', cream: 'loot_cream.webp', cushion: 'loot_cushion.webp',
