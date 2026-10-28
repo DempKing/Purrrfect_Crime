@@ -1,10 +1,11 @@
 // Draws a heist: floors and overlays first, then walls, furniture and characters sorted by depth.
 // Placeholder art for now; generated sprites replace the character and prop drawing later.
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Matrix } from 'pixi.js';
 import { DIRS, PRINT_TURNS, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, roboOff, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
 import type { Level, Point } from '../core/level';
 import { DISTRICTS } from '../levels';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
+import { charFrame, lootPicture, type CharFrameName, type CharName } from './characters';
 import { frameFor, prop, WALL_DECOR, type PropName } from './props';
 
 const WALL_H = 84;
@@ -81,11 +82,24 @@ export interface Overlay {
   targets: Set<string>;
 }
 
+/** How a character is moving, which picks their animation. */
+export type Gait = 'walk' | 'run' | 'sneak' | 'crawl' | 'leap' | 'climb';
+
 export interface Actor {
   x: number; // continuous grid position (tile x + 0.5 is the centre)
   y: number;
   facing: number;
   bob: number;
+  /** Set while moving. */
+  gait?: Gait;
+  /** Steps walked so far, for the stride. */
+  phase?: number;
+  /** 0..1 through a pounce. */
+  leapT?: number;
+  /** 1 just after Leo does something with his paws (picking, cracking, grabbing), easing to 0. */
+  work?: number;
+  /** Facing right on screen (the drawings face left). Kept while walking straight up or down the screen. */
+  flip?: boolean;
 }
 
 export interface Ripple {
@@ -124,6 +138,15 @@ export class HeistView {
   private district = '';
   private districtOf = '';
   private light: number[][] = [];
+  private lastTime = 0;
+  private lvl: Level | null = null;
+  /** Leo's height off the floor, easing between the floor and the rafters as he climbs. */
+  private leoLift = 0;
+  /** 0..1: how far Leo has ducked into a crate. */
+  private leoHide = 0;
+  /** Loot on its way from its stand to Leo's bag. */
+  private pops: { li: number; t: number }[] = [];
+  private inventorySeen: number[] = [];
 
   constructor() {
     this.root.addChild(this.floor, this.objects, this.fx);
@@ -138,6 +161,16 @@ export class HeistView {
     this.fx.clear();
     const light = lightMap(level, s.lampsOff);
     this.light = light;
+    this.lvl = level;
+    const dt = Math.min(0.1, Math.max(0, this.time - this.lastTime));
+    this.lastTime = this.time;
+    if (this.districtOf !== level.def.id || s.inventory.length < this.inventorySeen.length) {
+      this.inventorySeen = [...s.inventory];
+      this.pops = [];
+    }
+    for (const li of s.inventory) if (!this.inventorySeen.includes(li)) this.pops.push({ li, t: 0 });
+    this.inventorySeen = [...s.inventory];
+    leo.work = Math.max(0, (leo.work ?? 0) - dt * 1.4);
     if (this.districtOf !== level.def.id) {
       this.districtOf = level.def.id;
       this.district = DISTRICTS.find((d) => d.levels.some((l) => l.id === level.def.id))?.id ?? 'old-town';
@@ -312,10 +345,18 @@ export class HeistView {
       const facing = c.sweep[c.idx];
       items.push({ depth: project(p, c.at.x + 0.5, c.at.y + 0.5).depth + 0.4, draw: (g) => this.camera(g, c.at, facing, !camerasActive(s, c)) });
     }
-    if (!hiddenAt(level, s, s.leo) || s.leo.x !== Math.floor(leo.x) || s.leo.y !== Math.floor(leo.y)) items.push({
+    const liftTo = inRafters ? RAFTER_Z - 6 : 0;
+    const climbing = Math.abs(liftTo - this.leoLift) > 1;
+    this.leoLift += Math.max(-dt * 170, Math.min(dt * 170, liftTo - this.leoLift));
+    const tucked = hiddenAt(level, s, s.leo) && s.leo.x === Math.floor(leo.x) && s.leo.y === Math.floor(leo.y);
+    this.leoHide = Math.max(0, Math.min(1, this.leoHide + (tucked ? dt * 4 : -dt * 6)));
+    if (this.leoHide < 0.98) items.push({
       depth: leoDepth + 0.05,
       draw: (g) => {
-        this.drawLeo(g, leo, s.inventory.length > 0, inVent, inRafters ? RAFTER_Z - 6 : 0);
+        const gait = leo.gait;
+        if (climbing) leo.gait = 'climb';
+        this.drawLeo(g, leo, s.inventory.length > 0, inVent, this.leoLift);
+        leo.gait = gait;
         if (s.napTurns > 0) this.zzz(g, leo);
       },
     });
@@ -351,6 +392,144 @@ export class HeistView {
       const R = Math.max(0.15, r.r * r.t);
       this.fx.ellipse(sp.x, sp.y, (R * TILE_W) / Math.SQRT2, (R * TILE_H) / Math.SQRT2).stroke({ width: 3, color: 0xfff0b0, alpha: (1 - r.t) * 0.85 });
     }
+
+    // Loot just taken: it hops from its stand into Leo's bag.
+    for (const pop of this.pops) {
+      pop.t += dt / 0.55;
+      const from = level.def.loot[pop.li]?.at;
+      if (!from) continue;
+      const k = Math.min(1, pop.t);
+      const e = 1 - (1 - k) * (1 - k);
+      const x = from.x + 0.5 + (leo.x - from.x - 0.5) * e;
+      const y = from.y + 0.5 + (leo.y - from.y - 0.5) * e;
+      const sp = project(p, x, y, 40 + Math.sin(k * Math.PI) * 46 - k * 10);
+      const size = 1.25 - k * 0.65;
+      const pic = lootPicture(level.def.loot[pop.li].name);
+      this.fx.circle(sp.x, sp.y, 20 * size).fill({ color: 0xfff3c4, alpha: 0.25 * (1 - k) });
+      if (pic) this.fx.texture(pic.tex, pic.tint, sp.x - (pic.w * size) / 2, sp.y - (pic.h * size) / 2, pic.w * size, pic.h * size);
+      else this.fx.poly([sp.x, sp.y - 9 * size, sp.x + 7 * size, sp.y, sp.x, sp.y + 6 * size, sp.x - 7 * size, sp.y]).fill({ color: LOOT_COLORS[pop.li % LOOT_COLORS.length] });
+    }
+    this.pops = this.pops.filter((q) => q.t < 1);
+  }
+
+  /**
+   * A drawn character, animated from its three frames: breathing while it stands; striding (frames a and b in
+   * turn, with a bob) to walk; leaning in and bounding to run; crouched low to sneak through the dark; flat out
+   * to crawl through a vent; stretched along the arc of a pounce; swaying side to side to climb; and fidgeting
+   * fast, head down, while Leo works at a lock or a case. Returns where its head is, or null until the art loads.
+   */
+  private figure(
+    g: Graphics,
+    name: CharName,
+    a: Actor,
+    o: { lift?: number; alpha?: number; tint?: number; crawl?: boolean; hide?: number; asleep?: boolean; off?: boolean; scale?: number } = {},
+  ): { x: number; top: number } | null {
+    const still = charFrame(name, 'idle');
+    if (!still) return null;
+    const s = project(this.proj, a.x, a.y, o.lift ?? 0);
+    const f = this.face(a);
+    if (Math.abs(f.x) > 0.05) a.flip = f.x > 0;
+    const t = this.time;
+    const gait = a.gait ?? (o.crawl ? 'crawl' : undefined);
+    const cycle = (a.phase ?? 0) * 2;
+    const half = cycle % 1;
+    const hop = Math.abs(Math.sin(half * Math.PI));
+    let frame: CharFrameName = a.gait ? (Math.floor(cycle) % 2 ? 'b' : 'a') : 'idle';
+    let sx = 1;
+    let sy = 1;
+    let lean = 0;
+    let dx = 0;
+    let dy = 0;
+    let alpha = o.alpha ?? 1;
+    switch (gait) {
+      case undefined: {
+        const breath = Math.sin(t * 2.2 + a.x * 1.7 + a.y);
+        sy = 1 + breath * 0.012;
+        sx = 1 - breath * 0.008;
+        break;
+      }
+      case 'walk':
+        dy = -hop * 3;
+        lean = 0.04;
+        break;
+      case 'run':
+        dy = -hop * 7;
+        lean = 0.14;
+        sx = 1.05;
+        sy = 0.96;
+        break;
+      case 'sneak':
+        dy = -hop * 1.5;
+        lean = 0.1;
+        sx = 1.07;
+        sy = 0.82;
+        break;
+      case 'crawl':
+        if (!a.gait) frame = 'b';
+        lean = 0.05 + (a.gait ? Math.sin(cycle * Math.PI) * 0.04 : 0);
+        sx = 1.18;
+        sy = 0.5;
+        break;
+      case 'leap': {
+        const k = a.leapT ?? 0.5;
+        frame = 'a';
+        lean = 0.45 * (1 - 2 * k);
+        sx = 1.08;
+        sy = 0.94;
+        break;
+      }
+      case 'climb':
+        frame = Math.floor(t * 7) % 2 ? 'a' : 'b';
+        lean = Math.sin(t * 7 * Math.PI) * 0.07;
+        sx = 0.94;
+        break;
+    }
+    if (a.work && a.work > 0 && !a.gait) {
+      frame = Math.floor(t * 11) % 2 ? 'a' : 'b';
+      dx = Math.sin(t * 38) * 1.5 * a.work;
+      lean += 0.16 * a.work;
+      sy *= 1 - 0.07 * a.work;
+    }
+    if (o.asleep) {
+      frame = 'idle';
+      lean = -0.14;
+      sy = 0.93 + Math.sin(t * 1.4) * 0.015;
+    }
+    if (o.off) {
+      frame = 'idle';
+      lean = -0.2;
+      sy = 0.95;
+    }
+    if (o.hide) {
+      sy *= 1 - o.hide * 0.85;
+      alpha *= 1 - o.hide * 0.5;
+    }
+    const fr = charFrame(name, frame) ?? still;
+    const scale = o.scale ?? 1;
+    const dir = a.flip ? 1 : -1; // which way they face on screen
+    const by = s.y - a.bob + dy;
+    // A shadow on the floor (or the duct, in the vents), smaller as the character leaves the ground.
+    if (o.crawl) g.ellipse(s.x, s.y - 4, 26, 13).stroke({ width: 2, color: COL.duct, alpha: 0.9 });
+    else g.ellipse(s.x, s.y, 18 * scale * (gait === 'crawl' ? 1.3 : 1), 8 * scale).fill({ color: 0x000000, alpha: 0.35 * (1 - Math.min(0.7, a.bob / 50)) });
+    // The drawings face left: mirror them to face right, and lean into the way they're going.
+    const m = new Matrix().scale(-dir * sx * scale, sy * scale).rotate(lean * dir).translate(s.x + dx, by);
+    g.save();
+    g.setTransform(m);
+    g.setFillStyle({ color: 0xffffff, alpha });
+    g.texture(fr.tex, o.tint ?? 0xffffff, -fr.ax, -fr.ay, fr.w, fr.h);
+    g.restore();
+    g.setFillStyle({ color: 0xffffff, alpha: 1 });
+    if (gait === 'run' && hop < 0.3) {
+      // Dust kicked up behind.
+      for (const i of [0, 1]) g.circle(s.x - dir * (14 + i * 8), s.y - 3 - i * 2, 3.5 - i).fill({ color: 0xc8c0b0, alpha: 0.35 });
+    }
+    return { x: s.x + dx, top: by - fr.h * sy * scale };
+  }
+
+  /** Characters are a little darker in the dark, so you can see who's in shadow. */
+  private actorTint(a: Actor, leo = false): number {
+    const l = this.light[Math.floor(a.y)]?.[Math.floor(a.x)] ?? 1;
+    return l === 0 ? (leo ? 0x8c93b8 : 0x8a90aa) : l === 1 ? 0xeeeef4 : 0xffffff;
   }
 
   /** A baked sprite standing at (x, y) on the grid, `z` px up, turned `turn` radians (0: its front faces grid +y).
@@ -463,7 +642,12 @@ export class HeistView {
 
   private displayCase(g: Graphics, x: number, y: number, li: number, taken: boolean, broken: boolean): void {
     this.prism(g, x + 0.12, y + 0.12, x + 0.88, y + 0.88, 22, 0x6b5946, COL.caseBase, 0x47392b, 1);
-    if (!taken && li >= 0) {
+    const pic = li >= 0 ? lootPicture(this.lootName(li)) : undefined;
+    if (!taken && pic) {
+      const sp = project(this.proj, x + 0.5, y + 0.5, 34 + Math.sin(this.time * 1.6 + x) * 1.5);
+      const k = 26 / Math.max(pic.w, pic.h);
+      g.texture(pic.tex, pic.tint, sp.x - (pic.w * k) / 2, sp.y - (pic.h * k) / 2, pic.w * k, pic.h * k);
+    } else if (!taken && li >= 0) {
       const sp = project(this.proj, x + 0.5, y + 0.5, 32);
       const col = LOOT_COLORS[li % LOOT_COLORS.length];
       g.circle(sp.x, sp.y, 10).fill({ color: col, alpha: 0.18 });
@@ -482,7 +666,13 @@ export class HeistView {
   private plinth(g: Graphics, x: number, y: number, hasGem: boolean, rivalTook = false): void {
     this.prism(g, x + 0.18, y + 0.18, x + 0.82, y + 0.82, 34, 0xf3eee0, COL.plinth, 0xa9a392, 1);
     const sp = project(this.proj, x + 0.5, y + 0.5, 50);
-    if (hasGem) {
+    const pic = hasGem ? lootPicture(this.lootName(lootAt(this.lvl!, x, y))) : undefined;
+    if (pic) {
+      const k = 40 / Math.max(pic.w, pic.h);
+      const y0 = sp.y - (pic.h * k) / 2 - 6 + Math.sin(this.time * 1.4) * 2;
+      g.circle(sp.x, y0 + (pic.h * k) / 2, 26).fill({ color: 0xfff3c4, alpha: 0.14 + Math.sin(this.time * 2) * 0.04 });
+      g.texture(pic.tex, pic.tint, sp.x - (pic.w * k) / 2, y0, pic.w * k, pic.h * k);
+    } else if (hasGem) {
       const hue = [0x9fe8ff, 0xff9ff3, 0xb6ffb0, 0xffe39f][Math.floor(this.time * 2) % 4];
       g.circle(sp.x, sp.y, 20).fill({ color: hue, alpha: 0.2 });
       g.poly([sp.x, sp.y - 13, sp.x + 9, sp.y, sp.x, sp.y + 9, sp.x - 9, sp.y]).fill({ color: hue }).stroke({ width: 1.5, color: 0xffffff });
@@ -739,6 +929,14 @@ export class HeistView {
 
   /** A Robo-Guard: a bulldog-shaped tin can on a wheel, with a red heat-scanner visor (dark when unpowered). */
   private drawRobo(g: Graphics, a: Actor, guard: Guard, off: boolean, grinning: boolean): void {
+    const r = this.figure(g, 'robot', a, { off, tint: off ? 0x7a7e8c : this.actorTint(a) });
+    if (r) {
+      if (off) {
+        const z = project(this.proj, a.x + 0.3, a.y - 0.3, 80);
+        g.moveTo(z.x - 5, z.y).lineTo(z.x + 5, z.y).stroke({ width: 2, color: 0x9aa3b5 });
+      } else this.mark(g, r.x, r.top, guard.mode === 'searching' || grinning ? '!' : '', 0xff3b30, 0xffd23f);
+      return;
+    }
     const s = project(this.proj, a.x, a.y);
     const f = this.face(a);
     const front = f.y > -0.2;
@@ -766,6 +964,25 @@ export class HeistView {
       g.roundRect(hx - 10, top, 20, 22, 5).fill({ color: 0xff3b30 }).stroke({ width: 2, color: 0xffffff });
       g.rect(hx - 2, top + 4, 4, 9).fill({ color: 0xffffff });
       g.rect(hx - 2, top + 15, 4, 3).fill({ color: 0xffffff });
+    }
+  }
+
+  private lootName(li: number): string {
+    return this.lvl?.def.loot[li]?.name ?? '';
+  }
+
+  /** A ? or ! over a character's head, bobbing. */
+  private mark(g: Graphics, x: number, head: number, mark: '' | '?' | '!', bang: number, query: number): void {
+    if (!mark) return;
+    const top = head - 32 + Math.sin(this.time * 6) * 2;
+    g.roundRect(x - 10, top, 20, 26, 5).fill({ color: mark === '!' ? bang : query }).stroke({ width: 2, color: 0xffffff });
+    if (mark === '!') {
+      g.rect(x - 2, top + 4, 4, 12).fill({ color: 0xffffff });
+      g.rect(x - 2, top + 19, 4, 4).fill({ color: 0xffffff });
+    } else {
+      g.arc(x, top + 9, 5, Math.PI, Math.PI * 2.25).stroke({ width: 3, color: 0x1a1205 });
+      g.moveTo(x + 1, top + 13).lineTo(x, top + 17).stroke({ width: 3, color: 0x1a1205 });
+      g.rect(x - 1.5, top + 19, 3, 3).fill({ color: 0x1a1205 });
     }
   }
 
@@ -813,12 +1030,12 @@ export class HeistView {
     g.circle(c.x, c.y, 2).fill({ color: 0xd8262f });
   }
 
-  private zzz(g: Graphics, a: Actor): void {
+  private zzz(g: Graphics, a: Actor, top?: number): void {
     const s = project(this.proj, a.x, a.y);
     for (let i = 0; i < 3; i++) {
       const t = (this.time * 0.8 + i / 3) % 1;
       const x = s.x + 10 + t * 14;
-      const y = s.y - 64 - t * 26;
+      const y = (top ?? s.y - 50) - 14 - t * 26;
       const z = 4 + i;
       g.moveTo(x - z, y - z).lineTo(x + z, y - z).lineTo(x - z, y + z).lineTo(x + z, y + z).stroke({ width: 2, color: 0xd8e4ff, alpha: 1 - t });
     }
@@ -831,6 +1048,7 @@ export class HeistView {
 
   /** Leo Tuxedo, placeholder edition: black cat, white shirt front, red bow tie. */
   private drawLeo(g: Graphics, a: Actor, hasLoot: boolean, inVent: boolean, lift = 0): void {
+    if (this.figure(g, 'leo', a, { lift, alpha: inVent ? 0.55 : 1, crawl: inVent, tint: this.actorTint(a, true), hide: this.leoHide })) return;
     const s = project(this.proj, a.x, a.y, lift);
     const f = this.face(a);
     const front = f.y > -0.2;
@@ -863,6 +1081,13 @@ export class HeistView {
 
   /** A rival thief: a cat in their own colours, with a name tag, and the prize if they've got it. */
   private drawRival(g: Graphics, a: Actor, id: RivalId, prize: boolean): void {
+    const r = this.figure(g, id === 'paws' ? 'prof' : id, a, { tint: this.actorTint(a), scale: 0.97 });
+    if (r) {
+      if (prize) g.circle(r.x, r.top - 10, 7).fill({ color: 0x3a2a4a }).stroke({ width: 2, color: COL.rival });
+      const name = RIVALS[id].name;
+      g.roundRect(r.x - name.length * 2.6, r.top - (prize ? 30 : 16), name.length * 5.2, 12, 4).fill({ color: COL.rival, alpha: 0.85 });
+      return;
+    }
     const look = RIVAL_LOOKS[id];
     const s = project(this.proj, a.x, a.y);
     const f = this.face(a);
@@ -891,6 +1116,11 @@ export class HeistView {
 
   /** NightClaw: a tall, lean old black cat in a long coat and top hat, grey at the muzzle, with gold eyes. */
   private drawNightClaw(g: Graphics, a: Actor, guard: Guard, grinning: boolean): void {
+    const r = this.figure(g, 'nightclaw', a, { tint: this.actorTint(a) });
+    if (r) {
+      this.mark(g, r.x, r.top, grinning || guard.mode === 'searching' ? '!' : guard.mode === 'suspicious' ? '?' : '', 0xb05cff, 0xd9b8ff);
+      return;
+    }
     const s = project(this.proj, a.x, a.y);
     const f = this.face(a);
     const front = f.y > -0.2;
@@ -929,6 +1159,26 @@ export class HeistView {
 
   /** A guard (drawn as a bulldog): stocky, tan, peaked cap, torch. Shows ? when suspicious, ! when searching. */
   private drawGuard(g: Graphics, a: Actor, guard: Guard, grinning: boolean): void {
+    const sniffer = guard.kind === 'sniffer';
+    const r = this.figure(g, sniffer ? 'dog' : 'guard', a, { asleep: guard.asleep, tint: this.actorTint(a), scale: guard.kind === 'captain' ? 1.12 : 1 });
+    if (r) {
+      if (guard.kind === 'captain') {
+        // The captain's gold star, worn on the cap.
+        const y = r.top + 6;
+        g.star(r.x, y, 5, 4.5, 2).fill({ color: 0xf2c46b }).stroke({ width: 1, color: 0x6b4b12 });
+      }
+      if (sniffer && !guard.asleep) {
+        // Sniffing the air in front of its nose.
+        const dir = a.flip ? 1 : -1;
+        const nx = r.x + dir * 24;
+        const ny = r.top + 14;
+        const t = (this.time * 1.5) % 1;
+        for (const side of [-1, 1]) g.moveTo(nx + dir * t * 10, ny + side * (4 + t * 6)).quadraticCurveTo(nx + dir * (6 + t * 10), ny, nx + dir * t * 10, ny - side * (4 + t * 6)).stroke({ width: 1.5, color: 0xd8e4ff, alpha: 1 - t });
+      }
+      if (guard.asleep) return this.zzz(g, a, r.top);
+      this.mark(g, r.x, r.top, grinning || guard.mode === 'searching' ? '!' : guard.mode === 'suspicious' ? '?' : '', 0xff3b30, 0xffd23f);
+      return;
+    }
     const s = project(this.proj, a.x, a.y);
     const f = this.face(a);
     const front = f.y > -0.2;
