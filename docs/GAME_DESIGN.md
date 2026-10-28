@@ -557,6 +557,19 @@ the Aquarium's lights hang over its fish tanks and jellyfish columns.
 A heist starts with the camera behind Leo (turned so he's nearest it, the level stretching away) and zoomed in,
 following him. The mouse wheel, + and − (keys or buttons) zoom between that and the whole map.
 
+### 12.1e Loot, the Clocktower, windows
+
+Clicking a case, plinth or safe opens a tag beside it: the loot (picture, estimate, space) and what Leo can
+do — steal it, pick the lock, smash the glass, crack the safe — each with its action points and noise. If he
+isn't beside it, the cheapest safe spot next to it is used and the walk is part of the choice (the route is
+previewed on hover); if it's too far for this turn, the tag offers to walk closer, never into a guard's arms.
+A lock that takes more than one go brings the tag straight back. Number keys pick, Esc closes.
+
+The Clocktower is full of clocks: grandfather clocks in place of its pillars, a station clock, a cuckoo
+clock, and drawn clocks in the wall's plane (a Roman face, a skeleton of turning gears, an odd one with
+thirteen hours and a hand going backwards, a pendulum clock), all of different sizes and none agreeing on
+the time. Night windows only go in outside walls.
+
 ### 12.2 Audio, settings and accessibility as built (M6)
 
 - **Audio** is synthesised in the browser (Web Audio), so there are no files to load: a swing loop of

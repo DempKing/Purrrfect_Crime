@@ -104,5 +104,9 @@
  "potted_plant_02": {
   "tilesPerMetre": 0.9,
   "fit": 0.75
+ },
+ "vintage_grandfather_clock_01": {
+  "tilesPerMetre": 0.68,
+  "fit": 0.75
  }
 }

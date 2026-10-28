@@ -7,6 +7,8 @@ import 'pixi.js/unsafe-eval';
 import { parseLevel, the, type Level, type LevelDef, type Point } from './core/level';
 import {
   actionsHere,
+  lootAt,
+  tileNow,
   moveAp,
   inventoryUsed,
   inventoryValue,
@@ -46,7 +48,7 @@ import { learn, perksFor, raise, upgrade } from './meta/progression';
 import { deliverLetters } from './meta/letters';
 import { TUTORIAL, advance, type TutorialEvents } from './meta/tutorial';
 import * as screens from './ui/screens';
-import { loadCharacters } from './render/characters';
+import { loadCharacters, lootPictureUrl } from './render/characters';
 import { ABILITY_ICONS } from './ui/pictures';
 import { loadProps } from './render/props';
 import { loadSurfaces } from './render/surfaces';
@@ -216,6 +218,7 @@ function cameraBehindLeo(): void {
 const view = new HeistView();
 
 function turnCamera(dir: 1 | -1): void {
+  closeLootMenu();
   targetAngle += (dir * Math.PI) / 2;
   if (tutorial) {
     tutorial.ev.rotated = true;
@@ -263,8 +266,10 @@ function overlay(): Overlay {
   let path: Point[] = [];
   const pathDanger = new Map<string, number>();
   if (target && live) {
-    path = pathTo(c.reach, target) ?? [];
-    if (path.length && moveAp(state, c.reach.cost.get(key(target.x, target.y)) ?? 99) > state.ap) path = [];
+    // Pointing at loot: show the way to where Leo would stand to get at it.
+    const goal = lootHere(target) !== null ? standFor(target)?.at ?? target : target;
+    path = pathTo(c.reach, goal) ?? [];
+    if (path.length && moveAp(state, c.reach.cost.get(key(goal.x, goal.y)) ?? 99) > state.ap) path = [];
     for (const p of path.slice(1)) {
       const d = danger(level, state, p);
       if (d) pathDanger.set(key(p.x, p.y), d);
@@ -273,7 +278,7 @@ function overlay(): Overlay {
     const trip = motionTrip(level, state, path);
     if (trip > 0) for (const p of path.slice(trip)) pathDanger.set(key(p.x, p.y), 2);
   }
-  const actionable = target && live && clickAction(target);
+  const actionable = target && live && (clickAction(target) || lootHere(target) !== null);
   return {
     reach1,
     reach2,
@@ -309,8 +314,138 @@ function act(tile: Point): void {
     if (abilityTargets(level, state, targeting).has(key(tile.x, tile.y))) return runAbility(targeting, tile);
     return cancelTargeting();
   }
+  if (lootHere(tile) !== null) return openLootMenu(tile);
   const a = clickAction(tile);
   if (a) return runAction(a);
+  walkTo(tile);
+}
+
+// --- loot: click it for what Leo can do -------------------------------------------------------------
+
+/** The piece of loot on a tile, if it's still there to be had (in a case, on a plinth, in a safe). */
+function lootHere(t: Point): number | null {
+  if (!level || !state || state.layer !== 'floor') return null;
+  const tile = tileNow(level, state, t.x, t.y);
+  if (tile !== 'case' && tile !== 'plinth' && tile !== 'safe') return null;
+  const li = lootAt(level, t.x, t.y);
+  return li >= 0 && !state.inventory.includes(li) && !state.rivalLoot.includes(li) ? li : null;
+}
+
+/** Where Leo would stand to work on a tile this turn: where he is if he can, else the cheapest, safest spot beside it. */
+function standFor(target: Point): { at: Point; ap: number; danger: number } | null {
+  const near = (p: Point) => Math.max(Math.abs(p.x - target.x), Math.abs(p.y - target.y)) === 1;
+  if (near(state.leo)) return { at: { ...state.leo }, ap: 0, danger: 0 };
+  const reach = computed().reach;
+  let best: { at: Point; ap: number; d: number } | null = null;
+  for (let dy = -1; dy <= 1; dy++)
+    for (let dx = -1; dx <= 1; dx++) {
+      const p = { x: target.x + dx, y: target.y + dy };
+      const cost = reach.cost.get(key(p.x, p.y));
+      if ((!dx && !dy) || cost === undefined) continue;
+      const ap = moveAp(state, cost);
+      if (ap >= state.ap) continue; // leave a point for the job itself
+      const d = danger(level, state, p);
+      // Never a spot where he'd be caught if there's another; then the cheapest; then the least noticed.
+      if (!best || (d < 2 && best.d === 2) || ((d === 2) === (best.d === 2) && (ap < best.ap || (ap === best.ap && d < best.d)))) best = { at: p, ap, d };
+    }
+  return best && { at: best.at, ap: best.ap, danger: best.d };
+}
+
+/** The reachable tile nearest a target, for when it's too far to get to and work on this turn. */
+function closerTo(target: Point): Point | null {
+  let best: Point | null = null;
+  let bd = Infinity;
+  for (const [k, cost] of computed().reach.cost) {
+    if (!cost || moveAp(state, cost) > state.ap) continue;
+    const [x, y] = k.split(',').map(Number);
+    if (danger(level, state, { x, y }) === 2) continue; // not into a guard's arms
+    const d = Math.max(Math.abs(x - target.x), Math.abs(y - target.y)) * 10 + moveAp(state, cost) * 4 + danger(level, state, { x, y }) * 6;
+    if (d < bd) {
+      bd = d;
+      best = { x, y };
+    }
+  }
+  return best;
+}
+
+const VERBS: Partial<Record<Action['kind'], string>> = { take: 'Steal it', 'pick-case': 'Pick the lock', 'smash-case': 'Smash the glass', 'crack-safe': 'Crack the safe' };
+let lootMenu: Point | null = null;
+let lootChoices: (() => void)[] = [];
+
+/** A tag by the loot: what it is, and what Leo can do about it, with what each costs. */
+function openLootMenu(target: Point): void {
+  const li = lootHere(target);
+  if (li === null) return;
+  const loot = level.def.loot[li];
+  const stand = standFor(target);
+  const choices: { label: string; detail: string; run?: () => void; blocked?: string; loud?: boolean }[] = [];
+  if (stand) {
+    const there = { ...state, leo: stand.at, ap: state.ap - stand.ap } as State;
+    const walk = stand.ap ? `walk over (${stand.ap} AP), then ` : '';
+    const warn = stand.danger === 2 ? ' · a guard would catch him there' : stand.danger === 1 ? ' · a guard would notice' : '';
+    for (const a of actionsHere(level, there).filter((x) => x.at.x === target.x && x.at.y === target.y)) {
+      const noise = a.noise >= 6 ? 'loud: guards will come running' : a.noise > 0 ? 'quiet' : 'silent';
+      const k = key(target.x, target.y);
+      const goes = a.kind === 'pick-case' ? state.perks.casePicks : a.kind === 'crack-safe' ? state.perks.safeCracks : 1;
+      const steps = goes > 1 ? ` (${state.picks[k] ?? 0}/${goes})` : '';
+      choices.push({ label: (VERBS[a.kind] ?? a.label) + steps, detail: `${walk}${a.ap} AP${goes > 1 ? ' a go' : ''} · ${noise}${warn}`, blocked: a.blocked, loud: a.noise >= 6, run: () => walkTo(stand.at, () => {
+          doThere(target, a.kind);
+          // Not done yet (a lock that takes more than one go): the tag comes straight back for the next.
+          if (lootHere(target) !== null && state.status === 'playing' && state.ap > 0 && !busy) openLootMenu(target);
+        }) });
+    }
+  } else {
+    const closer = closerTo(target);
+    if (closer) choices.push({ label: 'Walk closer', detail: `${moveAp(state, computed().reach.cost.get(key(closer.x, closer.y)) ?? 0)} AP`, run: () => walkTo(closer) });
+  }
+  const pic = lootPictureUrl(loot.name);
+  const box = $('loot-menu');
+  box.innerHTML = `<div class="lm-head">${pic ? `<img src="${pic}" alt="">` : ''}<div><b>${loot.name}</b><span>est. $${loot.value.toLocaleString('en-US')} · ${loot.space} space${loot.space === 1 ? '' : 's'}</span></div></div>
+    ${stand ? '' : '<p class="lm-note">Too far to reach and work on this turn. Leo needs to get beside it with an action point to spare.</p>'}
+    ${choices.map((c, i) => `<button data-i="${i}" class="${c.loud ? 'loud' : ''}" ${c.blocked || !c.run ? 'disabled' : ''}><span class="k">${c.run ? i + 1 : '·'}</span><span class="lm-label">${c.label}</span><small>${c.blocked ?? c.detail}</small></button>`).join('')}
+    <button class="quiet lm-close">Never mind (Esc)</button>`;
+  lootChoices = choices.map((c) => () => {
+    if (c.blocked || !c.run) return;
+    closeLootMenu();
+    c.run();
+  });
+  box.querySelectorAll<HTMLButtonElement>('button[data-i]').forEach((b) => b.addEventListener('click', () => lootChoices[Number(b.dataset.i)]?.()));
+  box.querySelector('.lm-close')!.addEventListener('click', closeLootMenu);
+  lootMenu = target;
+  box.classList.remove('hidden');
+  placeLootMenu();
+  sfx('click');
+}
+
+/** Keeps the tag beside its loot (the camera may be moving), and on screen. */
+function placeLootMenu(): void {
+  if (!lootMenu) return;
+  const box = $('loot-menu');
+  const p = world.toGlobal(project(view.proj, lootMenu.x + 0.5, lootMenu.y + 0.5, 50));
+  const w = box.offsetWidth;
+  const h = box.offsetHeight;
+  const x = p.x + 34 + w > window.innerWidth - 8 ? p.x - 34 - w : p.x + 34;
+  box.style.left = `${Math.max(8, x)}px`;
+  box.style.top = `${Math.max(8, Math.min(window.innerHeight - h - 8, p.y - h / 2))}px`;
+}
+
+function closeLootMenu(): void {
+  lootMenu = null;
+  lootChoices = [];
+  $('loot-menu').classList.add('hidden');
+}
+
+/** Does an action on a tile Leo has just arrived beside. */
+function doThere(target: Point, kind: Action['kind']): void {
+  const a = actionsHere(level, state).find((x) => x.kind === kind && x.at.x === target.x && x.at.y === target.y);
+  if (!a) return;
+  if (a.blocked) return say(a.blocked);
+  runAction(a);
+}
+
+/** Moves Leo to a tile, animating the walk; `then` runs once he's there, if he's still free to act. */
+function walkTo(tile: Point, then?: () => void): void {
+  if (tile.x === state.leo.x && tile.y === state.leo.y) return then?.();
   state.log = [];
   const apBefore = state.ap;
   const res = moveLeo(level, state, tile);
@@ -336,7 +471,10 @@ function act(tile: Point): void {
     const gait: Gait = layer === 'vent' ? 'crawl' : dash ? 'run' : layer === 'floor' && dark[q.y][q.x] === 0 ? 'sneak' : 'walk';
     segs.push({ who: 'leo', from: p, to: q, facing: faceToward(p, q), t: 0, dur: anim((p.x !== q.x && p.y !== q.y ? 0.17 : 0.12) * crawl * (gait === 'sneak' ? 1.25 : 1)), sfx: layer === 'vent' && i % 2 ? undefined : step, gait });
   }
-  play(segs, afterLeoActs);
+  play(segs, () => {
+    afterLeoActs();
+    if (then && state.status === 'playing' && state.ap > 0) then();
+  });
 }
 
 function runAction(a: Action): void {
@@ -424,6 +562,7 @@ function afterLeoActs(): void {
 }
 
 function doEndTurn(): void {
+  closeLootMenu();
   if (busy || state.status !== 'playing') return;
   selected = null;
   banner('Guards’ turn');
@@ -494,6 +633,7 @@ function startHeist(def: LevelDef): void {
 
 /** Leaves the heist for the screens between heists. */
 function leaveHeist(): void {
+  closeLootMenu();
   inHeist = false;
   queue = [];
   busy = false;
@@ -652,6 +792,7 @@ function showTitle(): void {
 }
 
 function restart(): void {
+  closeLootMenu();
   state = newHeist(level, perksFor(profile), rivalPlan);
   rivalWasIn = false;
   targeting = null;
@@ -846,12 +987,14 @@ async function boot(): Promise<void> {
   app.canvas.addEventListener('pointermove', (e) => {
     if (e.pointerType === 'touch') return;
     hover = tileUnder(e.clientX, e.clientY);
+    app.canvas.style.cursor = hover && inHeist && lootHere(hover) !== null ? 'pointer' : '';
   });
   app.canvas.addEventListener('pointerleave', () => (hover = null));
   app.canvas.addEventListener('pointerdown', (e) => {
     const t = tileUnder(e.clientX, e.clientY);
+    closeLootMenu();
     if (!t) return;
-    if (e.pointerType === 'touch' && !clickAction(t) && (!selected || selected.x !== t.x || selected.y !== t.y)) {
+    if (e.pointerType === 'touch' && !clickAction(t) && lootHere(t) === null && (!selected || selected.x !== t.x || selected.y !== t.y)) {
       selected = t;
       say('Tap the same tile again to move there.');
       return;
@@ -897,6 +1040,12 @@ async function boot(): Promise<void> {
     // Nothing reaches the heist while a screen (the settings, say) is open over it.
     if (!inHeist || !$('screens').classList.contains('hidden')) return;
     if (e.target instanceof HTMLInputElement) return;
+    if (lootMenu) {
+      // The loot tag has the keys while it's open: its numbers, or Esc to put it away.
+      if (/^[1-9]$/.test(e.key)) lootChoices[Number(e.key) - 1]?.();
+      else if (e.key === 'Escape') closeLootMenu();
+      if (/^[1-9]$/.test(e.key) || e.key === 'Escape') return;
+    }
     const arrows: Record<string, [number, number]> = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
     if (e.key in arrows) {
       e.preventDefault();
@@ -1002,6 +1151,7 @@ async function boot(): Promise<void> {
     ripples = ripples.filter((r) => r.t < 1);
     if (!inHeist) return;
     fit(dt);
+    placeLootMenu();
     view.draw(level, state, overlay(), leo, guards, ripples, rival);
   });
 }

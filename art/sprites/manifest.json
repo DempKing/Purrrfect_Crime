@@ -1118,16 +1118,16 @@
   }
  },
  "vintage_grandfather_clock_01": {
-  "w": 94,
-  "h": 260,
-  "ax": 46.9,
-  "ay": 232.7,
+  "w": 82,
+  "h": 223,
+  "ax": 40.8,
+  "ay": 198.8,
   "scale": 2,
   "mount": "floor",
   "size": {
-   "w": 0.5,
-   "d": 0.34,
-   "h": 103
+   "w": 0.43,
+   "d": 0.29,
+   "h": 88
   }
  },
  "vintage_suitcase": {

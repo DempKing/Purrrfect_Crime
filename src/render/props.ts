@@ -22,6 +22,8 @@ import treasure_chest from '../../art/sprites/treasure_chest.webp';
 import Lantern_01 from '../../art/sprites/Lantern_01.webp';
 import potted_plant_01 from '../../art/sprites/potted_plant_01.webp';
 import potted_plant_02 from '../../art/sprites/potted_plant_02.webp';
+import wall_clock from '../../art/sprites/wall_clock.webp';
+import vintage_grandfather_clock_01 from '../../art/sprites/vintage_grandfather_clock_01.webp';
 import wooden_crate_01 from '../../art/sprites/wooden_crate_01.webp';
 import wooden_crate_02 from '../../art/sprites/wooden_crate_02.webp';
 import wooden_military_crate from '../../art/sprites/wooden_military_crate.webp';
@@ -45,6 +47,8 @@ const FILES = {
   Lantern_01,
   potted_plant_01,
   potted_plant_02,
+  wall_clock,
+  vintage_grandfather_clock_01,
   wooden_crate_01,
   wooden_crate_02,
   wooden_military_crate,
@@ -87,7 +91,11 @@ export function frameFor(turn: number, angle: number): number {
 }
 
 /** What hangs on the walls in each district: 3D props, and flat pieces (FlatName). */
-export const WALL_DECOR: Record<string, (PropName | FlatName)[]> = {
+/** Clocks drawn rather than modelled, for the Clocktower: each a little odd. */
+export type ClockFace = 'pclock_roman' | 'pclock_gears' | 'pclock_odd' | 'pclock_pendulum';
+export type WallPiece = PropName | FlatName | ClockFace;
+
+export const WALL_DECOR: Record<string, WallPiece[]> = {
   'old-town': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'ornate_mirror_01', 'spr_window', 'wd_manor', 'fancy_picture_frame_01'],
   'museum-mile': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'wd_museum', 'wd_manor', 'fancy_picture_frame_02'],
   'the-heights': ['ornate_mirror_01', 'fancy_picture_frame_02', 'wd_manor', 'spr_window', 'fancy_picture_frame_01'],
@@ -97,8 +105,8 @@ export const WALL_DECOR: Record<string, (PropName | FlatName)[]> = {
 };
 
 /** Heists whose walls differ from their district's. */
-export const LEVEL_WALL_DECOR: Record<string, (PropName | FlatName)[]> = {
-  'l2-clocktower': ['spr_window', 'fancy_picture_frame_01', 'spr_window', 'wd_manor'],
+export const LEVEL_WALL_DECOR: Record<string, WallPiece[]> = {
+  'l2-clocktower': ['pclock_roman', 'wall_clock', 'pclock_gears', 'wd_rail', 'pclock_odd', 'wd_toy', 'pclock_pendulum', 'pclock_roman', 'pclock_gears', 'spr_window'],
   'l4-opera-house': ['wd_opera', 'wd_opera', 'wd_manor', 'ornate_mirror_01', 'fancy_picture_frame_02'],
   'l15-customs': ['wd_warehouse', 'power_box_01', 'wd_warehouse', 'lifebuoy'],
   'l17-shipwreck': ['wd_aquarium', 'wd_fish', 'lifebuoy', 'wd_aquarium'],
@@ -126,7 +134,11 @@ export const EXHIBITS: Record<string, Exhibit[]> = {
 
 /** Heists whose lights hang over something else: the aquarium's tanks. */
 export const LEVEL_EXHIBITS: Record<string, Exhibit[]> = {
+  'l2-clocktower': [{ model: 'vintage_grandfather_clock_01', pedestal: false }, { model: 'mantel_clock_01', pedestal: true }],
   'l19-aquarium': [{ flat: 'spr_tank' }, { flat: 'spr_tanktall' }, { flat: 'spr_tanktall' }, { flat: 'spr_tank' }],
   'l18-fish-bank': [{ flat: 'spr_tank' }, { model: 'lambis_shell', pedestal: true }, { flat: 'spr_tanktall' }],
   'l17-shipwreck': [{ model: 'treasure_chest', pedestal: false }, { flat: 'spr_tank' }, { model: 'lambis_shell', pedestal: true }],
 };
+
+/** How often a wall face gets something on it: mostly one in five; the Clocktower is covered in clocks. */
+export const DECOR_DENSITY: Record<string, number> = { 'l2-clocktower': 0.5 };

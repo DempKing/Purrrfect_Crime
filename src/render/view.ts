@@ -7,7 +7,7 @@ import { DISTRICTS } from '../levels';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
 import { charFrame, lootPicture, type CharFrameName, type CharName } from './characters';
 import { flat, STANDING_FLATS, WALL_FLATS, type FlatName } from './flats';
-import { EXHIBITS, frameFor, LEVEL_EXHIBITS, LEVEL_WALL_DECOR, LIT_ON_WALL, prop, WALL_DECOR, type PropName } from './props';
+import { DECOR_DENSITY, EXHIBITS, frameFor, LEVEL_EXHIBITS, LEVEL_WALL_DECOR, LIT_ON_WALL, prop, WALL_DECOR, type ClockFace, type PropName } from './props';
 import { CREAK, lookFor, PLATE, surface, type FloorSkin, type Look, type WallSkin } from './surfaces';
 
 const WALL_H = 84;
@@ -293,6 +293,9 @@ export class HeistView {
           const a = near ? 0.75 : 1;
           if (t === 'wall' && !near) this.wallDecor(level, s, x, y, d, items);
           if (t === 'stack') items.push({ depth: d, draw: (g) => this.crateStack(g, x, y, near ? STUB_H : WALL_H - 20, a) });
+          else if (t === 'pillar' && level.def.id === 'l2-clocktower' && prop('vintage_grandfather_clock_01'))
+            // In the Clocktower, the pillars are grandfather clocks, each facing its own way.
+            items.push({ depth: d, draw: (g) => void this.sprite(g, 'vintage_grandfather_clock_01', x + 0.5, y + 0.5, 0, Math.floor(tileHash(x, y, 5) * 4) * (Math.PI / 2), near ? 0.35 : 1, this.tint(x, y)) });
           else if (t === 'pillar') items.push({ depth: d, draw: (g) => this.prism(g, x + 0.22, y + 0.22, x + 0.78, y + 0.78, h, 0xe6e0d0, COL.pillar, 0x948f82, a) });
           else if (t === 'door') items.push({ depth: d, draw: (g) => this.door(g, x, y, near ? STUB_H : WALL_H - 10, a, s.picks[k] ?? 0) });
           else if (t === 'keydoor') items.push({ depth: d, draw: (g) => this.keydoor(g, x, y, near ? STUB_H : WALL_H - 10, a, s.card === 'leo' || s.perks.masterKey) });
@@ -591,9 +594,21 @@ export class HeistView {
       const t = tileNow(level, s, fx, fy);
       if (t !== 'floor' && t !== 'marble' && t !== 'squeaky' && t !== 'grate' && t !== 'plate') return;
       if (c * n.x - sn * n.y + (sn * n.x + c * n.y) <= 0.3) return; // the face turned away from the camera
+      const density = DECOR_DENSITY[level.def.id] ?? 0.2;
       const h = tileHash(x, y, i);
-      if (h > 0.2) return;
-      const name = choices[Math.floor(h * 5 * choices.length)];
+      if (h > density) return;
+      let pick = Math.floor((h / density) * choices.length);
+      // Windows only in outside walls, where there's a night outside them; outside walls get them half the time.
+      const outside = x === 0 || y === 0 || x === level.w - 1 || y === level.h - 1;
+      if (outside && choices.includes('spr_window') && tileHash(x, y, i + 20) < 0.5) pick = choices.indexOf('spr_window');
+      while (choices[pick % choices.length] === 'spr_window' && !outside && choices.some((c) => c !== 'spr_window')) pick++;
+      const name = choices[pick % choices.length];
+      if (name.startsWith('pclock_')) {
+        const size = 0.95 + tileHash(x, y, i + 30) * 1.05;
+        const tint = this.tint(fx, fy);
+        items.push({ depth: d + 0.35, draw: (g) => this.clockFace(g, name as ClockFace, x + 0.5 + n.x * 0.52, y + 0.5 + n.y * 0.52, n, size, tint, tileHash(x, y, i + 40)) });
+        return;
+      }
       const tint = this.tint(fx, fy);
       const bx = x + 0.5 + n.x * 0.5;
       const by = y + 0.5 + n.y * 0.5;
@@ -634,6 +649,84 @@ export class HeistView {
         },
       });
     });
+  }
+
+  /**
+   * A clock drawn on a wall face, in the wall's own plane (so the face is foreshortened like the wall): a Roman
+   * face, a skeleton of turning gears, an odd one with thirteen hours and hands going their own ways, or a
+   * pendulum clock. `size` scales it; `seed` sets its hands and speed, so no two agree on the time.
+   */
+  private clockFace(g: Graphics, kind: ClockFace, bx: number, by: number, n: { x: number; y: number }, size: number, tint: number, seed: number): void {
+    let tx = -n.y;
+    let ty = n.x;
+    const b = project(this.proj, bx, by, 52);
+    if (project(this.proj, bx + tx, by + ty).x < project(this.proj, bx, by).x) {
+      tx = -tx;
+      ty = -ty;
+    }
+    // Local units are game pixels on the wall: x along it, y down it.
+    const along = project(this.proj, bx + tx, by + ty, 52);
+    const m = new Matrix(((along.x - b.x) / 58.8) * size, ((along.y - b.y) / 58.8) * size, 0, size, b.x, b.y);
+    const shade = (c: number) => {
+      const k = (tint & 0xff) / 255;
+      return (((((c >> 16) & 0xff) * k) | 0) << 16) | (((((c >> 8) & 0xff) * k) | 0) << 8) | (((c & 0xff) * k) | 0);
+    };
+    const t = this.time * (0.4 + seed * 0.8) + seed * 40;
+    const hand = (len: number, a: number, w: number, col: number) => g.moveTo(0, 0).lineTo(Math.sin(a) * len, -Math.cos(a) * len).stroke({ width: w, color: col, cap: 'round' });
+    const gear = (cx: number, cy: number, r: number, teeth: number, a: number, col: number) => {
+      const pts: number[] = [];
+      for (let i = 0; i < teeth * 2; i++) {
+        const rr = i % 2 ? r : r * 0.8;
+        const aa = a + (i * Math.PI) / teeth;
+        pts.push(cx + Math.cos(aa) * rr, cy + Math.sin(aa) * rr);
+      }
+      g.poly(pts).fill({ color: col }).stroke({ width: 0.8, color: shade(0x4a3410) });
+      g.circle(cx, cy, r * 0.28).fill({ color: shade(0x2a1d08) });
+    };
+    g.save();
+    g.setTransform(m);
+    if (kind === 'pclock_roman') {
+      g.circle(0, 0, 11).fill({ color: shade(0x8a6a2a) });
+      g.circle(0, 0, 9.5).fill({ color: shade(0xf1e8d0) }).stroke({ width: 0.8, color: shade(0x3a2a10) });
+      for (let i = 0; i < 12; i++) {
+        const a = (i * Math.PI) / 6;
+        g.moveTo(Math.sin(a) * 7.2, -Math.cos(a) * 7.2).lineTo(Math.sin(a) * 8.6, -Math.cos(a) * 8.6).stroke({ width: i % 3 ? 0.6 : 1.4, color: shade(0x1a1a1a) });
+      }
+      hand(5, t * 0.08, 1.4, shade(0x1a1a1a));
+      hand(7.5, t, 0.9, shade(0x1a1a1a));
+      g.circle(0, 0, 1).fill({ color: shade(0xb08a3a) });
+    } else if (kind === 'pclock_gears') {
+      gear(-4, 2, 7, 10, t * 0.6, shade(0xc9a24a));
+      gear(6, -4, 5, 8, -t * 0.84 + 0.3, shade(0xb08a3a));
+      gear(5, 7, 3.6, 6, t * 1.2, shade(0xd9b45a));
+      g.circle(-4, 2, 4.4).fill({ color: shade(0xf1e8d0), alpha: 0.85 });
+      hand(3.2, t * 0.1, 0.9, shade(0x1a1a1a));
+      hand(4.2, t * 1.1, 0.6, shade(0x1a1a1a));
+    } else if (kind === 'pclock_odd') {
+      // Thirteen hours, three hands, one of them going backwards, and an eye where the pin should be.
+      g.poly([0, -11, 9, -5, 10, 5, 0, 11, -10, 5, -9, -5]).fill({ color: shade(0x3a2a4a) }).stroke({ width: 1, color: shade(0xc9a24a) });
+      g.circle(0, 0, 7.6).fill({ color: shade(0xd8d0f0) });
+      for (let i = 0; i < 13; i++) {
+        const a = (i * Math.PI * 2) / 13;
+        g.circle(Math.sin(a) * 6.3, -Math.cos(a) * 6.3, 0.55).fill({ color: shade(0x2a1a3a) });
+      }
+      hand(5.5, t * 0.7, 0.9, shade(0x2a1a3a));
+      hand(4, -t * 1.3, 0.9, shade(0x8a1a2a));
+      hand(6.5, t * 3.1, 0.4, shade(0x2a1a3a));
+      g.ellipse(0, 0, 1.8, 1.1).fill({ color: shade(0xffffff) });
+      g.circle(Math.sin(t) * 0.5, 0, 0.6).fill({ color: shade(0x1a1a1a) });
+    } else {
+      // A pendulum clock: a wooden case, a small face, and the bob swinging below.
+      g.roundRect(-6, -10, 12, 30, 2).fill({ color: shade(0x5a3a1e) }).stroke({ width: 0.8, color: shade(0x2a1a0a) });
+      g.circle(0, -4, 4.6).fill({ color: shade(0xf1e8d0) });
+      hand(3, t * 0.1, 0.8, shade(0x1a1a1a));
+      hand(4, t, 0.5, shade(0x1a1a1a));
+      g.rect(-4, 3, 8, 15).fill({ color: shade(0x2a1a0a) });
+      const swing = Math.sin(this.time * 3 + seed * 6) * 0.35;
+      g.moveTo(0, 3).lineTo(Math.sin(swing) * 11, 3 + Math.cos(swing) * 11).stroke({ width: 0.6, color: shade(0xc9a24a) });
+      g.circle(Math.sin(swing) * 11, 3 + Math.cos(swing) * 11, 1.9).fill({ color: shade(0xd9b45a) });
+    }
+    g.restore();
   }
 
   /** A flat picture laid on a wall face (facing n), `width` tiles across, its middle `middle` px up. */

@@ -464,6 +464,22 @@ table.stash .hand { font: 400 1.1em/1 var(--type); color: #193a6e; }
   .toast + .toast { margin-top: -38px; }
 }
 
+/* --- The loot tag: click a case, plinth or safe ---------------------------------------------------- */
+.loot-menu { position: fixed; z-index: 40; width: 270px; padding: 12px 12px 10px; background: var(--grain), #f3ecd8; color: var(--ink); box-shadow: var(--shadow); clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%); padding-left: 24px; animation: tag-in 0.14s ease-out; }
+.loot-menu::before { content: ''; position: absolute; left: 9px; top: 50%; width: 7px; height: 7px; margin-top: -4px; border-radius: 50%; background: #1d1b22; }
+@keyframes tag-in { from { opacity: 0; transform: translateX(-8px) rotate(-2deg); } to { opacity: 1; transform: none; } }
+.lm-head { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #8a8170; }
+.lm-head img { width: 46px; height: 46px; object-fit: contain; }
+.lm-head b { display: block; font: 600 1.02em/1.15 var(--poster); letter-spacing: 0.02em; }
+.lm-head span { font: 400 0.8em/1.3 var(--type); color: #5a5446; }
+.loot-menu button { display: grid; grid-template-columns: 22px 1fr; column-gap: 8px; width: 100%; text-align: left; margin: 4px 0; padding: 7px 9px; text-transform: none; letter-spacing: 0; font: 600 0.95em/1.2 var(--body); }
+.loot-menu button .k { grid-row: span 2; align-self: center; font: 600 0.85em/1 var(--poster); opacity: 0.7; }
+.loot-menu button small { font: 400 0.78em/1.3 var(--type); opacity: 0.8; }
+.loot-menu button.loud { background: #7a1d16; }
+.loot-menu button:disabled { opacity: 0.55; }
+.lm-note { margin: 2px 0 6px; font: 400 0.8em/1.35 var(--type); color: #5a5446; }
+.loot-menu .lm-close { display: block; text-align: center; margin-top: 6px; font: 500 0.8em/1 var(--poster); text-transform: uppercase; letter-spacing: 0.1em; }
+
 /* --- Illustrations ---------------------------------------------------------------------------------- */
 /* Photographs, pinned or taped on: a white border, a slight tilt, a printed shadow. */
 .report-photo { float: right; width: 190px; margin: -6px -10px 10px 16px; padding: 7px 7px 4px; background: #fbf7ea; box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.3); transform: rotate(2.5deg); }
