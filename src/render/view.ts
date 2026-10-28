@@ -1,12 +1,13 @@
 // Draws a heist: floors and overlays first, then walls, furniture and characters sorted by depth.
 // Placeholder art for now; generated sprites replace the character and prop drawing later.
-import { Container, Graphics, Matrix } from 'pixi.js';
+import { Container, Graphics, Matrix, type Texture } from 'pixi.js';
 import { DIRS, PRINT_TURNS, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, roboOff, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
 import type { Level, Point } from '../core/level';
 import { DISTRICTS } from '../levels';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
 import { charFrame, lootPicture, type CharFrameName, type CharName } from './characters';
-import { EXHIBITS, frameFor, LIT_ON_WALL, prop, WALL_DECOR, type PropName } from './props';
+import { flat, STANDING_FLATS, WALL_FLATS, type FlatName } from './flats';
+import { EXHIBITS, frameFor, LEVEL_EXHIBITS, LEVEL_WALL_DECOR, LIT_ON_WALL, prop, WALL_DECOR, type PropName } from './props';
 import { CREAK, lookFor, PLATE, surface, type FloorSkin, type Look, type WallSkin } from './surfaces';
 
 const WALL_H = 84;
@@ -580,7 +581,7 @@ export class HeistView {
 
   /** Now and then, something hangs on a wall face the camera can see: pictures, clocks, lifebuoys, fuse boxes. */
   private wallDecor(level: Level, s: State, x: number, y: number, d: number, items: Drawable[]): void {
-    const choices = WALL_DECOR[this.district] ?? WALL_DECOR['old-town'];
+    const choices = LEVEL_WALL_DECOR[level.def.id] ?? WALL_DECOR[this.district] ?? WALL_DECOR['old-town'];
     const c = Math.cos(this.proj.angle);
     const sn = Math.sin(this.proj.angle);
     NEIGHBOURS.forEach((n, i) => {
@@ -599,8 +600,15 @@ export class HeistView {
       items.push({
         depth: d + 0.35,
         draw: (g) => {
-          const lit = LIT_ON_WALL.has(name) && prop(name);
-          const top = lit ? 50 + lit.height / 2 + 6 : 0;
+          const flatSpec = WALL_FLATS[name as FlatName];
+          const pic = flatSpec && flat(name as FlatName);
+          const model = flatSpec ? undefined : prop(name as PropName);
+          if (!pic && !model) return;
+          // How tall it is on the wall: a flat piece's picture keeps its proportions (58.8 px of height a tile).
+          const tall = pic && flatSpec ? (flatSpec.width * 58.8 * pic.height) / pic.width : (model?.height ?? 0);
+          const middle = flatSpec ? flatSpec.z : 50;
+          const lit = flatSpec ? !!flatSpec.lit : LIT_ON_WALL.has(name as PropName);
+          const top = middle + tall / 2 + 6;
           if (lit) {
             // A wash of warm light down the wall from the picture light.
             const a = project(this.proj, bx - n.y * 0.22, by + n.x * 0.22, top);
@@ -609,7 +617,8 @@ export class HeistView {
             const d2 = project(this.proj, bx - n.y * 0.4, by + n.x * 0.4, top - 62);
             g.poly([a.x, a.y, b.x, b.y, c2.x, c2.y, d2.x, d2.y]).fill({ color: 0xffe2a0, alpha: 0.16 });
           }
-          this.sprite(g, name, bx, by, 0, Math.atan2(n.y, n.x) - Math.PI / 2, 1, tint);
+          if (pic && flatSpec) this.onWall(g, pic, bx + n.x * 0.02, by + n.y * 0.02, n, flatSpec.width, middle, tall, tint);
+          else this.sprite(g, name as PropName, bx, by, 0, Math.atan2(n.y, n.x) - Math.PI / 2, 1, tint);
           if (lit) {
             // The brass picture light itself, on a short arm out from the wall.
             const ox = bx + n.x * 0.07;
@@ -625,6 +634,26 @@ export class HeistView {
         },
       });
     });
+  }
+
+  /** A flat picture laid on a wall face (facing n), `width` tiles across, its middle `middle` px up. */
+  private onWall(g: Graphics, tex: Texture, bx: number, by: number, n: { x: number; y: number }, width: number, middle: number, tall: number, tint: number): void {
+    // Along the wall, left to right as the camera sees it, so the picture is never mirrored.
+    let tx = -n.y;
+    let ty = n.x;
+    const b = project(this.proj, bx, by);
+    if (project(this.proj, bx + tx, by + ty).x < b.x) {
+      tx = -tx;
+      ty = -ty;
+    }
+    const l = project(this.proj, bx - (tx * width) / 2, by - (ty * width) / 2, middle + tall / 2);
+    const r = project(this.proj, bx + (tx * width) / 2, by + (ty * width) / 2, middle + tall / 2);
+    const m = new Matrix((r.x - l.x) / tex.width, (r.y - l.y) / tex.width, 0, tall / tex.height, l.x, l.y);
+    g.save();
+    g.setTransform(m);
+    g.setFillStyle({ color: 0xffffff, alpha: 1 });
+    g.texture(tex, tint, 0, 0, tex.width, tex.height);
+    g.restore();
   }
 
   /** Outer walls on the two sides facing the camera are always cut down, so the room is never hidden. */
@@ -757,15 +786,33 @@ export class HeistView {
    * and the tile. Returns false (so the old standing lamp is drawn) until the sprites load.
    */
   private exhibitUnderLight(items: Drawable[], d: number, x: number, y: number, on: boolean): boolean {
-    const list = EXHIBITS[this.district] ?? EXHIBITS['old-town'];
+    const list = LEVEL_EXHIBITS[this.districtOf] ?? EXHIBITS[this.district] ?? EXHIBITS['old-town'];
     const e = list[Math.floor(tileHash(x, y, 11) * list.length)];
+    const tint = on ? 0xfff6e6 : 0x8a8ea8;
+    if ('flat' in e) {
+      // Drawn standing up, facing the camera: the aquarium's tanks, a statue.
+      const tex = flat(e.flat);
+      if (!tex) return false;
+      const h = STANDING_FLATS[e.flat] ?? 60;
+      const w = (h * tex.width) / tex.height;
+      items.push({
+        depth: d,
+        draw: (g) => {
+          const sp = project(this.proj, x + 0.5, y + 0.5);
+          g.ellipse(sp.x, sp.y, w * 0.45, w * 0.2).fill({ color: 0x000000, alpha: 0.3 });
+          g.setFillStyle({ color: 0xffffff, alpha: 1 });
+          g.texture(tex, tint, sp.x - w / 2, sp.y - h + w * 0.12, w, h);
+        },
+      });
+      return true;
+    }
     if (!prop(e.model)) return false;
     const turn = Math.floor(tileHash(x, y, 12) * 4) * (Math.PI / 2);
     items.push({
       depth: d,
       draw: (g) => {
         if (e.pedestal) this.prism(g, x + 0.24, y + 0.24, x + 0.76, y + 0.76, 28, 0xe9e3d3, 0xc9c2b0, 0xa49d8b, 1);
-        this.sprite(g, e.model, x + 0.5, y + 0.5, e.pedestal ? 28 : 0, turn, 1, on ? 0xfff6e6 : 0x8a8ea8);
+        this.sprite(g, e.model, x + 0.5, y + 0.5, e.pedestal ? 28 : 0, turn, 1, tint);
       },
     });
     return true;
