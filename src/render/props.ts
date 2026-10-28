@@ -118,27 +118,6 @@ export const LEVEL_WALL_DECOR: Record<string, WallPiece[]> = {
 /** Wall pieces that get a little brass picture light above them. */
 export const LIT_ON_WALL = new Set<PropName>(['fancy_picture_frame_01', 'fancy_picture_frame_02', 'ornate_mirror_01']);
 
-/**
- * What stands under each ceiling light (a lamp on the map): something worth lighting, on a pedestal or not.
- * The lamp's tile still can't be walked through, so it's always something solid.
- */
-export type Exhibit = { model: PropName; pedestal: boolean } | { flat: FlatName };
-export const EXHIBITS: Record<string, Exhibit[]> = {
-  'old-town': [{ model: 'marble_bust_01', pedestal: true }, { model: 'horse_statue_01', pedestal: true }, { model: 'mantel_clock_01', pedestal: true }, { model: 'gothic_statue', pedestal: false }],
-  'museum-mile': [{ model: 'marble_bust_01', pedestal: true }, { model: 'gothic_statue', pedestal: false }, { flat: 'spr_statue' }, { model: 'horse_statue_01', pedestal: true }],
-  'the-heights': [{ model: 'potted_plant_01', pedestal: false }, { model: 'marble_bust_01', pedestal: true }, { model: 'potted_plant_02', pedestal: false }, { model: 'gothic_statue', pedestal: false }],
-  harbour: [{ model: 'lambis_shell', pedestal: true }, { model: 'treasure_chest', pedestal: false }, { model: 'Lantern_01', pedestal: true }, { model: 'lambis_shell', pedestal: true }],
-  downtown: [{ model: 'potted_plant_01', pedestal: false }, { model: 'horse_statue_01', pedestal: true }, { model: 'potted_plant_02', pedestal: false }, { model: 'marble_bust_01', pedestal: true }],
-  nightclaw: [{ model: 'gothic_statue', pedestal: false }, { model: 'mantel_clock_01', pedestal: true }, { model: 'concrete_cat_statue', pedestal: true }, { model: 'marble_bust_01', pedestal: true }],
-};
-
-/** Heists whose lights hang over something else: the aquarium's tanks. */
-export const LEVEL_EXHIBITS: Record<string, Exhibit[]> = {
-  'l2-clocktower': [{ model: 'vintage_grandfather_clock_01', pedestal: false }, { model: 'mantel_clock_01', pedestal: true }],
-  'l19-aquarium': [{ flat: 'spr_tank' }, { flat: 'spr_tanktall' }, { flat: 'spr_tanktall' }, { flat: 'spr_tank' }],
-  'l18-fish-bank': [{ flat: 'spr_tank' }, { model: 'lambis_shell', pedestal: true }, { flat: 'spr_tanktall' }],
-  'l17-shipwreck': [{ model: 'treasure_chest', pedestal: false }, { flat: 'spr_tank' }, { model: 'lambis_shell', pedestal: true }],
-};
 
 /** How often a wall face gets something on it: mostly one in five; the Clocktower is covered in clocks. */
 export const DECOR_DENSITY: Record<string, number> = { 'l2-clocktower': 0.5 };

@@ -4,10 +4,11 @@ import { Container, Graphics, Matrix, type Texture } from 'pixi.js';
 import { DIRS, PRINT_TURNS, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, roboOff, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
 import type { Level, Point } from '../core/level';
 import { DISTRICTS } from '../levels';
+import { exhibitAt, tileHash } from '../core/exhibits';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
 import { charFrame, lootPicture, type CharFrameName, type CharName } from './characters';
 import { flat, STANDING_FLATS, WALL_FLATS, type FlatName } from './flats';
-import { DECOR_DENSITY, EXHIBITS, frameFor, LEVEL_EXHIBITS, LEVEL_WALL_DECOR, LIT_ON_WALL, prop, WALL_DECOR, type ClockFace, type PropName } from './props';
+import { DECOR_DENSITY, frameFor, LEVEL_WALL_DECOR, LIT_ON_WALL, prop, WALL_DECOR, type ClockFace, type PropName } from './props';
 import { CREAK, lookFor, PLATE, surface, type FloorSkin, type Look, type WallSkin } from './surfaces';
 
 const WALL_H = 84;
@@ -109,13 +110,6 @@ export interface Ripple {
   y: number;
   r: number; // tiles
   t: number; // 0..1
-}
-
-/** A tile's own number, for picking props: the same tile always gets the same one. */
-function tileHash(x: number, y: number, salt = 0): number {
-  let h = (x * 73856093) ^ (y * 19349663) ^ (salt * 83492791);
-  h = Math.imul(h ^ (h >>> 13), 0x5bd1e995);
-  return ((h ^ (h >>> 15)) >>> 0) / 4294967296;
 }
 
 const NEIGHBOURS = [
@@ -322,7 +316,9 @@ export class HeistView {
           items.push({ depth: d, draw: (g) => this.plinth(g, x, y, li >= 0 && !s.inventory.includes(li) && !s.rivalLoot.includes(li), s.rivalLoot.includes(li)) });
         } else if (t === 'lamp') {
           const off = s.lampsOff.includes(level.lamps.findIndex((l) => l.at.x === x && l.at.y === y));
-          if (!this.exhibitUnderLight(items, d, x, y, !off)) items.push({ depth: d, draw: (g) => this.lamp(g, x, y, !off) });
+          const li = lootAt(level, x, y);
+          const gone = li >= 0 && (s.inventory.includes(li) || s.rivalLoot.includes(li));
+          if (!this.exhibitUnderLight(items, d, x, y, !off, gone)) items.push({ depth: d, draw: (g) => this.lamp(g, x, y, !off) });
           ceiling.push({ x, y, on: !off, lamp: true });
         } else if (t === 'laser') {
           items.push({ depth: d + 0.3, draw: (g) => this.laser(g, x, y, lasersOn) });
@@ -897,15 +893,25 @@ export class HeistView {
    * What stands under a ceiling light: a statue, a bust, a plant, on a pedestal or not, picked for the district
    * and the tile. Returns false (so the old standing lamp is drawn) until the sprites load.
    */
-  private exhibitUnderLight(items: Drawable[], d: number, x: number, y: number, on: boolean): boolean {
-    const list = LEVEL_EXHIBITS[this.districtOf] ?? EXHIBITS[this.district] ?? EXHIBITS['old-town'];
-    const e = list[Math.floor(tileHash(x, y, 11) * list.length)];
+  private exhibitUnderLight(items: Drawable[], d: number, x: number, y: number, on: boolean, gone: boolean): boolean {
+    const e = exhibitAt(this.districtOf, x, y);
     const tint = on ? 0xfff6e6 : 0x8a8ea8;
-    if ('flat' in e) {
+    if (gone) {
+      // Taken: nothing left but the pedestal (or a dusty patch where the chest stood).
+      items.push({
+        depth: d,
+        draw: (g) => {
+          if (e.pedestal || e.flat) this.prism(g, x + 0.24, y + 0.24, x + 0.76, y + 0.76, 28, 0xe9e3d3, 0xc9c2b0, 0xa49d8b, 1);
+          else this.diamond(g, x, y, 0.3, 0x8a8578, 0.35);
+        },
+      });
+      return true;
+    }
+    if (e.flat) {
       // Drawn standing up, facing the camera: the aquarium's tanks, a statue.
-      const tex = flat(e.flat);
+      const tex = flat(e.flat as FlatName);
       if (!tex) return false;
-      const h = STANDING_FLATS[e.flat] ?? 60;
+      const h = STANDING_FLATS[e.flat as FlatName] ?? 60;
       const w = (h * tex.width) / tex.height;
       items.push({
         depth: d,
@@ -918,13 +924,14 @@ export class HeistView {
       });
       return true;
     }
-    if (!prop(e.model)) return false;
+    const model = e.model as PropName;
+    if (!prop(model)) return false;
     const turn = Math.floor(tileHash(x, y, 12) * 4) * (Math.PI / 2);
     items.push({
       depth: d,
       draw: (g) => {
         if (e.pedestal) this.prism(g, x + 0.24, y + 0.24, x + 0.76, y + 0.76, 28, 0xe9e3d3, 0xc9c2b0, 0xa49d8b, 1);
-        this.sprite(g, e.model, x + 0.5, y + 0.5, e.pedestal ? 28 : 0, turn, 1, tint);
+        this.sprite(g, model, x + 0.5, y + 0.5, e.pedestal ? 28 : 0, turn, 1, tint);
       },
     });
     return true;

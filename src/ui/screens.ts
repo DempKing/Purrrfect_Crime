@@ -4,6 +4,7 @@
 // tags, index cards on cork, a ledger, blueprints, a manila case file); the look lives in styles.css.
 import { parseLevel, the, type LevelDef, type LootCategory } from '../core/level';
 import { RIVALS, type RivalPlan } from '../core/game';
+import { allLoot } from '../core/exhibits';
 import type { Paper } from '../meta/newspaper';
 import { LETTERS, challengeProgress, delivery, hasLetter, type Letter } from '../meta/letters';
 import { ACHIEVEMENTS, type Achievement } from '../meta/achievements';
@@ -497,7 +498,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
         <h3>${esc(def.name)}</h3>
         <p class="objective">${esc(def.objective)}</p>
         <ul class="facts">
-          <li>${def.loot.length} piece${def.loot.length === 1 ? '' : 's'} of loot</li>
+          <li>${allLoot(def).length} piece${allLoot(def).length === 1 ? '' : 's'} of loot</li>
           ${centre ? `<li>Prize: ${esc(centre.name)}${rec?.centrepiece ? ' <span class="tick">✓</span>' : ''}</li>` : ''}
           ${rec ? `<li>Best: ${rec.bestTurns} turns</li>` : ''}
         </ul>
@@ -697,7 +698,7 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
       }
   const marks: string[] = [];
   if (tier >= 1) {
-    for (const l of def.loot)
+    for (const l of allLoot(def))
       marks.push(
         def.map[l.at.y][l.at.x] === 'G'
           ? `<circle cx="${l.at.x * S + 8}" cy="${l.at.y * S + 8}" r="11" fill="none" stroke="#e0314b" stroke-width="2.5"/><circle cx="${l.at.x * S + 8}" cy="${l.at.y * S + 8}" r="4" fill="#f0e442"/>`
@@ -736,7 +737,7 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
         <p class="typed objective">${esc(def.objective)}</p>
         ${def.tip ? `<p class="tip sticky"><b>New here</b> ${esc(def.tip)}</p>` : ''}
         <dl class="typed facts-sheet">
-          <dt>Loot</dt><dd>${def.loot.length} pieces</dd>
+          <dt>Loot</dt><dd>${allLoot(def).length} pieces</dd>
           <dt>Guards</dt><dd>${level.guards.map((g) => `${esc(g.name)}${g.kind && g.kind !== 'watch' ? ` (${{ sleepy: 'sleepy', captain: 'captain', sniffer: 'sniffer', robo: 'Robo-Guard', nightclaw: 'the legend himself' }[g.kind]})` : ''}`).join(', ')}</dd>
           ${tier >= 2 ? `<dt>Cameras</dt><dd>${level.cameras.length}</dd>` : ''}
           ${rec ? `<dt>Best</dt><dd>${rec.bestTurns} turns</dd>` : ''}

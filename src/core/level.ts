@@ -1,4 +1,5 @@
 // Levels are drawn as text maps (one character per tile) plus a few lists: lamps, cameras, guards, loot.
+import { allLoot } from './exhibits';
 
 export type Tile =
   | 'floor'
@@ -252,7 +253,8 @@ export function parseLevel(def: LevelDef): Level {
     if (t !== 'case' && t !== 'plinth' && t !== 'safe') throw new Error(`${def.id}: loot "${l.name}" is not in a case, a safe or on the plinth`);
   }
   const level: Level = {
-    def,
+    // The exhibits under the lights join the loot (see exhibits.ts).
+    def: { ...def, loot: allLoot(def) },
     w,
     h,
     tiles,
