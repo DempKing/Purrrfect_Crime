@@ -146,6 +146,11 @@ const LOOT_TINTS: Record<string, number> = {
 const frames = new Map<string, CharFrame>();
 const loot = new Map<string, { tex: Texture; w: number; h: number }>();
 
+/** A character drawing's address, for the menus (the planning board's mugshots). */
+export function charImageUrl(name: CharName, frame: CharFrameName = 'idle'): string {
+  return CHAR_FILES[name][frame];
+}
+
 export function charFrame(name: CharName, frame: CharFrameName): CharFrame | undefined {
   return frames.get(`${name}_${frame}`);
 }

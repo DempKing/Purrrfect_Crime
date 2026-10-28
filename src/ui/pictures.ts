@@ -14,6 +14,7 @@ import cat_luna from '../../art/sprites/pics/cat_luna.webp';
 import cat_mittens from '../../art/sprites/pics/cat_mittens.webp';
 import cat_sammy from '../../art/sprites/pics/cat_sammy.webp';
 import cat_prof from '../../art/sprites/pics/cat_prof.webp';
+import keyart from '../../art/sprites/pics/keyart.webp';
 import legend_leo from '../../art/sprites/pics/legend_leo.webp';
 import boss_nightclaw from '../../art/sprites/pics/boss_nightclaw.webp';
 import g_decoy from '../../art/sprites/pics/g_decoy.webp';
@@ -44,6 +45,7 @@ export function portrait(who: RivalId | 'leo'): string {
 }
 
 export const LEGEND_PICTURE = legend_leo;
+export const KEY_ART = keyart;
 export const NIGHTCLAW_PICTURE = boss_nightclaw;
 
 /** Icons for the gadgets and skills that have one. */

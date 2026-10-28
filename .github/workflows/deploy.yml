@@ -33,7 +33,7 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p site
-          cp dist/index.html site/
+          cp -r dist/. site/
           touch site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:

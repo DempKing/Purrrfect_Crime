@@ -1,40 +1,42 @@
-/* Purrrfect Crime: a 1960s caper. Everything between heists is a thing you could hold: a film poster,
-   luggage tags, index cards pinned to cork, the fence's ledger, blueprints, a manila case file, newsprint.
-   Real typefaces (inlined by the build): Limelight for Art Deco headlines, Special Elite for the
-   typewriter, Oswald for poster lettering, Libre Franklin to read, UnifrakturMaguntia for the masthead
-   and Homemade Apple for handwriting. Hard, printed shadows; no glows, no glass. */
+/* Purrrfect Crime: a Saturday-morning cartoon caper. Bold ink outlines, flat saturated colour, hard comic
+   shadows, chunky lettering (Luckiest Guy) and friendly reading type (Nunito), notes in Patrick Hand.
+   The night is deep purple and blue; gold, teal and coral do the shouting. The newspaper keeps its
+   blackletter masthead and NightClaw keeps his copperplate hand. */
 
 :root {
-  --night: #11152a;
-  --night-2: #1b2142;
-  --ink: #17161c;
-  --paper: #efe5cc;
-  --paper-2: #e4d5b2;
-  --card: #f8f2e2;
-  --kraft: #c49a5c;
-  --kraft-dark: #946b35;
-  --cork: #9e7246;
-  --red: #b3261e;
-  --red-dark: #7d1a15;
-  --blue-ink: #234a86;
-  --brass: #c9a24b;
-  --mustard: #edc94c;
-  --blueprint: #1e4876;
-  --teal: #2f8a80;
-  --text: #efe5cc;
-  --dim: #a59e8c;
-  --display: 'Limelight', Georgia, serif;
-  --type: 'Special Elite', 'Courier New', monospace;
-  --poster: 'Oswald', 'Arial Narrow', sans-serif;
-  --body: 'Libre Franklin', 'Helvetica Neue', Arial, sans-serif;
-  --hand: 'Homemade Apple', 'Bradley Hand', cursive;
+  --night: #1a1240;
+  --night-2: #2b1d63;
+  --ink: #1c1233;
+  --paper: #fff3d6;
+  --paper-2: #ffe2a8;
+  --card: #ffffff;
+  --kraft: #ff9f43;
+  --kraft-dark: #c86a12;
+  --cork: #1f7a6f;
+  --red: #ff4d5e;
+  --red-dark: #c22a3c;
+  --blue-ink: #3a6ff0;
+  --brass: #ffc93c;
+  --mustard: #ffd23f;
+  --blueprint: #2457c5;
+  --teal: #1fc8b4;
+  --purple: #7b3fe4;
+  --text: #fff3d6;
+  --dim: #b9aee0;
+  --display: 'Luckiest Guy', 'Arial Black', Impact, sans-serif;
+  --type: 'Nunito', 'Trebuchet MS', Arial, sans-serif;
+  --poster: 'Nunito', 'Trebuchet MS', Arial, sans-serif;
+  --body: 'Nunito', 'Trebuchet MS', Arial, sans-serif;
+  --hand: 'Patrick Hand', 'Comic Sans MS', cursive;
+  --script: 'Homemade Apple', 'Bradley Hand', cursive;
   --black: 'UnifrakturMaguntia', 'Old English Text MT', serif;
-  /* Paper grain, as an SVG noise tile laid over a surface's colour. */
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  /* Cork: brown speckles from noise over the board's colour. */
-  --cork-tex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.42' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .25 0 0 0 0 .15 0 0 0 0 .06 0 0 0 3.2 -1.45'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
-  --halftone: radial-gradient(rgba(239, 229, 204, 0.045) 1px, transparent 1.5px) 0 0 / 7px 7px;
-  --shadow: 4px 5px 0 rgba(0, 0, 0, 0.45);
+  /* No paper grain any more: flat cartoon colour (kept as a no-op so older rules still parse). */
+  --grain: linear-gradient(transparent, transparent);
+  /* The planning board's felt: a fine dot pattern. */
+  --cork-tex: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1.6px) 0 0 / 11px 11px;
+  --halftone: radial-gradient(rgba(255, 255, 255, 0.05) 1.2px, transparent 1.7px) 0 0 / 9px 9px;
+  --shadow: 5px 5px 0 var(--ink);
+  --outline: 3px solid var(--ink);
   font-family: var(--body);
   color-scheme: dark;
 }
@@ -432,6 +434,321 @@ table.stash .hand { font: 400 1.1em/1 var(--type); color: #193a6e; }
 .tg-head { font: 600 0.75em/1.2 var(--poster); letter-spacing: 0.2em; text-transform: uppercase; border-bottom: 1px solid var(--ink); padding-bottom: 3px; margin-bottom: 4px; }
 .toast.gone { opacity: 0; transform: translateX(40px); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(20px) rotate(-2deg); } to { opacity: 1; transform: rotate(-1deg); } }
+
+/* --- The cartoon layer: ink outlines and flat colour over everything above ---------------------------- */
+html, body { background: var(--night); }
+body { background: radial-gradient(ellipse at 20% -10%, #3d2a8a 0%, transparent 55%), radial-gradient(ellipse at 90% 110%, #1c3f8f 0%, transparent 50%), var(--night); }
+.small { opacity: 0.85; }
+
+button {
+  font: 400 0.98em/1.15 var(--display);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--ink);
+  background: var(--card);
+  border: var(--outline);
+  border-radius: 12px;
+  padding: 8px 15px 6px;
+  box-shadow: 0 4px 0 var(--ink);
+  transition: transform 0.08s, box-shadow 0.08s, background 0.15s;
+}
+button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 0 var(--ink); }
+button:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+button.primary { background: var(--red); border-color: var(--ink); color: #fff; text-shadow: 0 2px 0 var(--red-dark); }
+button.primary:hover:not(:disabled) { background: #ff6574; }
+button.quiet { background: transparent; color: inherit; border-color: currentColor; box-shadow: none; }
+button.quiet:hover:not(:disabled) { box-shadow: none; background: rgba(255, 255, 255, 0.08); }
+button:focus-visible { outline: 3px solid var(--mustard); outline-offset: 3px; }
+
+.sheet, .note-card, .card, .caption-box, .narrator, .certificate, .loot-menu, .toast, .lair-stats, .slot {
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--outline);
+  border-radius: 16px;
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.sheet { transform: none; }
+.sheet-title, .help > b, .tree h3 { font-family: var(--display); color: var(--purple); letter-spacing: 0.02em; }
+h2.section { font: 900 0.9em/1.2 var(--poster); letter-spacing: 0.12em; border-bottom: 3px solid currentColor; }
+
+/* Stickers instead of rubber stamps. */
+.stamp { color: #fff; background: var(--red); border: 3px solid var(--ink); border-radius: 999px; padding: 4px 13px 2px; font: 400 0.95em/1.1 var(--display); letter-spacing: 0.05em; text-transform: none; mix-blend-mode: normal; opacity: 1; box-shadow: 3px 3px 0 var(--ink); transform: rotate(-6deg); }
+.stamp.blue { color: #fff; background: var(--blue-ink); }
+.stamp.new { color: var(--ink); background: var(--teal); }
+.stamp.small-stamp { font-size: 0.78em; padding: 3px 9px 1px; border-width: 2.5px; }
+.stamp.big-stamp { font-size: 2.3em; border-width: 4px; padding: 8px 22px 4px; }
+.badge { font: 800 0.68em/1.4 var(--body); color: var(--ink); background: var(--teal); border: 2px solid var(--ink); border-radius: 999px; padding: 1px 8px; }
+.badge.new { background: var(--mustard); color: var(--ink); }
+.badge.hot { background: var(--red); color: #fff; }
+.pips i { border: 2px solid currentColor; border-radius: 3px; }
+.pips i.on { background: var(--mustard); box-shadow: none; }
+.xpbar { height: 14px; border: var(--outline); border-radius: 999px; background: rgba(28, 18, 51, 0.15); overflow: hidden; }
+.xpbar span { background: linear-gradient(180deg, #ffe680, var(--brass) 55%, #e8a317); border-right: 2px solid var(--ink); }
+
+/* The heist HUD. */
+.status { border-left: var(--outline); border-radius: 16px; font-family: var(--body); }
+.status .title { font: 400 1.25em/1 var(--display); color: var(--purple); letter-spacing: 0.03em; }
+.pip { border: 2.5px solid var(--ink); }
+.pip.on { background: var(--mustard); }
+.light { font: 800 0.78em/1.4 var(--body); border: 2px solid var(--ink); border-radius: 999px; padding: 1px 8px; }
+.hud .buttons button:not(.primary) { background: var(--card); color: var(--ink); }
+.message { background: var(--ink); color: var(--paper); border: 3px solid var(--paper); border-radius: 14px; font: 700 0.95em/1.35 var(--body); box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5); }
+.act { background: var(--card); border: var(--outline); border-left: 9px solid var(--teal); border-radius: 12px; font: 800 0.92em/1.2 var(--body); text-transform: none; letter-spacing: 0; }
+.act .k { background: var(--ink); color: var(--mustard); border-radius: 6px; font-family: var(--display); }
+.ability { background: var(--kraft); color: var(--ink); border-color: var(--ink); }
+.ability.on { background: var(--mustard); }
+.alarm { border-radius: 14px; font: 400 1.05em/1.3 var(--display); letter-spacing: 0.06em; }
+#banner { font: 400 3em/1 var(--display); color: var(--mustard); -webkit-text-stroke: 2px var(--ink); text-shadow: 4px 4px 0 var(--ink), 7px 7px 0 var(--red); letter-spacing: 0.03em; }
+.narrator, .caption-box { background: var(--mustard); font-family: var(--body); }
+.speaker-name { font: 400 0.95em/1 var(--display); letter-spacing: 0.06em; text-transform: none; color: var(--purple); }
+.speaker p { font: 600 1.05em/1.55 var(--body); }
+.narrator-face .portrait, .portrait-frame { border: var(--outline); background: #fff; }
+
+/* Between heists: the night sky behind everything. */
+.screen.overlay { background: var(--halftone), rgba(20, 12, 50, 0.82); }
+.screen.overlay.dark { background: var(--halftone), rgba(12, 8, 30, 0.93); }
+.screen.desk-bg, .screen.lair-screen { background: var(--halftone), radial-gradient(ellipse at 20% -10%, #4a2fa0 0%, transparent 55%), radial-gradient(ellipse at 90% 110%, #1d4aa6 0%, transparent 55%), var(--night); }
+
+/* The title. */
+.poster-presents { font: 900 0.9em/1 var(--body); letter-spacing: 0.3em; color: var(--teal); margin-bottom: 18px; }
+.logo { font: 400 clamp(3.4rem, 10vw, 7.6rem)/0.9 var(--display); color: var(--mustard); -webkit-text-stroke: 3px var(--ink); text-shadow: 6px 6px 0 var(--ink), 11px 11px 0 var(--red); letter-spacing: 0.02em; }
+.poster-tagline { font: 700 1.2em/1.45 var(--body); }
+.title-art { position: fixed; inset: 0; background: center right / cover no-repeat; }
+.title-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(26, 18, 64, 0.94) 0%, rgba(26, 18, 64, 0.75) 40%, rgba(26, 18, 64, 0.1) 75%), linear-gradient(0deg, rgba(26, 18, 64, 0.8), transparent 40%); }
+.slot { clip-path: none; padding: 14px 16px; }
+.slot .tag-hole { display: none; }
+.tag-no { font: 400 1.5em/1 var(--display); color: var(--purple); }
+.tag-info { font: 600 0.9em/1.4 var(--body); }
+.poster-foot { font: 700 0.85em/1.3 var(--body); }
+.poster-foot span { border-radius: 8px; }
+
+/* The lair. */
+.polaroid { border: var(--outline); border-radius: 6px; box-shadow: 5px 5px 0 var(--ink); }
+.polaroid figcaption { font: 400 1.05em/1 var(--hand); }
+.nameplate { font: 400 2.1em/1 var(--display); color: var(--ink); background: var(--mustard); border: var(--outline); border-radius: 14px; box-shadow: 5px 5px 0 var(--ink); text-shadow: none; letter-spacing: 0.03em; }
+.lair-stats { transform: none; }
+.lair-stats dt, .facts-sheet dt { font: 900 0.72em/1.7 var(--body); letter-spacing: 0.12em; }
+.lair-buttons button { color: var(--paper); border-color: var(--paper); }
+.tabs { gap: 8px; }
+.tabs button { background: var(--night-2); color: var(--paper); border: var(--outline); border-bottom: none; border-radius: 14px 14px 0 0; box-shadow: none; padding: 9px 18px 7px; transform: translateY(4px); }
+.tabs button.on { transform: none; color: var(--ink); background: var(--mustard); }
+.tabs button.on[data-tab='heists'], .tabs button.on[data-tab='papers'] { background: var(--teal); color: var(--ink); }
+.tabs button.on[data-tab='leo'] { background: var(--kraft); }
+.tabs button.on[data-tab='market'] { background: #9be564; }
+.tabs button.on[data-tab='lair'] { background: var(--blue-ink); color: #fff; }
+.tab-body { border: var(--outline); border-radius: 0 18px 18px 18px; box-shadow: 7px 7px 0 var(--ink); }
+.tab-heists, .tab-papers { background: var(--cork-tex), linear-gradient(160deg, #23927f, #17685f); }
+h2.section.district { clip-path: none; background: var(--mustard); border: var(--outline); border-radius: 999px; padding: 5px 18px 3px; font: 400 1.1em/1.1 var(--display); letter-spacing: 0.04em; box-shadow: 3px 3px 0 var(--ink); }
+.job { background: var(--card); border: var(--outline); border-top: 12px solid var(--purple); border-radius: 14px; box-shadow: 5px 5px 0 var(--ink); }
+.job .pin { top: -16px; background: radial-gradient(circle at 35% 35%, #fff 0 2px, var(--red) 3px 100%); border: 2px solid var(--ink); width: 18px; height: 18px; margin-left: -9px; }
+.job h3 { font: 400 1.2em/1.1 var(--display); letter-spacing: 0.03em; color: var(--ink); }
+.job .facts { font: 700 0.84em/1.6 var(--body); }
+.job .scrawl { font: 400 1em/1.35 var(--hand); color: var(--purple); }
+.job.locked { background: #d9d2ef; border-top-color: #8a80b0; color: rgba(28, 18, 51, 0.7); }
+.challenge { border-left: var(--outline); }
+.tab-leo { background: var(--paper); border: var(--outline); }
+.mugshot { background: repeating-linear-gradient(transparent 0 15px, rgba(28, 18, 51, 0.12) 15px 16px), #e8f4ff; border: var(--outline); border-radius: 8px; overflow: hidden; }
+.mugshot img { filter: none; mix-blend-mode: normal; }
+.mug-board { font: 400 0.85em/1.6 var(--display); letter-spacing: 0.05em; color: var(--mustard); }
+.achievement .medal { font: 400 1.1em/1 var(--display); border: 2.5px dashed var(--ink); }
+.achievement.got .medal { border: var(--outline); background: radial-gradient(circle at 35% 30%, #fff1a8, var(--brass) 60%, #e8a317); }
+.tab-market { color: var(--ink); background: radial-gradient(rgba(28, 18, 51, 0.06) 1px, transparent 1.6px) 0 0 / 12px 12px, #eafbe0; padding-left: 22px; }
+.ledger-head h2.section { font: 400 1.8em/1 var(--display); color: #2d7d32; letter-spacing: 0.02em; }
+.demand { transform: rotate(1.5deg); background: var(--mustard); border: var(--outline); border-radius: 10px; }
+table.stash { font-family: var(--body); }
+table.stash th { font: 900 0.72em/1 var(--body); border-bottom: 3px solid var(--ink); }
+table.stash .hand { font: 400 1.3em/1 var(--display); color: #2d7d32; }
+.loot-pic { border: 2px solid var(--ink); border-radius: 8px; background: #fff; box-shadow: 2px 2px 0 var(--ink); }
+.empty-ledger { font: 400 1.4em/1.2 var(--hand); color: #2d7d32; }
+.tab-lair { font-family: var(--body); border-color: var(--ink); }
+.blueprint-title { font: 400 1.7em/1.2 var(--display); letter-spacing: 0.03em; }
+.tab-lair .up { border-radius: 12px; }
+.tab-lair .up b { font: 400 1.1em/1.2 var(--display); letter-spacing: 0.04em; text-transform: none; }
+.tab-lair button { background: var(--mustard); color: var(--ink); border-color: var(--ink); }
+.envelope { border: var(--outline); border-radius: 10px; box-shadow: 4px 4px 0 var(--ink); font: 600 0.9em/1.3 var(--body); }
+.clipping { border: 2px solid var(--ink); clip-path: none; border-radius: 4px; box-shadow: 4px 4px 0 var(--ink); }
+.clipping::before { display: none; }
+
+/* Letters keep NightClaw's own hand. */
+.letter .hand-written, .cert-sign { font-family: var(--script); }
+.letter { border: var(--outline); border-radius: 10px; }
+.certificate { outline: none; }
+.certificate h1, .legend-title { font-family: var(--display); }
+.legend-title { color: var(--red); -webkit-text-stroke: 1.5px var(--ink); }
+.credits .roll h1 { font-family: var(--display); color: var(--mustard); -webkit-text-stroke: 2px var(--ink); text-shadow: 5px 5px 0 var(--red); }
+.credit-what { font: 900 0.72em/1.2 var(--body); color: var(--teal); }
+.credits .roll b { font: 700 1.2em/1.2 var(--body); }
+.tg-head { font: 900 0.72em/1.2 var(--body); color: var(--purple); border-bottom: 2px solid var(--ink); }
+.toast { border-top: var(--outline); background: var(--mustard); font: 700 0.88em/1.4 var(--body); }
+.settings { font-family: var(--body); }
+.seg button { border-radius: 0; }
+.seg button:first-child { border-radius: 10px 0 0 10px; }
+.seg button:last-child { border-radius: 0 10px 10px 0; }
+.seg button.on { background: var(--purple); color: #fff; }
+.loot-menu { clip-path: none; padding-left: 14px; }
+.loot-menu::before { display: none; }
+.lm-head b { font: 400 1.15em/1.15 var(--display); letter-spacing: 0.03em; }
+.lm-head span, .lm-note { font-family: var(--body); color: #5a4f75; }
+.loot-menu button { font: 800 0.95em/1.2 var(--body); }
+.loot-menu button.loud { background: var(--red); color: #fff; }
+.loot-menu button .k { font-family: var(--display); }
+.report-photo, .rival-mug, .cert-portrait { border: var(--outline); border-radius: 6px; box-shadow: 5px 5px 0 var(--ink); filter: none; }
+.report-photo figcaption { font: 400 1.05em/1.2 var(--hand); color: var(--purple); }
+.citymap > .small { font-family: var(--body); }
+.map-svg { border: var(--outline); border-radius: 14px; box-shadow: 7px 7px 0 var(--ink); }
+
+/* --- The heist report: a score screen that plays out ---------------------------------------------------- */
+.report.score { width: min(660px, 100%); max-height: 100%; overflow-y: auto; padding: 22px 26px; }
+.score-top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.score-kicker { margin: 0; font: 900 0.75em/1 var(--body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--purple); }
+.report.score h1 { font: 400 2.1em/1.05 var(--display); letter-spacing: 0.02em; margin: 6px 0 8px; }
+.report.score .report-photo { float: none; width: 96px; margin: -4px -6px 0 0; flex: none; align-self: flex-start; }
+.report.score .report-photo figcaption { font-size: 0.82em; }
+.score-top { align-items: flex-start; margin-bottom: 4px; }
+.score-top > div { min-width: 0; }
+.report-result .turns { font: 800 0.95em/1 var(--body); }
+.pop-in { animation: pop-in 0.5s cubic-bezier(.2, 1.6, .4, 1) 0.15s both; }
+@keyframes pop-in { from { transform: scale(0) rotate(-30deg); } to { transform: scale(1) rotate(-6deg); } }
+.xp-lines { list-style: none; margin: 14px 0 6px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.xp-line { display: flex; justify-content: space-between; gap: 12px; padding: 6px 12px; border-radius: 10px; background: rgba(123, 63, 228, 0.08); font: 700 1em/1.2 var(--body); opacity: 0; transform: translateX(-24px); transition: opacity 0.25s, transform 0.3s cubic-bezier(.2, 1.4, .4, 1); }
+.xp-line.in { opacity: 1; transform: none; }
+.xp-line b { font: 400 1.1em/1 var(--display); color: var(--purple); letter-spacing: 0.03em; font-variant-numeric: tabular-nums; }
+.xp-total { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 12px; border-top: 3px solid var(--ink); font: 900 1.05em/1 var(--body); text-transform: uppercase; letter-spacing: 0.08em; }
+.xp-total b { font: 400 1.9em/1 var(--display); color: var(--ink); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; transition: transform 0.2s; }
+.xp-total.done b { color: var(--purple); animation: total-pop 0.4s cubic-bezier(.2, 1.8, .4, 1); }
+@keyframes total-pop { 50% { transform: scale(1.25); } }
+.level-meter { display: flex; gap: 14px; align-items: center; margin: 12px 0 4px; }
+.lvl-badge { flex: none; width: 74px; height: 74px; border-radius: 50%; border: var(--outline); background: radial-gradient(circle at 35% 30%, #fff1a8, var(--brass) 60%, #e8a317); box-shadow: 4px 4px 0 var(--ink); display: grid; place-content: center; text-align: center; }
+.lvl-badge small { font: 900 0.6em/1 var(--body); letter-spacing: 0.14em; text-transform: uppercase; }
+.lvl-badge b { font: 400 2em/1 var(--display); }
+.lvl-badge.bump { animation: badge-bump 0.6s cubic-bezier(.2, 1.8, .4, 1); }
+@keyframes badge-bump { 40% { transform: scale(1.45) rotate(-8deg); } }
+.meter { flex: 1; min-width: 0; }
+.xpbar.big { height: 24px; }
+.xpbar.big span { transition: none; }
+.meter .small { margin: 6px 0 0; font-weight: 700; }
+.levelups { display: flex; flex-direction: column; gap: 8px; }
+.levelup-burst { position: relative; display: flex; flex-direction: column; align-items: center; padding: 10px; border-radius: 14px; background: var(--purple); color: #fff; border: var(--outline); box-shadow: 5px 5px 0 var(--ink); animation: burst-in 0.6s cubic-bezier(.2, 1.6, .4, 1) both; overflow: visible; }
+.levelup-burst b { font: 400 2.2em/1 var(--display); color: var(--mustard); -webkit-text-stroke: 1.5px var(--ink); letter-spacing: 0.04em; text-shadow: 3px 3px 0 var(--ink); }
+.levelup-burst span { font: 800 0.95em/1.3 var(--body); }
+@keyframes burst-in { from { transform: scale(0.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.confetti { position: absolute; left: 50%; top: 50%; pointer-events: none; }
+.confetti i { position: absolute; width: 9px; height: 14px; background: var(--c); border: 1.5px solid var(--ink); border-radius: 2px; animation: confetti 1.1s ease-out both; }
+@keyframes confetti { from { transform: rotate(var(--a)) translateY(0) rotate(0); opacity: 1; } to { transform: rotate(var(--a)) translateY(calc(-1 * var(--d) - 60px)) rotate(540deg); opacity: 0; } }
+.levelup-note { font-weight: 700; }
+.haul { margin-top: 12px; padding-top: 10px; border-top: 3px dashed rgba(28, 18, 51, 0.3); }
+.haul-head { display: flex; justify-content: space-between; align-items: baseline; font: 900 1em/1 var(--body); text-transform: uppercase; letter-spacing: 0.08em; }
+.haul-head b { font: 400 1.7em/1 var(--display); color: #2d7d32; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.loot-drop { opacity: 0; transform: translateY(-30px) scale(0.6); transition: opacity 0.2s, transform 0.35s cubic-bezier(.2, 1.7, .4, 1); }
+.loot-drop.in { opacity: 1; transform: none; }
+.loot-drop:nth-child(odd).in { transform: rotate(-3deg); }
+.loot-drop:nth-child(even).in { transform: rotate(2deg); }
+.evidence figure { border: var(--outline); border-radius: 10px; background: #fff; box-shadow: 4px 4px 0 var(--ink); width: 108px; }
+.evidence figcaption { font: 700 0.7em/1.25 var(--body); }
+.evidence figcaption b { font: 400 1.2em/1.3 var(--display); color: #2d7d32; letter-spacing: 0.03em; }
+@media (max-width: 700px) { .report.score .report-photo { width: 96px; } .report.score h1 { font-size: 1.6em; } }
+
+/* In a heist: words that pop off the action (loot values, a smash, a lock giving), and a shake for a smash. */
+#floaters { position: fixed; inset: 0; pointer-events: none; z-index: 15; overflow: hidden; }
+.floater { position: absolute; transform: translate(-50%, -50%); font: 400 1.5em/1 var(--display); letter-spacing: 0.03em; color: var(--mustard); -webkit-text-stroke: 1.5px var(--ink); text-shadow: 3px 3px 0 var(--ink); white-space: nowrap; animation: float-up 1.8s cubic-bezier(.2, .9, .3, 1) forwards; }
+.floater.big { font-size: 2.2em; color: var(--mustard); }
+.floater.red { color: var(--red); }
+.floater.small { font-size: 1.05em; color: #fff; opacity: 1; }
+@keyframes float-up { 0% { transform: translate(-50%, -30%) scale(0.4); opacity: 0; } 10% { transform: translate(-50%, -60%) scale(1.2); opacity: 1; } 22% { transform: translate(-50%, -70%) scale(1); opacity: 1; } 75% { opacity: 1; } 100% { transform: translate(-50%, -170%) scale(1); opacity: 0; } }
+#stage.shake { animation: shake 0.35s linear; }
+@keyframes shake { 20% { transform: translate(-6px, 3px); } 40% { transform: translate(5px, -4px); } 60% { transform: translate(-4px, 2px); } 80% { transform: translate(3px, -1px); } }
+.status .haul-now { display: inline-block; transition: transform 0.15s; }
+.status .haul-now.bump { animation: total-pop 0.45s cubic-bezier(.2, 1.8, .4, 1); color: #2d7d32; }
+
+/* --- The planning board ------------------------------------------------------------------------------- */
+.screen.board-bg { background: var(--halftone), radial-gradient(ellipse at 50% 0%, #4a2fa0 0%, transparent 60%), var(--night); align-items: flex-start; overflow-y: auto; }
+.board-wrap { width: min(1080px, 100%); margin: auto; }
+.board {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.15fr 1.25fr 0.9fr;
+  grid-template-areas:
+    'title title title'
+    'photo plan  note'
+    'prize plan  facts'
+    'prize tip   rumour'
+    'guards guards guards'
+    'loot  loot  loot'
+    'go    go    go';
+  gap: 22px 24px;
+  align-items: start;
+  padding: 30px 28px 26px;
+  border: 14px solid #c8762e;
+  border-radius: 18px;
+  outline: var(--outline);
+  box-shadow: inset 0 0 0 3px var(--ink), 9px 9px 0 var(--ink);
+  background: var(--cork-tex), linear-gradient(160deg, #2bb39f, #16776b 70%);
+}
+.board > * { position: relative; z-index: 1; transform: rotate(var(--tilt, 0deg)); }
+.board > .strings { z-index: 0; }
+.board .pin { position: absolute; top: -9px; left: 50%; z-index: 3; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; border: 2px solid var(--ink); background: radial-gradient(circle at 35% 35%, #fff 0 2px, var(--red) 3px 100%); box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.35); }
+.strings { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; transform: none; overflow: visible; }
+.strings path { fill: none; stroke: #e2252f; stroke-width: 2.5; stroke-linecap: round; filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, 0.35)); }
+.card-label { display: block; font: 400 1.05em/1 var(--display); letter-spacing: 0.04em; color: var(--purple); margin-bottom: 8px; }
+
+.board-title { grid-area: title; justify-self: center; text-align: center; padding: 12px 34px 10px; background: var(--mustard); color: var(--ink); border: var(--outline); border-radius: 14px; box-shadow: 6px 6px 0 var(--ink); }
+.board-title small { font: 900 0.75em/1 var(--body); letter-spacing: 0.16em; text-transform: uppercase; }
+.board-title h1 { margin: 6px 0 0; font: 400 clamp(1.8em, 4.6vw, 2.8em)/1 var(--display); letter-spacing: 0.02em; }
+
+.snap { margin: 0; padding: 10px 10px 14px; background: #fff; color: var(--ink); border: var(--outline); border-radius: 6px; box-shadow: 6px 6px 0 var(--ink); }
+.snap figcaption { font: 400 1.25em/1.2 var(--hand); text-align: center; margin-top: 8px; }
+.snap figcaption b { display: block; font: 400 1em/1.1 var(--display); color: #2d7d32; letter-spacing: 0.03em; }
+.target { grid-area: photo; }
+.snap-img { aspect-ratio: 4 / 3; background: #0e0a26; display: grid; place-items: center; overflow: hidden; border: 2px solid var(--ink); }
+.snap-img img { width: 100%; height: 100%; object-fit: cover; }
+.snap-img span { font: 400 1.2em/1 var(--hand); color: var(--dim); }
+.prize { grid-area: prize; justify-self: center; width: min(200px, 100%); }
+.tip-note { align-self: stretch; }
+.prize img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; background: radial-gradient(circle, #fff6c8, #ffe28a 70%); border: 2px solid var(--ink); }
+
+.plan-card { grid-area: plan; padding: 12px 12px 10px; background: var(--blueprint); color: #e9f1ff; border: var(--outline); border-radius: 10px; box-shadow: 6px 6px 0 var(--ink); }
+.plan-card .card-label { color: var(--mustard); }
+.board .plan { width: 100%; height: auto; display: block; border: 3px solid #e9f1ff; border-radius: 4px; transform: none; box-shadow: none; margin: 0; }
+.board .legend { margin: 8px 0 0; font: 700 0.75em/1.4 var(--body); opacity: 0.9; }
+.no-plan { margin: 0; font: 400 1.3em/1.3 var(--hand); }
+
+.sticky-note { padding: 18px 16px 14px; color: var(--ink); border: var(--outline); border-radius: 4px; box-shadow: 5px 5px 0 var(--ink); font: 400 1.2em/1.3 var(--hand); }
+.sticky-note b { display: block; font: 400 0.95em/1 var(--display); letter-spacing: 0.04em; margin-bottom: 6px; color: var(--purple); }
+.objective-note { grid-area: note; background: #fff27a; }
+.tip-note { grid-area: tip; background: #ffb3c7; }
+.facts-card { grid-area: facts; padding: 16px; background: #dff3ff; color: var(--ink); border: var(--outline); border-radius: 8px; box-shadow: 5px 5px 0 var(--ink); }
+.facts-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font: 700 0.95em/1.3 var(--body); }
+.facts-card li b { font: 400 1.2em/1 var(--display); color: var(--blue-ink); }
+.facts-card li.dim { opacity: 0.6; font-style: italic; }
+
+.guards-strip { grid-area: guards; display: flex; flex-wrap: wrap; gap: 18px; transform: none; }
+.mug-card { position: relative; margin: 0; width: 150px; padding: 10px 10px 12px; background: #fff; color: var(--ink); border: var(--outline); border-radius: 6px; box-shadow: 5px 5px 0 var(--ink); transform: rotate(var(--tilt, 0deg)); }
+.mug-card img { display: block; width: 100%; height: 120px; object-fit: contain; object-position: 50% 100%; background: repeating-linear-gradient(transparent 0 13px, rgba(28, 18, 51, 0.1) 13px 14px), #e8f4ff; border: 2px solid var(--ink); }
+.mug-card figcaption { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; font: 400 1.02em/1.15 var(--hand); }
+.mug-card figcaption b { font: 400 1.1em/1 var(--display); letter-spacing: 0.04em; }
+.mug-card .route { color: var(--red-dark); }
+
+.rumour-card { grid-area: rumour; padding: 16px 14px 12px; background: #e8dcff; color: var(--ink); border: var(--outline); border-radius: 8px; box-shadow: 5px 5px 0 var(--ink); }
+.board .rumour { margin: 0; padding: 0; background: none; border: none; transform: none; color: var(--ink); font: 400 1.15em/1.3 var(--hand); }
+.board .rumour b { font: 400 0.95em/1 var(--display); color: var(--purple); letter-spacing: 0.04em; }
+.board .rival-mug { width: 72px; height: 72px; }
+
+.loot-strip { grid-area: loot; padding: 16px 16px 12px; background: #fff7e6; color: var(--ink); border: var(--outline); border-radius: 10px; box-shadow: 5px 5px 0 var(--ink); }
+.loot-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+.loot-row figure { margin: 0; flex: none; width: 92px; text-align: center; }
+.loot-row img { width: 72px; height: 72px; object-fit: contain; }
+.loot-row figcaption { font: 700 0.68em/1.2 var(--body); }
+.loot-row figcaption b { font: 400 1.15em/1.3 var(--display); color: #2d7d32; letter-spacing: 0.03em; }
+
+.board-buttons { grid-area: go; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; transform: none; }
+.big-go { font-size: 1.5em; padding: 12px 34px 9px; }
+@media (max-width: 860px) {
+  .board { grid-template-columns: 1fr 1fr; grid-template-areas: 'title title' 'photo note' 'prize facts' 'plan plan' 'tip rumour' 'guards guards' 'loot loot' 'go go'; border-width: 10px; padding: 24px 16px; }
+}
+@media (max-width: 560px) {
+  .board { grid-template-columns: 1fr; grid-template-areas: 'title' 'photo' 'note' 'plan' 'prize' 'facts' 'tip' 'rumour' 'guards' 'loot' 'go'; }
+  .mug-card { width: calc(50% - 9px); }
+}
 
 /* --- Phones ------------------------------------------------------------------------------------------ */
 @media (max-width: 700px) {

@@ -19,7 +19,7 @@ const browser = await playwright.chromium.launch({ executablePath: exe, args: ['
 const page = await browser.newPage({ viewport: { width: 1440, height: 860 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e.stack ?? e)));
-page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+page.on('console', (m) => m.type() === 'error' && !(m.location()?.url ?? '').includes('/music/') && errors.push(m.text())); // music files are optional
 await page.goto(pathToFileURL(join(root, 'dist', 'index.html')).href);
 await page.waitForFunction(() => window.__pc);
 await page.waitForTimeout(400);
@@ -46,6 +46,11 @@ async function clickTile(x, y) {
   await page.waitForTimeout(120);
   await page.mouse.click(p.x, p.y);
   await idle();
+}
+/** The report plays out as a score screen: the first click skips to the end, the second moves on. */
+async function closeReport() {
+  await page.click('#report-ok');
+  if ((await page.textContent('#report-ok').catch(() => null)) === 'Continue') await page.click('#report-ok');
 }
 async function action(kind, x, y) {
   await page.click(`#actions button[data-kind="${kind}"][data-at="${x},${y}"]`, { timeout: 3000 });
@@ -108,8 +113,13 @@ await page.waitForSelector('.paper', { timeout: 5000 }).catch((e) => { console.l
 await page.waitForTimeout(1500);
 await shot('07-paper.png');
 await page.click('#paper-ok');
+await page.waitForTimeout(1400);
+await shot('08a-report-counting.png');
+await page.waitForTimeout(1900);
+await shot('08b-report-filling.png');
+await page.waitForTimeout(3500);
 await shot('08-report.png');
-await page.click('#report-ok');
+await closeReport();
 
 // --- The narrator pays, and Leo buys the lair -------------------------------------------------------
 await shot('09-narrator.png');
@@ -125,7 +135,7 @@ const afterLair = await page.evaluate(() => ({ catnip: window.__pc.profile.catni
 
 // --- The Coin Museum, the first heist on offer --------------------------------------------------------------
 await page.click('[data-job="1"]');
-await page.waitForSelector('.briefing');
+await page.waitForSelector('.board');
 await shot('11b-briefing-no-table.png');
 await page.click('#go');
 await page.waitForTimeout(900);
@@ -136,7 +146,7 @@ await page.waitForSelector('.paper', { timeout: 6000 });
 await page.waitForTimeout(1500);
 await shot('13-coin-paper.png');
 await page.click('#paper-ok');
-await page.click('#report-ok');
+await closeReport();
 await page.click('[data-tab="market"]');
 await shot('14-market.png');
 await page.click('#sell-all');
@@ -159,7 +169,7 @@ const spent = await page.evaluate(() => ({ catnip: window.__pc.profile.catnip, p
 // --- Replay with the new kit: a bottle cap, then get caught on purpose ---------------------------------------
 await page.click('[data-tab="heists"]');
 await page.click('[data-job="1"]');
-await page.waitForSelector('.briefing .plan');
+await page.waitForSelector('.board .plan');
 await shot('18-briefing-plan.png');
 await page.click('#go');
 await page.waitForTimeout(900);
@@ -186,7 +196,7 @@ await page.waitForSelector('.lair');
 // --- A rival: Luna Luck is after the Double Doubloon tonight -----------------------------------------------
 await page.evaluate(() => { window.__pc.profile.rivals['l1-coin-museum'] = { id: 'luna', arrive: 2, entrance: 0 }; window.__pc.profile.rooms.planning = 2; });
 await page.click('[data-job="1"]');
-await page.waitForSelector('.briefing .rumour');
+await page.waitForSelector('.board .rumour');
 await shot('21-briefing-rival.png');
 await page.click('#go');
 await page.waitForTimeout(600);
@@ -255,7 +265,7 @@ const finalHeadline = await page.textContent('.paper h2');
 await page.waitForTimeout(1800);
 await shot('29-successor.png');
 await page.click('#paper-ok');
-await page.click('#report-ok');
+await closeReport();
 await page.waitForSelector('.lair');
 const legendary = await page.evaluate(() => ({ legendary: window.__pc.profile.legendary, badge: !!document.querySelector('.badge.legend') }));
 await shot('30-legendary-lair.png');

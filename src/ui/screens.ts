@@ -10,8 +10,8 @@ import { LETTERS, challengeProgress, delivery, hasLetter, type Letter } from '..
 import { ACHIEVEMENTS, type Achievement } from '../meta/achievements';
 import type { Settings } from '../settings';
 import { MASTHEAD } from '../meta/newspaper';
-import { lootPictureUrl } from '../render/characters';
-import { LEGEND_PICTURE, NIGHTCLAW_PICTURE, portrait, rivalRooftop, rooftopPicture } from './pictures';
+import { charImageUrl, lootPictureUrl } from '../render/characters';
+import { KEY_ART, LEGEND_PICTURE, NIGHTCLAW_PICTURE, portrait, rivalRooftop, rooftopPicture } from './pictures';
 import {
   LAIR_PRICE,
   DEMAND_BONUS,
@@ -53,47 +53,6 @@ const tilt = (seed: string, max = 1.6) => {
   return (((h >>> 0) % 1000) / 1000 - 0.5) * 2 * max;
 };
 
-/** The title poster's scene: an Art Deco sunburst behind the moon, the skyline, and Leo on a ledge. */
-const POSTER_SVG = (() => {
-  const rays = Array.from({ length: 18 }, (_, i) => {
-    const a0 = (i / 18) * Math.PI * 2;
-    const a1 = a0 + Math.PI / 36;
-    const r = 900;
-    return `<path d="M610 150 L${610 + Math.cos(a0) * r} ${150 + Math.sin(a0) * r} L${610 + Math.cos(a1) * r} ${150 + Math.sin(a1) * r}Z"/>`;
-  }).join('');
-  // Two rows of buildings: [x, width, height]. The front row has lit windows.
-  const back = [[0, 70, 210], [60, 50, 260], [105, 80, 190], [180, 40, 300], [215, 90, 230], [300, 60, 270], [355, 100, 200], [450, 45, 320], [490, 80, 240], [565, 120, 180], [680, 55, 280], [730, 90, 220]];
-  const front = [[-10, 120, 140], [100, 70, 180], [165, 110, 120], [270, 60, 200], [325, 140, 150], [460, 70, 170], [525, 90, 110], [610, 200, 90]];
-  const windows = front
-    .flatMap(([x, w, h], bi) =>
-      Array.from({ length: 12 }, (_, k) => {
-        const col = k % 4;
-        const row = Math.floor(k / 4);
-        if ((bi * 7 + k * 3) % 5 > 1) return '';
-        return `<rect x="${x + 10 + col * ((w - 20) / 4)}" y="${500 - h + 16 + row * 26}" width="8" height="12"/>`;
-      }),
-    )
-    .join('');
-  return `<svg class="poster-scene" viewBox="0 0 800 500" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-    <rect width="800" height="500" fill="#141a33"/>
-    <g fill="#1a2242">${rays}</g>
-    <circle cx="610" cy="150" r="92" fill="#e9dcbc"/><circle cx="610" cy="150" r="104" fill="none" stroke="#e9dcbc" stroke-width="2" opacity="0.35"/>
-    <circle cx="582" cy="128" r="14" fill="#dccca5"/><circle cx="640" cy="176" r="9" fill="#dccca5"/><circle cx="628" cy="112" r="6" fill="#dccca5"/>
-    <g fill="#0f1429">${back.map(([x, w, h]) => `<rect x="${x}" y="${500 - h}" width="${w}" height="${h}"/>`).join('')}<rect x="190" y="160" width="20" height="40"/><path d="M455 180 L467 140 L479 180Z"/></g>
-    <g fill="#090c1a">${front.map(([x, w, h]) => `<rect x="${x}" y="${500 - h}" width="${w}" height="${h}"/>`).join('')}</g>
-    <g fill="#e9c46a" opacity="0.6">${windows}</g>
-    <g transform="translate(655 330)">
-      <path d="M44 72 C80 70 96 40 78 22 C70 14 60 22 66 30" fill="none" stroke="#06070d" stroke-width="9" stroke-linecap="round"/>
-      <path d="M10 80 C2 50 8 24 28 18 C48 12 62 30 60 56 C58 74 48 82 30 82Z" fill="#06070d"/>
-      <path d="M14 22 L12 -6 L30 10Z M40 10 L54 -6 L52 20Z" fill="#06070d"/>
-      <circle cx="33" cy="16" r="20" fill="#06070d"/>
-      <ellipse cx="25" cy="14" rx="3" ry="4" fill="#e9c46a"/><ellipse cx="40" cy="14" rx="3" ry="4" fill="#e9c46a"/>
-      <path d="M26 38 L33 64 L40 38Z" fill="#efe5cc"/>
-      <path d="M22 34 L33 40 L22 46Z M44 34 L33 40 L44 46Z" fill="#b3261e"/><circle cx="33" cy="40" r="3" fill="#7d1a15"/>
-    </g>
-    <rect x="560" y="410" width="260" height="14" fill="#06070d"/>
-  </svg>`;
-})();
 const CATEGORY_NAMES: Record<LootCategory, string> = { jewel: 'Jewels', painting: 'Paintings', artefact: 'Artefacts', curiosity: 'Curiosities' };
 
 /** The narrator: an old grey cat in a trilby, placeholder until the generated portrait arrives. */
@@ -150,7 +109,7 @@ function slotSummary(p: Profile): string {
 
 export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void {
   const el = show(
-    `${POSTER_SVG}
+    `<div class="title-art" style="background-image:url(${KEY_ART})"></div>
     <div class="poster">
       <p class="poster-presents">The Whisker Times presents</p>
       <h1 class="logo"><span>Purrrfect</span><span>Crime</span></h1>
@@ -295,11 +254,17 @@ export const CREDITS: [string, string][] = [
   ['And you', 'for playing, flawlessly'],
 ];
 
+/** The music's credits, from art/music/credits.json (the build puts them on the page). */
+function musicCredits(): { track: string; artist: string; license: string }[] {
+  return (window as unknown as { MUSIC_CREDITS?: { track: string; artist: string; license: string }[] }).MUSIC_CREDITS ?? [];
+}
+
 export function credits(done: () => void): void {
   const el = show(
     `<div class="credits"><div class="roll">
       <h1>Purrrfect Crime</h1>
       ${CREDITS.map(([who, what]) => `<p><span class="credit-what">${esc(what)}</span><b>${esc(who)}</b></p>`).join('')}
+      ${musicCredits().map((m) => `<p><span class="credit-what">Music</span><b>“${esc(m.track)}” · ${esc(m.artist)}</b><span class="small">${esc(m.license)}</span></p>`).join('')}
       <p class="small">Free play continues: every heist is still there to replay, and the fences are still buying.</p>
       <div class="row-buttons"><button id="credits-ok" class="primary">Read the morning paper</button></div>
     </div></div>`,
@@ -354,31 +319,151 @@ function reportPhoto(r: HeistReport): string {
   return `<figure class="report-photo"><img src="${rooftopPicture(prize.name)}" alt=""><figcaption>Leo and ${the(esc(prize.name))}, on the rooftop</figcaption></figure>`;
 }
 
+/** Sounds for the screens; main.ts plugs the game's sound in. */
+let sfx: (name: 'tick' | 'coin' | 'levelup' | 'click' | 'take') => void = () => {};
+export function setScreenSound(fn: typeof sfx): void {
+  sfx = fn;
+}
+
+/**
+ * The heist report, as a score screen that plays out: the result pops up, each XP line slides in and counts up
+ * into the total, the level bar fills from where Leo was (a burst and a fanfare for every level he crosses),
+ * then the haul drops in piece by piece with its value rolling up. A click or a key skips to the end.
+ */
 export function heistReport(r: HeistReport, p: Profile, done: () => void): void {
-  const lvl = playerLevel(p.xp);
-  const into = p.xp - xpForLevel(lvl);
-  const need = xpForLevel(lvl + 1) - xpForLevel(lvl);
+  const xpAfter = p.xp;
+  const xpBefore = Math.max(0, xpAfter - r.xpTotal);
+  const haul = r.items.reduce((n, i) => n + i.value, 0);
   const el = show(
-    `<div class="sheet report">
-      <p class="form-head"><span>Heist report</span><span>Day ${r.paper.day}</span></p>
-      <h1>${esc(r.levelName)}</h1>
-      ${reportPhoto(r)}
-      <p class="report-result">${r.flawless ? '<span class="stamp blue">Flawless</span>' : '<span class="stamp">Got away</span>'} <span>${r.turns} turns</span></p>
-      <table class="xp">${r.xp.map((l) => `<tr><td>${esc(l.label)}</td><td>+${l.amount} XP</td></tr>`).join('')}
-        <tr class="total"><td>Total</td><td>+${r.xpTotal} XP</td></tr></table>
+    `<div class="sheet report score">
+      <div class="score-top">
+        <div><p class="score-kicker">Heist report · day ${r.paper.day}</p><h1>${esc(r.levelName)}</h1>
+        <p class="report-result"><span class="stamp ${r.flawless ? 'blue' : ''} pop-in">${r.flawless ? 'Flawless!' : 'Got away!'}</span><span class="turns">${r.turns} turns</span></p></div>
+        ${reportPhoto(r)}
+      </div>
+      <ol class="xp-lines">${r.xp.map((l, i) => `<li class="xp-line" data-i="${i}"><span>${esc(l.label)}</span><b>+<span class="n">0</span> XP</b></li>`).join('')}</ol>
+      <div class="xp-total">Total <b>+<span id="xp-total">0</span> XP</b></div>
+      <div class="level-meter">
+        <div class="lvl-badge"><small>Level</small><b id="lvl-num">${playerLevel(xpBefore)}</b></div>
+        <div class="meter"><div class="xpbar big"><span id="xp-fill"></span></div><p class="small" id="xp-into"></p></div>
+      </div>
+      <div class="levelups" id="levelups"></div>
       ${r.rival ? `<p class="rival-line">${r.rival.won ? `You beat ${esc(RIVALS[r.rival.id].name)} to the prize.` : `${esc(RIVALS[r.rival.id].name)} got the centrepiece this time. Replay to take it yourself.`}</p>` : ''}
       ${r.ncWaiting ? '<p class="rival-line">You got out, but NightClaw is still waiting for you to find him. Creep up and tap him on the shoulder to finish it.</p>' : ''}
-      ${r.finale ? '<p class="levelup">NightClaw’s collar has the top shelf of the Trophy Room to itself. It is not for sale.</p>' : ''}
-      ${r.levelAfter > r.levelBefore ? `<p class="levelup"><span class="stamp">Level ${r.levelAfter}</span> The fences pay ${Math.round(fenceRate(r.levelAfter) * 100)}% now.</p>` : ''}
-      <div class="xpbar"><span style="width:${Math.min(100, (into / need) * 100)}%"></span></div>
-      <p class="small">Level ${lvl} · ${into}/${need} XP to level ${lvl + 1}</p>
-      ${r.items.length ? `<div class="evidence">${r.items.map((i) => `<figure>${lootPic(i.name)}<figcaption>${esc(i.name)}</figcaption></figure>`).join('')}</div>` : ''}
-      <p>${r.items.length ? `${r.items.length} piece${r.items.length === 1 ? '' : 's'} went to the stash${r.replay ? ', but this is a replay, so the fences call it hot and pay half' : ''}.` : 'Nothing to sell this time.'}</p>
-      <div class="row-buttons"><button id="report-ok" class="primary">Continue</button></div>
+      ${r.finale ? '<p class="levelup-note">NightClaw’s collar has the top shelf of the Trophy Room to itself. It is not for sale.</p>' : ''}
+      ${r.items.length ? `<div class="haul"><div class="haul-head">The haul <b>$<span id="haul">0</span></b></div><div class="evidence">${r.items.map((i) => `<figure class="loot-drop">${lootPic(i.name, i.category)}<figcaption>${esc(i.name)}<br><b>$${i.value.toLocaleString('en-US')}</b></figcaption></figure>`).join('')}</div>
+        <p class="small">${r.items.length} piece${r.items.length === 1 ? '' : 's'} went to the stash${r.replay ? ', but this is a replay, so the fences call it hot and pay half' : ''}.</p></div>` : '<p>Nothing to sell this time.</p>'}
+      <div class="row-buttons"><button id="report-ok" class="primary">Skip</button></div>
     </div>`,
     'overlay',
   );
-  on(el, '#report-ok', done);
+  const q = <T extends HTMLElement>(sel: string) => el.querySelector(sel) as T;
+  const fill = q<HTMLElement>('#xp-fill');
+  const into = q<HTMLElement>('#xp-into');
+  const lvlNum = q<HTMLElement>('#lvl-num');
+  const totalEl = q<HTMLElement>('#xp-total');
+  const haulEl = el.querySelector<HTMLElement>('#haul');
+  const ok = q<HTMLButtonElement>('#report-ok');
+  const lines = [...el.querySelectorAll<HTMLElement>('.xp-line')];
+  const drops = [...el.querySelectorAll<HTMLElement>('.loot-drop')];
+  const shownLevel = { n: playerLevel(xpBefore) };
+
+  /** Shows the bar for an XP total: its level, how full, and how far to the next. */
+  const meter = (xp: number) => {
+    const lvl = playerLevel(xp);
+    const from = xpForLevel(lvl);
+    const to = xpForLevel(lvl + 1);
+    fill.style.width = `${Math.min(100, ((xp - from) / (to - from)) * 100)}%`;
+    into.textContent = `${Math.round(xp - from)} / ${to - from} XP to level ${lvl + 1}`;
+    if (lvl > shownLevel.n) {
+      for (let l = shownLevel.n + 1; l <= lvl; l++) levelUp(l);
+      shownLevel.n = lvl;
+    }
+    lvlNum.textContent = String(lvl);
+  };
+  const levelUp = (l: number) => {
+    sfx('levelup');
+    lvlNum.parentElement!.classList.remove('bump');
+    void lvlNum.offsetWidth;
+    lvlNum.parentElement!.classList.add('bump');
+    const burst = document.createElement('div');
+    burst.className = 'levelup-burst';
+    const confetti = Array.from({ length: 28 }, (_, i) => `<i style="--a:${(i / 28) * 360}deg;--d:${60 + (i % 5) * 18}px;--c:${['#ffd23f', '#ff4d5e', '#1fc8b4', '#7b3fe4', '#3a6ff0'][i % 5]}"></i>`).join('');
+    burst.innerHTML = `<div class="confetti">${confetti}</div><b>Level up!</b><span>Level ${l} · the fences pay ${Math.round(fenceRate(l) * 100)}% now</span>`;
+    q<HTMLElement>('#levelups').appendChild(burst);
+  };
+
+  // The show, as a list of steps on a clock; Skip runs straight to the end.
+  const timers: number[] = [];
+  let finished = false;
+  const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, ms));
+  const tween = (ms: number, step: (k: number) => void, then?: () => void) => {
+    const t0 = performance.now();
+    const frame = (now: number) => {
+      if (finished) return;
+      const k = Math.min(1, (now - t0) / ms);
+      step(1 - Math.pow(1 - k, 3));
+      if (k < 1) requestAnimationFrame(frame);
+      else then?.();
+    };
+    requestAnimationFrame(frame);
+  };
+  meter(xpBefore);
+  let total = 0;
+  let t = 500;
+  lines.forEach((li, i) => {
+    const amount = r.xp[i].amount;
+    at(t, () => {
+      li.classList.add('in');
+      sfx('tick');
+      const start = total;
+      total += amount;
+      tween(350, (k) => {
+        li.querySelector('.n')!.textContent = String(Math.round(amount * k));
+        totalEl.textContent = String(Math.round(start + amount * k));
+      });
+    });
+    t += 420;
+  });
+  at(t + 150, () => {
+    totalEl.parentElement!.classList.add('done');
+    sfx('coin');
+  });
+  t += 500;
+  const fillMs = Math.min(3200, 900 + (playerLevel(xpAfter) - playerLevel(xpBefore)) * 900);
+  at(t, () => tween(fillMs, (k) => meter(xpBefore + (xpAfter - xpBefore) * k)));
+  t += fillMs + 300;
+  drops.forEach((d, i) => {
+    at(t + i * 280, () => {
+      d.classList.add('in');
+      sfx('coin');
+      const upTo = r.items.slice(0, i + 1).reduce((n, it) => n + it.value, 0);
+      const from = r.items.slice(0, i).reduce((n, it) => n + it.value, 0);
+      if (haulEl) tween(260, (k) => (haulEl.textContent = Math.round(from + (upTo - from) * k).toLocaleString('en-US')));
+    });
+  });
+  t += drops.length * 280 + 200;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    timers.forEach((id) => window.clearTimeout(id));
+    lines.forEach((li, i) => {
+      li.classList.add('in');
+      li.querySelector('.n')!.textContent = String(r.xp[i].amount);
+    });
+    totalEl.textContent = String(r.xpTotal);
+    totalEl.parentElement!.classList.add('done');
+    meter(xpAfter);
+    drops.forEach((d) => d.classList.add('in'));
+    if (haulEl) haulEl.textContent = haul.toLocaleString('en-US');
+    ok.textContent = 'Continue';
+  };
+  at(t, finish);
+  ok.addEventListener('click', () => (finished ? done() : finish()));
+  el.addEventListener('pointerdown', (e) => {
+    if (!finished && e.target !== ok) finish();
+  });
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('reduce-motion')) finish();
 }
 
 // --- NightClaw's letters -------------------------------------------------------------------------------
@@ -675,7 +760,21 @@ function lairSvg(condition: number, mailbox: boolean): string {
 
 // --- The briefing: what the Planning Table knows -----------------------------------------------------
 
-export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onStart: () => void, onBack: () => void): void {
+/** What each kind of guard is like, for the notes on the planning board. */
+const GUARD_NOTES: Record<string, string> = {
+  watch: 'Regular patrol. Sees a long way into lamplight, hardly anything in the dark.',
+  sleepy: 'Dozes on the job. Any noise nearby wakes him up.',
+  captain: 'The captain. Sharper eyes than the rest: give him a wide berth.',
+  sniffer: 'A nose that smells Leo through walls, close up. Hide in a crate.',
+  robo: 'A Robo-Guard. Ignores thrown things and sees heat in the dark. Cut the power to stop it.',
+  nightclaw: 'The legend himself. Don’t let him see you coming.',
+};
+
+/**
+ * The planning board before a heist: a photo of the place (the game draws it), the prize, the floor plan, a card
+ * for every guard, sticky notes, and red string between the clues. What's on it grows with the Planning Table.
+ */
+export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onStart: () => void, onBack: () => void, photo?: Promise<string>): void {
   const tier = p.rooms.planning;
   const level = parseLevel(def);
   const rec = p.records[def.id];
@@ -722,33 +821,76 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
     tier < 1
       ? ''
       : rival
-        ? `<p class="rumour"><img class="rival-mug" src="${portrait(rival.id)}" alt=""><b>Rumour board:</b> word is ${esc(RIVALS[rival.id].name)} has an eye on ${the(esc(centre))} tonight.${tier >= 2 && entrance ? ` They’ll come in on turn ${rival.arrive}, by the spot marked R.` : ' A better Planning Table would tell you when, and where they’ll come in.'} Get it first.</p>`
-        : '<p class="small"><b>Rumour board:</b> no rival thieves are after this one.</p>';
+        ? `<p class="rumour"><img class="rival-mug" src="${portrait(rival.id)}" alt=""><b>Rumour:</b> word is ${esc(RIVALS[rival.id].name)} has an eye on ${the(esc(centre))} tonight.${tier >= 2 && entrance ? ` They’ll come in on turn ${rival.arrive}, by the spot marked R.` : ' A better Planning Table would tell you when, and where they’ll come in.'} Get it first.</p>`
+        : '<p class="rumour quiet-rumour"><b>Rumour:</b> no rival thieves are after this one.</p>';
   const plan = tier
     ? `<svg class="plan" viewBox="0 0 ${level.w * S} ${level.h * S}">${cells.join('')}${marks.join('')}</svg>
-       <p class="small legend">red ring: the prize · dots: loot · dashed squares: vents · red lines: lasers${tier >= 2 ? ' · purple: cameras · yellow: lamps' : ''}${tier >= 3 ? ' · orange dashes: guard routes' : ''}</p>`
-    : '<p class="small">Build a Planning Table at the lair to see the floor plan before you go in.</p>';
+       <p class="legend">red ring: the prize · dots: loot · dashed squares: vents · red lines: lasers${tier >= 2 ? ' · purple: cameras · yellow: lamps' : ''}${tier >= 3 ? ' · orange dashes: guard routes' : ''}</p>`
+    : '<p class="no-plan">No floor plan yet. Build a Planning Table at the lair to see it before you go in.</p>';
+  const prize = def.loot.find((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y);
+  const others = allLoot(def).filter((l) => l !== prize);
+  const lasers = def.map.join('').split('x').length - 1;
+  const tilt = (i: number) => `--tilt:${((i * 37) % 7) - 3}deg`;
+  const guardCards = level.guards
+    .map((g, i) => {
+      const kind = g.kind ?? 'watch';
+      const art = kind === 'sniffer' ? 'dog' : kind === 'robo' ? 'robot' : kind === 'nightclaw' ? 'nightclaw' : 'guard';
+      const route = tier >= 3 ? `Walks a beat of ${g.route.length} stop${g.route.length === 1 ? '' : 's'}.` : 'Beat unknown: a better Planning Table would show it.';
+      return `<figure class="mug-card" style="${tilt(i + 3)}"><span class="pin"></span><img src="${charImageUrl(art)}" alt=""><figcaption><b>${esc(g.name)}</b><span>${GUARD_NOTES[kind]}</span><span class="route">${route}</span></figcaption></figure>`;
+    })
+    .join('');
   const el = show(
-    `<div class="briefing case-file">
-      <span class="file-tab">Case file · ${esc(def.id.toUpperCase())}</span>
-      <div class="file-page">
-        ${rec ? `<span class="stamp ${rec.flawless ? 'blue' : ''}">${rec.flawless ? 'Flawless' : 'Cleared'}</span>` : '<span class="stamp">Confidential</span>'}
-        <h1>${esc(def.name)}</h1>
-        <p class="typed objective">${esc(def.objective)}</p>
-        ${def.tip ? `<p class="tip sticky"><b>New here</b> ${esc(def.tip)}</p>` : ''}
-        <dl class="typed facts-sheet">
-          <dt>Loot</dt><dd>${allLoot(def).length} pieces</dd>
-          <dt>Guards</dt><dd>${level.guards.map((g) => `${esc(g.name)}${g.kind && g.kind !== 'watch' ? ` (${{ sleepy: 'sleepy', captain: 'captain', sniffer: 'sniffer', robo: 'Robo-Guard', nightclaw: 'the legend himself' }[g.kind]})` : ''}`).join(', ')}</dd>
-          ${tier >= 2 ? `<dt>Cameras</dt><dd>${level.cameras.length}</dd>` : ''}
-          ${rec ? `<dt>Best</dt><dd>${rec.bestTurns} turns</dd>` : ''}
-        </dl>
-        ${plan}
-        ${rumour}
-        <div class="row-buttons"><button id="go" class="primary">Start the heist</button><button id="back" class="quiet">Back to the lair</button></div>
+    `<div class="board-wrap">
+      <div class="board">
+        <svg class="strings" aria-hidden="true"></svg>
+        <header class="board-title" style="--tilt:-1.5deg"><span class="pin"></span><small>The job${rec ? ` · ${rec.flawless ? 'pulled off flawlessly' : 'done before'}, best ${rec.bestTurns} turns` : ''}</small><h1>${esc(def.name)}</h1></header>
+        <figure class="snap target linked" style="--tilt:-3deg"><span class="pin"></span><div class="snap-img" id="level-photo"><span>Developing…</span></div><figcaption>The place</figcaption></figure>
+        <div class="sticky-note objective-note" style="--tilt:2deg"><span class="pin"></span><b>The plan</b>${esc(def.objective)}</div>
+        ${prize ? `<figure class="snap prize linked" style="--tilt:4deg"><span class="pin"></span><img src="${lootPictureUrl(prize.name, prize.category)}" alt=""><figcaption>${esc(prize.name)} <b>$${prize.value.toLocaleString('en-US')}</b></figcaption></figure>` : ''}
+        <div class="plan-card linked" style="--tilt:-1deg"><span class="pin"></span><b class="card-label">Floor plan</b>${plan}</div>
+        <div class="facts-card" style="--tilt:1.5deg"><span class="pin"></span><b class="card-label">What we know</b><ul>
+          <li><b>${allLoot(def).length}</b> pieces of loot</li>
+          <li><b>${level.guards.length}</b> guard${level.guards.length === 1 ? '' : 's'}</li>
+          ${tier >= 2 ? `<li><b>${level.cameras.length}</b> camera${level.cameras.length === 1 ? '' : 's'}</li><li><b>${lasers}</b> laser${lasers === 1 ? '' : 's'}</li>` : '<li class="dim">Cameras and lasers: unknown</li>'}
+        </ul></div>
+        ${def.tip ? `<div class="sticky-note tip-note" style="--tilt:-2.5deg"><span class="pin"></span><b>New here</b>${esc(def.tip)}</div>` : ''}
+        <div class="guards-strip">${guardCards}</div>
+        ${rumour ? `<div class="rumour-card linked" style="--tilt:2deg"><span class="pin"></span>${rumour}</div>` : ''}
+        ${tier >= 1 && others.length ? `<div class="loot-strip" style="--tilt:-0.5deg"><span class="pin"></span><b class="card-label">Also worth a look</b><div class="loot-row">${others.map((l) => `<figure><img src="${lootPictureUrl(l.name, l.category)}" alt=""><figcaption>${esc(l.name)}<br><b>$${l.value.toLocaleString('en-US')}</b></figcaption></figure>`).join('')}</div></div>` : ''}
+        <div class="board-buttons"><button id="go" class="primary big-go">Let’s do this!</button><button id="back">Back to the lair</button></div>
       </div>
     </div>`,
-    'overlay desk-bg',
+    'overlay board-bg',
   );
   on(el, '#go', onStart);
   on(el, '#back', onBack);
+  // The level's photo, when the game has drawn it.
+  photo?.then((url) => {
+    const box = el.querySelector('#level-photo');
+    if (box) box.innerHTML = `<img src="${url}" alt="">`;
+    requestAnimationFrame(() => strings(el));
+  });
+  // Red string from pin to pin between the main clues.
+  const strings = (root: HTMLElement) => {
+    const board = root.querySelector<HTMLElement>('.board');
+    const svg = root.querySelector<SVGSVGElement>('.strings');
+    if (!board || !svg || !board.isConnected) return;
+    const b = board.getBoundingClientRect();
+    svg.setAttribute('viewBox', `0 0 ${b.width} ${b.height}`);
+    const pins = [...root.querySelectorAll<HTMLElement>('.linked > .pin')].map((pin) => {
+      const r = pin.getBoundingClientRect();
+      return { x: r.left + r.width / 2 - b.left, y: r.top + r.height / 2 - b.top };
+    });
+    svg.innerHTML = pins
+      .slice(1)
+      .map((q, n) => {
+        const a = pins[n];
+        const sag = Math.min(60, Math.hypot(q.x - a.x, q.y - a.y) * 0.18);
+        return `<path d="M${a.x} ${a.y} Q${(a.x + q.x) / 2} ${(a.y + q.y) / 2 + sag} ${q.x} ${q.y}"/>`;
+      })
+      .join('');
+  };
+  requestAnimationFrame(() => strings(el));
+  const onResize = () => (el.isConnected ? strings(el) : window.removeEventListener('resize', onResize));
+  window.addEventListener('resize', onResize);
 }
