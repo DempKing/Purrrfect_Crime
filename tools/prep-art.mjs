@@ -154,5 +154,16 @@ for (const p of pictures) {
   loot[p.key] = { w, h };
 }
 console.log(`loot: ${Object.keys(loot).length} pictures`);
+
+// Floor and wall textures: square, scaled to 256 so they stay crisp without shimmering.
+const TEXTURES = ['tex_marble', 'tex_carpet', 'tex_parquet', 'tex_wood', 'tex_planks', 'tex_checker', 'tex_cobble', 'tex_stone', 'tex_concrete', 'tex_aqua', 'tex_brick', 'ext_water', 'ext_roof', 'ext_grass', 'dec_creak', 'dec_plate',
+  'w_museum', 'w_manor', 'w_opera', 'w_aquarium', 'w_warehouse', 'w_fish', 'w_lair', 'wall_gothic', 'wall_marble', 'wall_metal', 'wall_wallpaper', 'wall_wood', 'wall_white', 'wall_tile'];
+mkdirSync(join(root, 'art/sprites/tex'), { recursive: true });
+for (const name of TEXTURES) {
+  const url = dataUrl(join(src, `${name}.webp`));
+  const b = await page.evaluate((u) => window.measure(u), url);
+  save(join(root, 'art/sprites/tex', `${name}.webp`), await page.evaluate((a) => window.resize(...a), [url, 0, 0, b.w, b.h, 256, 256]));
+}
+console.log(`textures: ${TEXTURES.length}`);
 writeFileSync(join(root, 'art/sprites/chars.json'), JSON.stringify({ scale: SCALE, chars, loot }, null, 1) + '\n');
 await browser.close();
