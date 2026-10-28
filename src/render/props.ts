@@ -7,13 +7,11 @@ import manifest from '../../art/sprites/manifest.json';
 import ClassicConsole_01 from '../../art/sprites/ClassicConsole_01.webp';
 import fancy_picture_frame_01 from '../../art/sprites/fancy_picture_frame_01.webp';
 import fancy_picture_frame_02 from '../../art/sprites/fancy_picture_frame_02.webp';
-import fire_alarm from '../../art/sprites/fire_alarm.webp';
 import lifebuoy from '../../art/sprites/lifebuoy.webp';
 import metal_office_desk from '../../art/sprites/metal_office_desk.webp';
 import ornate_mirror_01 from '../../art/sprites/ornate_mirror_01.webp';
 import power_box_01 from '../../art/sprites/power_box_01.webp';
 import security_camera_01 from '../../art/sprites/security_camera_01.webp';
-import wall_clock from '../../art/sprites/wall_clock.webp';
 import marble_bust_01 from '../../art/sprites/marble_bust_01.webp';
 import gothic_statue from '../../art/sprites/gothic_statue.webp';
 import horse_statue_01 from '../../art/sprites/horse_statue_01.webp';
@@ -32,13 +30,11 @@ const FILES = {
   ClassicConsole_01,
   fancy_picture_frame_01,
   fancy_picture_frame_02,
-  fire_alarm,
   lifebuoy,
   metal_office_desk,
   ornate_mirror_01,
   power_box_01,
   security_camera_01,
-  wall_clock,
   marble_bust_01,
   gothic_statue,
   horse_statue_01,
@@ -92,23 +88,23 @@ export function frameFor(turn: number, angle: number): number {
 
 /** What hangs on the walls in each district: 3D props, and flat pieces (FlatName). */
 export const WALL_DECOR: Record<string, (PropName | FlatName)[]> = {
-  'old-town': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'wall_clock', 'ornate_mirror_01', 'wd_rail', 'spr_window', 'wd_toy', 'fire_alarm'],
-  'museum-mile': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'wd_museum', 'wd_manor', 'fancy_picture_frame_02', 'fire_alarm'],
-  'the-heights': ['ornate_mirror_01', 'fancy_picture_frame_02', 'wd_manor', 'spr_window', 'wall_clock', 'fancy_picture_frame_01'],
-  harbour: ['lifebuoy', 'wd_fish', 'wd_aquarium', 'fire_alarm', 'power_box_01', 'wd_warehouse'],
-  downtown: ['power_box_01', 'fire_alarm', 'wd_lab', 'wall_clock', 'spr_window', 'fancy_picture_frame_01'],
-  nightclaw: ['fancy_picture_frame_02', 'wd_lair', 'ornate_mirror_01', 'wd_manor', 'wall_clock', 'wd_lair'],
+  'old-town': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'ornate_mirror_01', 'spr_window', 'wd_manor', 'fancy_picture_frame_01'],
+  'museum-mile': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'wd_museum', 'wd_manor', 'fancy_picture_frame_02'],
+  'the-heights': ['ornate_mirror_01', 'fancy_picture_frame_02', 'wd_manor', 'spr_window', 'fancy_picture_frame_01'],
+  harbour: ['lifebuoy', 'wd_fish', 'wd_aquarium', 'power_box_01', 'wd_warehouse'],
+  downtown: ['power_box_01', 'wd_lab', 'spr_window', 'fancy_picture_frame_01'],
+  nightclaw: ['fancy_picture_frame_02', 'wd_lair', 'ornate_mirror_01', 'wd_manor', 'wd_lair'],
 };
 
 /** Heists whose walls differ from their district's. */
 export const LEVEL_WALL_DECOR: Record<string, (PropName | FlatName)[]> = {
-  'l2-clocktower': ['wd_toy', 'wd_rail', 'wall_clock', 'spr_window', 'wd_toy'],
+  'l2-clocktower': ['spr_window', 'fancy_picture_frame_01', 'spr_window', 'wd_manor'],
   'l4-opera-house': ['wd_opera', 'wd_opera', 'wd_manor', 'ornate_mirror_01', 'fancy_picture_frame_02'],
-  'l15-customs': ['wd_warehouse', 'power_box_01', 'fire_alarm', 'wd_warehouse', 'lifebuoy'],
+  'l15-customs': ['wd_warehouse', 'power_box_01', 'wd_warehouse', 'lifebuoy'],
   'l17-shipwreck': ['wd_aquarium', 'wd_fish', 'lifebuoy', 'wd_aquarium'],
-  'l19-aquarium': ['wd_aquarium', 'wd_aquarium', 'wd_fish', 'lifebuoy', 'fire_alarm'],
-  'l12-glass-tower': ['wd_lab', 'spr_window', 'fire_alarm', 'power_box_01'],
-  'l14-observatory': ['wd_lab', 'spr_window', 'wd_manor', 'wall_clock'],
+  'l19-aquarium': ['wd_aquarium', 'wd_aquarium', 'wd_fish', 'lifebuoy'],
+  'l12-glass-tower': ['wd_lab', 'spr_window', 'power_box_01'],
+  'l14-observatory': ['wd_lab', 'spr_window', 'wd_manor'],
 };
 
 /** Wall pieces that get a little brass picture light above them. */
