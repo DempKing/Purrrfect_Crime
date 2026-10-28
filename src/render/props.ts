@@ -2,6 +2,7 @@
 // seen from the game's camera turned 0°, 45°, … 315°. The view draws them in place of the grey-box shapes,
 // and falls back to those shapes until they've loaded.
 import { Assets, Rectangle, Texture } from 'pixi.js';
+import type { FlatName } from './flats';
 import manifest from '../../art/sprites/manifest.json';
 import ClassicConsole_01 from '../../art/sprites/ClassicConsole_01.webp';
 import fancy_picture_frame_01 from '../../art/sprites/fancy_picture_frame_01.webp';
@@ -89,14 +90,25 @@ export function frameFor(turn: number, angle: number): number {
   return (((Math.round((turn + angle) / (Math.PI / 4)) % 8) + 8) % 8);
 }
 
-/** The props for each district: what hangs on its walls. */
-export const WALL_DECOR: Record<string, PropName[]> = {
-  'old-town': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'wall_clock', 'ornate_mirror_01', 'fancy_picture_frame_01', 'fire_alarm'],
-  'museum-mile': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'fancy_picture_frame_02', 'fancy_picture_frame_01', 'fire_alarm'],
-  'the-heights': ['ornate_mirror_01', 'fancy_picture_frame_02', 'wall_clock', 'fancy_picture_frame_01', 'fancy_picture_frame_02'],
-  harbour: ['lifebuoy', 'fire_alarm', 'power_box_01', 'lifebuoy', 'wall_clock'],
-  downtown: ['power_box_01', 'fire_alarm', 'wall_clock', 'fancy_picture_frame_01'],
-  nightclaw: ['fancy_picture_frame_02', 'ornate_mirror_01', 'wall_clock', 'fancy_picture_frame_01', 'fancy_picture_frame_02'],
+/** What hangs on the walls in each district: 3D props, and flat pieces (FlatName). */
+export const WALL_DECOR: Record<string, (PropName | FlatName)[]> = {
+  'old-town': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'wall_clock', 'ornate_mirror_01', 'wd_rail', 'spr_window', 'wd_toy', 'fire_alarm'],
+  'museum-mile': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'wd_museum', 'wd_manor', 'fancy_picture_frame_02', 'fire_alarm'],
+  'the-heights': ['ornate_mirror_01', 'fancy_picture_frame_02', 'wd_manor', 'spr_window', 'wall_clock', 'fancy_picture_frame_01'],
+  harbour: ['lifebuoy', 'wd_fish', 'wd_aquarium', 'fire_alarm', 'power_box_01', 'wd_warehouse'],
+  downtown: ['power_box_01', 'fire_alarm', 'wd_lab', 'wall_clock', 'spr_window', 'fancy_picture_frame_01'],
+  nightclaw: ['fancy_picture_frame_02', 'wd_lair', 'ornate_mirror_01', 'wd_manor', 'wall_clock', 'wd_lair'],
+};
+
+/** Heists whose walls differ from their district's. */
+export const LEVEL_WALL_DECOR: Record<string, (PropName | FlatName)[]> = {
+  'l2-clocktower': ['wd_toy', 'wd_rail', 'wall_clock', 'spr_window', 'wd_toy'],
+  'l4-opera-house': ['wd_opera', 'wd_opera', 'wd_manor', 'ornate_mirror_01', 'fancy_picture_frame_02'],
+  'l15-customs': ['wd_warehouse', 'power_box_01', 'fire_alarm', 'wd_warehouse', 'lifebuoy'],
+  'l17-shipwreck': ['wd_aquarium', 'wd_fish', 'lifebuoy', 'wd_aquarium'],
+  'l19-aquarium': ['wd_aquarium', 'wd_aquarium', 'wd_fish', 'lifebuoy', 'fire_alarm'],
+  'l12-glass-tower': ['wd_lab', 'spr_window', 'fire_alarm', 'power_box_01'],
+  'l14-observatory': ['wd_lab', 'spr_window', 'wd_manor', 'wall_clock'],
 };
 
 /** Wall pieces that get a little brass picture light above them. */
@@ -106,11 +118,19 @@ export const LIT_ON_WALL = new Set<PropName>(['fancy_picture_frame_01', 'fancy_p
  * What stands under each ceiling light (a lamp on the map): something worth lighting, on a pedestal or not.
  * The lamp's tile still can't be walked through, so it's always something solid.
  */
-export const EXHIBITS: Record<string, { model: PropName; pedestal: boolean }[]> = {
+export type Exhibit = { model: PropName; pedestal: boolean } | { flat: FlatName };
+export const EXHIBITS: Record<string, Exhibit[]> = {
   'old-town': [{ model: 'marble_bust_01', pedestal: true }, { model: 'horse_statue_01', pedestal: true }, { model: 'mantel_clock_01', pedestal: true }, { model: 'gothic_statue', pedestal: false }],
-  'museum-mile': [{ model: 'marble_bust_01', pedestal: true }, { model: 'gothic_statue', pedestal: false }, { model: 'concrete_cat_statue', pedestal: true }, { model: 'horse_statue_01', pedestal: true }],
+  'museum-mile': [{ model: 'marble_bust_01', pedestal: true }, { model: 'gothic_statue', pedestal: false }, { flat: 'spr_statue' }, { model: 'horse_statue_01', pedestal: true }],
   'the-heights': [{ model: 'potted_plant_01', pedestal: false }, { model: 'marble_bust_01', pedestal: true }, { model: 'potted_plant_02', pedestal: false }, { model: 'gothic_statue', pedestal: false }],
   harbour: [{ model: 'lambis_shell', pedestal: true }, { model: 'treasure_chest', pedestal: false }, { model: 'Lantern_01', pedestal: true }, { model: 'lambis_shell', pedestal: true }],
   downtown: [{ model: 'potted_plant_01', pedestal: false }, { model: 'horse_statue_01', pedestal: true }, { model: 'potted_plant_02', pedestal: false }, { model: 'marble_bust_01', pedestal: true }],
   nightclaw: [{ model: 'gothic_statue', pedestal: false }, { model: 'mantel_clock_01', pedestal: true }, { model: 'concrete_cat_statue', pedestal: true }, { model: 'marble_bust_01', pedestal: true }],
+};
+
+/** Heists whose lights hang over something else: the aquarium's tanks. */
+export const LEVEL_EXHIBITS: Record<string, Exhibit[]> = {
+  'l19-aquarium': [{ flat: 'spr_tank' }, { flat: 'spr_tanktall' }, { flat: 'spr_tanktall' }, { flat: 'spr_tank' }],
+  'l18-fish-bank': [{ flat: 'spr_tank' }, { model: 'lambis_shell', pedestal: true }, { flat: 'spr_tanktall' }],
+  'l17-shipwreck': [{ model: 'treasure_chest', pedestal: false }, { flat: 'spr_tank' }, { model: 'lambis_shell', pedestal: true }],
 };
