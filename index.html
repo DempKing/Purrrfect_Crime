@@ -11,7 +11,7 @@
 
   <header class="hud">
     <div class="card status">
-      <div class="title">Purrrfect Crime <span class="tag">prototype M5</span></div>
+      <div class="title">Purrrfect Crime</div>
       <div class="small" id="level-name"></div>
       <div class="row">
         <span>Turn <b id="turn">1</b></span>
@@ -39,7 +39,7 @@
     <div id="narrator" class="narrator card hidden">
       <div class="narrator-face" id="narrator-face"></div>
       <div class="narrator-body">
-        <div class="narrator-top"><span class="kicker">The narrator</span><span class="small" id="narrator-count"></span></div>
+        <div class="narrator-top"><span class="speaker-name">The narrator</span><span class="small" id="narrator-count"></span></div>
         <p id="narrator-text"></p>
         <div class="row-buttons"><button id="narrator-ok" class="primary">Got it</button><button id="narrator-hide">Hide tips</button></div>
       </div>
@@ -76,14 +76,14 @@
 
 
   <div id="caught" class="overlay hidden">
-    <div class="card big caught">
-      <div class="kicker">Busted!</div>
+    <div class="sheet caught">
+      <span class="stamp big-stamp">Busted</span>
       <h1><span id="caught-who">Brutus</span> got Leo.</h1>
       <p id="caught-why"></p>
       <p class="small">The guard grins. Leo sighs. Back to the start.</p>
       <div class="row-buttons">
         <button id="again" class="primary">Try again (R)</button>
-        <button id="quit2">Quit</button>
+        <button id="quit2" class="quiet">Quit</button>
       </div>
     </div>
   </div>

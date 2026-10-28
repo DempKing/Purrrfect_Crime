@@ -59,6 +59,7 @@ src/core/      the rules, with no drawing: level parsing, movement and action po
                and patrols, the turn order, and a solver that searches every way a heist can go
 src/levels/    level maps (text grids) and guard routes
 src/render/    PixiJS isometric renderer: projection, rotating camera, grey-box art
+src/ui/        the menus, lair, briefing and reports (a 1960s caper look: see design §12.3)
 src/main.ts    input, animation, turn flow and the HUD
 tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 ```
@@ -71,6 +72,11 @@ tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 | [docs/BALANCE.md](docs/BALANCE.md) | The balance report: each level's flawless route, par, XP and loot |
 | [docs/ORIGINAL_BRIEF.md](docs/ORIGINAL_BRIEF.md) | The original pitch and decisions, word for word |
 | [art/README.md](art/README.md) | Where generated sprites go and how to upload them |
+
+## Fonts
+
+Limelight, Special Elite, Oswald, Libre Franklin, UnifrakturMaguntia and Homemade Apple, all under the
+SIL Open Font License 1.1, bundled from Fontsource.
 
 ## Platforms
 
@@ -87,4 +93,4 @@ tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 | M3 ✓ | Progression: attributes, skill trees, lair upgrades, saves |
 | M4 ✓ | Content: levels 1–25, rivals, all guard types, NightClaw's first letters, the challenge museum |
 | M5 ✓ (art pending) | Endgame: the NightClaw Challenge, NightClaw's Lair, ending |
-| M6 (settings ✓, sound ✓, accessibility ✓, achievements ✓, balance ✓) | Ship: Steam, settings, accessibility, balance and polish |
+| M6 (settings ✓, sound ✓, accessibility ✓, achievements ✓, balance ✓, menu revamp ✓) | Ship: Steam, settings, accessibility, balance and polish |
