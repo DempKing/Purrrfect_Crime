@@ -44,4 +44,5 @@ props the game uses, and which district gets what, are listed in `src/render/pro
 Drawn characters (`anim_<name>_idle|a|b.webp`: standing, and the two halves of a stride, facing left) and
 loot pictures (`loot_*.webp`) are prepared by `node tools/prep-art.mjs`: trimmed, scaled,
 with each frame's feet marked, into `art/sprites/chars/` and `art/sprites/loot/`. Which loot gets which
-picture is in `src/render/characters.ts`.
+picture is in `src/render/characters.ts`. Floor and wall textures go to `art/sprites/tex/` at 256 × 256; which
+heist uses which is in `src/render/surfaces.ts`.

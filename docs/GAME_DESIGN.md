@@ -537,6 +537,15 @@ case or on its plinth, hops into Leo's bag when taken, and appears in the fence'
 Turning round (walking toward or away from the camera) would want back and three-quarter drawings; until
 then the side views are mirrored.
 
+### 12.1c Floors and walls
+
+Floors are textured from the art (`tex_*`, `ext_*`), laid on the grid so they turn with the camera; walls are
+papered (`w_*`, `wall_*`), one copy of the texture to a tile, its foot on the floor, so a wall cut down to a
+stub shows its skirting. Each district has a look (floor, marble, wall) and some heists their own: the
+Opera House's red curtain walls, the Customs Warehouse's corrugated metal and concrete, the Aquarium's tiles,
+NightClaw's gothic stone. Creaky boards and pressure plates have their own drawings (`dec_creak`,
+`dec_plate`), so they stand out from the floor round them. The table is in `src/render/surfaces.ts`.
+
 ### 12.2 Audio, settings and accessibility as built (M6)
 
 - **Audio** is synthesised in the browser (Web Audio), so there are no files to load: a swing loop of

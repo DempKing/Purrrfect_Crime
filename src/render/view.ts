@@ -7,6 +7,7 @@ import { DISTRICTS } from '../levels';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
 import { charFrame, lootPicture, type CharFrameName, type CharName } from './characters';
 import { frameFor, prop, WALL_DECOR, type PropName } from './props';
+import { CREAK, lookFor, PLATE, surface, type FloorSkin, type Look, type WallSkin } from './surfaces';
 
 const WALL_H = 84;
 const STUB_H = 12;
@@ -136,6 +137,7 @@ export class HeistView {
   proj: Projector = { angle: 0, cx: 0, cy: 0 };
   time = 0;
   private district = '';
+  private look: Look = lookFor('old-town', '');
   private districtOf = '';
   private light: number[][] = [];
   private lastTime = 0;
@@ -174,6 +176,7 @@ export class HeistView {
     if (this.districtOf !== level.def.id) {
       this.districtOf = level.def.id;
       this.district = DISTRICTS.find((d) => d.levels.some((l) => l.id === level.def.id))?.id ?? 'old-town';
+      this.look = lookFor(this.district, level.def.id);
     }
     const beam = beaconTiles(level, s);
     const inVent = s.layer === 'vent';
@@ -198,9 +201,11 @@ export class HeistView {
         }
         const sand = tileNow(level, s, x, y) === 'floor' && level.tiles[y][x] === 'tidal';
         const base = sand ? ((x + y) % 2 ? 0xa58a5e : 0x9a8056) : t === 'exit' ? COL.exit : t === 'marble' ? ((x + y) % 2 ? COL.marbleA : COL.marbleB) : t === 'squeaky' ? ((x + y) % 2 ? 0x7a5634 : 0x6e4c2d) : (x + y) % 2 ? COL.carpetA : COL.carpetB;
-        this.diamond(f, x, y, 0.5, base, 1, COL.floorLine);
-        if (t === 'squeaky') this.planks(f, x, y);
-        if (t === 'plate') this.plate(f, x, y);
+        const skin = sand || t === 'exit' ? null : t === 'squeaky' ? CREAK : t === 'plate' ? PLATE : t === 'marble' ? this.look.marble : this.look.floor;
+        const skinned = !!skin && this.floorTile(f, x, y, skin);
+        if (!skinned) this.diamond(f, x, y, 0.5, base, 1, COL.floorLine);
+        if (t === 'squeaky' && !skinned) this.planks(f, x, y);
+        if (t === 'plate' && !skinned) this.plate(f, x, y);
         if (t === 'keycard') this.keycard(f, x, y);
         if (t === 'belt-e' || t === 'belt-w') this.belt(f, x, y, t === 'belt-e' ? 1 : -1);
         if (t === 'paint') this.paint(f, x, y);
@@ -294,7 +299,7 @@ export class HeistView {
             items.push({
               depth: d,
               draw: (g) => {
-                this.prism(g, x, y, x + 1, y + 1, h, t === 'panel' ? 0x55d6c2 : t === 'fuse' ? 0xf2c94c : t === 'switch' ? 0xe6e0d0 : COL.wallTop, COL.wallA, COL.wallB, a);
+                this.prism(g, x, y, x + 1, y + 1, h, t === 'panel' ? 0x55d6c2 : t === 'fuse' ? 0xf2c94c : t === 'switch' ? 0xe6e0d0 : surface(this.look.wall.tex) ? this.look.wall.top : COL.wallTop, COL.wallA, COL.wallB, a, 0, this.look.wall);
                 if (t === 'panel' || t === 'fuse') this.device(g, x, y, h, t, t === 'panel' ? s.camerasOff : s.lasersOff);
                 if (t === 'switch') this.lightSwitch(g, x, y, h, (level.def.switches ?? []).some((w) => w.at.x === x && w.at.y === y && w.lamps.some((i) => s.lampsOff.includes(i))));
               },
@@ -544,6 +549,20 @@ export class HeistView {
     return true;
   }
 
+  /** A floor tile, textured. The texture is laid on the grid, so it turns with the camera. False until loaded. */
+  private floorTile(g: Graphics, x: number, y: number, skin: FloorSkin): boolean {
+    const tex = surface(skin.tex);
+    if (!tex) return false;
+    const k = skin.tiles / tex.width; // tiles per texel
+    const o = project(this.proj, 0, 0);
+    const ex = project(this.proj, 1, 0);
+    const ey = project(this.proj, 0, 1);
+    const m = new Matrix((ex.x - o.x) * k, (ex.y - o.y) * k, (ey.x - o.x) * k, (ey.y - o.y) * k, o.x, o.y);
+    const c = this.corners(x, y, x + 1, y + 1, 0);
+    g.poly(c.flatMap((q) => [q.x, q.y])).fill({ texture: tex, matrix: m, textureSpace: 'global', color: 0xc4c4d2 }).stroke({ width: 1, color: 0x000000, alpha: 0.22 });
+    return true;
+  }
+
   /** Props are lit like the floor they stand on: dim in the dark, brightest under a lamp. */
   private tint(x: number, y: number): number {
     const l = this.light[y]?.[x] ?? 1;
@@ -595,7 +614,8 @@ export class HeistView {
   }
 
   /** A box. Only the faces turned toward the camera are drawn, shaded by which way they face. */
-  private prism(g: Graphics, x0: number, y0: number, x1: number, y1: number, h: number, top: number, sideA: number, sideB: number, alpha: number, z0 = 0): void {
+  private prism(g: Graphics, x0: number, y0: number, x1: number, y1: number, h: number, top: number, sideA: number, sideB: number, alpha: number, z0 = 0, skin?: WallSkin): void {
+    const paper = skin && surface(skin.tex);
     const b = this.corners(x0, y0, x1, y1, z0);
     const t = this.corners(x0, y0, x1, y1, z0 + h);
     const normals = [
@@ -611,7 +631,15 @@ export class HeistView {
       const ry = s * f.n.x + c * f.n.y;
       if (rx + ry <= 0.001) continue;
       const shade = rx > ry ? sideA : sideB;
-      g.poly([b[f.i].x, b[f.i].y, b[f.j].x, b[f.j].y, t[f.j].x, t[f.j].y, t[f.i].x, t[f.i].y]).fill({ color: shade, alpha }).stroke({ width: 1, color: 0x1a1d2c, alpha: alpha * 0.5 });
+      const face = [b[f.i].x, b[f.i].y, b[f.j].x, b[f.j].y, t[f.j].x, t[f.j].y, t[f.i].x, t[f.i].y];
+      if (paper) {
+        // Papered: one copy of the texture across the face, its foot on the floor, full height at WALL_H.
+        let l = b[f.i];
+        let r = b[f.j];
+        if (r.x < l.x) [l, r] = [r, l];
+        const m = new Matrix((r.x - l.x) / paper.width, (r.y - l.y) / paper.width, 0, WALL_H / paper.height, l.x, l.y - WALL_H);
+        g.poly(face).fill({ texture: paper, matrix: m, textureSpace: 'global', color: rx > ry ? 0xd6d6de : 0x9c9cac, alpha }).stroke({ width: 1, color: 0x1a1d2c, alpha: alpha * 0.5 });
+      } else g.poly(face).fill({ color: shade, alpha }).stroke({ width: 1, color: 0x1a1d2c, alpha: alpha * 0.5 });
     }
     g.poly(t.flatMap((q) => [q.x, q.y])).fill({ color: top, alpha }).stroke({ width: 1, color: 0x1a1d2c, alpha: alpha * 0.5 });
   }
