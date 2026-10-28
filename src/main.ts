@@ -184,6 +184,34 @@ function spawnRipples(): void {
 // --- camera -----------------------------------------------------------------------------------
 
 let targetAngle = 0;
+/** 1 shows the whole map; more is closer in, following Leo. */
+const ZOOM_START = 1.9;
+const ZOOM_MAX = 3;
+let zoom = ZOOM_START;
+let zoomNow = ZOOM_START;
+/** The point the camera looks at (in the world's own coordinates), easing after Leo. */
+let focus: { x: number; y: number } | null = null;
+
+function zoomBy(k: number): void {
+  zoom = Math.max(1, Math.min(ZOOM_MAX, zoom * k));
+}
+
+/** Turns the camera so it looks over Leo's shoulder: he's nearest the camera, the level stretches away. */
+function cameraBehindLeo(): void {
+  let best = 0;
+  let bestDepth = -Infinity;
+  for (let k = 0; k < 4; k++) {
+    const d = project({ angle: (k * Math.PI) / 2, cx: view.proj.cx, cy: view.proj.cy }, state.leo.x + 0.5, state.leo.y + 0.5).depth;
+    if (d > bestDepth + 0.01) {
+      bestDepth = d;
+      best = k;
+    }
+  }
+  targetAngle = (best * Math.PI) / 2;
+  view.proj.angle = targetAngle;
+  zoom = zoomNow = ZOOM_START;
+  focus = null;
+}
 const view = new HeistView();
 
 function turnCamera(dir: 1 | -1): void {
@@ -460,6 +488,7 @@ function startHeist(def: LevelDef): void {
   inHeist = true;
   document.body.classList.remove('meta');
   restart();
+  cameraBehindLeo();
 }
 
 /** Leaves the heist for the screens between heists. */
@@ -831,6 +860,17 @@ async function boot(): Promise<void> {
 
 
   $('rotate-left').addEventListener('click', () => turnCamera(1));
+  $('zoom-in').addEventListener('click', () => zoomBy(1.25));
+  $('zoom-out').addEventListener('click', () => zoomBy(0.8));
+  app.canvas.addEventListener(
+    'wheel',
+    (e) => {
+      if (!inHeist) return;
+      e.preventDefault();
+      zoomBy(Math.pow(0.9985, e.deltaY));
+    },
+    { passive: false },
+  );
   $('rotate-right').addEventListener('click', () => turnCamera(-1));
   $('end').addEventListener('click', doEndTurn);
   $('restart').addEventListener('click', restart);
@@ -861,6 +901,8 @@ async function boot(): Promise<void> {
       e.preventDefault();
       moveCursor(...arrows[e.key]);
     } else if (e.key === 'q' || e.key === 'Q') turnCamera(1);
+    else if (e.key === '+' || e.key === '=') zoomBy(1.25);
+    else if (e.key === '-' || e.key === '_') zoomBy(0.8);
     else if (e.key === 'e' || e.key === 'E') turnCamera(-1);
     else if (e.key === 'Enter' && selected && state.status === 'playing') {
       e.preventDefault();
@@ -958,13 +1000,16 @@ async function boot(): Promise<void> {
     for (const r of ripples) r.t += dt / 0.9;
     ripples = ripples.filter((r) => r.t < 1);
     if (!inHeist) return;
-    fit();
+    fit(dt);
     view.draw(level, state, overlay(), leo, guards, ripples, rival);
   });
 }
 
-/** Keeps the whole map on screen, between the HUD bars, whatever the camera angle. */
-function fit(): void {
+/**
+ * Frames the heist between the HUD bars. At zoom 1 the whole map fits, whatever the camera angle; zoomed in,
+ * the camera follows Leo, but never wanders off the map.
+ */
+function fit(dt = 0): void {
   const w = app.screen.width;
   const h = app.screen.height;
   // Leave room for the HUD on top and the narrator, actions and message underneath.
@@ -981,9 +1026,28 @@ function fit(): void {
       y1 = Math.max(y1, s.y);
     }
   }
-  const scale = Math.min((w - 24) / (x1 - x0), (h - top - bottom) / (y1 - y0), 1.5);
+  const whole = Math.min((w - 24) / (x1 - x0), (h - top - bottom) / (y1 - y0), 1.5);
+  zoomNow += (zoom - zoomNow) * (dt ? 1 - Math.exp(-dt * 8) : 1);
+  const scale = Math.min(whole * zoomNow, 2.2);
+  // Follow Leo, easing; the more zoomed in, the more the view centres on him rather than the map.
+  const leoAt = project(view.proj, leo.x, leo.y, 30);
+  const want = { x: Math.max(x0, Math.min(x1, leoAt.x)), y: Math.max(y0, Math.min(y1, leoAt.y)) };
+  if (!focus || !dt) focus = { ...want };
+  else {
+    const k = 1 - Math.exp(-dt * 5);
+    focus.x += (want.x - focus.x) * k;
+    focus.y += (want.y - focus.y) * k;
+  }
+  const t = Math.min(1, (scale / whole - 1) / 0.5);
+  let cx = (x0 + x1) / 2 + (focus.x - (x0 + x1) / 2) * t;
+  let cy = (y0 + y1) / 2 + (focus.y - (y0 + y1) / 2) * t;
+  // Don't show more empty space past the map's edge than the view needs.
+  const halfW = (w - 24) / 2 / scale;
+  const halfH = (h - top - bottom) / 2 / scale;
+  cx = (x1 - x0) / 2 > halfW ? Math.max(x0 + halfW, Math.min(x1 - halfW, cx)) : (x0 + x1) / 2;
+  cy = (y1 - y0) / 2 > halfH ? Math.max(y0 + halfH, Math.min(y1 - halfH, cy)) : (y0 + y1) / 2;
   world.scale.set(scale);
-  world.position.set(w / 2 - ((x0 + x1) / 2) * scale, top + (h - top - bottom) / 2 - ((y0 + y1) / 2) * scale);
+  world.position.set(w / 2 - cx * scale, top + (h - top - bottom) / 2 - cy * scale);
 }
 
 boot().catch((e: unknown) => {

@@ -546,6 +546,16 @@ Opera House's red curtain walls, the Customs Warehouse's corrugated metal and co
 NightClaw's gothic stone. Creaky boards and pressure plates have their own drawings (`dec_creak`,
 `dec_plate`), so they stand out from the floor round them. The table is in `src/render/surfaces.ts`.
 
+### 12.1d Lights and the camera
+
+Lamps on the map are ceiling lights: a pendant on a cord over a statue, a bust or a plant (a pedestal where it
+needs one), with its beam and pool of light. The tile still can't be walked through, and switching the light
+off dims what's under it. Display cases and plinths have small spots over them, and paintings and mirrors have
+brass picture lights washing the wall. No lamps stand on the floor or hang on the walls.
+
+A heist starts with the camera behind Leo (turned so he's nearest it, the level stretching away) and zoomed in,
+following him. The mouse wheel, + and − (keys or buttons) zoom between that and the whole map.
+
 ### 12.2 Audio, settings and accessibility as built (M6)
 
 - **Audio** is synthesised in the browser (Web Audio), so there are no files to load: a swing loop of

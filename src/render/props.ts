@@ -7,14 +7,22 @@ import ClassicConsole_01 from '../../art/sprites/ClassicConsole_01.webp';
 import fancy_picture_frame_01 from '../../art/sprites/fancy_picture_frame_01.webp';
 import fancy_picture_frame_02 from '../../art/sprites/fancy_picture_frame_02.webp';
 import fire_alarm from '../../art/sprites/fire_alarm.webp';
-import hanging_picture_frame_01 from '../../art/sprites/hanging_picture_frame_01.webp';
 import lifebuoy from '../../art/sprites/lifebuoy.webp';
 import metal_office_desk from '../../art/sprites/metal_office_desk.webp';
 import ornate_mirror_01 from '../../art/sprites/ornate_mirror_01.webp';
 import power_box_01 from '../../art/sprites/power_box_01.webp';
 import security_camera_01 from '../../art/sprites/security_camera_01.webp';
-import street_lamp_02 from '../../art/sprites/street_lamp_02.webp';
 import wall_clock from '../../art/sprites/wall_clock.webp';
+import marble_bust_01 from '../../art/sprites/marble_bust_01.webp';
+import gothic_statue from '../../art/sprites/gothic_statue.webp';
+import horse_statue_01 from '../../art/sprites/horse_statue_01.webp';
+import concrete_cat_statue from '../../art/sprites/concrete_cat_statue.webp';
+import mantel_clock_01 from '../../art/sprites/mantel_clock_01.webp';
+import lambis_shell from '../../art/sprites/lambis_shell.webp';
+import treasure_chest from '../../art/sprites/treasure_chest.webp';
+import Lantern_01 from '../../art/sprites/Lantern_01.webp';
+import potted_plant_01 from '../../art/sprites/potted_plant_01.webp';
+import potted_plant_02 from '../../art/sprites/potted_plant_02.webp';
 import wooden_crate_01 from '../../art/sprites/wooden_crate_01.webp';
 import wooden_crate_02 from '../../art/sprites/wooden_crate_02.webp';
 import wooden_military_crate from '../../art/sprites/wooden_military_crate.webp';
@@ -24,14 +32,22 @@ const FILES = {
   fancy_picture_frame_01,
   fancy_picture_frame_02,
   fire_alarm,
-  hanging_picture_frame_01,
   lifebuoy,
   metal_office_desk,
   ornate_mirror_01,
   power_box_01,
   security_camera_01,
-  street_lamp_02,
   wall_clock,
+  marble_bust_01,
+  gothic_statue,
+  horse_statue_01,
+  concrete_cat_statue,
+  mantel_clock_01,
+  lambis_shell,
+  treasure_chest,
+  Lantern_01,
+  potted_plant_01,
+  potted_plant_02,
   wooden_crate_01,
   wooden_crate_02,
   wooden_military_crate,
@@ -75,10 +91,26 @@ export function frameFor(turn: number, angle: number): number {
 
 /** The props for each district: what hangs on its walls. */
 export const WALL_DECOR: Record<string, PropName[]> = {
-  'old-town': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'wall_clock', 'street_lamp_02', 'ornate_mirror_01', 'fire_alarm'],
-  'museum-mile': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'hanging_picture_frame_01', 'fancy_picture_frame_01', 'fire_alarm'],
-  'the-heights': ['ornate_mirror_01', 'fancy_picture_frame_02', 'wall_clock', 'fancy_picture_frame_01', 'hanging_picture_frame_01'],
-  harbour: ['lifebuoy', 'street_lamp_02', 'fire_alarm', 'power_box_01', 'lifebuoy'],
-  downtown: ['power_box_01', 'fire_alarm', 'wall_clock', 'hanging_picture_frame_01'],
-  nightclaw: ['fancy_picture_frame_02', 'ornate_mirror_01', 'wall_clock', 'fancy_picture_frame_01', 'hanging_picture_frame_01'],
+  'old-town': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'wall_clock', 'ornate_mirror_01', 'fancy_picture_frame_01', 'fire_alarm'],
+  'museum-mile': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'fancy_picture_frame_02', 'fancy_picture_frame_01', 'fire_alarm'],
+  'the-heights': ['ornate_mirror_01', 'fancy_picture_frame_02', 'wall_clock', 'fancy_picture_frame_01', 'fancy_picture_frame_02'],
+  harbour: ['lifebuoy', 'fire_alarm', 'power_box_01', 'lifebuoy', 'wall_clock'],
+  downtown: ['power_box_01', 'fire_alarm', 'wall_clock', 'fancy_picture_frame_01'],
+  nightclaw: ['fancy_picture_frame_02', 'ornate_mirror_01', 'wall_clock', 'fancy_picture_frame_01', 'fancy_picture_frame_02'],
+};
+
+/** Wall pieces that get a little brass picture light above them. */
+export const LIT_ON_WALL = new Set<PropName>(['fancy_picture_frame_01', 'fancy_picture_frame_02', 'ornate_mirror_01']);
+
+/**
+ * What stands under each ceiling light (a lamp on the map): something worth lighting, on a pedestal or not.
+ * The lamp's tile still can't be walked through, so it's always something solid.
+ */
+export const EXHIBITS: Record<string, { model: PropName; pedestal: boolean }[]> = {
+  'old-town': [{ model: 'marble_bust_01', pedestal: true }, { model: 'horse_statue_01', pedestal: true }, { model: 'mantel_clock_01', pedestal: true }, { model: 'gothic_statue', pedestal: false }],
+  'museum-mile': [{ model: 'marble_bust_01', pedestal: true }, { model: 'gothic_statue', pedestal: false }, { model: 'concrete_cat_statue', pedestal: true }, { model: 'horse_statue_01', pedestal: true }],
+  'the-heights': [{ model: 'potted_plant_01', pedestal: false }, { model: 'marble_bust_01', pedestal: true }, { model: 'potted_plant_02', pedestal: false }, { model: 'gothic_statue', pedestal: false }],
+  harbour: [{ model: 'lambis_shell', pedestal: true }, { model: 'treasure_chest', pedestal: false }, { model: 'Lantern_01', pedestal: true }, { model: 'lambis_shell', pedestal: true }],
+  downtown: [{ model: 'potted_plant_01', pedestal: false }, { model: 'horse_statue_01', pedestal: true }, { model: 'potted_plant_02', pedestal: false }, { model: 'marble_bust_01', pedestal: true }],
+  nightclaw: [{ model: 'gothic_statue', pedestal: false }, { model: 'mantel_clock_01', pedestal: true }, { model: 'concrete_cat_statue', pedestal: true }, { model: 'marble_bust_01', pedestal: true }],
 };

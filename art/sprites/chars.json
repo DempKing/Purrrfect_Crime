@@ -232,7 +232,7 @@
    "h": 120
   },
   "mantel_clock_01": {
-   "w": 73,
+   "w": 70,
    "h": 120
   },
   "treasure_chest": {
@@ -240,24 +240,24 @@
    "h": 120
   },
   "marble_bust_01": {
-   "w": 77,
+   "w": 75,
    "h": 120
   },
   "horse_statue_01": {
-   "w": 70,
+   "w": 62,
    "h": 120
   },
   "gothic_statue": {
-   "w": 103,
+   "w": 102,
    "h": 120
   },
   "concrete_cat_statue": {
-   "w": 105,
+   "w": 103,
    "h": 120
   },
   "lambis_shell": {
    "w": 120,
-   "h": 112
+   "h": 117
   },
   "tea_set_01": {
    "w": 107,
@@ -268,7 +268,7 @@
    "h": 120
   },
   "Lantern_01": {
-   "w": 58,
+   "w": 47,
    "h": 120
   },
   "vintage_suitcase": {

@@ -205,7 +205,7 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
       ${toggle('largeText', 'Larger text', 'Bigger text in the HUD and on every screen.')}
       ${toggle('reduceMotion', 'Reduce motion', 'No spinning newspapers or rolling credits; quicker animations.')}
       ${choice('palette', 'Colours', [['standard', 'Standard'], ['colourblind', 'Colour-blind friendly']])}
-      <p class="small note">Keyboard: arrow keys move the cursor, Enter moves Leo there (or does what's there), Space ends the turn, 1–9 pick an action, Q and E turn the camera, Esc cancels.</p>
+      <p class="small note">Keyboard: arrow keys move the cursor, Enter moves Leo there (or does what's there), Space ends the turn, 1–9 pick an action, Q and E turn the camera, + and − (or the mouse wheel) zoom, Esc cancels.</p>
       <div class="row-buttons"><button id="settings-ok" class="primary">Done</button></div>
     </div>`,
     'overlay',
