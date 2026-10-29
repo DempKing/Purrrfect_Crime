@@ -620,6 +620,17 @@ with notes in a marker hand (Patrick Hand). Results are stickers, not rubber sta
 - **In a heist:** loot values pop off the case when Leo takes something ("+$5,200", bigger for the
   centrepiece), a smash says CRASH! and shakes the screen, a lock that needs another go says "click…", and
   the haul in the corner bumps up.
+- **Black market:** Slick Whiskers' booth in a back alley: a rat fence in a trench coat behind a striped
+  stall under a swinging bulb and a flickering neon sign, every piece in the stash on the counter with a
+  string price tag (and its deal: this week's demand, the collector, hot goods). Selling slides it over to
+  him with the till's bell and the Catnip popping up; "Sell the lot" does them all in a row.
+- **View cones:** every guard and camera throws a cone on the floor, cast ray by ray so it stops at walls
+  and doorways (red for guards, stronger once they're suspicious; purple for cameras), with the tiles they'd
+  actually catch Leo on picked out inside it.
+- **Camera:** WASD pans, C recentres; it follows Leo again when he moves or the view turns.
+- **Sound effects** are synthesised in layers: struck-metal partials for locks, latches and bottle caps,
+  hollow resonant booms for the vents, wood and hinges for doors, a short room reverb on everything, and a
+  separate sound for a lock giving way, a safe door swinging, a vent hatch and the menu buttons.
 - **Music:** a track per screen (title, lair, black market, planning board, heist, suspicious, alarm,
   report, NightClaw), crossfading as you move between them; see `art/music/README.md`. Without a file,
   heists fall back to the synthesised band.

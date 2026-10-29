@@ -5,6 +5,11 @@
 
 export type Sfx =
   | 'tick'
+  | 'unlock'
+  | 'safe-open'
+  | 'hatch'
+  | 'ui'
+  | 'sell'
   | 'coin'
   | 'levelup'
   | 'step-carpet'
@@ -94,6 +99,18 @@ export class Sound {
       this.musicBus.connect(this.master);
       this.sfxBus = ctx.createGain();
       this.sfxBus.connect(this.master);
+      // A little room: every effect also goes, quietly, through a short reverb.
+      const len2 = Math.floor(ctx.sampleRate * 1.4);
+      const ir = ctx.createBuffer(2, len2, ctx.sampleRate);
+      for (let c = 0; c < 2; c++) {
+        const d2 = ir.getChannelData(c);
+        for (let i = 0; i < len2; i++) d2[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len2, 3.2);
+      }
+      const verb = ctx.createConvolver();
+      verb.buffer = ir;
+      const wet = ctx.createGain();
+      wet.gain.value = 0.22;
+      this.sfxBus.connect(verb).connect(wet).connect(this.master);
       const len = ctx.sampleRate;
       this.noise = ctx.createBuffer(1, len, ctx.sampleRate);
       const d = this.noise.getChannelData(0);
@@ -239,6 +256,22 @@ export class Sound {
     src.stop(at + dur + 0.02);
   }
 
+  /** Struck metal: a few inharmonic partials that ring and die away (locks, latches, bottle caps, ducts). */
+  private metal(bus: GainNode, at: number, freq: number, dur: number, vol: number, ratios = [1, 2.76, 5.4, 8.93]): void {
+    ratios.forEach((r, i) => this.tone(bus, 'sine', freq * r * (1 + (Math.random() - 0.5) * 0.01), at, dur / (1 + i * 0.6), vol / (1 + i * 0.9), undefined, 0.001));
+  }
+
+  /** A soft, low knock: a falling sine and a puff of low noise. */
+  private thud(bus: GainNode, at: number, freq: number, vol: number, dur = 0.16): void {
+    this.tone(bus, 'sine', freq, at, dur, vol, freq * 0.45, 0.002);
+    this.hiss(bus, at, dur * 0.4, vol * 0.35, 'lowpass', freq * 4);
+  }
+
+  /** A little random variation, so repeated sounds aren't identical. */
+  private vary(x: number, amount = 0.08): number {
+    return x * (1 + (Math.random() - 0.5) * 2 * amount);
+  }
+
   // --- the music ---------------------------------------------------------------------------------
 
   /** Schedules the next few eighth notes, a little ahead of time. */
@@ -288,38 +321,93 @@ export class Sound {
     const t = ctx.currentTime + delay;
     switch (name) {
       case 'step-carpet':
-        return this.hiss(b, t, 0.06, 0.08, 'lowpass', 500);
+        // A padded paw on carpet: a soft low thump with a brush of fabric.
+        this.thud(b, t, this.vary(110), 0.12, 0.08);
+        return this.hiss(b, t, 0.05, 0.035, 'bandpass', this.vary(1400), undefined, 0.8);
       case 'step-marble':
-        this.hiss(b, t, 0.04, 0.12, 'highpass', 3000);
-        return this.tone(b, 'sine', 1800, t, 0.03, 0.04);
+        // Claws on stone: a tick with a bit of the hall's echo.
+        this.hiss(b, t, 0.03, 0.1, 'highpass', 4500);
+        this.metal(b, t, this.vary(2400, 0.12), 0.05, 0.025);
+        return this.thud(b, t, 140, 0.06, 0.06);
       case 'creak':
-        return this.tone(b, 'sawtooth', 180, t, 0.35, 0.08, 120, 0.05);
+        // An old board giving: a wobbling, grinding squeal.
+        for (let k = 0; k < 3; k++) this.tone(b, 'sawtooth', this.vary(210 - k * 30, 0.05), t + k * 0.09, 0.22, 0.05, this.vary(150 - k * 20), 0.03);
+        return this.hiss(b, t, 0.4, 0.04, 'bandpass', 700, 400, 6);
       case 'pick':
-        this.tone(b, 'square', 3200, t, 0.02, 0.05);
-        return this.tone(b, 'square', 2600, t + 0.07, 0.02, 0.05);
+        // Picks in a lock: a scrape and two tiny pins clicking.
+        this.hiss(b, t, 0.09, 0.05, 'bandpass', this.vary(5200), 3800, 4);
+        this.metal(b, t + 0.05, this.vary(3100, 0.1), 0.06, 0.05, [1, 2.3]);
+        this.metal(b, t + 0.13, this.vary(3600, 0.1), 0.06, 0.04, [1, 2.3]);
+        return;
+      case 'unlock':
+        // The lock gives: pins setting one by one, then the bolt shoots back with a solid clunk, and a ring.
+        [0, 0.07, 0.13].forEach((d, k) => this.metal(b, t + d, 2800 + k * 350, 0.05, 0.045, [1, 2.2]));
+        this.thud(b, t + 0.22, 160, 0.35, 0.14);
+        this.metal(b, t + 0.22, 820, 0.35, 0.12);
+        this.tone(b, 'triangle', midi(84), t + 0.32, 0.4, 0.05);
+        return;
+      case 'safe-open':
+        // The last tumbler drops, the handle turns, the heavy door swings.
+        this.thud(b, t, 90, 0.45, 0.25);
+        this.metal(b, t, 520, 0.5, 0.12);
+        this.tone(b, 'sawtooth', 70, t + 0.18, 0.6, 0.05, 55, 0.08);
+        this.hiss(b, t + 0.18, 0.6, 0.05, 'lowpass', 400);
+        return;
       case 'smash':
-        this.hiss(b, t, 0.5, 0.5, 'highpass', 2000, 6000);
-        for (let i = 0; i < 6; i++) this.tone(b, 'sine', 3000 + Math.random() * 3000, t + i * 0.04, 0.12, 0.06);
+        // An impact, the pane bursting, and shards tinkling down.
+        this.thud(b, t, 120, 0.5, 0.2);
+        this.hiss(b, t, 0.35, 0.45, 'highpass', 1800, 7000);
+        for (let k = 0; k < 14; k++) this.metal(b, t + 0.03 + Math.random() * 0.6, 2500 + Math.random() * 4500, 0.12, 0.03, [1, 2.4]);
         return;
       case 'take':
-        this.tone(b, 'triangle', midi(76), t, 0.12, 0.12);
-        return this.tone(b, 'triangle', midi(83), t + 0.08, 0.25, 0.12);
+        // A rustle into the sack and a bright little jingle.
+        this.hiss(b, t, 0.18, 0.08, 'bandpass', 2200, 900, 1.2);
+        this.tone(b, 'triangle', midi(79), t + 0.08, 0.12, 0.1);
+        this.tone(b, 'triangle', midi(84), t + 0.15, 0.12, 0.1);
+        return this.tone(b, 'triangle', midi(91), t + 0.22, 0.35, 0.08);
       case 'door':
-        this.tone(b, 'sine', 120, t, 0.15, 0.3, 70);
-        return this.hiss(b, t, 0.08, 0.08, 'lowpass', 800);
+        // A latch clicks, the hinges groan, the door bumps against the stop.
+        this.metal(b, t, 1900, 0.06, 0.06, [1, 2.6]);
+        this.tone(b, 'sawtooth', this.vary(160), t + 0.05, 0.35, 0.035, this.vary(240), 0.06);
+        this.hiss(b, t + 0.05, 0.35, 0.03, 'bandpass', 900, 600, 8);
+        return this.thud(b, t + 0.4, 95, 0.3, 0.18);
       case 'vent':
-        return this.tone(b, 'triangle', 220, t, 0.25, 0.1, 160);
+        // Crawling in a duct: the thin metal bonging under each paw.
+        this.thud(b, t, this.vary(90), 0.16, 0.12);
+        this.hiss(b, t, 0.3, 0.07, 'bandpass', this.vary(240), undefined, 14);
+        return this.hiss(b, t, 0.22, 0.04, 'bandpass', this.vary(560), undefined, 18);
+      case 'hatch':
+        // A vent grate lifting out: a scrape, a clang and the duct's hollow boom.
+        this.hiss(b, t, 0.18, 0.06, 'bandpass', 3000, 1500, 3);
+        this.metal(b, t + 0.12, 640, 0.6, 0.12, [1, 2.1, 3.7, 5.9]);
+        this.hiss(b, t + 0.12, 0.7, 0.08, 'bandpass', 180, undefined, 10);
+        return this.thud(b, t + 0.12, 70, 0.25, 0.3);
       case 'beep':
-        this.tone(b, 'square', 880, t, 0.06, 0.05);
-        return this.tone(b, 'square', 1320, t + 0.08, 0.1, 0.05);
+        // A card reader: a clean two-tone chirp, then the magnetic lock releasing.
+        this.tone(b, 'sine', 1320, t, 0.07, 0.07);
+        this.tone(b, 'sine', 1760, t + 0.09, 0.12, 0.07);
+        return this.thud(b, t + 0.22, 130, 0.2, 0.1);
       case 'dials':
-        for (let i = 0; i < 3; i++) this.tone(b, 'square', 1500, t + i * 0.06, 0.015, 0.05);
-        return;
+        // A safe dial spinning: ratcheting ticks that ring a little inside the box.
+        for (let k = 0; k < 6; k++) this.metal(b, t + k * 0.05, this.vary(1700, 0.04), 0.06, 0.04, [1, 3.1]);
+        return this.thud(b, t + 0.32, 200, 0.12, 0.08);
       case 'click':
-        return this.tone(b, 'square', 1000, t, 0.015, 0.06);
+        // A switch or a lever: a crisp mechanical snap.
+        this.metal(b, t, 2200, 0.04, 0.06, [1, 2.7]);
+        return this.thud(b, t, 300, 0.1, 0.04);
+      case 'ui':
+        // Menu buttons: a soft wooden tock.
+        this.tone(b, 'sine', 1100, t, 0.05, 0.08, 700, 0.001);
+        return this.hiss(b, t, 0.02, 0.03, 'bandpass', 2500);
+      case 'sell':
+        // The fence's till: a drawer bell and coins counted out.
+        this.metal(b, t, 1568, 0.7, 0.1, [1, 2.0, 3.0]);
+        for (let k = 0; k < 5; k++) this.metal(b, t + 0.18 + k * 0.06, this.vary(3200, 0.1), 0.1, 0.035, [1, 2.4]);
+        return;
       case 'clink':
-        this.tone(b, 'sine', 2600, t, 0.25, 0.12);
-        return this.tone(b, 'sine', 3900, t + 0.12, 0.2, 0.06);
+        // A bottle cap bouncing three times across the floor.
+        [0, 0.16, 0.27].forEach((d, k) => this.metal(b, t + d, this.vary(2600), 0.18 - k * 0.04, 0.09 - k * 0.025));
+        return;
       case 'bark':
         for (const d of [0, 0.22]) {
           this.tone(b, 'sawtooth', 320, t + d, 0.12, 0.2, 180, 0.01);

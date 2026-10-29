@@ -1,8 +1,8 @@
 // Draws a heist: floors and overlays first, then walls, furniture and characters sorted by depth.
 // Placeholder art for now; generated sprites replace the character and prop drawing later.
 import { Container, Graphics, Matrix, type Texture } from 'pixi.js';
-import { DIRS, PRINT_TURNS, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, roboOff, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
-import type { Level, Point } from '../core/level';
+import { DIRS, KIND_SIGHT, PRINT_TURNS, ROBO_RANGE, SIGHT_HALF_ANGLE, SIGHT_RANGE, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, roboOff, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
+import { blocksSight, type Level, type Point } from '../core/level';
 import { DISTRICTS } from '../levels';
 import { exhibitAt, tileHash } from '../core/exhibits';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
@@ -136,6 +136,7 @@ export class HeistView {
   private districtOf = '';
   private light: number[][] = [];
   private lastTime = 0;
+  private coneCache = new Map<string, number[]>();
   private lvl: Level | null = null;
   /** Leo's height off the floor, easing between the floor and the rafters as he climbs. */
   private leoLift = 0;
@@ -218,7 +219,7 @@ export class HeistView {
           this.diamondOutline(f, x, y, COL.target, 1.5, 0.12, 0.8);
         }
         if (ov.vision.has(k)) {
-          this.diamond(f, x, y, 0.47, COL.vision, 0.32);
+          this.diamond(f, x, y, 0.42, COL.vision, 0.3);
           if (hatchVision) this.hatch(f, x, y, COL.vision);
         }
         if (!inVent && !inRafters) {
@@ -226,6 +227,18 @@ export class HeistView {
           else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.38, COL.reach2, 0.26);
         }
       }
+    // Each guard's and camera's view: a cone on the floor, cut off by walls.
+    if (!inVent && !inRafters) {
+      guards.forEach((a, i) => {
+        const g = s.guards[i];
+        if (!g || g.asleep || roboOff(s, g) || s.status !== 'playing') return;
+        const range = g.kind === 'robo' ? ROBO_RANGE * s.perks.sight : SIGHT_RANGE.lit * KIND_SIGHT[g.kind];
+        const alert = g.mode !== 'patrol';
+        this.viewCone(f, level, s, a.x, a.y, a.facing, range, alert ? COL.danger : COL.vision, alert ? 0.22 : 0.16);
+      });
+      for (const c of s.cameras) if (camerasActive(s, c)) this.viewCone(f, level, s, c.at.x + 0.5, c.at.y + 0.5, c.sweep[c.idx], c.range, COL.camera, 0.11);
+    }
+
     // The vent layer, drawn like a blueprint while Leo is inside.
     if (inVent)
       for (let y = 0; y < level.h; y++)
@@ -549,6 +562,7 @@ export class HeistView {
     g.setFillStyle({ color: 0xffffff, alpha });
     g.texture(fr.tex, o.tint ?? 0xffffff, -fr.ax, -fr.ay, fr.w, fr.h);
     g.restore();
+    g.beginPath();
     g.setFillStyle({ color: 0xffffff, alpha: 1 });
     if (gait === 'run' && hop < 0.3) {
       // Dust kicked up behind.
@@ -760,6 +774,49 @@ export class HeistView {
     g.setFillStyle({ color: 0xffffff, alpha: 1 });
     g.texture(tex, tint, 0, 0, tex.width, tex.height);
     g.restore();
+  }
+
+  /**
+   * A view cone on the floor: a fan of rays from the watcher, each stopping at the first thing that blocks
+   * sight, so the cone hugs corners and doorways the way the guard's eyes do. A brighter edge outlines it.
+   */
+  private viewCone(g: Graphics, level: Level, s: State, x: number, y: number, facing: number, range: number, color: number, alpha: number): void {
+    const d = DIRS[facing];
+    const base = Math.atan2(d.y, d.x);
+    const half = (SIGHT_HALF_ANGLE * Math.PI) / 180;
+    const rays = 28;
+    // The rays only change when the watcher moves or turns, or the building changes (a door opens): cache them.
+    const id = `${x.toFixed(2)},${y.toFixed(2)},${facing},${range},${s.turn},${s.ap},${s.smashed.length}`;
+    let ends = this.coneCache.get(id);
+    if (!ends) {
+      ends = [];
+      for (let i = 0; i <= rays; i++) {
+        const a = base - half + (2 * half * i) / rays;
+        const ux = Math.cos(a);
+        const uy = Math.sin(a);
+        let len = range + 0.5;
+        for (let t = 0.3; t <= range + 0.5; t += 0.1) {
+          const tx = Math.floor(x + ux * t);
+          const ty = Math.floor(y + uy * t);
+          if (tx < 0 || ty < 0 || tx >= level.w || ty >= level.h || blocksSight(tileNow(level, s, tx, ty))) {
+            len = t;
+            break;
+          }
+        }
+        ends.push(x + ux * len, y + uy * len);
+      }
+      if (this.coneCache.size > 400) this.coneCache.clear();
+      this.coneCache.set(id, ends);
+    }
+    const pts: number[] = [];
+    const start = project(this.proj, x, y);
+    pts.push(start.x, start.y);
+    for (let i = 0; i < ends.length; i += 2) {
+      const p = project(this.proj, ends[i], ends[i + 1]);
+      pts.push(p.x, p.y);
+    }
+    const pulse = 1 + Math.sin(this.time * 2.5) * 0.12;
+    g.poly(pts).fill({ color, alpha: alpha * pulse }).stroke({ width: 2, color, alpha: 0.55, join: 'round' });
   }
 
   /** Outer walls on the two sides facing the camera are always cut down, so the room is never hidden. */
@@ -1254,8 +1311,9 @@ export class HeistView {
       g.rect(x - 2, top + 4, 4, 12).fill({ color: 0xffffff });
       g.rect(x - 2, top + 19, 4, 4).fill({ color: 0xffffff });
     } else {
-      g.arc(x, top + 9, 5, Math.PI, Math.PI * 2.25).stroke({ width: 3, color: 0x1a1205 });
-      g.moveTo(x + 1, top + 13).lineTo(x, top + 17).stroke({ width: 3, color: 0x1a1205 });
+      // A fresh path each time, so the curve doesn't join up with whatever was drawn before it.
+      g.beginPath().arc(x, top + 9, 5, Math.PI, Math.PI * 2.25).stroke({ width: 3, color: 0x1a1205 });
+      g.beginPath().moveTo(x + 1, top + 13).lineTo(x, top + 17).stroke({ width: 3, color: 0x1a1205 });
       g.rect(x - 1.5, top + 19, 3, 3).fill({ color: 0x1a1205 });
     }
   }
@@ -1434,7 +1492,7 @@ export class HeistView {
   /** A guard (drawn as a bulldog): stocky, tan, peaked cap, torch. Shows ? when suspicious, ! when searching. */
   private drawGuard(g: Graphics, a: Actor, guard: Guard, grinning: boolean): void {
     const sniffer = guard.kind === 'sniffer';
-    const r = this.figure(g, sniffer ? 'dog' : 'guard', a, { asleep: guard.asleep, tint: this.actorTint(a), scale: guard.kind === 'captain' ? 1.12 : 1, torch: !sniffer && !guard.asleep });
+    const r = this.figure(g, sniffer ? 'dog' : 'guard', a, { asleep: guard.asleep, tint: this.actorTint(a), scale: guard.kind === 'captain' ? 1.12 : 1, torch: false });
     if (r) {
       if (guard.kind === 'captain') {
         // The captain's gold star, worn on the cap.
