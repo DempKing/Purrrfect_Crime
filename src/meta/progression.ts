@@ -49,12 +49,6 @@ export const ATTRIBUTES: AttributeInfo[] = [
 
 export const attributeInfo = (id: Attribute) => ATTRIBUTES.find((a) => a.id === id)!;
 
-/** Points to spend: one per level after the first. */
-export function attributePoints(p: Profile): number {
-  const spent = Object.values(p.attributes).reduce((n, r) => n + r, 0);
-  return playerLevel(p.xp) - 1 - spent;
-}
-
 /** Catnip for the next rank of an attribute (the Gym takes 15% off per tier). */
 export function attributeCost(p: Profile, id: Attribute): number {
   const rank = p.attributes[id];
@@ -63,7 +57,6 @@ export function attributeCost(p: Profile, id: Attribute): number {
 
 export function canRaise(p: Profile, id: Attribute): string | null {
   if (p.attributes[id] >= attributeInfo(id).ranks.length) return 'Already at the top rank.';
-  if (attributePoints(p) < 1) return 'Needs an attribute point: Leo gets one each level.';
   if (p.catnip < attributeCost(p, id)) return 'Not enough Catnip.';
   return null;
 }

@@ -30,7 +30,6 @@ import {
   SKILLS,
   TREES,
   attributeCost,
-  attributePoints,
   canLearn,
   canRaise,
   canUpgrade,
@@ -594,7 +593,6 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   const into = p.xp - xpForLevel(lvl);
   const need = xpForLevel(lvl + 1) - xpForLevel(lvl);
   const wanted = demand(p.day);
-  const points = attributePoints(p);
 
   // A heist opens once the one before it is cleared; anything already cleared stays open. NightClaw's
   // challenge opens with his second letter.
@@ -669,7 +667,6 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
         <dt>Subject</dt><dd>Leo Tuxedo</dd>
         <dt>Known as</dt><dd>${p.legendary ? 'Legendary' : 'The tuxedo cat'}</dd>
         <dt>Level</dt><dd>${lvl}</dd>
-        <dt>Points to spend</dt><dd>${points} <span class="small">(one a level, plus Catnip for training)</span></dd>
       </dl>
     </div>
     <h2 class="section">Attributes</h2>
@@ -754,7 +751,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   const body = { heists, leo, market, lair: lairTab, papers }[tab];
   const names: Record<LairTab, string> = {
     heists: 'Heists',
-    leo: `Leo${points ? ` (${points})` : ''}`,
+    leo: 'Leo',
     market: `Black market${p.stash.length ? ` (${p.stash.length})` : ''}`,
     lair: 'Lair',
     papers: 'Front pages',

@@ -234,12 +234,12 @@ and a headline; the Leo tab keeps the rivalry record.
 
 - XP for a successful heist: base by heist + bonuses for stealth (never seen, no alarms), loot value, the
   centrepiece, speed (turn count) and beating a rival to the prize.
-- **Level cap 30.** Each level gives +1 attribute point and improves black-market prices. Some skills and
+- **Level cap 30.** Each level improves black-market prices. Some skills and
   levels need a minimum player level.
 
-### 7.2 Attributes (bought with attribute points and Catnip)
+### 7.2 Attributes (bought with Catnip)
 
-Each rank costs one attribute point (Leo gets one per level) and `150 × (rank + 1)` Catnip, less the
+Each rank costs `150 × (rank + 1)` Catnip, less the
 Scratching Tower's discount.
 
 | Attribute | Ranks | Effect |

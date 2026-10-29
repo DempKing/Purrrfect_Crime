@@ -29,7 +29,6 @@ import {
   ATTRIBUTES,
   SKILLS,
   attributeCost,
-  attributePoints,
   canLearn,
   canRaise,
   canUpgrade,
@@ -270,9 +269,8 @@ function richProfile(level: number): Profile {
   return p;
 }
 
-test('attribute points: one per level, each rank costs Catnip, the Gym takes some off', () => {
+test('attributes: each rank costs more Catnip, the Gym takes some off', () => {
   const p = richProfile(4);
-  assert.equal(attributePoints(p), 3);
   assert.equal(attributeCost(p, 'agility'), 150);
   assert.ok(raise(p, 'agility'));
   assert.equal(attributeCost(p, 'agility'), 300);
@@ -280,8 +278,8 @@ test('attribute points: one per level, each rank costs Catnip, the Gym takes som
   assert.equal(attributeCost(p, 'agility'), 210);
   assert.ok(raise(p, 'agility'));
   assert.ok(raise(p, 'pockets'));
-  assert.equal(attributePoints(p), 0);
-  assert.match(canRaise(p, 'stealth')!, /attribute point/);
+  p.catnip = 0;
+  assert.match(canRaise(p, 'stealth')!, /Catnip/);
   const perks = perksFor(p);
   assert.equal(perks.movePerAp, 6);
   assert.equal(perks.spaces, 7);
