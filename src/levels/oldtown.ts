@@ -241,7 +241,7 @@ export const OPERA_HOUSE: LevelDef = {
   objective: 'Steal the Phantom’s Mask from the costume vault and walk out the front doors.',
   ambient: 'dark',
   xp: 220,
-  par: 24,
+  par: 18,
   map: [
     '############################',
     '#.....#............#......L#',
@@ -295,7 +295,8 @@ export const OPERA_HOUSE: LevelDef = {
     { name: 'Usher', start: { x: 26, y: 15 }, route: [{ x: 20, y: 15 }, { x: 19, y: 14 }, { x: 16, y: 15 }, { x: 19, y: 14 }, { x: 20, y: 13 }, { x: 26, y: 13 }, { x: 26, y: 15 }] },
     { name: 'Diva', kind: 'sleepy', start: { x: 26, y: 5 }, route: [{ x: 25, y: 5 }] },
     { name: 'Stagehand', start: { x: 8, y: 2 }, route: [{ x: 17, y: 2 }, { x: 17, y: 6 }, { x: 8, y: 6 }, { x: 8, y: 2 }] },
-    { name: 'Tenor', kind: 'sniffer', start: { x: 21, y: 2 }, route: [{ x: 21, y: 8 }, { x: 21, y: 2 }] },
+    // The guard dog sniffs up and down the far end of the vault, by the way out to the lobby, not the stage door.
+    { name: 'Tenor', kind: 'sniffer', start: { x: 20, y: 8 }, route: [{ x: 22, y: 8 }, { x: 20, y: 8 }] },
   ],
   loot: [
     { at: { x: 23, y: 4 }, name: 'Phantom’s Mask', value: 9500, space: 1, category: 'artefact' },

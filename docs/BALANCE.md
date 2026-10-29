@@ -12,7 +12,7 @@ plan, and a player only sees a turn or two ahead.
 | The Cobblestone Coin Museum | 11 | 22 | 22 | 120 | $13,200 | $5,200 | 3 |
 | The Clocktower Archive | 10 | 20 | 20 | 150 | $6,400 | $6,400 | 4 |
 | The Pawnbroker Penthouse | 13 | 26 | 26 | 180 | $18,650 | $7,800 | 5 |
-| The Opera House Costume Vault | 12 | 24 | 24 | 220 | $9,500 | $9,500 | 6 |
+| The Opera House Costume Vault | 8 | 24 | 18 | 220 | $9,500 | $9,500 | 6 |
 | The Natural History Museum | 7 | 17 | 17 | 260 | $23,250 | $11,000 | 7 |
 | The Egyptian Wing | 9 | 19 | 19 | 280 | $23,000 | $12,500 | 8 |
 | The Modern Art Atrium | 7 | 17 | 17 | 300 | $34,300 | $14,000 | 9 |
@@ -37,7 +37,7 @@ plan, and a player only sees a turn or two ahead.
 | NightClaw’s Lair | 17 | 34 | 34 | 800 | $78,500 | $0 | 20 |
 
 **One flawless run through the story** (every level once, every piece of loot, a third of par to spare):
-21,691 XP, which is level 20 (level 22, for Second Wind, needs 24,150 XP),
+21,681 XP, which is level 20 (level 22, for Second Wind, needs 24,150 XP),
 and about 84,310 Catnip from the fences before demand bonuses and the Fence's Office.
 
 Against that: every skill costs 21,000 Catnip, every lair room at its top tier
