@@ -58,14 +58,6 @@ export function setPalette(palette: 'standard' | 'colourblind'): void {
   hatchVision = palette === 'colourblind';
 }
 
-/** Placeholder looks for the four rivals until their sprites arrive. */
-const RIVAL_LOOKS: Record<RivalId, { fur: number; patch?: number; eyes: number; mask: number }> = {
-  mittens: { fur: 0xf2f0ea, patch: 0xd9822b, eyes: 0x5fbf5f, mask: 0x1b1b22 },
-  luna: { fur: 0x9aa3b5, eyes: 0x8ec5ff, mask: 0x3a2a5a },
-  sammy: { fur: 0xd9822b, patch: 0xf5e6c8, eyes: 0xe9d36b, mask: 0x1b1b22 },
-  paws: { fur: 0x7a5a3a, patch: 0xc8a882, eyes: 0x2a1a0c, mask: 0x4a2a1a },
-};
-
 /** Loot colours by index, so each piece reads differently on its stand. */
 const LOOT_COLORS = [0x9fe8ff, 0xf2c46b, 0xf5f0ff, 0xffd84a, 0xe0314b, 0xd9b36c, 0x3fbf7f, 0xb6a4ff];
 
@@ -126,6 +118,13 @@ interface Drawable {
 
 export class HeistView {
   root = new Container();
+  /** The floor itself (tiles, textures, light and shadow): drawn again only when it can have changed. */
+  private floorBase = new Graphics();
+  private floorKey = '';
+  private floorRes = 0;
+  /** Screen pixels per world pixel, so the cached floor stays sharp at any zoom. */
+  private detail = 1;
+  /** What moves on the floor every frame: highlights, cones, belts, the path. */
   private floor = new Graphics();
   private objects = new Graphics();
   private fx = new Graphics();
@@ -147,7 +146,16 @@ export class HeistView {
   private inventorySeen: number[] = [];
 
   constructor() {
-    this.root.addChild(this.floor, this.objects, this.fx);
+    this.root.addChild(this.floorBase, this.floor, this.objects, this.fx);
+  }
+
+  /** The zoom (times the screen's pixel density). The floor's picture is redrawn sharper or softer when it settles. */
+  setDetail(pixelsPerUnit: number): void {
+    const want = Math.round(pixelsPerUnit * 4) / 4;
+    if (Math.abs(want - this.detail) >= 0.25) {
+      this.detail = want;
+      this.floorKey = '';
+    }
   }
 
   draw(level: Level, s: State, ov: Overlay, leo: Actor, guards: Actor[], ripples: Ripple[], rival?: Actor): void {
@@ -179,8 +187,20 @@ export class HeistView {
     const inRafters = s.layer === 'rafter';
     const spots = spotlightsNow(level, s);
 
-    // Floors, shaded by light, with the overlays painted on top of them.
-    for (let y = 0; y < level.h; y++)
+    // Floors, shaded by light, with the overlays painted on top of them. The floor and its lighting only change
+    // between turns, when a switch is flipped, the camera turns or the textures arrive; the rest is every frame.
+    const baseKey = `${level.def.id}|${p.angle.toFixed(5)}|${s.turn}|${s.lampsOff.join(',')}|${s.layer}|${surface(this.look.floor.tex) ? 1 : 0}`;
+    const fb = baseKey !== this.floorKey ? this.floorBase.clear() : null;
+    this.floorKey = baseKey;
+    if (fb) {
+      // The floor is kept as one picture, drawn again only when it changes: far fewer shapes every frame.
+      const b = this.floorBase.getLocalBounds();
+      const res = Math.max(0.5, Math.min(this.detail, 4096 / Math.max(1, b.width, b.height)));
+      if (Math.abs(res - this.floorRes) > 0.01) {
+        this.floorRes = res;
+        this.floorBase.cacheAsTexture({ resolution: res, antialias: true });
+      } else this.floorBase.updateCacheTexture();
+    }    for (let y = 0; y < level.h; y++)
       for (let x = 0; x < level.w; x++) {
         const t = tileNow(level, s, x, y);
         if (t === 'wall' || t === 'pillar' || t === 'stack' || t === 'panel' || t === 'fuse') continue;
@@ -195,24 +215,26 @@ export class HeistView {
           }
           continue;
         }
+        if (t === 'keycard') this.keycard(f, x, y);
+        if (t === 'belt-e' || t === 'belt-w') this.belt(f, x, y, t === 'belt-e' ? 1 : -1);
+        if (fb) {
         const sand = tileNow(level, s, x, y) === 'floor' && level.tiles[y][x] === 'tidal';
         const base = sand ? ((x + y) % 2 ? 0xa58a5e : 0x9a8056) : t === 'exit' ? COL.exit : t === 'marble' ? ((x + y) % 2 ? COL.marbleA : COL.marbleB) : t === 'squeaky' ? ((x + y) % 2 ? 0x7a5634 : 0x6e4c2d) : (x + y) % 2 ? COL.carpetA : COL.carpetB;
         const skin = sand || t === 'exit' ? null : t === 'squeaky' ? CREAK : t === 'plate' ? PLATE : t === 'marble' ? this.look.marble : this.look.floor;
-        const skinned = !!skin && this.floorTile(f, x, y, skin);
-        if (!skinned) this.diamond(f, x, y, 0.5, base, 1, COL.floorLine);
-        if (t === 'squeaky' && !skinned) this.planks(f, x, y);
-        if (t === 'plate' && !skinned) this.plate(f, x, y);
-        if (t === 'keycard') this.keycard(f, x, y);
-        if (t === 'belt-e' || t === 'belt-w') this.belt(f, x, y, t === 'belt-e' ? 1 : -1);
-        if (t === 'paint') this.paint(f, x, y);
+        const skinned = !!skin && this.floorTile(fb, x, y, skin);
+        if (!skinned) this.diamond(fb, x, y, 0.5, base, 1, COL.floorLine);
+        if (t === 'squeaky' && !skinned) this.planks(fb, x, y);
+        if (t === 'plate' && !skinned) this.plate(fb, x, y);
+        if (t === 'paint') this.paint(fb, x, y);
         const spotlit = spots.some((sp) => Math.hypot(x - sp.at.x, y - sp.at.y) <= sp.radius + 0.01) || beam.has(k);
         const l = spotlit ? 2 : light[y][x];
-        if (l === 0) this.diamond(f, x, y, 0.5, 0x05060c, 0.55);
-        else if (l === 2) this.diamond(f, x, y, 0.5, spotlit ? 0xfff6d8 : COL.lampGlow, spotlit ? 0.32 : 0.16);
-        if (t === 'grate') this.grate(f, x, y);
+        if (l === 0) this.diamond(fb, x, y, 0.5, 0x05060c, 0.55);
+        else if (l === 2) this.diamond(fb, x, y, 0.5, spotlit ? 0xfff6d8 : COL.lampGlow, spotlit ? 0.32 : 0.16);
+        if (t === 'grate') this.grate(fb, x, y);
+        if (inVent || inRafters) this.diamond(fb, x, y, 0.5, 0x02030a, 0.45);
+        }
         if ((level.def.fishy ?? []).some((m) => x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h)) this.diamond(f, x, y, 0.5, 0x6fd6a0, 0.07 + Math.sin(this.time * 1.5 + x * 0.7 + y) * 0.03);
         if (level.motion[y][x] && sensorsActive(s)) this.diamondOutline(f, x, y, COL.motion, 1, 0.1, 0.35 + Math.sin(this.time * 3) * 0.1);
-        if (inVent || inRafters) this.diamond(f, x, y, 0.5, 0x02030a, 0.45);
         if (ov.cameraVision.has(k)) this.diamond(f, x, y, 0.46, COL.camera, 0.3);
         if (ov.targets.has(k)) {
           this.diamond(f, x, y, 0.4, COL.target, 0.28 + Math.sin(this.time * 5) * 0.08);
@@ -378,7 +400,7 @@ export class HeistView {
       draw: (g) => {
         const gait = leo.gait;
         if (climbing) leo.gait = 'climb';
-        this.drawLeo(g, leo, s.inventory.length > 0, inVent, this.leoLift);
+        this.drawLeo(g, leo, inVent, this.leoLift);
         leo.gait = gait;
         if (s.napTurns > 0) this.zzz(g, leo);
       },
@@ -1261,41 +1283,11 @@ export class HeistView {
   /** A Robo-Guard: a bulldog-shaped tin can on a wheel, with a red heat-scanner visor (dark when unpowered). */
   private drawRobo(g: Graphics, a: Actor, guard: Guard, off: boolean, grinning: boolean): void {
     const r = this.figure(g, 'robot', a, { off, tint: off ? 0x7a7e8c : this.actorTint(a) });
-    if (r) {
-      if (off) {
-        const z = project(this.proj, a.x + 0.3, a.y - 0.3, 80);
-        g.moveTo(z.x - 5, z.y).lineTo(z.x + 5, z.y).stroke({ width: 2, color: 0x9aa3b5 });
-      } else this.mark(g, r.x, r.top, guard.mode === 'searching' || grinning ? '!' : '', 0xff3b30, 0xffd23f);
-      return;
-    }
-    const s = project(this.proj, a.x, a.y);
-    const f = this.face(a);
-    const front = f.y > -0.2;
-    const by = s.y - (off ? 0 : a.bob);
-    g.ellipse(s.x, s.y, 20, 9).fill({ color: 0x000000, alpha: 0.35 });
-    g.circle(s.x, by - 5, 6).fill({ color: 0x2a2c34 });
-    g.roundRect(s.x - 17, by - 40, 34, 32, 8).fill({ color: off ? 0x6e7280 : 0x9aa3b5 }).stroke({ width: 2, color: 0x3a3f4c });
-    g.rect(s.x - 10, by - 30, 20, 3).fill({ color: 0x3a3f4c });
-    const hx = s.x + f.x * 3;
-    const hy = by - 52;
-    g.roundRect(hx - 15, hy - 11, 30, 22, 7).fill({ color: off ? 0x6e7280 : 0xb7bfcf }).stroke({ width: 2, color: 0x3a3f4c });
-    g.moveTo(hx, hy - 11).lineTo(hx, hy - 22).stroke({ width: 2, color: 0x3a3f4c });
-    g.circle(hx, hy - 23, 3).fill({ color: off ? 0x444444 : Math.sin(this.time * 6) > 0 ? 0xff3b30 : 0x7a1a14 });
-    if (front) {
-      g.roundRect(hx + f.x * 4 - 11, hy - 4, 22, 7, 3).fill({ color: off ? 0x2a2c34 : 0xff3b30, alpha: off ? 1 : 0.85 + Math.sin(this.time * 8) * 0.15 });
-      if (grinning) g.rect(hx + f.x * 4 - 6, hy + 6, 12, 2).fill({ color: 0x3a3f4c });
-    }
+    if (!r) return;
     if (off) {
       const z = project(this.proj, a.x + 0.3, a.y - 0.3, 80);
       g.moveTo(z.x - 5, z.y).lineTo(z.x + 5, z.y).stroke({ width: 2, color: 0x9aa3b5 });
-      return;
-    }
-    if (guard.mode === 'searching' || grinning) {
-      const top = hy - 46 + Math.sin(this.time * 6) * 2;
-      g.roundRect(hx - 10, top, 20, 22, 5).fill({ color: 0xff3b30 }).stroke({ width: 2, color: 0xffffff });
-      g.rect(hx - 2, top + 4, 4, 9).fill({ color: 0xffffff });
-      g.rect(hx - 2, top + 15, 4, 3).fill({ color: 0xffffff });
-    }
+    } else this.mark(g, r.x, r.top, guard.mode === 'searching' || grinning ? '!' : '', 0xff3b30, 0xffd23f);
   }
 
   private lootName(li: number): string {
@@ -1378,193 +1370,46 @@ export class HeistView {
     return screenDir(this.proj, d.x, d.y);
   }
 
-  /** Leo Tuxedo, placeholder edition: black cat, white shirt front, red bow tie. */
-  private drawLeo(g: Graphics, a: Actor, hasLoot: boolean, inVent: boolean, lift = 0): void {
-    if (this.figure(g, 'leo', a, { lift, alpha: inVent ? 0.55 : 1, crawl: inVent, tint: this.actorTint(a, true), hide: this.leoHide })) return;
-    const s = project(this.proj, a.x, a.y, lift);
-    const f = this.face(a);
-    const front = f.y > -0.2;
-    const by = s.y - a.bob;
-    const alpha = inVent ? 0.55 : 1;
-    if (inVent) g.ellipse(s.x, s.y - 4, 26, 13).stroke({ width: 2, color: COL.duct, alpha: 0.9 });
-    else g.ellipse(s.x, s.y, 18, 8).fill({ color: 0x000000, alpha: 0.35 });
-    g.moveTo(s.x - f.x * 10, by - 14).bezierCurveTo(s.x - f.x * 30, by - 20, s.x - f.x * 26, by - 46, s.x - f.x * 16, by - 50).stroke({ width: 5, color: 0x16161c, cap: 'round', alpha });
-    g.ellipse(s.x, by - 22, 14, 19).fill({ color: 0x1b1b22, alpha }).stroke({ width: 2, color: 0x000000, alpha });
-    if (front) {
-      g.poly([s.x + f.x * 6 - 6, by - 36, s.x + f.x * 6 + 6, by - 36, s.x + f.x * 6, by - 14]).fill({ color: 0xf5f5f5, alpha });
-      g.poly([s.x + f.x * 6 - 7, by - 38, s.x + f.x * 6, by - 35, s.x + f.x * 6 - 7, by - 32]).fill({ color: 0xd8262f, alpha });
-      g.poly([s.x + f.x * 6 + 7, by - 38, s.x + f.x * 6, by - 35, s.x + f.x * 6 + 7, by - 32]).fill({ color: 0xd8262f, alpha });
-    }
-    const hx = s.x + f.x * 3;
-    const hy = by - 48;
-    g.poly([hx - 11, hy - 6, hx - 8, hy - 20, hx - 2, hy - 9]).fill({ color: 0x1b1b22, alpha }).stroke({ width: 2, color: 0x000000, alpha });
-    g.poly([hx + 11, hy - 6, hx + 8, hy - 20, hx + 2, hy - 9]).fill({ color: 0x1b1b22, alpha }).stroke({ width: 2, color: 0x000000, alpha });
-    g.circle(hx, hy, 12).fill({ color: 0x1b1b22, alpha }).stroke({ width: 2, color: 0x000000, alpha });
-    if (front) {
-      g.ellipse(hx + f.x * 5, hy + 4, 6, 4).fill({ color: 0xf5f5f5, alpha });
-      g.circle(hx + f.x * 6 - 5, hy - 2, 2.4).fill({ color: 0xc6f05a, alpha });
-      g.circle(hx + f.x * 6 + 5, hy - 2, 2.4).fill({ color: 0xc6f05a, alpha });
-    }
-    if (hasLoot) {
-      g.circle(s.x - f.x * 12, by - 24, 8).fill({ color: 0x6b4b2a, alpha }).stroke({ width: 2, color: 0x2a1a0c, alpha });
-      g.poly([s.x - f.x * 12, by - 31, s.x - f.x * 12 + 4, by - 26, s.x - f.x * 12, by - 22, s.x - f.x * 12 - 4, by - 26]).fill({ color: 0x9fe8ff, alpha });
-    }
+  /** Leo Tuxedo, from his drawings. */
+  private drawLeo(g: Graphics, a: Actor, inVent: boolean, lift = 0): void {
+    this.figure(g, 'leo', a, { lift, alpha: inVent ? 0.55 : 1, crawl: inVent, tint: this.actorTint(a, true), hide: this.leoHide });
   }
 
   /** A rival thief: a cat in their own colours, with a name tag, and the prize if they've got it. */
   private drawRival(g: Graphics, a: Actor, id: RivalId, prize: boolean): void {
     const r = this.figure(g, id === 'paws' ? 'prof' : id, a, { tint: this.actorTint(a), scale: 0.97 });
-    if (r) {
-      if (prize) g.circle(r.x, r.top - 10, 7).fill({ color: 0x3a2a4a }).stroke({ width: 2, color: COL.rival });
-      const name = RIVALS[id].name;
-      g.roundRect(r.x - name.length * 2.6, r.top - (prize ? 30 : 16), name.length * 5.2, 12, 4).fill({ color: COL.rival, alpha: 0.85 });
-      return;
-    }
-    const look = RIVAL_LOOKS[id];
-    const s = project(this.proj, a.x, a.y);
-    const f = this.face(a);
-    const front = f.y > -0.2;
-    const by = s.y - a.bob;
-    g.ellipse(s.x, s.y, 17, 8).fill({ color: 0x000000, alpha: 0.35 });
-    g.moveTo(s.x - f.x * 10, by - 14).bezierCurveTo(s.x - f.x * 30, by - 20, s.x - f.x * 26, by - 46, s.x - f.x * 16, by - 50).stroke({ width: 5, color: look.fur, cap: 'round' });
-    g.ellipse(s.x, by - 22, 13, 18).fill({ color: look.fur }).stroke({ width: 2, color: 0x000000 });
-    if (look.patch) g.ellipse(s.x + 4, by - 26, 6, 8).fill({ color: look.patch });
-    const hx = s.x + f.x * 3;
-    const hy = by - 46;
-    g.poly([hx - 11, hy - 6, hx - 8, hy - 19, hx - 2, hy - 9]).fill({ color: look.fur }).stroke({ width: 2, color: 0x000000 });
-    g.poly([hx + 11, hy - 6, hx + 8, hy - 19, hx + 2, hy - 9]).fill({ color: look.fur }).stroke({ width: 2, color: 0x000000 });
-    g.circle(hx, hy, 11).fill({ color: look.fur }).stroke({ width: 2, color: 0x000000 });
-    if (front) {
-      g.circle(hx + f.x * 6 - 5, hy - 2, 2.2).fill({ color: look.eyes });
-      g.circle(hx + f.x * 6 + 5, hy - 2, 2.2).fill({ color: look.eyes });
-      if (id === 'paws') g.circle(hx + f.x * 6 - 5, hy - 2, 4.5).stroke({ width: 1.5, color: 0xd9b36c }).circle(hx + f.x * 6 + 5, hy - 2, 4.5).stroke({ width: 1.5, color: 0xd9b36c });
-      g.rect(hx - 9, hy + 4, 18, 4).fill({ color: look.mask });
-    }
-    if (prize) g.circle(s.x - f.x * 12, by - 24, 8).fill({ color: 0x3a2a4a }).stroke({ width: 2, color: COL.rival });
-    // Name tag.
+    if (!r) return;
+    if (prize) g.circle(r.x, r.top - 10, 7).fill({ color: 0x3a2a4a }).stroke({ width: 2, color: COL.rival });
     const name = RIVALS[id].name;
-    g.roundRect(hx - name.length * 2.6, hy - 36, name.length * 5.2, 12, 4).fill({ color: COL.rival, alpha: 0.85 });
+    g.roundRect(r.x - name.length * 2.6, r.top - (prize ? 30 : 16), name.length * 5.2, 12, 4).fill({ color: COL.rival, alpha: 0.85 });
   }
 
   /** NightClaw: a tall, lean old black cat in a long coat and top hat, grey at the muzzle, with gold eyes. */
   private drawNightClaw(g: Graphics, a: Actor, guard: Guard, grinning: boolean): void {
     const r = this.figure(g, 'nightclaw', a, { tint: this.actorTint(a) });
-    if (r) {
-      this.mark(g, r.x, r.top, grinning || guard.mode === 'searching' ? '!' : guard.mode === 'suspicious' ? '?' : '', 0xb05cff, 0xd9b8ff);
-      return;
-    }
-    const s = project(this.proj, a.x, a.y);
-    const f = this.face(a);
-    const front = f.y > -0.2;
-    const by = s.y - a.bob * 0.5;
-    g.ellipse(s.x, s.y, 18, 8).fill({ color: 0x000000, alpha: 0.4 });
-    // His tail, curling up behind him.
-    g.moveTo(s.x - f.x * 10, by - 12).bezierCurveTo(s.x - f.x * 34, by - 14, s.x - f.x * 30, by - 52, s.x - f.x * 18, by - 58).stroke({ width: 5, color: 0x121218, cap: 'round' });
-    // The coat, swirling.
-    g.poly([s.x - 16, by - 4, s.x + 16, by - 4, s.x + 10, by - 40, s.x - 10, by - 40]).fill({ color: 0x241a36 }).stroke({ width: 2, color: 0x0a0a10 });
-    g.poly([s.x - 4, by - 40, s.x + 4, by - 40, s.x, by - 24]).fill({ color: 0xe8e2d0 });
-    const hx = s.x + f.x * 3;
-    const hy = by - 52;
-    g.poly([hx - 12, hy - 5, hx - 9, hy - 20, hx - 2, hy - 9]).fill({ color: 0x121218 }).stroke({ width: 2, color: 0x000000 });
-    g.poly([hx + 12, hy - 5, hx + 9, hy - 20, hx + 2, hy - 9]).fill({ color: 0x121218 }).stroke({ width: 2, color: 0x000000 });
-    g.circle(hx, hy, 12).fill({ color: 0x121218 }).stroke({ width: 2, color: 0x000000 });
-    // The top hat.
-    g.ellipse(hx, hy - 12, 15, 4).fill({ color: 0x0a0a10 });
-    g.rect(hx - 9, hy - 30, 18, 18).fill({ color: 0x0a0a10 });
-    g.rect(hx - 9, hy - 16, 18, 3).fill({ color: 0x6b2a5a });
-    if (front) {
-      const glint = 0.75 + Math.sin(this.time * 2) * 0.25;
-      g.ellipse(hx + f.x * 6 - 5, hy - 2, 2.8, 2.2).fill({ color: 0xf2c46b, alpha: glint });
-      g.ellipse(hx + f.x * 6 + 5, hy - 2, 2.8, 2.2).fill({ color: 0xf2c46b, alpha: glint });
-      g.circle(hx + f.x * 6 + 5, hy - 2, 5).stroke({ width: 1.2, color: 0xd9b36c });
-      g.ellipse(hx + f.x * 7, hy + 5, 6, 3.5).fill({ color: 0x8a8f9c });
-      for (const side of [-1, 1]) g.moveTo(hx + f.x * 7 + side * 4, hy + 5).lineTo(hx + f.x * 7 + side * 16, hy + 3).stroke({ width: 1, color: 0xd8dbe2 });
-      if (grinning) g.moveTo(hx + f.x * 7 - 4, hy + 8).quadraticCurveTo(hx + f.x * 7, hy + 11, hx + f.x * 7 + 4, hy + 8).stroke({ width: 1.5, color: 0xd8dbe2 });
-    }
-    const mark = grinning || guard.mode === 'searching' ? '!' : guard.mode === 'suspicious' ? '?' : '';
-    if (!mark) return;
-    const top = hy - 58 + Math.sin(this.time * 6) * 2;
-    g.roundRect(hx - 10, top, 20, 24, 5).fill({ color: mark === '!' ? 0xb05cff : 0xd9b8ff }).stroke({ width: 2, color: 0xffffff });
-    if (mark === '!') g.rect(hx - 2, top + 4, 4, 11).fill({ color: 0xffffff }).rect(hx - 2, top + 17, 4, 3).fill({ color: 0xffffff });
-    else g.circle(hx, top + 12, 4).stroke({ width: 3, color: 0x2a1a3a });
+    if (!r) return;
+    this.mark(g, r.x, r.top, grinning || guard.mode === 'searching' ? '!' : guard.mode === 'suspicious' ? '?' : '', 0xb05cff, 0xd9b8ff);
   }
 
-  /** A guard (drawn as a bulldog): stocky, tan, peaked cap, torch. Shows ? when suspicious, ! when searching. */
+  /** A guard: a bulldog (a guard dog for sniffers), the captain with a gold star. Shows ? when suspicious, ! when searching. */
   private drawGuard(g: Graphics, a: Actor, guard: Guard, grinning: boolean): void {
     const sniffer = guard.kind === 'sniffer';
     const r = this.figure(g, sniffer ? 'dog' : 'guard', a, { asleep: guard.asleep, tint: this.actorTint(a), scale: guard.kind === 'captain' ? 1.12 : 1, torch: false });
-    if (r) {
-      if (guard.kind === 'captain') {
-        // The captain's gold star, worn on the cap.
-        const y = r.top + 6;
-        g.star(r.x, y, 5, 4.5, 2).fill({ color: 0xf2c46b }).stroke({ width: 1, color: 0x6b4b12 });
-      }
-      if (sniffer && !guard.asleep) {
-        // Sniffing the air in front of its nose.
-        const dir = a.flip ? 1 : -1;
-        const nx = r.x + dir * 24;
-        const ny = r.top + 14;
-        const t = (this.time * 1.5) % 1;
-        for (const side of [-1, 1]) g.moveTo(nx + dir * t * 10, ny + side * (4 + t * 6)).quadraticCurveTo(nx + dir * (6 + t * 10), ny, nx + dir * t * 10, ny - side * (4 + t * 6)).stroke({ width: 1.5, color: 0xd8e4ff, alpha: 1 - t });
-      }
-      if (guard.asleep) return this.zzz(g, a, r.top);
-      this.mark(g, r.x, r.top, grinning || guard.mode === 'searching' ? '!' : guard.mode === 'suspicious' ? '?' : '', 0xff3b30, 0xffd23f);
-      return;
+    if (!r) return;
+    if (guard.kind === 'captain') {
+      // The captain's gold star, worn on the cap.
+      const y = r.top + 6;
+      g.star(r.x, y, 5, 4.5, 2).fill({ color: 0xf2c46b }).stroke({ width: 1, color: 0x6b4b12 });
     }
-    const s = project(this.proj, a.x, a.y);
-    const f = this.face(a);
-    const front = f.y > -0.2;
-    const by = s.y - a.bob;
-    g.ellipse(s.x, s.y, 22, 10).fill({ color: 0x000000, alpha: 0.35 });
-    g.ellipse(s.x, by - 22, 19, 20).fill({ color: 0x2b3a67 }).stroke({ width: 2, color: 0x121a33 });
-    g.moveTo(s.x + f.x * 14, by - 26).lineTo(s.x + f.x * 30, by - 26 + f.y * 14).stroke({ width: 5, color: 0x333333, cap: 'round' });
-    g.circle(s.x + f.x * 31, by - 26 + f.y * 14, 4).fill({ color: 0xfff3b0 });
-    const hx = s.x + f.x * 4;
-    const hy = by - 46;
-    g.ellipse(hx, hy, 17, 14).fill({ color: 0xc89b6a }).stroke({ width: 2, color: 0x6b4b2a });
-    if (front) {
-      g.ellipse(hx + f.x * 6, hy + 6, 11, 6).fill({ color: 0xe4c49b });
-      g.circle(hx + f.x * 7 - 6, hy - 2, 2.5).fill({ color: 0x1a1a1a });
-      g.circle(hx + f.x * 7 + 6, hy - 2, 2.5).fill({ color: 0x1a1a1a });
-      g.ellipse(hx + f.x * 8, hy + 3, 4, 3).fill({ color: 0x2a1a12 });
-      if (grinning) g.moveTo(hx + f.x * 6 - 7, hy + 8).quadraticCurveTo(hx + f.x * 6, hy + 14, hx + f.x * 6 + 7, hy + 8).stroke({ width: 2, color: 0x2a1a12 });
-    }
-    g.ellipse(hx - 15, hy + 1, 5, 7).fill({ color: 0x9c7046 });
-    g.ellipse(hx + 15, hy + 1, 5, 7).fill({ color: 0x9c7046 });
-    const captain = guard.kind === 'captain';
-    g.ellipse(hx, hy - 12, 15, 5).fill({ color: captain ? 0x15203f : 0x1e2b52 });
-    g.rect(hx - 10, hy - 22, 20, 10).fill({ color: captain ? 0x1a2650 : 0x24335f });
-    g.circle(hx, hy - 17, 2.5).fill({ color: 0xf2c46b });
-    if (captain) {
-      // Gold braid on the cap and epaulettes.
-      g.rect(hx - 10, hy - 14, 20, 3).fill({ color: 0xf2c46b });
-      g.rect(s.x - 20, by - 36, 9, 4).fill({ color: 0xf2c46b });
-      g.rect(s.x + 11, by - 36, 9, 4).fill({ color: 0xf2c46b });
-    }
-    if (guard.kind === 'sniffer' && front) {
-      // A big wet nose, and the air it's sampling.
-      g.ellipse(hx + f.x * 10, hy + 4, 6, 4.5).fill({ color: 0x111111 });
+    if (sniffer && !guard.asleep) {
+      // Sniffing the air in front of its nose.
+      const dir = a.flip ? 1 : -1;
+      const nx = r.x + dir * 24;
+      const ny = r.top + 14;
       const t = (this.time * 1.5) % 1;
-      for (const side of [-1, 1]) g.moveTo(hx + f.x * 10 + side * (8 + t * 8), hy - 2).quadraticCurveTo(hx + f.x * 10 + side * (12 + t * 8), hy + 4, hx + f.x * 10 + side * (8 + t * 8), hy + 10).stroke({ width: 1.5, color: 0xd8e4ff, alpha: 1 - t });
+      for (const side of [-1, 1]) g.moveTo(nx + dir * t * 10, ny + side * (4 + t * 6)).quadraticCurveTo(nx + dir * (6 + t * 10), ny, nx + dir * t * 10, ny - side * (4 + t * 6)).stroke({ width: 1.5, color: 0xd8e4ff, alpha: 1 - t });
     }
-    if (guard.asleep) {
-      // Eyes shut and snoring.
-      if (front) for (const side of [-6, 6]) g.moveTo(hx + f.x * 7 + side - 3, hy - 2).lineTo(hx + f.x * 7 + side + 3, hy - 2).stroke({ width: 2, color: 0x1a1a1a });
-      this.zzz(g, a);
-      return;
-    }
-    const mark = grinning || guard.mode === 'searching' ? '!' : guard.mode === 'suspicious' ? '?' : '';
-    if (!mark) return;
-    const col = mark === '!' ? 0xff3b30 : 0xffd23f;
-    const top = hy - 52 + Math.sin(this.time * 6) * 2;
-    g.roundRect(hx - 10, top, 20, 26, 5).fill({ color: col }).stroke({ width: 2, color: 0xffffff });
-    if (mark === '!') {
-      g.rect(hx - 2, top + 4, 4, 12).fill({ color: 0xffffff });
-      g.rect(hx - 2, top + 19, 4, 4).fill({ color: 0xffffff });
-    } else {
-      g.arc(hx, top + 9, 5, Math.PI, Math.PI * 2.25).stroke({ width: 3, color: 0x1a1205 });
-      g.moveTo(hx + 1, top + 13).lineTo(hx, top + 17).stroke({ width: 3, color: 0x1a1205 });
-      g.rect(hx - 1.5, top + 19, 3, 3).fill({ color: 0x1a1205 });
-    }
+    if (guard.asleep) return this.zzz(g, a, r.top);
+    this.mark(g, r.x, r.top, grinning || guard.mode === 'searching' ? '!' : guard.mode === 'suspicious' ? '?' : '', 0xff3b30, 0xffd23f);
   }
 }

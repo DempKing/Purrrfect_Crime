@@ -620,7 +620,7 @@ with notes in a marker hand (Patrick Hand). Results are stickers, not rubber sta
 - **In a heist:** loot values pop off the case when Leo takes something ("+$5,200", bigger for the
   centrepiece), a smash says CRASH! and shakes the screen, a lock that needs another go says "click…", and
   the haul in the corner bumps up.
-- **Black market:** Slick Whiskers' booth in a back alley: a rat fence in a trench coat behind a striped
+- **Black market:** Slick Whiskers' booth in a back alley: a raccoon fence in a fedora and trench coat behind a striped
   stall under a swinging bulb and a flickering neon sign, every piece in the stash on the counter with a
   string price tag (and its deal: this week's demand, the collector, hot goods). Selling slides it over to
   him with the till's bell and the Catnip popping up; "Sell the lot" does them all in a row.
@@ -638,6 +638,12 @@ with notes in a marker hand (Patrick Hand). Results are stickers, not rubber sta
   UnifrakturMaguntia (newspaper masthead) and Homemade Apple (NightClaw's letters).
 
 ## 13. Tech plan
+
+**Performance notes.** The floor and its lighting are drawn into one cached picture that's redrawn only when
+it can have changed (a new turn, a light switched, the camera turned, the zoom settled), at the zoom's
+sharpness and never wider than 4,096 px; highlights, cones and anything animated are drawn live over it.
+View cones cache their rays. Pictures are re-encoded (WebP quality about 80) to keep the single-file build
+small: 3.5 MB, down from 4.8 MB. Animation time steps are capped at 0.2 s, so slow machines keep real time.
 
 - **Stack:** TypeScript + PixiJS 8 (GPU rendering, which the night lighting, vision cones and camera
   rotation need), packaged with Electron like the studio's other games. **Two builds from one codebase:**

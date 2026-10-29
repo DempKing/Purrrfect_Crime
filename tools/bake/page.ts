@@ -134,5 +134,5 @@ async function bake(url: string, o: BakeOptions): Promise<Baked> {
     sctx.drawImage(out, i * w, 0);
   }
   scene.remove(pivot);
-  return { strip: strip.toDataURL('image/webp', 0.88), w, h, ax: -l * ppu, ay: t * ppu, tiles: { w: s.x, d: s.z, h: s.y * ZPX } };
+  return { strip: strip.toDataURL('image/webp', 0.82), w, h, ax: -l * ppu, ay: t * ppu, tiles: { w: s.x, d: s.z, h: s.y * ZPX } };
 }

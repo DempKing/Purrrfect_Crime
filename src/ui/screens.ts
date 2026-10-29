@@ -66,28 +66,32 @@ export const NARRATOR_SVG = `<svg class="portrait" viewBox="0 0 64 64" aria-hidd
   <path d="M10 40 L22 41 M10 45 L22 43 M54 40 L42 41 M54 45 L42 43" stroke="#d8dbe2" stroke-width="1"/>
 </svg>`;
 
-/** Slick Whiskers, the fence: a rat in a trench coat and a fedora, shades on, a gold tooth and a gold chain. */
+/** Slick Whiskers, the fence: a raccoon in a trench coat and a fedora, his bandit mask doing the work of shades,
+ * a gold tooth, a gold chain, and his ringed tail curled up behind the counter. */
 const FENCE_SVG = `<svg viewBox="0 0 220 230" aria-hidden="true">
   <g stroke="#1c1233" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M178 228 C214 196 214 132 186 104 C176 96 166 104 172 114 C190 140 186 186 160 212Z" fill="#8d8899"/>
+    <path d="M196 118 L176 124 M204 146 L182 146 M200 176 L178 170" stroke="#3a3446" stroke-width="10"/>
     <path d="M30 230 C34 170 60 140 110 138 C160 140 186 170 190 230Z" fill="#c8a06a"/>
     <path d="M110 140 L82 230 M110 140 L138 230" fill="none"/>
     <path d="M70 150 L110 196 L150 150 L138 138 L110 170 L82 138Z" fill="#a8824a"/>
     <path d="M96 150 Q110 176 124 150" fill="none" stroke="#ffc93c" stroke-width="4"/>
     <circle cx="110" cy="172" r="6" fill="#ffc93c"/>
-    <ellipse cx="62" cy="64" rx="26" ry="28" fill="#9a93b0"/><ellipse cx="62" cy="66" rx="14" ry="16" fill="#e7a6b8" stroke-width="3"/>
-    <ellipse cx="158" cy="64" rx="26" ry="28" fill="#9a93b0"/><ellipse cx="158" cy="66" rx="14" ry="16" fill="#e7a6b8" stroke-width="3"/>
-    <path d="M70 80 C70 50 150 50 150 80 C150 110 140 126 128 134 L118 150 C114 156 106 156 102 150 L92 134 C80 126 70 110 70 80Z" fill="#b3adc6"/>
-    <ellipse cx="110" cy="148" rx="11" ry="8" fill="#ff8fa8"/>
+    <path d="M58 70 L64 34 L88 54Z" fill="#8d8899"/><path d="M64 60 L67 44 L78 54Z" fill="#2a2433" stroke-width="3"/>
+    <path d="M162 70 L156 34 L132 54Z" fill="#8d8899"/><path d="M156 60 L153 44 L142 54Z" fill="#2a2433" stroke-width="3"/>
+    <path d="M58 86 C58 58 162 58 162 86 C162 112 140 132 122 140 L110 146 L98 140 C80 132 58 112 58 86Z" fill="#a19cae"/>
+    <path d="M70 108 Q110 128 150 108 Q140 136 110 142 Q80 136 70 108Z" fill="#f4f0e6" stroke-width="3"/>
+    <path d="M60 84 C72 70 96 74 108 86 L112 86 C124 74 148 70 160 84 C158 102 140 106 126 100 L110 96 L94 100 C80 106 62 102 60 84Z" fill="#2a2433"/>
+    <circle cx="88" cy="88" r="7" fill="#fff3b0" stroke-width="3"/><circle cx="132" cy="88" r="7" fill="#fff3b0" stroke-width="3"/>
+    <circle cx="90" cy="89" r="3" fill="#1c1233" stroke="none"/><circle cx="134" cy="89" r="3" fill="#1c1233" stroke="none"/>
     <path d="M60 52 L160 52 L150 18 C140 6 80 6 70 18Z" fill="#5a3a22"/>
     <path d="M36 56 Q110 38 184 56 Q110 70 36 56Z" fill="#6b4628"/>
     <path d="M68 44 L152 44" stroke="#2a1a10" stroke-width="8"/>
-    <rect x="76" y="80" width="28" height="18" rx="7" fill="#1c1233"/><rect x="116" y="80" width="28" height="18" rx="7" fill="#1c1233"/>
-    <path d="M104 86 L116 86"/>
-    <path d="M96 118 Q110 128 126 116" fill="none"/>
-    <rect x="114" y="119" width="7" height="8" fill="#ffc93c" stroke-width="2.5"/>
-    <path d="M90 142 L50 134 M92 148 L52 150 M130 142 L170 134 M128 148 L168 150" stroke-width="2.5"/>
+    <ellipse cx="110" cy="116" rx="9" ry="6" fill="#1c1233"/>
+    <path d="M98 128 Q110 136 124 126" fill="none"/>
+    <rect x="113" y="128" width="7" height="7" fill="#ffc93c" stroke-width="2.5"/>
+    <path d="M88 120 L52 114 M90 126 L54 130 M132 120 L168 114 M130 126 L166 130" stroke-width="2.5"/>
   </g>
-  <rect x="80" y="83" width="9" height="4" rx="2" fill="#fff" opacity="0.7"/><rect x="120" y="83" width="9" height="4" rx="2" fill="#fff" opacity="0.7"/>
 </svg>`;
 
 /** NightClaw's portrait, for when he speaks. */
