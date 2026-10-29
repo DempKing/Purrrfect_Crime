@@ -125,7 +125,7 @@ export const SKILLS: SkillInfo[] = [
   { id: 'fuse-kit', tree: 'tech', name: 'Fuse Kit', text: 'Once a heist, short every laser in the building for three turns, from anywhere.', level: 11, cost: 1400, requires: 'keycard-clone' },
   { id: 'emp-collar', tree: 'tech', name: 'EMP Collar', text: 'Once a heist, knock out every camera within 5 tiles, and all the lasers, for two turns.', level: 18, cost: 2800, requires: 'fuse-kit' },
   { id: 'pounce', tree: 'acrobat', name: 'Pounce', text: 'Leap two tiles in a straight line, over a laser, a case or a lamp, without a sound. 1 action point, any number of times.', level: 3, cost: 400 },
-  { id: 'ceiling-climb', tree: 'acrobat', name: 'Ceiling Climb', text: 'Climb the ladders into the rafters and walk the beams where nobody looks. Drop down anywhere (thump), or climb down a ladder quietly.', level: 6, cost: 800, requires: 'pounce' },
+  { id: 'ceiling-climb', tree: 'acrobat', name: 'Ceiling Climb', text: 'Land like a cat: dropping down from the rafters makes no sound at all, so Leo can drop anywhere, right behind a guard.', level: 6, cost: 800, requires: 'pounce' },
   { id: 'tightrope', tree: 'acrobat', name: 'Tightrope', text: 'Walk the wires strung over rooftop gaps and water, where no guard can follow.', level: 9, cost: 1100, requires: 'pounce' },
   { id: 'cat-nap', tree: 'acrobat', name: 'Cat Nap', text: 'Once a heist, curl up in a shadow: for two turns no guard notices Leo unless they trip over him.', level: 15, cost: 2200, requires: 'pounce' },
   { id: 'second-wind', tree: 'acrobat', name: 'Second Wind', text: 'Once a heist, after spending an action point, catch your breath: one more action point this turn.', level: 22, cost: 4000, requires: 'cat-nap' },

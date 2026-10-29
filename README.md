@@ -11,7 +11,7 @@ There's no combat: stay hidden in the shadows and vents. Get caught and you rest
 difficulty choice, no checkpoints, no undo, and every level is designed to be beaten flawlessly.
 **All five districts are built (25 levels)**: after the
 tutorial come the Cobblestone Coin Museum (a sleepy guard, creaky floorboards, a safe), the Clocktower
-Archive (a captain who calls for help, rafters for Ceiling Climb), the Pawnbroker Penthouse (a sniffer
+Archive (a captain who calls for help, rafters reached by ladders), the Pawnbroker Penthouse (a sniffer
 who smells through walls, pulsing lasers) and the Opera House Costume Vault (moving spotlights). Museum Mile follows
 with five dim halls: Natural History (pressure plates), the Egyptian Wing (motion sensors), the Modern
 Art Atrium, the Gem & Mineral Hall and the Planetarium. The Heights brings card-reader doors (the
