@@ -139,7 +139,6 @@ export function lookFor(district: string, levelId: string): Look {
 
 export const CREAK: FloorSkin = { tex: 'dec_creak', tiles: 1 };
 export const PLATE: FloorSkin = { tex: 'dec_plate', tiles: 1 };
-export const WATER: FloorSkin = { tex: 'ext_water', tiles: 3 };
 
 const textures = new Map<SurfaceName, Texture>();
 

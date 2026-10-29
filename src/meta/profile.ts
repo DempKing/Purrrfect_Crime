@@ -289,7 +289,6 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
 
 // --- Saving: three slots ---------------------------------------------------------------------
 
-export const SLOTS = 3;
 export const slotKey = (slot: number) => `purrrfect-crime-slot-${slot + 1}`;
 /** Where M2 kept its one save; it moves into the first empty slot. */
 export const OLD_SAVE_KEY = 'purrrfect-crime-save-v1';

@@ -675,7 +675,16 @@ function showReport(r: ReturnType<typeof completeHeist>): void {
   screens.heistReport(r, profile, goOn);
 }
 
+/** The game's art, loading in the background from the moment it starts. */
+let artReady: Promise<void> = Promise.resolve();
+let artLoaded = false;
+
 function startHeist(def: LevelDef): void {
+  // The art loads while the title is up; on the off chance it hasn't finished, the heist waits for it.
+  if (!artLoaded) return void artReady.then(() => {
+    artLoaded = true;
+    startHeist(def);
+  });
   sound.setFinale(def.id.startsWith('nc-'));
   rivalPlan = rivalPlanFor(def);
   level = parseLevel(def);
@@ -1076,7 +1085,10 @@ const world = new Container();
 async function boot(): Promise<void> {
   await app.init({ resizeTo: window, background: 0x0a0c18, antialias: true, resolution: Math.min(2, window.devicePixelRatio || 1), autoDensity: true });
   screens.setScreenSound((n) => sound.play(n));
-  Promise.all([loadProps(), loadCharacters(), loadSurfaces(), loadFlats()]).catch((e) => console.error('Sprites failed to load', e));
+  artReady = Promise.all([loadProps(), loadCharacters(), loadSurfaces(), loadFlats()]).then(
+    () => void (artLoaded = true),
+    (e) => console.error('Sprites failed to load', e),
+  );
   $('stage').appendChild(app.canvas);
   world.addChild(view.root);
   app.stage.addChild(world);
@@ -1320,6 +1332,7 @@ function fit(dt = 0): void {
   pan.x = cx - ((x0 + x1) / 2 + (focus.x - (x0 + x1) / 2) * t);
   pan.y = cy - ((y0 + y1) / 2 + (focus.y - (y0 + y1) / 2) * t);
   world.scale.set(scale);
+  view.setDetail(scale * app.renderer.resolution);
   world.position.set(w / 2 - cx * scale, top + (h - top - bottom) / 2 - cy * scale);
 }
 

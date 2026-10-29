@@ -133,4 +133,3 @@ export const NIGHT_GALLERY: LevelDef = {
   ],
 };
 
-export const LEVELS = [NIGHT_GALLERY, GREY_GALLERY];

@@ -100,7 +100,7 @@ await page.evaluate(() => {
       for (let i = 0; i < 16; i++) x.drawImage(sil, Math.cos((i * Math.PI) / 8) * rim, Math.sin((i * Math.PI) / 8) * rim);
     }
     x.drawImage(c, rim, rim, w, h);
-    return out.toDataURL('image/webp', 0.9);
+    return out.toDataURL('image/webp', 0.8);
   };
 });
 const dataUrl = (file) => `data:image/${file.endsWith('.png') ? 'png' : 'webp'};base64,${readFileSync(file).toString('base64')}`;
@@ -196,7 +196,7 @@ const PICTURES = [
   ...['clock', 'moon', 'pearl', 'prism', 'seed'].map((v) => [`win_leo_${v}`, 520]),
   ...['luna', 'mittens', 'sammy', 'prof'].map((r) => [`win_${r}_moon`, 520]),
   ...['leo', 'luna', 'mittens', 'sammy', 'prof'].map((c) => [`cat_${c}`, 300]),
-  ['legend_leo', 560], ['keyart', 1600], ['boss_nightclaw', 420],
+  ['legend_leo', 560], ['keyart', 1280], ['boss_nightclaw', 420],
   ...['decoy', 'smoke', 'emp', 'sardine', 'treat'].map((g) => [`g_${g}`, 64]),
   // Flat pieces for the heists: things that hang on walls, and the aquarium's tanks.
   ...['manor', 'museum', 'opera', 'rail', 'toy', 'aquarium', 'fish', 'lair', 'warehouse', 'lab'].map((w) => [`wd_${w}`, 210]),
