@@ -66,6 +66,30 @@ export const NARRATOR_SVG = `<svg class="portrait" viewBox="0 0 64 64" aria-hidd
   <path d="M10 40 L22 41 M10 45 L22 43 M54 40 L42 41 M54 45 L42 43" stroke="#d8dbe2" stroke-width="1"/>
 </svg>`;
 
+/** Slick Whiskers, the fence: a rat in a trench coat and a fedora, shades on, a gold tooth and a gold chain. */
+const FENCE_SVG = `<svg viewBox="0 0 220 230" aria-hidden="true">
+  <g stroke="#1c1233" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M30 230 C34 170 60 140 110 138 C160 140 186 170 190 230Z" fill="#c8a06a"/>
+    <path d="M110 140 L82 230 M110 140 L138 230" fill="none"/>
+    <path d="M70 150 L110 196 L150 150 L138 138 L110 170 L82 138Z" fill="#a8824a"/>
+    <path d="M96 150 Q110 176 124 150" fill="none" stroke="#ffc93c" stroke-width="4"/>
+    <circle cx="110" cy="172" r="6" fill="#ffc93c"/>
+    <ellipse cx="62" cy="64" rx="26" ry="28" fill="#9a93b0"/><ellipse cx="62" cy="66" rx="14" ry="16" fill="#e7a6b8" stroke-width="3"/>
+    <ellipse cx="158" cy="64" rx="26" ry="28" fill="#9a93b0"/><ellipse cx="158" cy="66" rx="14" ry="16" fill="#e7a6b8" stroke-width="3"/>
+    <path d="M70 80 C70 50 150 50 150 80 C150 110 140 126 128 134 L118 150 C114 156 106 156 102 150 L92 134 C80 126 70 110 70 80Z" fill="#b3adc6"/>
+    <ellipse cx="110" cy="148" rx="11" ry="8" fill="#ff8fa8"/>
+    <path d="M60 52 L160 52 L150 18 C140 6 80 6 70 18Z" fill="#5a3a22"/>
+    <path d="M36 56 Q110 38 184 56 Q110 70 36 56Z" fill="#6b4628"/>
+    <path d="M68 44 L152 44" stroke="#2a1a10" stroke-width="8"/>
+    <rect x="76" y="80" width="28" height="18" rx="7" fill="#1c1233"/><rect x="116" y="80" width="28" height="18" rx="7" fill="#1c1233"/>
+    <path d="M104 86 L116 86"/>
+    <path d="M96 118 Q110 128 126 116" fill="none"/>
+    <rect x="114" y="119" width="7" height="8" fill="#ffc93c" stroke-width="2.5"/>
+    <path d="M90 142 L50 134 M92 148 L52 150 M130 142 L170 134 M128 148 L168 150" stroke-width="2.5"/>
+  </g>
+  <rect x="80" y="83" width="9" height="4" rx="2" fill="#fff" opacity="0.7"/><rect x="120" y="83" width="9" height="4" rx="2" fill="#fff" opacity="0.7"/>
+</svg>`;
+
 /** NightClaw's portrait, for when he speaks. */
 export const NIGHTCLAW_SVG = `<img class="portrait" src="${NIGHTCLAW_PICTURE}" alt="">`;
 
@@ -165,7 +189,7 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
       ${toggle('largeText', 'Larger text', 'Bigger text in the HUD and on every screen.')}
       ${toggle('reduceMotion', 'Reduce motion', 'No spinning newspapers or rolling credits; quicker animations.')}
       ${choice('palette', 'Colours', [['standard', 'Standard'], ['colourblind', 'Colour-blind friendly']])}
-      <p class="small note">Keyboard: arrow keys move the cursor, Enter moves Leo there (or does what's there), Space ends the turn, 1–9 pick an action, Q and E turn the camera, + and − (or the mouse wheel) zoom, Esc cancels.</p>
+      <p class="small note">Keyboard: arrow keys move the cursor, Enter moves Leo there (or does what's there), Space ends the turn, 1–9 pick an action, Q and E turn the camera, WASD pans it (C recentres on Leo), + and − (or the mouse wheel) zoom, Esc cancels.</p>
       <div class="row-buttons"><button id="settings-ok" class="primary">Done</button></div>
     </div>`,
     'overlay',
@@ -320,7 +344,7 @@ function reportPhoto(r: HeistReport): string {
 }
 
 /** Sounds for the screens; main.ts plugs the game's sound in. */
-let sfx: (name: 'tick' | 'coin' | 'levelup' | 'click' | 'take') => void = () => {};
+let sfx: (name: 'tick' | 'coin' | 'levelup' | 'click' | 'take' | 'sell') => void = () => {};
 export function setScreenSound(fn: typeof sfx): void {
   sfx = fn;
 }
@@ -654,19 +678,40 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     }).join('')}</div>`;
 
   const collector = collectorWants(p);
-  const stash = p.stash
-    .map(
-      (s) => `<tr><td>${lootPic(s.name, s.category)}<b>${esc(s.name)}</b>${s.centrepiece ? ' <span class="badge">centrepiece</span>' : ''}${s.hot ? ' <span class="badge hot">hot</span>' : ''}${s.id === collector ? ' <span class="badge new">collector ×1.5</span>' : ''}<br><span class="small">${CATEGORY_NAMES[s.category]} · ${esc(s.levelName)} · est. ${money(s.value)}</span></td>
-        <td class="price"><span class="hand">${priceOf(p, s).toLocaleString('en-US')}</span>${s.category === wanted ? ' <span class="badge">+25%</span>' : ''}</td>
-        <td><button data-sell="${s.id}">Sell</button></td></tr>`,
-    )
+  const office = p.rooms.fence ? ` My office takes ${p.rooms.fence * 5}% less off you.` : '';
+  const total = p.stash.reduce((n, s) => n + priceOf(p, s), 0);
+  const goods = p.stash
+    .map((s, i) => {
+      const deal = s.category === wanted ? `+${Math.round(DEMAND_BONUS * 100)}% this week` : s.id === collector ? 'collector ×1.5' : s.hot ? 'hot: half price' : '';
+      return `<div class="ware${s.centrepiece ? ' prize-ware' : ''}" style="--tilt:${tilt(`ware${s.id}`, 4)}deg;--i:${i}" data-ware="${s.id}">
+        <img src="${lootPictureUrl(s.name, s.category)}" alt="">
+        <div class="price-tag"><b>${priceOf(p, s).toLocaleString('en-US')}</b><span class="nip"></span>${deal ? `<small>${deal}</small>` : ''}</div>
+        <p class="ware-name">${esc(s.name)}<span>${CATEGORY_NAMES[s.category]} · est. ${money(s.value)}</span></p>
+        <button data-sell="${s.id}">Sell</button>
+      </div>`;
+    })
     .join('');
-  const office = p.rooms.fence ? ` The Fence's Office adds ${p.rooms.fence * 5}%.` : '';
+  const line = !p.stash.length
+    ? 'Empty-pawed again? Come back when you’ve got something shiny.'
+    : `Psst. ${CATEGORY_NAMES[wanted]} are moving this week: I’ll go ${Math.round(DEMAND_BONUS * 100)}% over.${office} Everything else, one Catnip per ten bucks, less my ${100 - Math.round(fenceRate(lvl) * 100)}%.`;
   const market = `
-    <div class="ledger-head"><h2 class="section">The fence’s book</h2><p class="demand note-card">Wanted this week: <b>${CATEGORY_NAMES[wanted]}</b>, +${Math.round(DEMAND_BONUS * 100)}%. Demand changes every three days (one heist is one day).</p></div>
-    <p class="small">One Catnip per $10 of estimated value, minus the fence's cut: you get ${Math.round(fenceRate(lvl) * 100)}% at your level, 2% more each level.${office} Hold things for a better week, or sell now.</p>
-    ${p.stash.length ? `<table class="stash"><thead><tr><th>Item</th><th class="price">Catnip</th><th></th></tr></thead>${stash}</table><div class="row-buttons"><button id="sell-all" class="primary">Sell everything (${catnip(p.stash.reduce((n, s) => n + priceOf(p, s), 0))})</button></div>` : '<p class="hand empty-ledger">Nothing to sell. Go steal something.</p>'}
-    <p class="small">Lifetime sales: ${catnip(p.soldTotal)} Catnip.</p>`;
+    <div class="booth">
+      <div class="alley" aria-hidden="true"><div class="bulb"><i></i></div><div class="sign">PAWN<span>·</span>NO QUESTIONS</div></div>
+      <div class="stall">
+        <div class="awning" aria-hidden="true"></div>
+        <div class="fence-row">
+          <div class="fence-guy">${FENCE_SVG}</div>
+          <div class="speech"><b>Slick Whiskers, the fence</b>${line}</div>
+        </div>
+        <div class="counter">
+          ${p.stash.length ? `<div class="wares">${goods}</div>` : '<p class="empty-counter">The counter’s bare.</p>'}
+        </div>
+        <div class="till">
+          <div><small>Lifetime sales</small><b>${catnip(p.soldTotal)}</b></div>
+          ${p.stash.length ? `<button id="sell-all" class="primary">Sell the lot · ${catnip(total)}</button>` : ''}
+        </div>
+      </div>
+    </div>`;
 
   const rooms = ROOMS.map((r) => {
     const tier = p.rooms[r.id];
@@ -731,8 +776,31 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   );
   on(el, '[data-tab]', (e) => lair(p, cb, (e.currentTarget as HTMLElement).dataset.tab as LairTab));
   on(el, '[data-job]', (e) => cb.onHeist(cb.jobs[Number((e.currentTarget as HTMLElement).dataset.job)]));
-  on(el, '[data-sell]', (e) => cb.onSell(Number((e.currentTarget as HTMLElement).dataset.sell)));
-  on(el, '#sell-all', cb.onSellAll);
+  // Selling: the piece slides over to the fence, the till rings, Catnip pops up, then the books update.
+  const sellOne = (ware: HTMLElement | null, then: () => void, delay = 0) => {
+    window.setTimeout(() => {
+      if (ware) {
+        ware.classList.add('sold');
+        const pop = document.createElement('b');
+        pop.className = 'catnip-pop';
+        pop.textContent = `+${ware.querySelector('.price-tag b')?.textContent ?? ''}`;
+        ware.appendChild(pop);
+      }
+      sfx('sell');
+    }, delay);
+    window.setTimeout(then, delay + 650);
+  };
+  on(el, '[data-sell]', (e) => {
+    const id = Number((e.currentTarget as HTMLElement).dataset.sell);
+    el.querySelectorAll<HTMLButtonElement>('[data-sell], #sell-all').forEach((b) => (b.disabled = true));
+    sellOne(el.querySelector<HTMLElement>(`[data-ware="${id}"]`), () => cb.onSell(id));
+  });
+  on(el, '#sell-all', () => {
+    const wares = [...el.querySelectorAll<HTMLElement>('[data-ware]')];
+    el.querySelectorAll<HTMLButtonElement>('[data-sell], #sell-all').forEach((b) => (b.disabled = true));
+    wares.forEach((w, i) => sellOne(w, () => {}, i * 140));
+    window.setTimeout(cb.onSellAll, wares.length * 140 + 700);
+  });
   on(el, '[data-paper]', (e) => cb.onPaper(Number((e.currentTarget as HTMLElement).dataset.paper)));
   on(el, '[data-raise]', (e) => cb.onRaise((e.currentTarget as HTMLElement).dataset.raise as Attribute));
   on(el, '[data-learn]', (e) => cb.onLearn((e.currentTarget as HTMLElement).dataset.learn as SkillId));

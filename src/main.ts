@@ -194,6 +194,15 @@ let zoom = ZOOM_START;
 let zoomNow = ZOOM_START;
 /** The point the camera looks at (in the world's own coordinates), easing after Leo. */
 let focus: { x: number; y: number } | null = null;
+/** How far the player has panned the camera away from Leo (WASD), in the world's own pixels. */
+const pan = { x: 0, y: 0 };
+/** WASD keys held down right now. */
+const panKeys = new Set<string>();
+/** Back to following Leo. */
+function recentre(): void {
+  pan.x = 0;
+  pan.y = 0;
+}
 
 function zoomBy(k: number): void {
   zoom = Math.max(1, Math.min(ZOOM_MAX, zoom * k));
@@ -214,11 +223,13 @@ function cameraBehindLeo(): void {
   view.proj.angle = targetAngle;
   zoom = zoomNow = ZOOM_START;
   focus = null;
+  recentre();
 }
 const view = new HeistView();
 
 function turnCamera(dir: 1 | -1): void {
   closeLootMenu();
+  recentre();
   targetAngle += (dir * Math.PI) / 2;
   if (tutorial) {
     tutorial.ev.rotated = true;
@@ -446,6 +457,7 @@ function doThere(target: Point, kind: Action['kind']): void {
 /** Moves Leo to a tile, animating the walk; `then` runs once he's there, if he's still free to act. */
 function walkTo(tile: Point, then?: () => void): void {
   if (tile.x === state.leo.x && tile.y === state.leo.y) return then?.();
+  recentre(); // the camera catches up with Leo when he moves
   state.log = [];
   const apBefore = state.ap;
   const res = moveLeo(level, state, tile);
@@ -529,14 +541,18 @@ function runAction(a: Action): void {
     lights: 'click',
     panel: 'click',
     fuse: 'click',
-    'enter-vent': 'vent',
-    'exit-vent': 'vent',
+    'enter-vent': 'hatch',
+    'exit-vent': 'hatch',
     'climb-up': 'door',
     'climb-down': 'door',
     drop: 'door',
     tap: 'tap',
   };
-  const snd = actionSound[a.kind];
+  let snd = actionSound[a.kind];
+  // The lock giving way is its own sound: a door swinging open, a case opening, a safe door.
+  const opened = state.inventory.length > invBefore.length || (a.kind === 'pick-door' && tileNow(level, state, a.at.x, a.at.y) !== 'door');
+  if (opened && (a.kind === 'pick-door' || a.kind === 'pick-case')) snd = 'unlock';
+  if (opened && a.kind === 'crack-safe') snd = 'safe-open';
   if (snd) sfx(snd);
   if (a.kind !== 'enter-vent' && a.kind !== 'exit-vent' && a.kind !== 'climb-up' && a.kind !== 'climb-down' && a.kind !== 'drop') leo.work = 1;
   if (state.inventory.length && a.kind !== 'take' && /^Got /.test(state.log.join(' '))) sfx('take');
@@ -1117,6 +1133,13 @@ async function boot(): Promise<void> {
   $('settings-btn').addEventListener('click', openSettingsInHeist);
   // Browsers only allow sound after the player has done something.
   for (const ev of ['pointerdown', 'keydown'] as const) window.addEventListener(ev, () => sound.unlock(), { passive: true });
+  // Every button in the menus gives a soft click.
+  document.addEventListener('pointerdown', (e) => {
+    const b = (e.target as HTMLElement).closest?.('button');
+    if (b && !b.disabled && !b.closest('#actions')) sound.play('ui');
+  });
+  window.addEventListener('keyup', (e) => panKeys.delete(e.key.toLowerCase()));
+  window.addEventListener('blur', () => panKeys.clear());
   window.addEventListener('keydown', (e) => {
     // Nothing reaches the heist while a screen (the settings, say) is open over it.
     if (!inHeist || !$('screens').classList.contains('hidden')) return;
@@ -1127,6 +1150,12 @@ async function boot(): Promise<void> {
       else if (e.key === 'Escape') closeLootMenu();
       if (/^[1-9]$/.test(e.key) || e.key === 'Escape') return;
     }
+    const k = e.key.toLowerCase();
+    if (k === 'w' || k === 'a' || k === 's' || k === 'd') {
+      panKeys.add(k);
+      return;
+    }
+    if (k === 'c' || k === 'f') return recentre();
     const arrows: Record<string, [number, number]> = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
     if (e.key in arrows) {
       e.preventDefault();
@@ -1196,7 +1225,8 @@ async function boot(): Promise<void> {
   showTitle();
 
   app.ticker.add((tk) => {
-    const dt = Math.min(0.05, tk.deltaMS / 1000);
+    // Keep animations in real time on slow machines too (but not a leap after the tab was hidden).
+    const dt = Math.min(0.2, tk.deltaMS / 1000);
     view.time += dt;
     view.proj.angle += (targetAngle - view.proj.angle) * (1 - Math.exp(-dt * 10));
     if (queue.length) {
@@ -1271,13 +1301,24 @@ function fit(dt = 0): void {
     focus.y += (want.y - focus.y) * k;
   }
   const t = Math.min(1, (scale / whole - 1) / 0.5);
-  let cx = (x0 + x1) / 2 + (focus.x - (x0 + x1) / 2) * t;
-  let cy = (y0 + y1) / 2 + (focus.y - (y0 + y1) / 2) * t;
+  // WASD pans the view across the screen at a steady speed, however far zoomed in.
+  if (panKeys.size && dt) {
+    const speed = (700 / scale) * dt;
+    if (panKeys.has('a')) pan.x -= speed;
+    if (panKeys.has('d')) pan.x += speed;
+    if (panKeys.has('w')) pan.y -= speed;
+    if (panKeys.has('s')) pan.y += speed;
+  }
+  let cx = (x0 + x1) / 2 + (focus.x - (x0 + x1) / 2) * t + pan.x;
+  let cy = (y0 + y1) / 2 + (focus.y - (y0 + y1) / 2) * t + pan.y;
   // Don't show more empty space past the map's edge than the view needs.
   const halfW = (w - 24) / 2 / scale;
   const halfH = (h - top - bottom) / 2 / scale;
   cx = (x1 - x0) / 2 > halfW ? Math.max(x0 + halfW, Math.min(x1 - halfW, cx)) : (x0 + x1) / 2;
   cy = (y1 - y0) / 2 > halfH ? Math.max(y0 + halfH, Math.min(y1 - halfH, cy)) : (y0 + y1) / 2;
+  // Keep the pan to what the edges allowed, so holding a key against the edge doesn't wind up.
+  pan.x = cx - ((x0 + x1) / 2 + (focus.x - (x0 + x1) / 2) * t);
+  pan.y = cy - ((y0 + y1) / 2 + (focus.y - (y0 + y1) / 2) * t);
   world.scale.set(scale);
   world.position.set(w / 2 - cx * scale, top + (h - top - bottom) / 2 - cy * scale);
 }
