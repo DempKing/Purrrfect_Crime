@@ -1694,3 +1694,22 @@ export function danger(level: Level, s: State, p: Point): 0 | 1 | 2 {
   }
   return worst;
 }
+
+/** What happens if Leo walks to a tile and the guards then take their turn: the worst of it, for the player's preview. */
+export type Aftermath = 'caught' | 'alarm' | 'seen' | null;
+
+/**
+ * Plays it forward on a copy: Leo moves to `to`, then the guards and cameras take their turn (they move and
+ * turn, which the danger on the path alone doesn't show). Tells the player what would happen if they ended
+ * their turn there.
+ */
+export function aftermath(level: Level, s: State, to: Point): Aftermath {
+  const sim = structuredClone(s);
+  sim.log = [];
+  if (!(to.x === s.leo.x && to.y === s.leo.y) && !moveLeo(level, sim, to).ok) return null;
+  const judge = (): Aftermath => (sim.status === 'caught' ? 'caught' : sim.alarm !== null && s.alarm === null ? 'alarm' : sim.seen && !s.seen ? 'seen' : null);
+  const now = judge();
+  if (now || sim.status !== 'playing') return now;
+  endTurn(level, sim);
+  return judge();
+}

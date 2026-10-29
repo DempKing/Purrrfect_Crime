@@ -627,6 +627,11 @@ with notes in a marker hand (Patrick Hand). Results are stickers, not rubber sta
 - **View cones:** every guard and camera throws a cone on the floor, cast ray by ray so it stops at walls
   and doorways (red for guards, stronger once they're suspicious; purple for cameras), with the tiles they'd
   actually catch Leo on picked out inside it.
+- **What the guards' turn will bring:** for every tile Leo can reach, the game plays the guards' turn
+  forward on a copy (they move, cameras turn, noise draws them over, a captain whistles) and marks the tiles
+  where ending the turn goes wrong: a red cross for caught or an alarm, an orange ring for spotted. Pointing
+  at one says which; the path's last step is coloured to match. It's worked out a few tiles a frame, so it
+  never stutters. Each camera's next direction is outlined too.
 - **Camera:** WASD pans, C recentres; it follows Leo again when he moves or the view turns.
 - **Sound effects** are synthesised in layers: struck-metal partials for locks, latches and bottle caps,
   hollow resonant booms for the vents, wood and hinges for doors, a short room reverb on everything, and a
