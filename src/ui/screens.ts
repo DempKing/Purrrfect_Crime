@@ -292,7 +292,10 @@ export function credits(done: () => void): void {
     `<div class="credits"><div class="roll">
       <h1>Purrrfect Crime</h1>
       ${CREDITS.map(([who, what]) => `<p><span class="credit-what">${esc(what)}</span><b>${esc(who)}</b></p>`).join('')}
-      ${musicCredits().map((m) => `<p><span class="credit-what">Music</span><b>“${esc(m.track)}” · ${esc(m.artist)}</b><span class="small">${esc(m.license)}</span></p>`).join('')}
+      ${[...new Set(musicCredits().map((m) => m.artist))].map((artist) => {
+        const mine = musicCredits().filter((m) => m.artist === artist);
+        return `<p><span class="credit-what">Music</span><b>${esc(artist)}</b><span>${mine.map((m) => `“${esc(m.track)}”`).join(' · ')}</span><span class="small">${esc(mine[0].license)}</span></p>`;
+      }).join('')}
       <p class="small">Free play continues: every heist is still there to replay, and the fences are still buying.</p>
       <div class="row-buttons"><button id="credits-ok" class="primary">Read the morning paper</button></div>
     </div></div>`,

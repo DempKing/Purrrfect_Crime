@@ -144,6 +144,11 @@ export class Sound {
     if (t > 0) this.setScene(this.finale && t < 3 ? 'finale' : t >= 3 ? 'chase' : t >= 2 ? 'alert' : 'heist');
   }
 
+  /** The music file playing now, if any (for the tests). */
+  get nowPlaying(): MusicScene | null {
+    return this.playing;
+  }
+
   /** NightClaw's places get their own heist music. */
   setFinale(on: boolean): void {
     this.finale = on;

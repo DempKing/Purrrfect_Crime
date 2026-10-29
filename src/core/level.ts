@@ -17,7 +17,7 @@ export type Tile =
   | 'fuse' // fuse box for the lasers, on a wall
   | 'squeaky' // a loose floorboard: loud underfoot
   | 'safe' // a safe with loot inside: slow to crack, but silent
-  | 'ladder' // up to the rafters (Ceiling Climb)
+  | 'ladder' // up to the rafters
   | 'seat' // a row of theatre seats: low, so guards see over them, but in Leo's way
   | 'plate' // a pressure plate: step on it and the alarm goes off
   | 'keydoor' // a door with a card reader: it opens for the keycard, and can't be picked

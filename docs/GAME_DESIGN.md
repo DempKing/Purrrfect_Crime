@@ -261,7 +261,7 @@ Pounce). Once-a-heist skills get a second charge from the Workshop's third tier.
   *Vanish* (lvl 20: break detection once per heist).
 - **Tech:** *Camera Loop* (loop a camera for 3 turns), *Laser Mirror*, *Keycard Clone*, *Fuse Kit*,
   *EMP Collar* (lvl 18: disables every device in a radius for 1 turn).
-- **Acrobat:** *Pounce* (jump 2 tiles), *Ceiling Climb* (crawl along rafters as a second route),
+- **Acrobat:** *Pounce* (jump 2 tiles), *Ceiling Climb* (drop silently from the rafters; anyone can climb a ladder),
   *Tightrope* (cross gaps), *Cat Nap* (lvl 15: wait out a guard's whole route while hidden), *Second Wind*
   (lvl 22: one extra action point once per heist).
 
@@ -280,7 +280,7 @@ As built in M3:
 | Fuse Kit | 11 | 1,400 | Once a heist: all lasers off for three turns, from anywhere. |
 | EMP Collar | 18 | 2,800 | Once a heist: cameras within 5 tiles and all lasers off for two turns. |
 | Pounce | 3 | 400 | 1 AP, unlimited: leap two tiles over a laser, case or lamp. Landing on a live laser trips it. |
-| Ceiling Climb | 6 | 800 | Locked until the levels with rafters (M4). |
+| Ceiling Climb | 6 | 800 | Drops from the rafters are silent. Ladders work without it, from the Clocktower on. |
 | Tightrope | 9 | 1,100 | Walk the wires over rooftop gaps and water, where no guard can follow. |
 | Cat Nap | 15 | 2,200 | Once a heist: guards can't notice Leo for two of their turns (unless they walk into him). |
 | Second Wind | 22 | 4,000 | Once a heist, with 1 action point or fewer left: free, +1 action point this turn. (It replaced Nine Lives when the game went to one mode, where a catch is always a catch.) |
@@ -426,7 +426,7 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | --- | --- | --- |
 | 0 | The Corner Gallery | The tutorial (§10). |
 | 1 | The Cobblestone Coin Museum | A sleepy guard at the ticket desk, creaky floorboards, a safe. |
-| 2 | The Clocktower Archive | A captain who whistles for help; rafters and ladders for Ceiling Climb. |
+| 2 | The Clocktower Archive | A captain who whistles for help; rafters and ladders: a high road past the guards. |
 | 3 | The Pawnbroker Penthouse | A sniffer who smells through walls; pulsing lasers. |
 | 4 | The Opera House Costume Vault | Spotlights that move every turn; theatre seats guards see over. |
 | 5 | The Natural History Museum | Museum Mile's dim halls (only the marked shadows are dark); pressure plates. |

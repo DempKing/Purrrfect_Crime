@@ -61,7 +61,7 @@ export interface Perks {
   ghostStep: boolean; // the first noisy move of a heist makes none (Shadow)
   vanish: boolean; // the first time a guard glimpses Leo, he's gone before it registers (Shadow)
   laserMirror: boolean; // the first laser Leo breaks bounces harmlessly (Tech)
-  ceilingClimb: boolean; // the rafters, by the ladders (Acrobat)
+  ceilingClimb: boolean; // drops from the rafters land silently (Acrobat)
   tightrope: boolean; // walk the wires over gaps (Acrobat)
   masterKey: boolean; // keycard doors open without the keycard (Tech: Keycard Clone)
   charges: Partial<Record<Ability, number>>; // per heist; pounce is unlimited when owned
@@ -944,10 +944,10 @@ export function actionsHere(level: Level, s: State): Action[] {
   } else if (s.layer === 'rafter') {
     const below = tileNow(level, s, L.x, L.y);
     if (below === 'ladder') out.push({ kind: 'climb-down', at: L, label: 'Climb down the ladder', ap: 1, noise: 0 });
-    else if (!blocksMove(below) && !guardTiles(s).has(key(L.x, L.y))) out.push({ kind: 'drop', at: L, label: 'Drop to the floor', ap: 1, noise: NOISE.drop });
+    else if (!blocksMove(below) && !guardTiles(s).has(key(L.x, L.y))) out.push({ kind: 'drop', at: L, label: s.perks.ceilingClimb ? 'Drop to the floor (silently)' : 'Drop to the floor', ap: 1, noise: s.perks.ceilingClimb ? 0 : NOISE.drop });
   } else {
     if (tileAt(level, L.x, L.y) === 'grate') out.push({ kind: 'enter-vent', at: L, label: 'Climb into the vent', ap: 1, noise: 0 });
-    if (tileAt(level, L.x, L.y) === 'ladder') out.push({ kind: 'climb-up', at: L, label: 'Climb up to the rafters', ap: 1, noise: 0, blocked: s.perks.ceilingClimb ? undefined : 'Needs the Ceiling Climb skill (Acrobat).' });
+    if (tileAt(level, L.x, L.y) === 'ladder') out.push({ kind: 'climb-up', at: L, label: 'Climb up to the rafters', ap: 1, noise: 0 });
     // The finale: NightClaw, unaware, right beside Leo, and the prize in Leo's paws.
     const nc = level.def.finale ? s.guards.find((g) => g.kind === 'nightclaw' && near8(L, g)) : undefined;
     const prize = level.plinth ? lootAt(level, level.plinth.x, level.plinth.y) : -1;
@@ -1129,8 +1129,12 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
       break;
     case 'drop':
       s.layer = 'floor';
-      s.log.push('Thump!');
-      makeNoise(level, s, s.leo, NOISE.drop);
+      // Ceiling Climb: Leo lands like a cat, without a sound.
+      if (s.perks.ceilingClimb) s.log.push('Leo drops down without a sound.');
+      else {
+        s.log.push('Thump!');
+        makeNoise(level, s, s.leo, NOISE.drop);
+      }
       dogsBark(level, s, s.leo, new Set());
       checkExposure(level, s, s.leo);
       break;

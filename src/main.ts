@@ -1211,6 +1211,9 @@ async function boot(): Promise<void> {
     },
     startHeist: (id: string) => startHeist(JOBS.find((j) => j.id === id)!),
     levels: JOBS.map((j) => ({ id: j.id, challenge: !!j.challenge, finale: !!j.finale })),
+    get music() {
+      return sound.nowPlaying;
+    },
     get slot() {
       return slot;
     },

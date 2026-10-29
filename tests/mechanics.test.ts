@@ -128,12 +128,12 @@ test('a safe takes three quiet goes, two with Dexterity', () => {
   assert.equal(deft.s.inventory.length, 1);
 });
 
-test('the rafters: only with Ceiling Climb, unseen up there, down by the ladder or with a thump', () => {
+test('the rafters: anyone can climb a ladder, unseen up there, down by the ladder or with a thump', () => {
   const plain = heist(sandbox([]));
   plain.s.leo = { x: 5, y: 6 };
-  assert.match(actionsHere(plain.level, plain.s).find((a) => a.kind === 'climb-up')!.blocked!, /Ceiling Climb/);
+  assert.equal(actionsHere(plain.level, plain.s).find((a) => a.kind === 'climb-up')!.blocked, undefined, 'no skill needed');
 
-  const { level, s } = heist(sandbox([{ name: 'Joe', start: { x: 10, y: 7 }, route: [{ x: 3, y: 7 }] }], { ambient: 'lit' }), { ceilingClimb: true });
+  const { level, s } = heist(sandbox([{ name: 'Joe', start: { x: 10, y: 7 }, route: [{ x: 3, y: 7 }] }], { ambient: 'lit' }));
   s.leo = { x: 5, y: 6 };
   assert.ok(doAction(level, s, 'climb-up', { x: 5, y: 6 }));
   assert.equal(s.layer, 'rafter');
@@ -146,6 +146,15 @@ test('the rafters: only with Ceiling Climb, unseen up there, down by the ladder 
   assert.ok(doAction(level, s, 'drop', s.leo));
   assert.equal(s.layer, 'floor');
   assert.equal(s.noises.at(-1)?.r, 3);
+  // With Ceiling Climb the same drop is silent.
+  const deft = heist(sandbox([]), { ceilingClimb: true });
+  deft.s.leo = { x: 5, y: 6 };
+  doAction(deft.level, deft.s, 'climb-up', deft.s.leo);
+  moveLeo(deft.level, deft.s, { x: 8, y: 6 });
+  deft.s.ap = 2;
+  const before = deft.s.noises.length;
+  assert.ok(doAction(deft.level, deft.s, 'drop', deft.s.leo));
+  assert.equal(deft.s.noises.length, before, 'no thump');
 });
 
 test('a spotlight lights its circle, and moves one step a turn', () => {
