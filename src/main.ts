@@ -7,6 +7,8 @@ import 'pixi.js/unsafe-eval';
 import { parseLevel, the, type Level, type LevelDef, type Point } from './core/level';
 import {
   actionsHere,
+  aftermath,
+  type Aftermath,
   lootAt,
   tileNow,
   moveAp,
@@ -256,6 +258,39 @@ function computed() {
   return cache;
 }
 
+// --- what happens when the guards move: worked out a few tiles a frame, for every tile Leo can reach -------
+
+/** For each reachable tile: what would happen if Leo ended his turn there (the guards move and the cameras turn). */
+const risk = new Map<string, Aftermath>();
+let riskVersion = -1;
+let riskQueue: Point[] = [];
+
+/** Works through the reachable tiles for a few milliseconds a frame, so the game never stutters. */
+function workOnRisk(): void {
+  if (!inHeist || busy || state.status !== 'playing' || targeting) return;
+  if (riskVersion !== version) {
+    riskVersion = version;
+    risk.clear();
+    riskQueue = [{ ...state.leo }];
+    for (const [k, cost] of computed().reach.cost) {
+      if (!cost || moveAp(state, cost) > state.ap) continue;
+      const [x, y] = k.split(',').map(Number);
+      riskQueue.push({ x, y });
+    }
+  }
+  const t0 = performance.now();
+  while (riskQueue.length && performance.now() - t0 < 5) {
+    const p = riskQueue.shift()!;
+    risk.set(key(p.x, p.y), aftermath(level, state, p));
+  }
+}
+
+const RISK_WORDS: Record<Exclude<Aftermath, null>, string> = {
+  caught: 'Caught when the guards move',
+  alarm: 'A camera turns onto this tile: alarm',
+  seen: 'Spotted when the guards move',
+};
+
 function overlay(): Overlay {
   const c = computed();
   const reach1 = new Set<string>();
@@ -264,7 +299,7 @@ function overlay(): Overlay {
   if (targeting && live) {
     const targets = abilityTargets(level, state, targeting);
     const target = selected ?? hover;
-    return { reach1, reach2, vision: c.vision, cameraVision: c.cameraVision, footprints: c.footprints, path: [], pathDanger: new Map(), hover: target && targets.has(key(target.x, target.y)) ? target : null, targets, rivalPath: c.rivalPath };
+    return { reach1, reach2, vision: c.vision, cameraVision: c.cameraVision, footprints: c.footprints, path: [], pathDanger: new Map(), hover: target && targets.has(key(target.x, target.y)) ? target : null, targets, rivalPath: c.rivalPath, risky: new Map() };
   }
   if (live)
     for (const [k, cost] of c.reach.cost) {
@@ -288,6 +323,10 @@ function overlay(): Overlay {
     // Two steps inside a motion-sensor zone in one move trips it.
     const trip = motionTrip(level, state, path);
     if (trip > 0) for (const p of path.slice(trip)) pathDanger.set(key(p.x, p.y), 2);
+    // And where the walk ends: what the guards' turn would bring.
+    const end = path.length ? path[path.length - 1] : null;
+    const r = end ? risk.get(key(end.x, end.y)) : undefined;
+    if (end && r) pathDanger.set(key(end.x, end.y), Math.max(pathDanger.get(key(end.x, end.y)) ?? 0, r === 'seen' ? 1 : 2));
   }
   const actionable = target && live && (clickAction(target) || lootHere(target) !== null);
   return {
@@ -301,7 +340,26 @@ function overlay(): Overlay {
     hover: target && (path.length > 1 || actionable) ? target : null,
     targets: new Set(),
     rivalPath: state.status === 'playing' ? c.rivalPath : [],
+    risky: live && riskVersion === version ? risk : new Map(),
   };
+}
+
+/** A note by the pointer when the tile under it isn't safe to end the turn on. */
+function placeRiskNote(): void {
+  const box = $('risk-note');
+  const target = selected ?? hover;
+  const live = inHeist && state.status === 'playing' && !busy && !targeting && !lootMenu;
+  const goal = target && live ? (lootHere(target) !== null ? standFor(target)?.at ?? null : target) : null;
+  const r = goal && riskVersion === version ? risk.get(key(goal.x, goal.y)) : null;
+  if (!r || !goal) {
+    box.classList.add('hidden');
+    return;
+  }
+  const p = world.toGlobal(project(view.proj, goal.x + 0.5, goal.y + 0.5));
+  box.textContent = RISK_WORDS[r];
+  box.className = `risk-note ${r === 'seen' ? 'warn' : 'bad'}`;
+  box.style.left = `${p.x}px`;
+  box.style.top = `${p.y + 18}px`;
 }
 
 function tileUnder(clientX: number, clientY: number): Point | null {
@@ -792,7 +850,7 @@ function levelPhoto(def: LevelDef): Promise<string> {
     v.proj = { angle: (best * Math.PI) / 2, cx: lv.w / 2, cy: lv.h / 2 };
     v.time = 2;
     const actor = (x: number, y: number, facing: number) => ({ x: x + 0.5, y: y + 0.5, facing, bob: 0 });
-    const none: Overlay = { reach1: new Set(), reach2: new Set(), vision: new Set(), cameraVision: new Set(), footprints: [], rivalPath: [], path: [], pathDanger: new Map(), hover: null, targets: new Set() };
+    const none: Overlay = { reach1: new Set(), reach2: new Set(), vision: new Set(), cameraVision: new Set(), footprints: [], rivalPath: [], path: [], pathDanger: new Map(), hover: null, targets: new Set(), risky: new Map() };
     v.draw(lv, st, none, actor(st.leo.x, st.leo.y, 2), st.guards.map((g) => actor(g.x, g.y, g.facing)), [], undefined);
     const holder = new Container();
     holder.addChild(v.root);
@@ -1211,6 +1269,8 @@ async function boot(): Promise<void> {
     },
     startHeist: (id: string) => startHeist(JOBS.find((j) => j.id === id)!),
     levels: JOBS.map((j) => ({ id: j.id, challenge: !!j.challenge, finale: !!j.finale })),
+    /** What ending the turn on a tile would bring (once worked out), for the tests. */
+    riskAt: (x: number, y: number) => risk.get(key(x, y)),
     get music() {
       return sound.nowPlaying;
     },
@@ -1277,7 +1337,9 @@ async function boot(): Promise<void> {
     ripples = ripples.filter((r) => r.t < 1);
     if (!inHeist) return;
     fit(dt);
+    workOnRisk();
     placeLootMenu();
+    placeRiskNote();
     view.draw(level, state, overlay(), leo, guards, ripples, rival);
   });
 }

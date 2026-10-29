@@ -58,6 +58,7 @@
       <li><b>Keyboard:</b> the arrow keys move a cursor, Enter moves Leo there or does what's there, Space ends the turn, Q and E turn the camera, WASD pans it (C brings it back to Leo), + and − (or the mouse wheel) zoom. The ⚙ button has sound, speed and accessibility settings.</li>
       <li><b>Move:</b> click a tile. Blue costs 1 action point, yellow costs both (a loud dash). On a phone, tap once to preview and again to move.</li>
       <li><b>Path colours:</b> white is safe, yellow means a guard will notice something and come to look, red means caught or alarm.</li>
+      <li><b>When the guards move:</b> a red cross on a tile means Leo would be caught, or a camera would turn onto him, if he ended his turn there; an orange ring means he'd be spotted. Pointing at it says which.</li>
       <li><b>Shadows hide you.</b> Guards see 6 tiles into lamplight, 4 into moonlight and barely past their nose in the dark. Being right next to one, or standing in lamplight in front of one, gets you caught.</li>
       <li><b>Red</b> is what the guards see, <b>purple</b> is what the cameras see. Orange dots are where the guards walk next.</li>
       <li><b>Guard types:</b> sleepy guards (Zzz) see nothing until a noise wakes them; captains (gold braid) see further and call others over; sniffers (big nose) smell you through walls from two tiles away.</li>
@@ -80,6 +81,7 @@
 
 
   <div id="loot-menu" class="loot-menu hidden" role="menu"></div>
+  <div id="risk-note" class="risk-note hidden" aria-live="polite"></div>
 
   <div id="caught" class="overlay hidden">
     <div class="sheet caught">

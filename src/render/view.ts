@@ -75,6 +75,8 @@ export interface Overlay {
   hover: Point | null;
   /** Where the gadget or skill being aimed can go. */
   targets: Set<string>;
+  /** Tiles where ending the turn goes wrong once the guards move: caught, alarm or seen. */
+  risky: Map<string, 'caught' | 'alarm' | 'seen' | null>;
 }
 
 /** How a character is moving, which picks their animation. */
@@ -248,6 +250,8 @@ export class HeistView {
           if (ov.reach1.has(k)) this.diamond(f, x, y, 0.38, COL.reach1, 0.3);
           else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.38, COL.reach2, 0.26);
         }
+        const r = ov.risky.get(k);
+        if (r && (ov.reach1.has(k) || ov.reach2.has(k))) this.riskMark(f, x, y, r);
       }
     // Each guard's and camera's view: a cone on the floor, cut off by walls.
     if (!inVent && !inRafters) {
@@ -258,7 +262,13 @@ export class HeistView {
         const alert = g.mode !== 'patrol';
         this.viewCone(f, level, s, a.x, a.y, a.facing, range, alert ? COL.danger : COL.vision, alert ? 0.22 : 0.16);
       });
-      for (const c of s.cameras) if (camerasActive(s, c)) this.viewCone(f, level, s, c.at.x + 0.5, c.at.y + 0.5, c.sweep[c.idx], c.range, COL.camera, 0.11);
+      for (const c of s.cameras)
+        if (camerasActive(s, c)) {
+          this.viewCone(f, level, s, c.at.x + 0.5, c.at.y + 0.5, c.sweep[c.idx], c.range, COL.camera, 0.11);
+          // Where it will look after the guards' turn: just an outline.
+          const next = c.sweep[(c.idx + 1) % c.sweep.length];
+          if (next !== c.sweep[c.idx]) this.viewCone(f, level, s, c.at.x + 0.5, c.at.y + 0.5, next, c.range, COL.camera, 0);
+        }
     }
 
     // The vent layer, drawn like a blueprint while Leo is inside.
@@ -838,7 +848,22 @@ export class HeistView {
       pts.push(p.x, p.y);
     }
     const pulse = 1 + Math.sin(this.time * 2.5) * 0.12;
-    g.poly(pts).fill({ color, alpha: alpha * pulse }).stroke({ width: 2, color, alpha: 0.55, join: 'round' });
+    if (alpha > 0) g.poly(pts).fill({ color, alpha: alpha * pulse }).stroke({ width: 2, color, alpha: 0.55, join: 'round' });
+    else g.poly(pts).stroke({ width: 1.5, color, alpha: 0.35 + Math.sin(this.time * 4) * 0.1, join: 'round' });
+  }
+
+  /** A mark on a tile Leo shouldn't end his turn on: a red cross (caught or alarm) or an orange ring (spotted). */
+  private riskMark(g: Graphics, x: number, y: number, r: 'caught' | 'alarm' | 'seen'): void {
+    const c = project(this.proj, x + 0.5, y + 0.5);
+    if (r === 'seen') {
+      g.ellipse(c.x, c.y, 11, 5.5).stroke({ width: 2.5, color: COL.warn, alpha: 0.9 });
+      return;
+    }
+    const a = project(this.proj, x + 0.3, y + 0.3);
+    const b = project(this.proj, x + 0.7, y + 0.7);
+    const d = project(this.proj, x + 0.7, y + 0.3);
+    const e = project(this.proj, x + 0.3, y + 0.7);
+    g.moveTo(a.x, a.y).lineTo(b.x, b.y).moveTo(d.x, d.y).lineTo(e.x, e.y).stroke({ width: 3, color: COL.danger, alpha: 0.9, cap: 'round' });
   }
 
   /** Outer walls on the two sides facing the camera are always cut down, so the room is never hidden. */

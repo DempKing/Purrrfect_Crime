@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseLevel, type GuardDef, type LevelDef } from '../src/core/level';
-import { BASE_PERKS, actionsHere, roboOff, beaconTiles, danger, doAction, endTurn, flooded, guardSees, guardView, key, leoReach, lightNow, makeNoise, motionTrip, moveLeo, newHeist, planRival, useAbility, type Perks, type RivalPlan, type State } from '../src/core/game';
+import { BASE_PERKS, actionsHere, aftermath, roboOff, beaconTiles, danger, doAction, endTurn, flooded, guardSees, guardView, key, leoReach, lightNow, makeNoise, motionTrip, moveLeo, newHeist, planRival, useAbility, type Perks, type RivalPlan, type State } from '../src/core/game';
 import { ALL_LEVELS } from '../src/levels';
 import { exhibitLoot } from '../src/core/exhibits';
 
@@ -621,4 +621,15 @@ test('what stands on a pedestal under a light can be stolen', () => {
   assert.ok(s.inventory.includes(li));
   // Life-size statues, plants, grandfather clocks and tanks stay put.
   assert.ok(exhibitLoot(ALL_LEVELS.find((l) => l.id === 'l19-aquarium')!).length === 0);
+});
+
+test('the look-ahead: a tile that looks safe now, but a guard walks into view of it on his turn', () => {
+  // Joe walks left along row 7 towards Leo; standing in his way is fine now and fatal once he moves.
+  const { level, s } = heist(sandbox([{ name: 'Joe', start: { x: 12, y: 7 }, route: [{ x: 3, y: 7 }] }], { ambient: 'lit' }));
+  s.leo = { x: 4, y: 7 };
+  s.guards[0].facing = 4;
+  assert.equal(aftermath(level, s, s.leo) !== null, true, 'he walks right up to Leo');
+  // Behind the wall, out of his way, the guards' turn passes quietly.
+  s.leo = { x: 1, y: 1 };
+  assert.equal(aftermath(level, s, s.leo), null);
 });
