@@ -336,11 +336,11 @@ export function credits(done: () => void, fromMenu = false): void {
   const el = show(
     `<div class="credits${fromMenu ? ' rolling' : ''}"><div class="roll">
       <h1>Purrrfect Crime</h1>
-      ${CREDITS.map(([who, what]) => `<p><span class="credit-what">${esc(what)}</span><b>${esc(who)}</b></p>`).join('')}
       ${[...new Set(musicCredits().map((m) => m.artist))].map((artist) => {
         const mine = musicCredits().filter((m) => m.artist === artist);
         return `<p><span class="credit-what">Music</span><b>${esc(artist)}</b><span>${mine.map((m) => `“${esc(m.track)}”`).join(' · ')}</span><span class="small">${esc(mine[0].license)}</span></p>`;
       }).join('')}
+      ${CREDITS.map(([who, what]) => `<p><span class="credit-what">${esc(what)}</span><b>${esc(who)}</b></p>`).join('')}
       ${fromMenu ? '' : '<p class="small">Free play continues: every heist is still there to replay, and the fences are still buying.</p>'}
       ${fromMenu ? '<p class="credit-end">Thanks for playing.</p>' : '<div class="row-buttons"><button id="credits-ok" class="primary">Read the morning paper</button></div>'}
     </div></div>${fromMenu ? '<button id="credits-ok" class="corner-btn right">Back (Esc)</button>' : ''}`,
