@@ -327,9 +327,22 @@ export function loadSlot(storage: Pick<Storage, 'getItem'> | null, slot: number)
   }
 }
 
+const LAST_SLOT_KEY = 'purrrfect-crime-last-slot';
+
+/** The game saved most recently, for Continue on the title. */
+export function lastSlot(storage: Pick<Storage, 'getItem'> | null): number | null {
+  try {
+    const v = storage?.getItem(LAST_SLOT_KEY);
+    return v === null || v === undefined ? null : Number(v);
+  } catch {
+    return null;
+  }
+}
+
 export function saveSlot(storage: Pick<Storage, 'setItem'> | null, slot: number, p: Profile): void {
   try {
     storage?.setItem(slotKey(slot), JSON.stringify(p));
+    storage?.setItem(LAST_SLOT_KEY, String(slot));
   } catch {
     // Private windows and full storage: the game still plays, it just won't remember.
   }

@@ -123,10 +123,13 @@ function on(el: HTMLElement, sel: string, fn: (e: Event) => void): void {
 // --- Title and save slots ---------------------------------------------------------------------
 
 export interface TitleCallbacks {
+  /** The game played last, if there is one. */
+  lastSlot: number | null;
   onPlay: (slot: number) => void;
   onNew: (slot: number) => void;
   onDelete: (slot: number) => void;
   onSettings: () => void;
+  onCredits: () => void;
 }
 
 function slotSummary(p: Profile): string {
@@ -134,38 +137,79 @@ function slotSummary(p: Profile): string {
   return `Level ${playerLevel(p.xp)} · ${where}<br>${p.catnip.toLocaleString('en-US')} Catnip${p.legendary ? ' · <b>Legendary</b>' : ''}`;
 }
 
+/**
+ * The title: the logo over the key art, and a menu (Continue, New Game, Load), with Credits in the bottom left
+ * and Settings in the bottom right. Load and "which game to replace" open as a panel over it; Esc closes it.
+ */
 export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void {
+  const saved = slots.some(Boolean);
+  const last = cb.lastSlot !== null && slots[cb.lastSlot] ? cb.lastSlot : slots.findIndex(Boolean);
+  const free = slots.findIndex((p) => !p);
   const el = show(
     `<div class="title-art" style="background-image:url(${KEY_ART})"></div>
     <div class="poster">
-      <p class="poster-presents">The Whisker Times presents</p>
       <h1 class="logo"><span>Purrrfect</span><span>Crime</span></h1>
-      <p class="poster-tagline">One tuxedo. Twenty-five museums. Not one witness.</p>
-      <div class="slots">
-        ${slots
-          .map((p, i) => {
-            const body = p
-              ? `<div class="tag-body"><span class="tag-no">Game ${i + 1}</span><span class="tag-info">${slotSummary(p)}</span></div>
-                  <div class="row-buttons"><button class="primary" data-play="${i}">Continue</button><button class="quiet" data-delete="${i}">Delete</button></div>`
-              : `<div class="tag-body"><span class="tag-no">Game ${i + 1}</span><span class="tag-info">Empty</span></div>
-                  <div class="row-buttons"><button class="primary" data-new="${i}">New game</button></div>`;
-            return `<div class="slot ${p ? '' : 'empty'}" style="--tilt:${tilt(`slot${i}`, 1.2)}deg"><span class="tag-hole"></span>${body}</div>`;
-          })
-          .join('')}
-      </div>
-      <div class="poster-foot"><button id="title-settings" class="quiet">Settings</button><span>Prototype · placeholder art · games save in this browser</span></div>
-    </div>`,
+      <p class="poster-tagline">Sneak in. Steal big. Leave nothing but a calling card.</p>
+      <nav class="title-menu" aria-label="Main menu">
+        ${saved ? `<button id="continue" class="primary"><b>Continue</b><small>${last >= 0 ? `Game ${last + 1} · ${slotSummary(slots[last]!).replace('<br>', ' · ')}` : ''}</small></button>` : ''}
+        <button id="new-game" class="${saved ? '' : 'primary'}"><b>New game</b>${free < 0 ? '<small>All three games are in use: pick one to replace</small>' : ''}</button>
+        <button id="load" ${saved ? '' : 'disabled'}><b>Load</b></button>
+      </nav>
+      <div id="slot-panel" class="slot-panel hidden" role="dialog"></div>
+    </div>
+    <button id="title-credits" class="corner-btn left">Credits</button>
+    <button id="title-settings" class="corner-btn right">Settings</button>`,
     'title-screen',
   );
+  const panel = el.querySelector<HTMLElement>('#slot-panel')!;
+  /** The three games as tags, to load or (for a new game) replace. */
+  const openPanel = (mode: 'load' | 'replace') => {
+    panel.innerHTML = `<h2>${mode === 'load' ? 'Load a game' : 'Replace which game?'}</h2><div class="slots">${slots
+      .map((p, i) => {
+        const body = p
+          ? `<div class="tag-body"><span class="tag-no">Game ${i + 1}</span><span class="tag-info">${slotSummary(p)}</span></div>
+              <div class="row-buttons">${mode === 'load' ? `<button class="primary" data-play="${i}">Load</button><button class="quiet" data-delete="${i}">Delete</button>` : `<button class="primary" data-replace="${i}">Replace</button>`}</div>`
+          : `<div class="tag-body"><span class="tag-no">Game ${i + 1}</span><span class="tag-info">Empty</span></div>
+              <div class="row-buttons"><button class="primary" data-new="${i}">New game</button></div>`;
+        return `<div class="slot ${p ? '' : 'empty'}">${body}</div>`;
+      })
+      .join('')}</div><button class="quiet" id="panel-close">Back (Esc)</button>`;
+    panel.classList.remove('hidden');
+    on(panel, '[data-play]', (e) => cb.onPlay(Number((e.currentTarget as HTMLElement).dataset.play)));
+    on(panel, '[data-new]', (e) => cb.onNew(Number((e.currentTarget as HTMLElement).dataset.new)));
+    on(panel, '[data-replace]', (e) => {
+      const b = e.currentTarget as HTMLElement;
+      if (b.dataset.armed) return cb.onNew(Number(b.dataset.replace));
+      b.dataset.armed = '1';
+      b.textContent = 'Really replace it?';
+    });
+    on(panel, '[data-delete]', (e) => {
+      const b = e.currentTarget as HTMLElement;
+      if (b.dataset.armed) return cb.onDelete(Number(b.dataset.delete));
+      b.dataset.armed = '1';
+      b.textContent = 'Really delete?';
+    });
+    on(panel, '#panel-close', closePanel);
+  };
+  const closePanel = () => panel.classList.add('hidden');
+  on(el, '#continue', () => last >= 0 && cb.onPlay(last));
+  on(el, '#new-game', () => (free >= 0 ? cb.onNew(free) : openPanel('replace')));
+  on(el, '#load', () => openPanel('load'));
   on(el, '#title-settings', cb.onSettings);
-  on(el, '[data-play]', (e) => cb.onPlay(Number((e.currentTarget as HTMLElement).dataset.play)));
-  on(el, '[data-new]', (e) => cb.onNew(Number((e.currentTarget as HTMLElement).dataset.new)));
-  on(el, '[data-delete]', (e) => {
-    const b = e.currentTarget as HTMLElement;
-    if (b.dataset.armed) return cb.onDelete(Number(b.dataset.delete));
-    b.dataset.armed = '1';
-    b.textContent = 'Really delete?';
-  });
+  on(el, '#title-credits', cb.onCredits);
+  escToClose(el, () => !panel.classList.contains('hidden') && (closePanel(), true));
+}
+
+/**
+ * Esc for whatever is open on a screen: `close` returns true if it closed something. The listener goes away with
+ * the screen.
+ */
+function escToClose(el: HTMLElement, close: () => boolean | void): void {
+  const onKey = (e: KeyboardEvent) => {
+    if (!el.isConnected) return window.removeEventListener('keydown', onKey);
+    if (e.key === 'Escape' && close() !== false) e.preventDefault();
+  };
+  window.addEventListener('keydown', onKey);
 }
 
 // --- Settings ---------------------------------------------------------------------------------------------
@@ -217,6 +261,7 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
     });
   });
   on(el, '#settings-ok', onClose);
+  escToClose(el, onClose);
   el.querySelector<HTMLElement>('#settings-ok')?.focus();
 }
 
@@ -286,21 +331,27 @@ function musicCredits(): { track: string; artist: string; license: string }[] {
   return (window as unknown as { MUSIC_CREDITS?: { track: string; artist: string; license: string }[] }).MUSIC_CREDITS ?? [];
 }
 
-export function credits(done: () => void): void {
+/** The end titles. From the title menu (`fromMenu`), with a Back button and Esc; at the end of the story, on to the paper. */
+export function credits(done: () => void, fromMenu = false): void {
   const el = show(
-    `<div class="credits"><div class="roll">
+    `<div class="credits${fromMenu ? ' rolling' : ''}"><div class="roll">
       <h1>Purrrfect Crime</h1>
       ${CREDITS.map(([who, what]) => `<p><span class="credit-what">${esc(what)}</span><b>${esc(who)}</b></p>`).join('')}
       ${[...new Set(musicCredits().map((m) => m.artist))].map((artist) => {
         const mine = musicCredits().filter((m) => m.artist === artist);
         return `<p><span class="credit-what">Music</span><b>${esc(artist)}</b><span>${mine.map((m) => `“${esc(m.track)}”`).join(' · ')}</span><span class="small">${esc(mine[0].license)}</span></p>`;
       }).join('')}
-      <p class="small">Free play continues: every heist is still there to replay, and the fences are still buying.</p>
-      <div class="row-buttons"><button id="credits-ok" class="primary">Read the morning paper</button></div>
-    </div></div>`,
+      ${fromMenu ? '' : '<p class="small">Free play continues: every heist is still there to replay, and the fences are still buying.</p>'}
+      ${fromMenu ? '<p class="credit-end">Thanks for playing.</p>' : '<div class="row-buttons"><button id="credits-ok" class="primary">Read the morning paper</button></div>'}
+    </div></div>${fromMenu ? '<button id="credits-ok" class="corner-btn right">Back (Esc)</button>' : ''}`,
     'overlay dark',
   );
   on(el, '#credits-ok', done);
+  if (fromMenu) {
+    escToClose(el, done);
+    // Once the last line has rolled off the top, back to the title.
+    el.querySelector('.roll')!.addEventListener('animationend', () => el.isConnected && done());
+  }
 }
 
 // --- The calling card and the paper ------------------------------------------------------------------
