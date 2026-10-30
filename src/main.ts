@@ -45,7 +45,7 @@ import {
 } from './core/game';
 import { ALL_LEVELS, DISTRICTS } from './levels';
 import { CORNER_GALLERY } from './levels/tutorial';
-import { buyLair, rivalFor, completeHeist, deleteSlot, loadSlot, loadSlots, narratorBuysTutorialLoot, newProfile, saveSlot, sell, type Profile } from './meta/profile';
+import { buyLair, rivalFor, completeHeist, deleteSlot, lastSlot, loadSlot, loadSlots, narratorBuysTutorialLoot, newProfile, saveSlot, sell, type Profile } from './meta/profile';
 import { learn, perksFor, raise, upgrade } from './meta/progression';
 import { deliverLetters } from './meta/letters';
 import { TUTORIAL, advance, type TutorialEvents } from './meta/tutorial';
@@ -930,6 +930,7 @@ function showTitle(): void {
   leaveHeist();
   sound.setScene('title');
   screens.titleScreen(loadSlots(storage()), {
+    lastSlot: lastSlot(storage()),
     onPlay: (i) => {
       const p = loadSlot(storage(), i);
       if (!p) return showTitle();
@@ -948,6 +949,7 @@ function showTitle(): void {
       showTitle();
     },
     onSettings: () => screens.settingsScreen(settings, changeSettings, showTitle),
+    onCredits: () => screens.credits(showTitle, true),
   });
 }
 

@@ -35,8 +35,19 @@ await shot('01b-settings.png');
 const settingsApplied = await page.evaluate(() => ({ large: document.body.classList.contains('large-text'), saved: JSON.parse(localStorage.getItem('purrrfect-crime-settings')) }));
 await page.click('[data-toggle="largeText"]');
 await page.click('#settings-ok');
-await page.waitForSelector('[data-new="0"]');
-await page.click('[data-new="0"]');
+// Credits from the title roll, and Esc closes them (and the settings).
+await page.click('#title-credits');
+await page.waitForSelector('.credits');
+await page.waitForTimeout(6000);
+await shot('01c-credits.png');
+await page.keyboard.press('Escape');
+await page.waitForSelector('#new-game');
+await page.click('#title-settings');
+await page.waitForSelector('.settings');
+await page.keyboard.press('Escape');
+await page.waitForSelector('#new-game');
+const menuBeforeSaves = await page.evaluate(() => ({ cont: !!document.querySelector('#continue'), loadDisabled: document.querySelector('#load').disabled }));
+await page.click('#new-game');
 await page.waitForTimeout(900);
 
 const idle = () => page.waitForFunction(() => !window.__pc.busy, null, { timeout: 15000 }).then(() => page.waitForTimeout(200));
@@ -212,11 +223,15 @@ await page.waitForSelector('.lair');
 
 // --- Save & quit, then continue from the title ----------------------------------------------------------
 await page.click('#lair-quit');
-await page.waitForSelector('[data-play="0"]');
+await page.waitForSelector('#continue');
 await shot('22-title-slots.png');
+await page.click('#load');
+await page.waitForSelector('#slot-panel [data-play="0"]');
+await shot('22b-load.png');
+await page.keyboard.press('Escape');
 await page.reload();
 await page.waitForFunction(() => window.__pc);
-await page.click('[data-play="0"]');
+await page.click('#continue');
 await page.waitForSelector('.lair');
 const reloaded = await page.evaluate(() => ({ catnip: window.__pc.profile.catnip, heists: window.__pc.profile.heists, papers: window.__pc.profile.papers.length, skills: window.__pc.profile.skills.length }));
 
@@ -298,7 +313,7 @@ const after = await page.evaluate(() => ({ ...window.__pc.state.leo }));
 const keyboard = { moved: before.x !== after.x || before.y !== after.y, msg: keyboardMsg };
 const earned = await page.evaluate(() => window.__pc.profile.achievements);
 
-const results = { tutorialEnd, tips: [...tips], afterLair, coinEnd, sold, spent, kit, afterCap, caughtStatus, race, reloaded, letterTitles, challenge, letter4, finalHeadline, legendary, settingsApplied, keyboard, earned };
+const results = { tutorialEnd, tips: [...tips], afterLair, coinEnd, sold, spent, kit, afterCap, caughtStatus, race, reloaded, letterTitles, challenge, letter4, finalHeadline, legendary, settingsApplied, menuBeforeSaves, keyboard, earned };
 console.log(JSON.stringify(results, null, 1));
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors');
 await browser.close();
@@ -316,6 +331,6 @@ const ok =
   reloaded.heists === 2 && reloaded.papers === 2 && reloaded.catnip === spent.catnip && reloaded.skills === 1 &&
   /Letter 1/.test(letterTitles[0]) && /Letter 2/.test(letterTitles[1]) && challenge.some((d) => /NightClaw/.test(d)) &&
   /Letter 4/.test(letter4) && /SUCCESSOR/.test(finalHeadline) && legendary.legendary && legendary.badge &&
-  settingsApplied.large && settingsApplied.saved.palette === 'colourblind' && keyboard.moved &&
+  settingsApplied.large && !menuBeforeSaves.cont && menuBeforeSaves.loadDisabled && settingsApplied.saved.palette === 'colourblind' && keyboard.moved &&
   ['first-night', 'home', 'legendary'].every((a) => earned.includes(a));
 process.exit(errors.length || !ok ? 1 : 0);

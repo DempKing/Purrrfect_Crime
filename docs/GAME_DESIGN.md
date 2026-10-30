@@ -606,7 +606,7 @@ A Saturday-morning cartoon caper, not a noir: thick ink outlines, flat saturated
 and blue night, hard comic shadows, chunky lettering (Luckiest Guy) and friendly reading type (Nunito),
 with notes in a marker hand (Patrick Hand). Results are stickers, not rubber stamps.
 
-- **Title:** the crew key art behind the logo and the save slots.
+- **Title:** the crew key art behind the logo, the line "Sneak in. Steal big. Leave nothing but a calling card.", and a menu: Continue (the game played last), New Game (the first empty slot, or pick one to replace) and Load (the three games, to load or delete). Credits in the bottom left roll up the screen; Settings in the bottom right. Esc closes the credits, the settings and the load panel.
 - **Lair:** heists as cards pinned to a green board, Leo's file, the fence's book, the lair's blueprint, the
   letters and the front pages, each on its own coloured tab.
 - **Planning board** (before a heist): a cork board with a photo of the building (the game draws the actual
