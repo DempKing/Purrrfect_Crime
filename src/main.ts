@@ -953,7 +953,30 @@ function showTitle(): void {
   });
 }
 
+/**
+ * Restarting throws the heist away, so mid-heist it takes a second press (of R or the button) within a few
+ * seconds: one stray key next to E (the camera) can't send Leo back to the start.
+ */
+let restartArmed = 0;
+function askRestart(): void {
+  if (state.status !== 'playing' || performance.now() < restartArmed) return restart();
+  restartArmed = performance.now() + 3000;
+  const b = $('restart');
+  b.textContent = 'Really restart?';
+  b.classList.add('armed');
+  say('Press R (or Restart) again to start the heist over.');
+  window.setTimeout(() => {
+    if (performance.now() >= restartArmed) {
+      b.textContent = 'Restart';
+      b.classList.remove('armed');
+    }
+  }, 3050);
+}
+
 function restart(): void {
+  restartArmed = 0;
+  $('restart').textContent = 'Restart';
+  $('restart').classList.remove('armed');
   lastHaul = 0;
   closeLootMenu();
   state = newHeist(level, perksFor(profile), rivalPlan);
@@ -1186,7 +1209,10 @@ async function boot(): Promise<void> {
   );
   $('rotate-right').addEventListener('click', () => turnCamera(-1));
   $('end').addEventListener('click', doEndTurn);
-  $('restart').addEventListener('click', restart);
+  $('restart').addEventListener('click', askRestart);
+  // The heist's toolbar buttons let go of keyboard focus once clicked: Space and Enter belong to the heist
+  // (end the turn, act), and must never press a button that was clicked earlier.
+  document.querySelector('.hud .buttons')?.addEventListener('click', (e) => (e.target as HTMLElement).closest('button')?.blur());
   $('again').addEventListener('click', restart);
   $('quit').addEventListener('click', quit);
   $('quit2').addEventListener('click', quit);
@@ -1243,8 +1269,11 @@ async function boot(): Promise<void> {
     } else if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       if (state.status === 'playing') doEndTurn();
-      else restart();
-    } else if (e.key === 'r' || e.key === 'R') restart();
+      else if (state.status === 'caught') restart();
+    } else if (e.key === 'r' || e.key === 'R') {
+      if (state.status === 'caught') restart();
+      else askRestart();
+    }
     else if (e.key === 'Escape') {
       selected = null;
       if (targeting) cancelTargeting();
