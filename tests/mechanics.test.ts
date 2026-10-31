@@ -641,3 +641,17 @@ test('the look-ahead: a tile that looks safe now, but a guard walks into view of
   s.leo = { x: 1, y: 1 };
   assert.equal(aftermath(level, s, s.leo), null);
 });
+
+test('a guard who walks into a rival collars them, looking or not', () => {
+  // Rex marches along row 1 towards the rival's way in, facing away from her as he passes.
+  const guards: GuardDef[] = [{ name: 'Rex', start: { x: 12, y: 1 }, route: [{ x: 16, y: 1 }] }];
+  const level = parseLevel({ ...HALL, guards });
+  const s = newHeist(level, BASE_PERKS, plan('mittens', 1));
+  s.rival!.phase = 'in';
+  s.rival!.x = 15;
+  s.rival!.y = 1;
+  s.guards[0].facing = 4; // looking west, the wrong way
+  endTurn(level, s);
+  assert.equal(s.rival!.caught, true);
+  assert.equal(s.rival!.caughtBy, 'Rex');
+});

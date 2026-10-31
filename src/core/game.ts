@@ -145,7 +145,7 @@ export interface Rival {
   /** Collared by a guard: out of the heist, and whatever they'd taken goes back. */
   caught: boolean;
   caughtBy: string | null;
-  /** Turns spent waiting for a way past the guards; after two they risk it. */
+  /** Turns spent waiting for a way past the guards; after four they risk it. */
   waited?: number;
 }
 
@@ -1492,16 +1492,13 @@ function noticeThings(level: Level, s: State, g: Guard): void {
 // The rival's turn, after the guards'
 
 /** The next tile toward any of the goals for a rival. */
-function rivalStep(level: Level, s: State, r: Rival, goals: Point[], careful = true): Point | null {
+function rivalStep(level: Level, s: State, r: Rival, goals: Point[], watched: Set<string> | null = null): Point | null {
   // Rivals are pros: they get through any door, vault or wire.
   const goal = new Set(goals.map((g) => key(g.x, g.y)));
   if (goal.has(key(r.x, r.y))) return null;
-  // Rivals are careful too: they keep out of what any guard can see (they'd rather wait than be caught).
-  const watched = new Set<string>();
-  for (const g of s.guards) if (!g.asleep) for (const k of guardView(level, s, g)) watched.add(k);
   const ok = (x: number, y: number) => {
     const t = tileNow(level, s, x, y);
-    if (careful && watched.has(key(x, y)) && !goal.has(key(x, y))) return false;
+    if (watched?.has(key(x, y)) && !goal.has(key(x, y))) return false;
     return (t === 'door' || t === 'keydoor' || t === 'vault' || t === 'wire' || !blocksMove(t)) && !(s.layer === 'floor' && s.leo.x === x && s.leo.y === y);
   };
   const prev = new Map<string, string>([[key(r.x, r.y), '']]);
@@ -1554,6 +1551,7 @@ function runRival(level: Level, s: State): GuardStep[] {
   }
   const around: Point[] = [];
   for (const d of DIRS) around.push({ x: level.plinth.x + d.x, y: level.plinth.y + d.y });
+  const watched = rivalDanger(level, s);
   for (let i = 0; i < RIVALS[r.id].speed; i++) {
     if (r.phase === 'in' && around.some((a) => a.x === r.x && a.y === r.y)) {
       // Reached the prize: it takes the rest of the turn to lift it.
@@ -1564,8 +1562,21 @@ function runRival(level: Level, s: State): GuardStep[] {
       break;
     }
     const goals = r.phase === 'in' ? around : [r.entrance];
-    // The safe way if there is one; after waiting two turns for the guards to move off, any way at all.
-    const next = rivalStep(level, s, r, goals) ?? ((r.waited ?? 0) >= 2 ? rivalStep(level, s, r, goals, false) : null);
+    // The safe way if there is one; after waiting four turns for the guards to move off, any way at all.
+    let next = rivalStep(level, s, r, goals, watched) ?? ((r.waited ?? 0) >= 4 ? rivalStep(level, s, r, goals) : null);
+    let dodged = false;
+    // No way through yet, and a guard is coming here: duck out of the way to the nearest safe spot.
+    if (!next && watched.has(key(r.x, r.y))) {
+      const hide: Point[] = [];
+      for (let dy = -6; dy <= 6; dy++)
+        for (let dx = -6; dx <= 6; dx++) {
+          const x = r.x + dx;
+          const y = r.y + dy;
+          if (!watched.has(key(x, y)) && !blocksMove(tileNow(level, s, x, y))) hide.push({ x, y });
+        }
+      if (hide.length) next = rivalStep(level, s, r, hide, watched);
+      dodged = !!next;
+    }
     if (!next) {
       if (i === 0 && !(r.phase === 'leaving' && r.x === r.entrance.x && r.y === r.entrance.y)) r.waited = (r.waited ?? 0) + 1;
       if (r.phase === 'leaving' && r.x === r.entrance.x && r.y === r.entrance.y) {
@@ -1574,7 +1585,8 @@ function runRival(level: Level, s: State): GuardStep[] {
       }
       break;
     }
-    r.waited = 0;
+    // Ducking out of the way isn't getting anywhere: it still counts as waiting.
+    r.waited = dodged ? (i === 0 ? (r.waited ?? 0) + 1 : r.waited) : 0;
     const was = { x: r.x, y: r.y };
     r.facing = faceToward(r, next);
     r.x = next.x;
@@ -1610,11 +1622,40 @@ function rivalHabits(level: Level, s: State, r: Rival, was: Point): void {
 }
 
 /**
+ * Where a rival won't set foot if there's another way: anything an awake guard can see now or will see after
+ * their next turn, and the tiles right beside every guard, now and then. Rivals are careful too.
+ */
+function rivalDanger(level: Level, s: State): Set<string> {
+  const out = new Set<string>();
+  const near = (p: Point) => {
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) out.add(key(p.x + dx, p.y + dy));
+  };
+  // A dry run of the guards' next turn: where they'll stand, and what they'll see from there.
+  const sim = structuredClone(s);
+  sim.layer = 'vent';
+  sim.log = [];
+  runGuards(level, sim, true);
+  for (const g of [...s.guards, ...sim.guards]) {
+    if (g.asleep) continue;
+    for (const k of guardView(level, g === sim.guards.find((o) => o === g) ? sim : s, g)) out.add(k);
+    near(g);
+  }
+  return out;
+}
+
+/** After the guards' turn: a guard who has walked up to a rival (or can see them) collars them. */
+function guardsMeetRival(level: Level, s: State): void {
+  const r = s.rival;
+  if (r && (r.phase === 'in' || r.phase === 'leaving')) rivalSpotted(level, s, r);
+}
+
+/**
  * A guard who spots a rival collars them: they're out of the heist, and whatever they'd taken goes back where it
  * was (the prize too). The guards are on edge afterwards. Luna Luck, being lucky, only gets caught up close.
  */
 function rivalSpotted(level: Level, s: State, r: Rival): boolean {
-  const g = s.guards.find((g) => !g.asleep && guardSees(level, s, g, r.x, r.y, true) && (r.id !== 'luna' || Math.hypot(g.x - r.x, g.y - r.y) <= 2.5));
+  // Bumping into a rival is as good as seeing one; looking takes a clear view (and, for Luna, a close one).
+  const g = s.guards.find((g) => !g.asleep && (Math.hypot(g.x - r.x, g.y - r.y) <= 1.5 || (guardSees(level, s, g, r.x, r.y, true) && (r.id !== 'luna' || Math.hypot(g.x - r.x, g.y - r.y) <= 2.5))));
   if (!g) return false;
   const had = s.rivalLoot.length;
   s.log.push(`${g.name} collars ${r.name}! The guards haul them off${had ? `, and ${had === 1 ? 'the loot goes' : 'everything they took goes'} back on display` : ''}.`);
@@ -1670,6 +1711,7 @@ export function endTurn(level: Level, s: State): GuardStep[] {
   for (const c of s.cameras) c.idx = (c.idx + 1) % c.sweep.length;
   checkExposure(level, s, s.leo);
   const steps = s.status === 'playing' ? runGuards(level, s, false) : [];
+  if (s.status === 'playing') guardsMeetRival(level, s);
   if (s.status === 'playing') steps.push(...runRival(level, s));
   // Gadgets wear off at the end of the guards' turn.
   for (const c of s.cameras) c.offTurns = Math.max(0, c.offTurns - 1);
