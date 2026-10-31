@@ -209,12 +209,6 @@ export class HeistView {
         const k = key(x, y);
         if (t === 'gap' || t === 'wire') {
           this.gap(f, level, x, y);
-          if (ov.vision.has(k)) this.diamond(f, x, y, 0.47, COL.vision, 0.2);
-          if (ov.cameraVision.has(k)) this.diamond(f, x, y, 0.46, COL.camera, 0.2);
-          if (t === 'wire' && !inVent && !inRafters) {
-            if (ov.reach1.has(k)) this.diamond(f, x, y, 0.38, COL.reach1, 0.3);
-            else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.38, COL.reach2, 0.26);
-          }
           continue;
         }
         if (t === 'keycard') this.keycard(f, x, y);
@@ -237,18 +231,9 @@ export class HeistView {
         }
         if ((level.def.fishy ?? []).some((m) => x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h)) this.diamond(f, x, y, 0.5, 0x6fd6a0, 0.07 + Math.sin(this.time * 1.5 + x * 0.7 + y) * 0.03);
         if (level.motion[y][x] && sensorsActive(s)) this.diamondOutline(f, x, y, COL.motion, 1, 0.1, 0.35 + Math.sin(this.time * 3) * 0.1);
-        if (ov.cameraVision.has(k)) this.diamond(f, x, y, 0.46, COL.camera, 0.3);
         if (ov.targets.has(k)) {
           this.diamond(f, x, y, 0.4, COL.target, 0.28 + Math.sin(this.time * 5) * 0.08);
           this.diamondOutline(f, x, y, COL.target, 1.5, 0.12, 0.8);
-        }
-        if (ov.vision.has(k)) {
-          this.diamond(f, x, y, 0.42, COL.vision, 0.3);
-          if (hatchVision) this.hatch(f, x, y, COL.vision);
-        }
-        if (!inVent && !inRafters) {
-          if (ov.reach1.has(k)) this.diamond(f, x, y, 0.38, COL.reach1, 0.3);
-          else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.38, COL.reach2, 0.26);
         }
         const r = ov.risky.get(k);
         if (r && (ov.reach1.has(k) || ov.reach2.has(k))) this.riskMark(f, x, y, r.kind);
@@ -260,11 +245,11 @@ export class HeistView {
         if (!g || g.asleep || roboOff(s, g) || s.status !== 'playing') return;
         const range = g.kind === 'robo' ? ROBO_RANGE * s.perks.sight : SIGHT_RANGE.lit * KIND_SIGHT[g.kind];
         const alert = g.mode !== 'patrol';
-        this.viewCone(f, level, s, a.x, a.y, a.facing, range, alert ? COL.danger : COL.vision, alert ? 0.22 : 0.16);
+        this.viewCone(f, level, s, a.x, a.y, a.facing, range, alert ? COL.danger : COL.vision, 0);
       });
       for (const c of s.cameras)
         if (camerasActive(s, c)) {
-          this.viewCone(f, level, s, c.at.x + 0.5, c.at.y + 0.5, c.sweep[c.idx], c.range, COL.camera, 0.11);
+          this.viewCone(f, level, s, c.at.x + 0.5, c.at.y + 0.5, c.sweep[c.idx], c.range, COL.camera, 0);
           // Where it will look after the guards' turn: just an outline.
           const next = c.sweep[(c.idx + 1) % c.sweep.length];
           if (next !== c.sweep[c.idx]) this.viewCone(f, level, s, c.at.x + 0.5, c.at.y + 0.5, next, c.range, COL.camera, 0);
@@ -276,23 +261,23 @@ export class HeistView {
       for (let y = 0; y < level.h; y++)
         for (let x = 0; x < level.w; x++) {
           if (!level.ducts[y][x]) continue;
-          const k = key(x, y);
           this.diamond(f, x, y, 0.42, COL.duct, 0.18);
           this.diamondOutline(f, x, y, COL.duct, 1.5, 0.08, 0.6);
-          if (ov.reach1.has(k)) this.diamond(f, x, y, 0.3, COL.reach1, 0.45);
-          else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.3, COL.reach2, 0.4);
         }
     // Up in the rafters, the beams Leo can walk are drawn on the floor below like a plan.
     if (inRafters)
       for (let y = 0; y < level.h; y++)
         for (let x = 0; x < level.w; x++) {
           if (!level.rafters[y][x]) continue;
-          const k = key(x, y);
           this.diamond(f, x, y, 0.42, COL.beam, 0.2);
           this.diamondOutline(f, x, y, COL.beam, 1.5, 0.08, 0.6);
-          if (ov.reach1.has(k)) this.diamond(f, x, y, 0.3, COL.reach1, 0.45);
-          else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.3, COL.reach2, 0.4);
         }
+    // The areas, outlined rather than filled: where the guards and cameras would see Leo, and how far he can go
+    // this turn (blue for one action point, yellow round everything two can reach).
+    this.region(f, ov.cameraVision, COL.camera, 2.5, 0.95);
+    this.region(f, ov.vision, COL.vision, 2.5, 0.95, hatchVision);
+    this.region(f, new Set([...ov.reach1, ...ov.reach2]), COL.reach2, 3, 0.95);
+    this.region(f, ov.reach1, COL.reach1, 3, 0.95);
     for (const d of s.decoys) this.decoyCard(f, d);
     for (const pr of s.prints) this.pawPrint(f, pr, pr.turns / PRINT_TURNS);
     for (const fp of ov.footprints) {
@@ -312,7 +297,7 @@ export class HeistView {
     }
     if (ov.hover) {
       const worst = Math.max(0, ...ov.pathDanger.values());
-      this.diamondOutline(f, ov.hover.x, ov.hover.y, worst === 2 ? COL.danger : worst === 1 ? COL.warn : COL.path, 3);
+      this.diamondOutline(f, ov.hover.x, ov.hover.y, worst === 2 ? COL.danger : worst === 1 ? COL.warn : COL.path, 3.5, 0.02, 1);
     }
 
     // Everything standing up, nearest last.
@@ -873,6 +858,28 @@ export class HeistView {
     const pulse = 1 + Math.sin(this.time * 2.5) * 0.12;
     if (alpha > 0) g.poly(pts).fill({ color, alpha: alpha * pulse }).stroke({ width: 2, color, alpha: 0.55, join: 'round' });
     else g.poly(pts).stroke({ width: 1.5, color, alpha: 0.35 + Math.sin(this.time * 4) * 0.1, join: 'round' });
+  }
+
+  /**
+   * The outline of an area of tiles: only the edges between a tile in it and one outside, so neighbouring tiles
+   * share one border and the area reads as a single shape. Dashed for the colour-blind palette's guard sight.
+   */
+  private region(g: Graphics, tiles: Set<string>, color: number, width: number, alpha: number, dashed = false): void {
+    if (!tiles.size) return;
+    const edge = (x0: number, y0: number, x1: number, y1: number) => {
+      const a = project(this.proj, x0, y0);
+      const b = project(this.proj, x1, y1);
+      if (!dashed) return void g.moveTo(a.x, a.y).lineTo(b.x, b.y);
+      for (const [t0, t1] of [[0, 0.35], [0.65, 1]]) g.moveTo(a.x + (b.x - a.x) * t0, a.y + (b.y - a.y) * t0).lineTo(a.x + (b.x - a.x) * t1, a.y + (b.y - a.y) * t1);
+    };
+    for (const k of tiles) {
+      const [x, y] = k.split(',').map(Number);
+      if (!tiles.has(key(x, y - 1))) edge(x, y, x + 1, y);
+      if (!tiles.has(key(x, y + 1))) edge(x, y + 1, x + 1, y + 1);
+      if (!tiles.has(key(x - 1, y))) edge(x, y, x, y + 1);
+      if (!tiles.has(key(x + 1, y))) edge(x + 1, y, x + 1, y + 1);
+    }
+    g.stroke({ width, color, alpha, cap: 'round', join: 'round' });
   }
 
   /** A mark on a tile Leo shouldn't end his turn on: a red cross (caught or alarm) or an orange ring (spotted). */
@@ -1478,18 +1485,6 @@ export class HeistView {
       g.beginPath().arc(x, top + 9, 5, Math.PI, Math.PI * 2.25).stroke({ width: 3, color: 0x1a1205 });
       g.beginPath().moveTo(x + 1, top + 13).lineTo(x, top + 17).stroke({ width: 3, color: 0x1a1205 });
       g.rect(x - 1.5, top + 19, 3, 3).fill({ color: 0x1a1205 });
-    }
-  }
-
-  /** Diagonal stripes across a tile, so a seen tile reads without colour. */
-  private hatch(g: Graphics, x: number, y: number, color: number): void {
-    for (const t of [0.25, 0.5, 0.75]) {
-      const a = project(this.proj, x + t, y + 0.05);
-      const b = project(this.proj, x + 0.05, y + t);
-      const c = project(this.proj, x + 0.95, y + t);
-      const d = project(this.proj, x + t, y + 0.95);
-      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1.5, color, alpha: 0.8 });
-      g.moveTo(c.x, c.y).lineTo(d.x, d.y).stroke({ width: 1.5, color, alpha: 0.8 });
     }
   }
 

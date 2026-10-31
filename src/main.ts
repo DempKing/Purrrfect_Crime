@@ -325,7 +325,6 @@ function overlay(): Overlay {
     const r = end ? risk.get(key(end.x, end.y)) : undefined;
     if (end && r) pathDanger.set(key(end.x, end.y), Math.max(pathDanger.get(key(end.x, end.y)) ?? 0, r.kind === 'seen' ? 1 : 2));
   }
-  const actionable = target && live && (clickAction(target) || lootHere(target) !== null || boxHere(target) !== null);
   return {
     reach1,
     reach2,
@@ -334,7 +333,8 @@ function overlay(): Overlay {
     footprints: state.status === 'playing' ? c.footprints : [],
     path,
     pathDanger,
-    hover: target && (path.length > 1 || actionable) ? target : null,
+    // The tile under the pointer is always outlined (in the colour of the walk there, if there is one).
+    hover: target,
     targets: new Set(),
     rivalPath: state.status === 'playing' ? c.rivalPath : [],
     risky: live && riskVersion === version ? risk : new Map(),
