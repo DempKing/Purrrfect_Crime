@@ -293,6 +293,27 @@ export function isRafter(level: Level, x: number, y: number): boolean {
   return !!level.rafters[y]?.[x];
 }
 
+/**
+ * Which way a laser's beam runs: across the gap it guards, from one wall to the other. Its line of lasers is
+ * followed both ways along the map; the beam runs along whichever line ends in a wall at both ends (along x when
+ * neither or both do).
+ */
+export function laserAxis(level: Level, x: number, y: number): 'x' | 'y' {
+  const walled = (dx: number, dy: number) => {
+    const end = (sign: number) => {
+      let cx = x;
+      let cy = y;
+      while (tileAt(level, cx, cy) === 'laser') {
+        cx += dx * sign;
+        cy += dy * sign;
+      }
+      return blocksSight(tileAt(level, cx, cy));
+    };
+    return end(1) && end(-1);
+  };
+  return !walled(1, 0) && walled(0, 1) ? 'y' : 'x';
+}
+
 /** Whether a tile blocks walking, given which doors are open and which cases are emptied. */
 export function blocksMove(t: Tile): boolean {
   return (
