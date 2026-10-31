@@ -1468,7 +1468,7 @@ function noticeThings(level: Level, s: State, g: Guard): void {
     const k = key(d.x, d.y);
     if (!g.noticed.includes(k) && guardSees(level, s, g, d.x, d.y, true)) {
       g.noticed.push(k);
-      triggerAlarm(s, d, `${g.name} found an empty display`, d.byLeo);
+      triggerAlarm(s, d, tileAt(level, d.x, d.y) === 'safe' ? `${g.name} found the safe hanging open` : `${g.name} found an empty display`, d.byLeo);
     }
   }
   for (const d of [...s.decoys, ...s.prints])

@@ -585,6 +585,11 @@ lever under a lightning sign) that cuts them. They're mounted on inner walls abo
 glow until used, and can be clicked from anywhere Leo can reach this turn: he walks over and throws the switch.
 No decorative boxes hang on walls, so anything that looks like a control box is one.
 
+**Safes** face into the room (the side with the most open floor): a steel box whose door has a combination
+dial, a three-spoke handle, hinges, rivets, a brass plate, and a tumbler light for each go it takes, lit green as
+Leo cracks it. Once it's open the door hangs wide on its hinge and the empty inside shows, which is what tells a
+passing guard it's been robbed ("found the safe hanging open", and the alarm), just like an empty display case.
+
 **Layout rules.** No passage is one tile wide: every corridor and doorway gap is at least two. A laser's beams
 run across the gap it guards, from wall to wall (worked out from the map: along the line of lasers that has a
 wall at both ends), in the heist and on the planning board's floor plan alike.
