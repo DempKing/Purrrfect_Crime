@@ -827,6 +827,8 @@ body.reduce-motion .credits.rolling .roll { animation-duration: 28s !important; 
 .slot-panel .quiet { color: var(--paper); }
 @media (max-width: 700px) { .title-menu button { min-width: 0; width: 100%; font-size: 1.3em; } .title-menu { align-items: stretch; } }
 
+.hud .buttons button#restart.armed { background: var(--red); color: #fff; }
+
 /* --- Phones ------------------------------------------------------------------------------------------ */
 @media (max-width: 700px) {
   .status { min-width: 0; flex: 1 1 100%; }
