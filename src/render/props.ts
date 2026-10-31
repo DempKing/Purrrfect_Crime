@@ -9,7 +9,6 @@ import fancy_picture_frame_01 from '../../art/sprites/fancy_picture_frame_01.web
 import fancy_picture_frame_02 from '../../art/sprites/fancy_picture_frame_02.webp';
 import lifebuoy from '../../art/sprites/lifebuoy.webp';
 import metal_office_desk from '../../art/sprites/metal_office_desk.webp';
-import power_box_01 from '../../art/sprites/power_box_01.webp';
 import security_camera_01 from '../../art/sprites/security_camera_01.webp';
 import marble_bust_01 from '../../art/sprites/marble_bust_01.webp';
 import gothic_statue from '../../art/sprites/gothic_statue.webp';
@@ -33,7 +32,6 @@ const FILES = {
   fancy_picture_frame_02,
   lifebuoy,
   metal_office_desk,
-  power_box_01,
   security_camera_01,
   marble_bust_01,
   gothic_statue,
@@ -97,8 +95,8 @@ export const WALL_DECOR: Record<string, WallPiece[]> = {
   'old-town': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'spr_window', 'wd_manor', 'fancy_picture_frame_01'],
   'museum-mile': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'wd_museum', 'wd_manor', 'fancy_picture_frame_02'],
   'the-heights': ['fancy_picture_frame_02', 'wd_manor', 'spr_window', 'fancy_picture_frame_01'],
-  harbour: ['lifebuoy', 'wd_fish', 'wd_aquarium', 'power_box_01', 'wd_warehouse'],
-  downtown: ['power_box_01', 'wd_lab', 'spr_window', 'fancy_picture_frame_01'],
+  harbour: ['lifebuoy', 'wd_fish', 'wd_aquarium', 'wd_warehouse'],
+  downtown: ['wd_lab', 'spr_window', 'fancy_picture_frame_01'],
   nightclaw: ['fancy_picture_frame_02', 'wd_lair', 'wd_manor', 'wd_lair'],
 };
 
@@ -106,10 +104,10 @@ export const WALL_DECOR: Record<string, WallPiece[]> = {
 export const LEVEL_WALL_DECOR: Record<string, WallPiece[]> = {
   'l2-clocktower': ['pclock_roman', 'wall_clock', 'pclock_gears', 'wd_rail', 'pclock_odd', 'wd_toy', 'pclock_pendulum', 'pclock_roman', 'pclock_gears', 'spr_window'],
   'l4-opera-house': ['wd_opera', 'wd_opera', 'wd_manor', 'fancy_picture_frame_02'],
-  'l15-customs': ['wd_warehouse', 'power_box_01', 'wd_warehouse', 'lifebuoy'],
+  'l15-customs': ['wd_warehouse', 'wd_warehouse', 'lifebuoy'],
   'l17-shipwreck': ['wd_aquarium', 'wd_fish', 'lifebuoy', 'wd_aquarium'],
   'l19-aquarium': ['wd_aquarium', 'wd_aquarium', 'wd_fish', 'lifebuoy'],
-  'l12-glass-tower': ['wd_lab', 'spr_window', 'power_box_01'],
+  'l12-glass-tower': ['wd_lab', 'spr_window'],
   'l14-observatory': ['wd_lab', 'spr_window', 'wd_manor'],
 };
 

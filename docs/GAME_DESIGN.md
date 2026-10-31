@@ -579,6 +579,12 @@ report: a painted one where there is one, otherwise a drawing chosen from its na
 with a scene to suit, cut gems in the right colour, pearls, crowns, pocket watches, scrolls, fossils,
 figurines in jade, gold or silver...). Paintings uploaded under the names in `art/LOOT_LIST.md` replace them.
 
+**Control boxes.** Every heist with cameras has a CCTV box (a little screen of camera feeds) that shuts them
+off and silences the alarm, and every heist with lasers, motion sensors or Robo-Guards has a power box (a breaker
+lever under a lightning sign) that cuts them. They're mounted on inner walls about halfway through the building,
+glow until used, and can be clicked from anywhere Leo can reach this turn: he walks over and throws the switch.
+No decorative boxes hang on walls, so anything that looks like a control box is one.
+
 **Layout rules.** No passage is one tile wide: every corridor and doorway gap is at least two. A laser's beams
 run across the gap it guards, from wall to wall (worked out from the map: along the line of lasers that has a
 wall at both ends), in the heist and on the planning board's floor plan alike.

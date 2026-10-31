@@ -313,7 +313,7 @@ function overlay(): Overlay {
   const pathDanger = new Map<string, number>();
   if (target && live) {
     // Pointing at loot: show the way to where Leo would stand to get at it.
-    const goal = lootHere(target) !== null ? standFor(target)?.at ?? target : target;
+    const goal = lootHere(target) !== null || boxHere(target) ? standFor(target)?.at ?? target : target;
     path = pathTo(c.reach, goal) ?? [];
     if (path.length && moveAp(state, c.reach.cost.get(key(goal.x, goal.y)) ?? 99) > state.ap) path = [];
     for (const p of path.slice(1)) {
@@ -328,7 +328,7 @@ function overlay(): Overlay {
     const r = end ? risk.get(key(end.x, end.y)) : undefined;
     if (end && r) pathDanger.set(key(end.x, end.y), Math.max(pathDanger.get(key(end.x, end.y)) ?? 0, r === 'seen' ? 1 : 2));
   }
-  const actionable = target && live && (clickAction(target) || lootHere(target) !== null);
+  const actionable = target && live && (clickAction(target) || lootHere(target) !== null || boxHere(target) !== null);
   return {
     reach1,
     reach2,
@@ -349,7 +349,7 @@ function placeRiskNote(): void {
   const box = $('risk-note');
   const target = selected ?? hover;
   const live = inHeist && state.status === 'playing' && !busy && !targeting && !lootMenu;
-  const goal = target && live ? (lootHere(target) !== null ? standFor(target)?.at ?? null : target) : null;
+  const goal = target && live ? (lootHere(target) !== null || boxHere(target) ? standFor(target)?.at ?? null : target) : null;
   const r = goal && riskVersion === version ? risk.get(key(goal.x, goal.y)) : null;
   if (!r || !goal) {
     box.classList.add('hidden');
@@ -386,10 +386,26 @@ function act(tile: Point): void {
   if (lootHere(tile) !== null) return openLootMenu(tile);
   const a = clickAction(tile);
   if (a) return runAction(a);
+  // A control box out of reach: walk over to it, then throw the switch.
+  const box = boxHere(tile);
+  if (box) {
+    const st = standFor(tile);
+    if (!st) return say('Too far to reach and use this turn.');
+    return walkTo(st.at, () => doThere(tile, box));
+  }
   walkTo(tile);
 }
 
 // --- loot: click it for what Leo can do -------------------------------------------------------------
+
+/** A camera panel or power box that's still on, which Leo can walk over to and use. */
+function boxHere(t: Point): 'panel' | 'fuse' | null {
+  if (!level || !state || state.layer !== 'floor') return null;
+  const tile = tileNow(level, state, t.x, t.y);
+  if (tile === 'panel' && !state.camerasOff) return 'panel';
+  if (tile === 'fuse' && !state.lasersOff) return 'fuse';
+  return null;
+}
 
 /** The piece of loot on a tile, if it's still there to be had (in a case, on a plinth, in a safe, under a light). */
 function lootHere(t: Point): number | null {
@@ -1179,14 +1195,14 @@ async function boot(): Promise<void> {
   app.canvas.addEventListener('pointermove', (e) => {
     if (e.pointerType === 'touch') return;
     hover = tileUnder(e.clientX, e.clientY);
-    app.canvas.style.cursor = hover && inHeist && lootHere(hover) !== null ? 'pointer' : '';
+    app.canvas.style.cursor = hover && inHeist && (lootHere(hover) !== null || boxHere(hover)) ? 'pointer' : '';
   });
   app.canvas.addEventListener('pointerleave', () => (hover = null));
   app.canvas.addEventListener('pointerdown', (e) => {
     const t = tileUnder(e.clientX, e.clientY);
     closeLootMenu();
     if (!t) return;
-    if (e.pointerType === 'touch' && !clickAction(t) && lootHere(t) === null && (!selected || selected.x !== t.x || selected.y !== t.y)) {
+    if (e.pointerType === 'touch' && !clickAction(t) && lootHere(t) === null && !boxHere(t) && (!selected || selected.x !== t.x || selected.y !== t.y)) {
       selected = t;
       say('Tap the same tile again to move there.');
       return;
@@ -1302,6 +1318,11 @@ async function boot(): Promise<void> {
     levels: JOBS.map((j) => ({ id: j.id, challenge: !!j.challenge, finale: !!j.finale })),
     /** What ending the turn on a tile would bring (once worked out), for the tests. */
     riskAt: (x: number, y: number) => risk.get(key(x, y)),
+    /** After a test changes the state directly: work out reach and the rest again. */
+    refresh: () => {
+      version++;
+      syncActors();
+    },
     get music() {
       return sound.nowPlaying;
     },
