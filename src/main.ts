@@ -7,6 +7,8 @@ import 'pixi.js/unsafe-eval';
 import { parseLevel, the, type Level, type LevelDef, type Point } from './core/level';
 import {
   actionsHere,
+  dropLoot,
+  lootGone,
   aftermath,
   type Aftermath,
   lootAt,
@@ -428,7 +430,7 @@ function lootHere(t: Point): number | null {
   const tile = tileNow(level, state, t.x, t.y);
   if (tile !== 'case' && tile !== 'plinth' && tile !== 'safe' && tile !== 'lamp') return null;
   const li = lootAt(level, t.x, t.y);
-  return li >= 0 && !state.inventory.includes(li) && !state.rivalLoot.includes(li) ? li : null;
+  return li >= 0 && !lootGone(state, li) ? li : null;
 }
 
 /** Where Leo would stand to work on a tile this turn: where he is if he can, else the cheapest, safest spot beside it. */
@@ -493,6 +495,23 @@ function openLootMenu(target: Point): void {
           // Not done yet (a lock that takes more than one go): the tag comes straight back for the next.
           if (lootHere(target) !== null && state.status === 'playing' && state.ap > 0 && !busy) openLootMenu(target);
         }) });
+      // The bag's full: offer to put something down to make room for this.
+      if (a.blocked?.startsWith('No room')) {
+        const used = inventoryUsed(level, state);
+        for (const old of state.inventory) {
+          const o = level.def.loot[old];
+          if (used - o.space + loot.space > state.perks.spaces) continue;
+          choices.push({
+            label: `Swap: leave ${o.name}`,
+            detail: `${walk}put it down, then ${(VERBS[a.kind] ?? a.label).toLowerCase()} · $${o.value.toLocaleString('en-US')} → $${loot.value.toLocaleString('en-US')}`,
+            run: () =>
+              walkTo(stand.at, () => {
+                putDown(old);
+                doThere(target, a.kind);
+              }),
+          });
+        }
+      }
     }
   } else {
     const closer = closerTo(target);
@@ -533,6 +552,52 @@ function closeLootMenu(): void {
   lootMenu = null;
   lootChoices = [];
   $('loot-menu').classList.add('hidden');
+}
+
+/** Puts a piece of loot down where Leo stands (free), and shows it. */
+function putDown(li: number): void {
+  state.log = [];
+  if (!dropLoot(level, state, li)) return;
+  sfx('take');
+  version++;
+  updateHud();
+  say(state.log.join(' '));
+  renderBag();
+}
+
+// --- the bag: what Leo's carrying ----------------------------------------------------------------------------
+
+function bagOpen(): boolean {
+  return !$('bag').classList.contains('hidden');
+}
+
+function toggleBag(open = !bagOpen()): void {
+  $('bag').classList.toggle('hidden', !open);
+  if (open) renderBag();
+}
+
+/** The bag's contents: each piece with its picture, worth and size, and a button to put it down. */
+function renderBag(): void {
+  if (!bagOpen() || !state) return;
+  const used = inventoryUsed(level, state);
+  const canDrop = state.status === 'playing' && state.layer === 'floor' && !busy;
+  const box = $('bag');
+  box.innerHTML = `<div class="bag-head"><b>Leo’s bag</b><span>${used} / ${state.perks.spaces} spaces · $${inventoryValue(level, state).toLocaleString('en-US')}</span></div>
+    <div class="bag-slots" style="--n:${state.perks.spaces}">${Array.from({ length: state.perks.spaces }, (_, i) => `<i class="${i < used ? 'full' : ''}"></i>`).join('')}</div>
+    ${
+      state.inventory.length
+        ? `<ul class="bag-items">${state.inventory
+            .map((li) => {
+              const l = level.def.loot[li];
+              return `<li><img src="${lootPictureUrl(l.name, l.category)}" alt=""><div><b>${l.name}</b><span>$${l.value.toLocaleString('en-US')} · ${l.space} space${l.space === 1 ? '' : 's'}</span></div><button data-drop="${li}" ${canDrop ? '' : 'disabled'} title="${canDrop ? 'Put it down here, to make room' : 'Not from up here'}">Put down</button></li>`;
+            })
+            .join('')}</ul>`
+        : '<p class="bag-empty">Empty. Go steal something.</p>'
+    }
+    ${state.dropped.length ? `<p class="bag-note">Left behind: ${state.dropped.map((d) => level.def.loot[d.li].name).join(', ')}. Walk back to pick it up (1 AP).</p>` : '<p class="bag-note">Putting something down is free. It stays where you leave it, to pick up later.</p>'}
+    <button class="quiet bag-close">Close (I or Esc)</button>`;
+  box.querySelectorAll<HTMLButtonElement>('[data-drop]').forEach((b) => b.addEventListener('click', () => putDown(Number(b.dataset.drop))));
+  box.querySelector('.bag-close')!.addEventListener('click', () => toggleBag(false));
 }
 
 /** Does an action on a tile Leo has just arrived beside. */
@@ -792,6 +857,7 @@ function startHeist(def: LevelDef): void {
 
 /** Leaves the heist for the screens between heists. */
 function leaveHeist(): void {
+  toggleBag(false);
   closeLootMenu();
   inHeist = false;
   queue = [];
@@ -1061,6 +1127,7 @@ function updateHud(): void {
   const haulNow = inventoryValue(level, state);
   $('inventory').innerHTML = `Inventory <b>${inventoryUsed(level, state)}/${state.perks.spaces}</b> · <span class="haul-now${haulNow > lastHaul ? ' bump' : ''}">${money(haulNow)}</span>${extras ? ` · ${extras}` : ''}`;
   lastHaul = haulNow;
+  renderBag();
   // The race, if there is one. Before they arrive, only a good Planning Table says when.
   const r = state.rival;
   const rl = $('rival');
@@ -1245,6 +1312,8 @@ async function boot(): Promise<void> {
   $('rotate-right').addEventListener('click', () => turnCamera(-1));
   $('end').addEventListener('click', doEndTurn);
   $('restart').addEventListener('click', askRestart);
+  $('bag-btn').addEventListener('click', () => toggleBag());
+  $('inventory').addEventListener('click', () => toggleBag());
   // The heist's toolbar buttons let go of keyboard focus once clicked: Space and Enter belong to the heist
   // (end the turn, act), and must never press a button that was clicked earlier.
   document.querySelector('.hud .buttons')?.addEventListener('click', (e) => (e.target as HTMLElement).closest('button')?.blur());
@@ -1284,6 +1353,8 @@ async function boot(): Promise<void> {
       if (/^[1-9]$/.test(e.key) || e.key === 'Escape') return;
     }
     const k = e.key.toLowerCase();
+    if (k === 'i') return toggleBag();
+    if (e.key === 'Escape' && bagOpen()) return toggleBag(false);
     if (k === 'w' || k === 'a' || k === 's' || k === 'd') {
       panKeys.add(k);
       return;

@@ -1,7 +1,7 @@
 // Draws a heist: floors and overlays first, then walls, furniture and characters sorted by depth.
 // Placeholder art for now; generated sprites replace the character and prop drawing later.
 import { Container, Graphics, Matrix, type Texture } from 'pixi.js';
-import { DIRS, KIND_SIGHT, PRINT_TURNS, ROBO_RANGE, SIGHT_HALF_ANGLE, SIGHT_RANGE, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, roboOff, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
+import { lootGone, DIRS, KIND_SIGHT, PRINT_TURNS, ROBO_RANGE, SIGHT_HALF_ANGLE, SIGHT_RANGE, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, roboOff, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
 import { blocksMove, blocksSight, laserAxis, type Level, type Point } from '../core/level';
 import { DISTRICTS } from '../levels';
 import { exhibitAt, tileHash } from '../core/exhibits';
@@ -358,16 +358,16 @@ export class HeistView {
         }
         if (t === 'case') {
           const li = lootAt(level, x, y);
-          const taken = li >= 0 && (s.inventory.includes(li) || s.rivalLoot.includes(li));
+          const taken = li >= 0 && lootGone(s, li);
           const broken = s.smashed.includes(k);
           items.push({ depth: d, draw: (g) => this.displayCase(g, x, y, li, taken, broken) });
         } else if (t === 'plinth') {
           const li = lootAt(level, x, y);
-          items.push({ depth: d, draw: (g) => this.plinth(g, x, y, li >= 0 && !s.inventory.includes(li) && !s.rivalLoot.includes(li), s.rivalLoot.includes(li)) });
+          items.push({ depth: d, draw: (g) => this.plinth(g, x, y, li >= 0 && !lootGone(s, li), s.rivalLoot.includes(li)) });
         } else if (t === 'lamp') {
           const off = s.lampsOff.includes(level.lamps.findIndex((l) => l.at.x === x && l.at.y === y));
           const li = lootAt(level, x, y);
-          const gone = li >= 0 && (s.inventory.includes(li) || s.rivalLoot.includes(li));
+          const gone = li >= 0 && lootGone(s, li);
           if (!this.exhibitUnderLight(items, d, x, y, !off, gone)) items.push({ depth: d, draw: (g) => this.lamp(g, x, y, !off) });
           ceiling.push({ x, y, on: !off, lamp: true });
         } else if (t === 'laser') {
@@ -376,7 +376,7 @@ export class HeistView {
           items.push({ depth: d - 0.4, draw: (g) => this.exitSign(g, x, y) });
         } else if (t === 'safe') {
           const li = lootAt(level, x, y);
-          items.push({ depth: d, draw: (g) => this.safe(g, level, x, y, s.smashed.includes(k) || (li >= 0 && (s.inventory.includes(li) || s.rivalLoot.includes(li))), s.picks[k] ?? 0, s.perks.safeCracks) });
+          items.push({ depth: d, draw: (g) => this.safe(g, level, x, y, s.smashed.includes(k) || (li >= 0 && lootGone(s, li)), s.picks[k] ?? 0, s.perks.safeCracks) });
         } else if (t === 'seat') {
           items.push({ depth: d, draw: (g) => this.prism(g, x + 0.08, y + 0.2, x + 0.92, y + 0.8, 20, 0x9c2a3a, 0x7a1f2c, 0x5e1722, 1) });
         } else if (t === 'ladder') {
@@ -396,6 +396,24 @@ export class HeistView {
         // The rafters: beams high overhead, drawn faintly unless Leo is up there.
         if (level.rafters[y][x]) items.push({ depth: d + 0.6, draw: (g) => this.beam(g, x, y, inRafters ? 0.95 : 0.35) });
       }
+    // Loot Leo has put down, lying on the floor where he left it, with a little glint.
+    s.dropped.forEach((dr, i) => {
+      const pic = lootPicture(level.def.loot[dr.li].name);
+      const d = project(p, dr.x + 0.5, dr.y + 0.5).depth;
+      items.push({
+        depth: d - 0.1,
+        draw: (g) => {
+          const off = (i % 3) * 0.12 - 0.12;
+          const c = project(p, dr.x + 0.5 + off, dr.y + 0.5 - off, 0);
+          g.ellipse(c.x, c.y, 14, 6).fill({ color: 0xfff3c4, alpha: 0.18 + Math.sin(this.time * 3 + i) * 0.06 });
+          if (pic) {
+            const k = 22 / Math.max(pic.w, pic.h);
+            g.setFillStyle({ color: 0xffffff, alpha: 1 });
+            g.texture(pic.tex, pic.tint, c.x - (pic.w * k) / 2, c.y - pic.h * k + 4, pic.w * k, pic.h * k);
+          } else g.poly([c.x, c.y - 9, c.x + 6, c.y - 2, c.x, c.y + 3, c.x - 6, c.y - 2]).fill({ color: LOOT_COLORS[dr.li % LOOT_COLORS.length] }).stroke({ width: 1, color: 0x1c1233 });
+        },
+      });
+    });
     if (level.def.beacon) this.beacon(level, s);
     for (const sp of spots) {
       const c = project(p, sp.at.x + 0.5, sp.at.y + 0.5);

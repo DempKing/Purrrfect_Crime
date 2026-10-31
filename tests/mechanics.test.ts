@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseLevel, type GuardDef, type LevelDef } from '../src/core/level';
-import { BASE_PERKS, actionsHere, aftermath, triggerAlarm, roboOff, beaconTiles, danger, doAction, endTurn, flooded, guardSees, guardView, key, leoReach, lightNow, makeNoise, motionTrip, moveLeo, newHeist, planRival, useAbility, type Perks, type RivalPlan, type State } from '../src/core/game';
+import { BASE_PERKS, actionsHere, aftermath, triggerAlarm, dropLoot, lootGone, roboOff, beaconTiles, danger, doAction, endTurn, flooded, guardSees, guardView, key, leoReach, lightNow, makeNoise, motionTrip, moveLeo, newHeist, planRival, useAbility, type Perks, type RivalPlan, type State } from '../src/core/game';
 import { ALL_LEVELS } from '../src/levels';
 import { exhibitLoot } from '../src/core/exhibits';
 
@@ -691,4 +691,27 @@ test('somebody else’s alarm: silenced in time, the run stays flawless; left to
   t.alarm = 1;
   endTurn(level, t);
   assert.equal(t.status, 'caught');
+});
+
+test('putting loot down to make room, and picking it back up', () => {
+  const { level, s } = heist(sandbox([]), { spaces: 1 });
+  s.leo = { x: 12, y: 5 };
+  s.inventory = [0];
+  const ap = s.ap;
+  assert.ok(dropLoot(level, s, 0), 'free to put down');
+  assert.equal(s.ap, ap);
+  assert.deepEqual(s.inventory, []);
+  assert.deepEqual(s.dropped, [{ li: 0, x: 12, y: 5 }]);
+  assert.ok(lootGone(s, 0), 'still not back in its case');
+  // It can be picked up again from beside it, for an action point.
+  s.leo = { x: 11, y: 5 };
+  const pick = actionsHere(level, s).find((a) => a.kind === 'pick-up');
+  assert.ok(pick && !pick.blocked);
+  assert.ok(doAction(level, s, 'pick-up', pick!.at));
+  assert.deepEqual(s.inventory, [0]);
+  assert.deepEqual(s.dropped, []);
+  // With the bag full, picking up waits for room (a stand-in: the bag holds one space, already used).
+  s.leo = { x: 12, y: 5 };
+  s.dropped = [{ li: 0, x: 12, y: 5 }];
+  assert.match(actionsHere(level, s).find((a) => a.kind === 'pick-up')!.blocked!, /No room/);
 });

@@ -600,6 +600,13 @@ heist, whatever they took goes back on display, and the guards stay on edge. Lun
 caught up close. A caught rival counts as beaten (75 XP, the record), makes the morning paper ("SAMMY SWIPES
 NABBED AS TUXEDO CAT ESCAPES WITH THE ..."), and the report says so.
 
+**Leo's bag.** The Bag button, the I key or a click on the inventory line opens it: every piece he's carrying
+with its picture, worth and size, a meter of the spaces used, and a Put down button. Putting something down is
+free and leaves it on the floor where he stands, glinting, to pick up again later (1 action point, from beside
+it); its case stays empty, so the guards still notice it. With the bag full, the loot tag offers a swap for each
+piece that would make room ("Swap: leave Silver Florin · $750 → $300"): he walks over, puts it down, and takes the
+new one.
+
 **Whose alarm.** A rival only raises the alarm through the usual ways: a guard finding a case they've emptied, or a
 camera catching them on film (rivals steer clear of camera views too). A guard who spots one collars them instead.
 An alarm that isn't Leo's doesn't spoil a flawless run: shut it off at the camera panel in time and nothing is

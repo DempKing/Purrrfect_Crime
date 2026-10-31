@@ -835,6 +835,24 @@ body.reduce-motion .credits.rolling .roll { animation-duration: 28s !important; 
 .rival-arrow span { padding: 2px 8px; border: 2px solid var(--ink); border-radius: 999px; background: var(--purple); color: #fff; font: 800 0.75em/1.3 var(--body); white-space: nowrap; }
 @keyframes rival-pulse { 50% { opacity: 0.55; } }
 
+/* Leo's bag. */
+#inventory { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.bag { position: fixed; z-index: 35; top: 120px; left: max(12px, env(safe-area-inset-left, 0px)); width: min(330px, calc(100vw - 24px)); max-height: calc(100vh - 260px); overflow-y: auto; padding: 14px 16px 12px; background: var(--paper); color: var(--ink); border: var(--outline); border-radius: 16px; box-shadow: 6px 6px 0 var(--ink); animation: tag-in 0.14s ease-out; }
+.bag-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.bag-head b { font: 400 1.4em/1 var(--display); color: var(--purple); letter-spacing: 0.03em; }
+.bag-head span { font: 800 0.85em/1.2 var(--body); }
+.bag-slots { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 4px; margin: 10px 0; }
+.bag-slots i { height: 12px; border: 2px solid var(--ink); border-radius: 4px; background: rgba(28, 18, 51, 0.08); }
+.bag-slots i.full { background: var(--mustard); }
+.bag-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.bag-items li { display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: center; padding: 6px 8px; background: #fff; border: 2px solid var(--ink); border-radius: 10px; }
+.bag-items img { width: 46px; height: 46px; object-fit: contain; }
+.bag-items b { display: block; font: 800 0.9em/1.2 var(--body); }
+.bag-items span { font: 600 0.78em/1.3 var(--body); color: #2d7d32; }
+.bag-items button { font-size: 0.8em; padding: 5px 10px 3px; }
+.bag-empty, .bag-note { font: 600 0.82em/1.4 var(--body); color: #5a4f75; margin: 8px 0 4px; }
+.bag .bag-close { display: block; width: 100%; margin-top: 8px; font-size: 0.85em; }
+
 /* --- Phones ------------------------------------------------------------------------------------------ */
 @media (max-width: 700px) {
   .status { min-width: 0; flex: 1 1 100%; }

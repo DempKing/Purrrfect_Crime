@@ -237,6 +237,8 @@ export interface State {
   napTurns: number; // Cat Nap: guards can't see Leo for this many of their turns
   rival: Rival | null;
   rivalLoot: number[]; // loot a rival has taken (the centrepiece, or whatever Sammy pocketed)
+  /** Loot Leo has put down to make room: lying on the floor where he left it, to pick up again. */
+  dropped: { li: number; x: number; y: number }[];
   rivalBeaten: boolean; // Leo took the centrepiece while a rival was after it
   /** Who has the level's keycard: nobody yet, Leo, or a rival who swiped it. */
   card: 'leo' | 'rival' | null;
@@ -301,6 +303,7 @@ export function newHeist(level: Level, perks: Perks = BASE_PERKS, rival: RivalPl
         ? { id: rival.id, name: RIVALS[rival.id].name, x: entrance.x, y: entrance.y, facing: 0, arrive: rival.arrive, entrance: { ...entrance }, phase: 'waiting', prize: false, alarmed: false, caught: false, caughtBy: null }
         : null,
     rivalLoot: [],
+    dropped: [],
     rivalBeaten: false,
     card: null,
     combination: false,
@@ -945,7 +948,8 @@ export type ActionKind =
   | 'exit-vent'
   | 'climb-up'
   | 'climb-down'
-  | 'drop';
+  | 'drop'
+  | 'pick-up';
 
 export interface Action {
   kind: ActionKind;
@@ -959,6 +963,15 @@ export interface Action {
 
 const near8 = (a: Point, b: Point) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) === 1;
 const near4 = (a: Point, b: Point) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
+
+/** Puts a piece of loot down on Leo's tile, to make room. It takes no time; he can pick it up again later. */
+export function dropLoot(level: Level, s: State, li: number): boolean {
+  if (s.status !== 'playing' || s.layer !== 'floor' || !s.inventory.includes(li)) return false;
+  s.inventory = s.inventory.filter((i) => i !== li);
+  s.dropped.push({ li, x: s.leo.x, y: s.leo.y });
+  s.log.push(`Leo sets down ${the(level.def.loot[li].name)}.`);
+  return true;
+}
 
 /** Everything Leo can do from where he stands. */
 export function actionsHere(level: Level, s: State): Action[] {
@@ -995,7 +1008,7 @@ export function actionsHere(level: Level, s: State): Action[] {
         const loot = li >= 0 ? level.def.loot[li] : null;
         const k = key(x, y);
         const taken = li >= 0 && lootGone(s, li);
-        const noRoom = loot && inventoryUsed(level, s) + loot.space > s.perks.spaces ? `No room: the inventory has ${s.perks.spaces} spaces.` : undefined;
+        const noRoom = loot && inventoryUsed(level, s) + loot.space > s.perks.spaces ? `No room: the bag holds ${s.perks.spaces} space${s.perks.spaces === 1 ? "" : "s"}.` : undefined;
         if (t === 'case' && loot && !taken) {
           if (s.smashed.includes(k)) out.push({ kind: 'take', at: p, label: `Take ${the(loot.name)}`, ap: 1, noise: 0, blocked: noRoom });
           else {
@@ -1033,6 +1046,14 @@ export function actionsHere(level: Level, s: State): Action[] {
         if (t === 'fuse' && !s.lasersOff) out.push({ kind: 'fuse', at: p, label: s.guards.some((g) => g.kind === 'robo') ? 'Cut the power: lasers, sensors and robots' : 'Cut the power to the lasers', ap: 1, noise: 0 });
       }
   }
+  // Loot Leo put down, on his tile or next to it.
+  if (s.layer === 'floor')
+    for (const d of s.dropped) {
+      if (Math.max(Math.abs(d.x - L.x), Math.abs(d.y - L.y)) > 1) continue;
+      const l = level.def.loot[d.li];
+      const full = inventoryUsed(level, s) + l.space > s.perks.spaces ? `No room: the bag holds ${s.perks.spaces} space${s.perks.spaces === 1 ? "" : "s"}.` : undefined;
+      if (!out.some((a) => a.kind === 'pick-up' && a.at.x === d.x && a.at.y === d.y)) out.push({ kind: 'pick-up', at: { x: d.x, y: d.y }, label: `Pick up ${the(l.name)}`, ap: 1, noise: 0, blocked: full });
+    }
   for (const a of out) if (!a.blocked && s.ap < a.ap) a.blocked = 'Not enough action points.';
   return out;
 }
@@ -1052,8 +1073,8 @@ function take(level: Level, s: State, at: Point): void {
 }
 
 /** Loot that's gone: in Leo's inventory, or taken by a rival. */
-function lootGone(s: State, li: number): boolean {
-  return s.inventory.includes(li) || s.rivalLoot.includes(li);
+export function lootGone(s: State, li: number): boolean {
+  return s.inventory.includes(li) || s.rivalLoot.includes(li) || s.dropped.some((d) => d.li === li);
 }
 
 export function doAction(level: Level, s: State, kind: ActionKind, at: Point): boolean {
@@ -1080,6 +1101,14 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
       s.openDoors.push(k);
       s.log.push('Beep. The light turns green and the door slides open.');
       break;
+    case 'pick-up': {
+      const i = s.dropped.findIndex((d) => d.x === at.x && d.y === at.y);
+      if (i < 0) return false;
+      const [d] = s.dropped.splice(i, 1);
+      s.inventory.push(d.li);
+      s.log.push(`Leo picks ${the(level.def.loot[d.li].name)} back up.`);
+      break;
+    }
     case 'tap':
       s.tagged = true;
       s.status = 'escaped';
@@ -1343,7 +1372,8 @@ export function steal(level: Level, s: State): boolean {
 
 /** Tiles that show a theft: broken or emptied cases and an empty plinth. */
 function disturbances(level: Level, s: State): (Point & { byLeo: boolean })[] {
-  const leo = s.inventory.map((i) => ({ ...level.def.loot[i].at, byLeo: true }));
+  // Whatever Leo took is missing from its case, whether it's in his bag or he's put it down somewhere.
+  const leo = [...s.inventory, ...s.dropped.map((d) => d.li)].map((i) => ({ ...level.def.loot[i].at, byLeo: true }));
   const smashed = s.smashed.filter((k) => !s.inventory.some((i) => key(level.def.loot[i].at.x, level.def.loot[i].at.y) === k)).map((k) => {
     const [x, y] = k.split(',').map(Number);
     return { x, y, byLeo: true };
