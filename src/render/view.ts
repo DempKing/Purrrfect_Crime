@@ -76,7 +76,7 @@ export interface Overlay {
   /** Where the gadget or skill being aimed can go. */
   targets: Set<string>;
   /** Tiles where ending the turn goes wrong once the guards move: caught, alarm or seen. */
-  risky: Map<string, 'caught' | 'alarm' | 'seen' | null>;
+  risky: Map<string, { kind: 'caught' | 'alarm' | 'seen'; why: string } | null>;
 }
 
 /** How a character is moving, which picks their animation. */
@@ -251,7 +251,7 @@ export class HeistView {
           else if (ov.reach2.has(k)) this.diamond(f, x, y, 0.38, COL.reach2, 0.26);
         }
         const r = ov.risky.get(k);
-        if (r && (ov.reach1.has(k) || ov.reach2.has(k))) this.riskMark(f, x, y, r);
+        if (r && (ov.reach1.has(k) || ov.reach2.has(k))) this.riskMark(f, x, y, r.kind);
       }
     // Each guard's and camera's view: a cone on the floor, cut off by walls.
     if (!inVent && !inRafters) {
@@ -319,6 +319,9 @@ export class HeistView {
     const items: Drawable[] = [];
     const ceiling: { x: number; y: number; on: boolean; lamp: boolean }[] = [];
     const leoDepth = project(p, leo.x, leo.y).depth;
+    // A rival in the building gets the same view: walls in front of them drop down so you can see them.
+    const rivalIn = !!rival && !!s.rival && (s.rival.phase === 'in' || s.rival.phase === 'leaving');
+    const rivalDepth = rival ? project(p, rival.x, rival.y).depth : 0;
     const lasersOn = lasersActive(level, s);
     for (let y = 0; y < level.h; y++)
       for (let x = 0; x < level.w; x++) {
@@ -329,7 +332,7 @@ export class HeistView {
           // Walls between the camera and Leo, the near outer walls, and every wall while Leo is in the vents drop to stubs.
           // Control boxes stay full height, so the box on them is always where you'd reach for it.
           const box = t === 'panel' || t === 'fuse';
-          const near = !box && (inVent || inRafters || (Math.hypot(x + 0.5 - leo.x, y + 0.5 - leo.y) < 3.6 && d > leoDepth + 0.2) || this.nearOuterWall(level, x, y));
+          const near = !box && (inVent || inRafters || (Math.hypot(x + 0.5 - leo.x, y + 0.5 - leo.y) < 3.6 && d > leoDepth + 0.2) || (rivalIn && Math.hypot(x + 0.5 - rival!.x, y + 0.5 - rival!.y) < 2.6 && d > rivalDepth + 0.2) || this.nearOuterWall(level, x, y));
           const h = near ? STUB_H : t === 'pillar' ? WALL_H - 6 : WALL_H;
           const a = near ? 0.75 : 1;
           if (t === 'wall' && !near) this.wallDecor(level, s, x, y, d, items);

@@ -285,11 +285,6 @@ function workOnRisk(): void {
   }
 }
 
-const RISK_WORDS: Record<Exclude<Aftermath, null>, string> = {
-  caught: 'Caught when the guards move',
-  alarm: 'A camera turns onto this tile: alarm',
-  seen: 'Spotted when the guards move',
-};
 
 function overlay(): Overlay {
   const c = computed();
@@ -326,7 +321,7 @@ function overlay(): Overlay {
     // And where the walk ends: what the guards' turn would bring.
     const end = path.length ? path[path.length - 1] : null;
     const r = end ? risk.get(key(end.x, end.y)) : undefined;
-    if (end && r) pathDanger.set(key(end.x, end.y), Math.max(pathDanger.get(key(end.x, end.y)) ?? 0, r === 'seen' ? 1 : 2));
+    if (end && r) pathDanger.set(key(end.x, end.y), Math.max(pathDanger.get(key(end.x, end.y)) ?? 0, r.kind === 'seen' ? 1 : 2));
   }
   const actionable = target && live && (clickAction(target) || lootHere(target) !== null || boxHere(target) !== null);
   return {
@@ -344,6 +339,26 @@ function overlay(): Overlay {
   };
 }
 
+/** While a rival is in the building but off screen, an arrow at the screen's edge points to them. */
+function placeRivalArrow(): void {
+  const el = $('rival-arrow');
+  const r = state?.rival;
+  if (!inHeist || !r || (r.phase !== 'in' && r.phase !== 'leaving')) return el.classList.add('hidden');
+  const p = world.toGlobal(project(view.proj, rival.x, rival.y, 30));
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const m = 60;
+  if (p.x > m && p.x < w - m && p.y > m && p.y < h - m) return el.classList.add('hidden');
+  const cx = w / 2;
+  const cy = h / 2;
+  const k = Math.min((w / 2 - m) / Math.max(1, Math.abs(p.x - cx)), (h / 2 - m) / Math.max(1, Math.abs(p.y - cy)));
+  el.style.left = `${cx + (p.x - cx) * k}px`;
+  el.style.top = `${cy + (p.y - cy) * k}px`;
+  el.style.setProperty('--turn', `${Math.atan2(p.y - cy, p.x - cx)}rad`);
+  el.querySelector('span')!.textContent = r.name;
+  el.classList.remove('hidden');
+}
+
 /** A note by the pointer when the tile under it isn't safe to end the turn on. */
 function placeRiskNote(): void {
   const box = $('risk-note');
@@ -356,8 +371,8 @@ function placeRiskNote(): void {
     return;
   }
   const p = world.toGlobal(project(view.proj, goal.x + 0.5, goal.y + 0.5));
-  box.textContent = RISK_WORDS[r];
-  box.className = `risk-note ${r === 'seen' ? 'warn' : 'bad'}`;
+  box.textContent = r.why;
+  box.className = `risk-note ${r.kind === 'seen' ? 'warn' : 'bad'}`;
   box.style.left = `${p.x}px`;
   box.style.top = `${p.y + 18}px`;
 }
@@ -702,6 +717,7 @@ function doEndTurn(): void {
     if (s.guard === -1) {
       // The rival's first step is their arrival: they appear there, rather than walking in from nowhere.
       const from = rivalWasIn ? rivalAt : { x: s.to.x, y: s.to.y };
+      if (!rivalWasIn && state.rival) window.setTimeout(() => banner(`${state.rival?.name ?? 'A rival'} is in the building!`), 300);
       rivalWasIn = true;
       rivalAt = { x: s.to.x, y: s.to.y };
       return { who: -1, from, to: { x: s.to.x, y: s.to.y }, facing: s.to.facing, t: 0, dur: anim(0.16), gait: 'run' };
@@ -1390,6 +1406,7 @@ async function boot(): Promise<void> {
     ripples = ripples.filter((r) => r.t < 1);
     if (!inHeist) return;
     fit(dt);
+    placeRivalArrow();
     workOnRisk();
     placeLootMenu();
     placeRiskNote();

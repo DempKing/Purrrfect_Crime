@@ -429,7 +429,7 @@ export function heistReport(r: HeistReport, p: Profile, done: () => void): void 
         <div class="meter"><div class="xpbar big"><span id="xp-fill"></span></div><p class="small" id="xp-into"></p></div>
       </div>
       <div class="levelups" id="levelups"></div>
-      ${r.rival ? `<p class="rival-line">${r.rival.won ? `You beat ${esc(RIVALS[r.rival.id].name)} to the prize.` : `${esc(RIVALS[r.rival.id].name)} got the centrepiece this time. Replay to take it yourself.`}</p>` : ''}
+      ${r.rival ? `<p class="rival-line">${r.rival.caught ? `The guards caught ${esc(RIVALS[r.rival.id].name)}. One less thief in town.` : r.rival.won ? `You beat ${esc(RIVALS[r.rival.id].name)} to the prize.` : `${esc(RIVALS[r.rival.id].name)} got the centrepiece this time. Replay to take it yourself.`}</p>` : ''}
       ${r.ncWaiting ? '<p class="rival-line">You got out, but NightClaw is still waiting for you to find him. Creep up and tap him on the shoulder to finish it.</p>' : ''}
       ${r.finale ? '<p class="levelup-note">NightClaw’s collar has the top shelf of the Trophy Room to itself. It is not for sale.</p>' : ''}
       ${r.items.length ? `<div class="haul"><div class="haul-head">The haul <b>$<span id="haul">0</span></b></div><div class="evidence">${r.items.map((i) => `<figure class="loot-drop">${lootPic(i.name, i.category)}<figcaption>${esc(i.name)}<br><b>$${i.value.toLocaleString('en-US')}</b></figcaption></figure>`).join('')}</div>
