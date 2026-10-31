@@ -327,7 +327,9 @@ export class HeistView {
         const k = key(x, y);
         if (t === 'wall' || t === 'pillar' || t === 'stack' || t === 'door' || t === 'keydoor' || t === 'vault' || t === 'panel' || t === 'fuse' || t === 'switch') {
           // Walls between the camera and Leo, the near outer walls, and every wall while Leo is in the vents drop to stubs.
-          const near = inVent || inRafters || (Math.hypot(x + 0.5 - leo.x, y + 0.5 - leo.y) < 3.6 && d > leoDepth + 0.2) || this.nearOuterWall(level, x, y);
+          // Control boxes stay full height, so the box on them is always where you'd reach for it.
+          const box = t === 'panel' || t === 'fuse';
+          const near = !box && (inVent || inRafters || (Math.hypot(x + 0.5 - leo.x, y + 0.5 - leo.y) < 3.6 && d > leoDepth + 0.2) || this.nearOuterWall(level, x, y));
           const h = near ? STUB_H : t === 'pillar' ? WALL_H - 6 : WALL_H;
           const a = near ? 0.75 : 1;
           if (t === 'wall' && !near) this.wallDecor(level, s, x, y, d, items);
@@ -343,8 +345,8 @@ export class HeistView {
             items.push({
               depth: d,
               draw: (g) => {
-                this.prism(g, x, y, x + 1, y + 1, h, t === 'panel' ? 0x55d6c2 : t === 'fuse' ? 0xf2c94c : t === 'switch' ? 0xe6e0d0 : surface(this.look.wall.tex) ? this.look.wall.top : COL.wallTop, COL.wallA, COL.wallB, a, 0, this.look.wall);
-                if (t === 'panel' || t === 'fuse') this.device(g, x, y, h, t, t === 'panel' ? s.camerasOff : s.lasersOff);
+                this.prism(g, x, y, x + 1, y + 1, h, t === 'switch' ? 0xe6e0d0 : surface(this.look.wall.tex) ? this.look.wall.top : COL.wallTop, COL.wallA, COL.wallB, a, 0, this.look.wall);
+                if (box) this.controlBox(g, level, s, x, y, t, t === 'panel' ? s.camerasOff : s.lasersOff);
                 if (t === 'switch') this.lightSwitch(g, x, y, h, (level.def.switches ?? []).some((w) => w.at.x === x && w.at.y === y && w.lamps.some((i) => s.lampsOff.includes(i))));
               },
             });
@@ -936,14 +938,54 @@ export class HeistView {
     g.circle(sp.x, sp.y, 4).fill({ color: picks > 0 ? 0x9ff0c8 : 0xf2c46b });
   }
 
-  private device(g: Graphics, x: number, y: number, h: number, kind: 'panel' | 'fuse', off: boolean): void {
-    const sp = project(this.proj, x + 0.5, y + 0.5, h + 10);
-    const blink = Math.sin(this.time * 4 + x) > 0;
-    g.roundRect(sp.x - 12, sp.y - 9, 24, 18, 4).fill({ color: 0x1c2233 }).stroke({ width: 2, color: kind === 'panel' ? 0x55d6c2 : 0xf2c94c });
-    if (kind === 'panel') g.rect(sp.x - 8, sp.y - 5, 16, 9).fill({ color: off ? 0x333a4a : 0x2fb8a3 });
-    else g.moveTo(sp.x + 2, sp.y - 6).lineTo(sp.x - 3, sp.y + 1).lineTo(sp.x + 2, sp.y + 1).lineTo(sp.x - 2, sp.y + 7).stroke({ width: 2, color: off ? 0x555a66 : 0xffe066 });
-    g.circle(sp.x + 9, sp.y - 6, 2).fill({ color: off ? 0x555a66 : blink ? 0x4dff88 : 0x1d6b3a });
+  /**
+   * A control box mounted on every face of the wall that looks into the room: the CCTV box (a little screen of
+   * camera feeds) or the power box (a breaker lever under a lightning sign). Both pulse a little until they're
+   * used; then the screen goes dark, or the lever drops and the light goes red.
+   */
+  private controlBox(g: Graphics, level: Level, s: State, x: number, y: number, kind: 'panel' | 'fuse', off: boolean): void {
+    const c = Math.cos(this.proj.angle);
+    const sn = Math.sin(this.proj.angle);
+    for (const n of NEIGHBOURS) {
+      const t = tileNow(level, s, x + n.x, y + n.y);
+      if (blocksSight(t) || t === 'gap' || t === 'wire') continue;
+      if (c * n.x - sn * n.y + (sn * n.x + c * n.y) <= 0.3) continue; // the face turned away from the camera
+      let tx = -n.y;
+      let ty = n.x;
+      const bx = x + 0.5 + n.x * 0.52;
+      const by = y + 0.5 + n.y * 0.52;
+      const o = project(this.proj, bx, by, 46);
+      if (project(this.proj, bx + tx, by + ty).x < project(this.proj, bx, by).x) {
+        tx = -tx;
+        ty = -ty;
+      }
+      const along = project(this.proj, bx + tx, by + ty, 46);
+      // Local units: game pixels on the wall, x along it, y down it; the box's middle 46 px up the wall.
+      const m = new Matrix((along.x - o.x) / 58.8, (along.y - o.y) / 58.8, 0, 1, o.x, o.y);
+      const glow = off ? 0 : 0.35 + Math.sin(this.time * 3 + x + y) * 0.2;
+      g.save();
+      g.setTransform(m);
+      if (glow) g.roundRect(-20, -24, 40, 46, 8).fill({ color: kind === 'panel' ? 0x5ef0ff : 0xffd23f, alpha: glow * 0.35 });
+      g.roundRect(-16, -20, 32, 38, 4).fill({ color: 0x5b6472 }).stroke({ width: 2, color: 0x1c1233 });
+      g.rect(-13, -17, 26, 32).fill({ color: 0x6e7888 });
+      if (kind === 'panel') {
+        // Four little camera feeds, live or dead.
+        for (const [sx, sy] of [[-11, -14], [1, -14], [-11, -4], [1, -4]]) g.rect(sx, sy, 10, 8).fill({ color: off ? 0x1a1d24 : 0x2fb8a3 }).stroke({ width: 1, color: 0x1c1233 });
+        if (!off) for (const [sx, sy] of [[-11, -14], [1, -14], [-11, -4], [1, -4]]) g.rect(sx + 1, sy + 3 + ((this.time * 6 + sx) % 4), 8, 1).fill({ color: 0xbaf7ec, alpha: 0.6 });
+        g.circle(-8, 9, 2.2).fill({ color: off ? 0x7a1d16 : Math.sin(this.time * 5) > 0 ? 0xff3b30 : 0x8a1a14 });
+        g.rect(-2, 7, 11, 4).fill({ color: 0x1c1233 });
+      } else {
+        // A lightning sign, and the breaker lever: up while the power's on, down once Leo has thrown it.
+        g.poly([-1, -16, -7, -6, -2, -6, -5, 2, 5, -9, 0, -9, 3, -16]).fill({ color: 0xffd23f }).stroke({ width: 1, color: 0x1c1233 });
+        g.rect(-4, 3, 8, 12).fill({ color: 0x2a2f3a });
+        g.rect(-2.5, off ? 9 : 2, 5, 6).fill({ color: off ? 0xff3b30 : 0x4dff88 }).stroke({ width: 1, color: 0x1c1233 });
+        g.circle(9, 12, 2).fill({ color: off ? 0xff3b30 : 0x4dff88 });
+      }
+      g.restore();
+      g.beginPath();
+    }
   }
+
 
   private displayCase(g: Graphics, x: number, y: number, li: number, taken: boolean, broken: boolean): void {
     this.prism(g, x + 0.12, y + 0.12, x + 0.88, y + 0.88, 22, 0x6b5946, COL.caseBase, 0x47392b, 1);
