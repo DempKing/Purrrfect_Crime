@@ -224,6 +224,8 @@ export interface State {
   alarmRaised: boolean;
   /** Whether the alarm ringing now is Leo's doing (if it isn't, a lockdown doesn't end the heist). */
   alarmByLeo: boolean;
+  /** Who set off the alarm ringing now, when it wasn't Leo (a rival's name). */
+  alarmBy: string | null;
   /** Locked down by somebody else's alarm: the exits are sealed until the rival is caught or gone. */
   lockdown: boolean;
   /** Turns left on a lockdown with no rival in the building to catch. */
@@ -289,6 +291,7 @@ export function newHeist(level: Level, perks: Perks = BASE_PERKS, rival: RivalPl
     seen: false,
     alarmRaised: false,
     alarmByLeo: false,
+    alarmBy: null,
     lockdown: false,
     lockdownTurns: 0,
     perks: structuredClone(perks),
@@ -719,8 +722,13 @@ export function triggerAlarm(s: State, p: Point, why: string, byLeo = true): voi
   else if (byLeo) s.alarmByLeo = true;
   if (s.alarm === null && (!s.lockdown || byLeo)) {
     s.alarm = ALARM_TURNS;
-    s.log.push(`Alarm! ${why}. Lockdown in ${ALARM_TURNS} turns.`);
-  }
+    s.alarmBy = byLeo ? null : (s.rival?.name ?? 'another thief');
+    s.log.push(
+      byLeo
+        ? `Alarm! ${why}. Lockdown in ${ALARM_TURNS} turns.`
+        : `Alarm! ${why}. That's ${s.alarmBy}'s doing, not Leo's: lie low and keep out of sight until it blows over, and none of it will be pinned on him.`,
+    );
+  } else if (byLeo) s.alarmBy = null;
   for (const g of s.guards) {
     g.asleep = false;
     g.mode = 'searching';
@@ -1793,7 +1801,7 @@ export function endTurn(level: Level, s: State): GuardStep[] {
         s.alarm = null;
         s.lockdown = true;
         s.lockdownTurns = 4;
-        s.log.push('Lockdown! Every exit is sealed while the guards hunt for the intruder.');
+        s.log.push(`Lockdown! Every exit is sealed while the guards hunt for ${s.alarmBy ?? 'the intruder'}. Lie low: once they've caught them, the doors open and Leo is in the clear.`);
       }
     }
   }

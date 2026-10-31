@@ -773,6 +773,7 @@ function doEndTurn(): void {
   selected = null;
   banner('Guards’ turn');
   const before = state.guards.map((g) => ({ x: g.x, y: g.y }));
+  const alarmBefore = state.alarm !== null;
   const steps: GuardStep[] = endTurn(level, state);
   noisesSeen = 0;
   version++;
@@ -795,6 +796,8 @@ function doEndTurn(): void {
   busy = segs.length > 0;
   updateHud();
   sfx(...soundsInLog(state.log));
+  const rivalAlarm = state.alarm !== null && !state.alarmByLeo && !alarmBefore;
+  if (rivalAlarm) window.setTimeout(() => banner(`${state.alarmBy ?? 'A rival'} set off the alarm!`), 500);
   play(segs, () => {
     syncActors();
     updateHud();
@@ -1160,10 +1163,12 @@ function updateHud(): void {
   li.className = `light l${l < 0 ? 'v' : l}`;
   const al = $('alarm');
   if (state.lockdown && state.status === 'playing') {
-    al.textContent = `LOCKDOWN · exits sealed until the guards catch ${state.rival && (state.rival.phase === 'in' || state.rival.phase === 'leaving') ? state.rival.name : 'the intruder'}`;
+    al.textContent = `LOCKDOWN · lie low: the exits open once the guards catch ${state.rival && (state.rival.phase === 'in' || state.rival.phase === 'leaving') ? state.rival.name : 'the intruder'}`;
     show('alarm');
   } else if (state.alarm !== null && state.status === 'playing') {
-    al.textContent = `ALARM${state.alarmByLeo ? '' : ' (not yours)'} · lockdown in ${state.alarm} turn${state.alarm === 1 ? '' : 's'}${state.camerasOff ? '' : ' · shut it off at the camera panel'}`;
+    al.textContent = state.alarmByLeo
+      ? `ALARM · lockdown in ${state.alarm} turn${state.alarm === 1 ? '' : 's'}${state.camerasOff ? '' : ' · shut it off at the camera panel'}`
+      : `ALARM · ${state.alarmBy ?? 'a rival'} set it off, not you · lie low and stay out of sight, and it won't be pinned on you · lockdown in ${state.alarm}`;
     show('alarm');
   } else hide('alarm');
   ($('end') as HTMLButtonElement).disabled = busy || state.status !== 'playing';
