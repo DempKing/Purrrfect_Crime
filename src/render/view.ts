@@ -2,7 +2,7 @@
 // Placeholder art for now; generated sprites replace the character and prop drawing later.
 import { Container, Graphics, Matrix, type Texture } from 'pixi.js';
 import { DIRS, KIND_SIGHT, PRINT_TURNS, ROBO_RANGE, SIGHT_HALF_ANGLE, SIGHT_RANGE, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, roboOff, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
-import { blocksSight, laserAxis, type Level, type Point } from '../core/level';
+import { blocksMove, blocksSight, laserAxis, type Level, type Point } from '../core/level';
 import { DISTRICTS } from '../levels';
 import { exhibitAt, tileHash } from '../core/exhibits';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
@@ -373,7 +373,7 @@ export class HeistView {
           items.push({ depth: d - 0.4, draw: (g) => this.exitSign(g, x, y) });
         } else if (t === 'safe') {
           const li = lootAt(level, x, y);
-          items.push({ depth: d, draw: (g) => this.safe(g, x, y, s.smashed.includes(k) || (li >= 0 && s.inventory.includes(li)), s.picks[k] ?? 0) });
+          items.push({ depth: d, draw: (g) => this.safe(g, level, x, y, s.smashed.includes(k) || (li >= 0 && (s.inventory.includes(li) || s.rivalLoot.includes(li))), s.picks[k] ?? 0, s.perks.safeCracks) });
         } else if (t === 'seat') {
           items.push({ depth: d, draw: (g) => this.prism(g, x + 0.08, y + 0.2, x + 0.92, y + 0.8, 20, 0x9c2a3a, 0x7a1f2c, 0x5e1722, 1) });
         } else if (t === 'ladder') {
@@ -1169,16 +1169,97 @@ export class HeistView {
     g.circle(n.x, n.y, 1.5).fill({ color: 0x2a1a0c });
   }
 
-  private safe(g: Graphics, x: number, y: number, open: boolean, cracks: number): void {
-    this.prism(g, x + 0.12, y + 0.12, x + 0.88, y + 0.88, 44, 0x5a6070, 0x3e4452, 0x2e333e, 1);
-    const c = project(this.proj, x + 0.5, y + 0.5, 46);
-    g.circle(c.x, c.y, 8).fill({ color: open ? 0x1a1a1a : 0xc0c6d4 }).stroke({ width: 2, color: 0x20242c });
-    if (!open) {
-      const a = this.time * 0.6 + cracks;
-      g.moveTo(c.x, c.y).lineTo(c.x + Math.cos(a) * 6, c.y + Math.sin(a) * 6).stroke({ width: 2, color: 0x20242c });
-      for (let i = 0; i < cracks; i++) g.circle(c.x - 8 + i * 8, c.y + 13, 2).fill({ color: 0x6ee7a8 });
+  /**
+   * A safe: a heavy steel box facing the room, with a door on its front (a big combination dial, a three-spoke
+   * handle, hinges, rivets and a brass plate), green tumbler lights for each go of cracking it, and, once it's
+   * open, the door swung wide on its hinge and the empty inside showing: the same thing the guards see.
+   */
+  private safe(g: Graphics, level: Level, x: number, y: number, open: boolean, cracks: number, goes: number): void {
+    const c = Math.cos(this.proj.angle);
+    const sn = Math.sin(this.proj.angle);
+    // It faces into the room: the side with the most open floor in front of it.
+    const run = (d: { x: number; y: number }) => {
+      let k = 0;
+      while (k < 5 && !blocksMove(level.tiles[y + d.y * (k + 1)]?.[x + d.x * (k + 1)] ?? 'wall')) k++;
+      return k;
+    };
+    const n = NEIGHBOURS.reduce((best, d) => (run(d) > run(best) ? d : best), NEIGHBOURS[1]);
+    const H = 46;
+    this.prism(g, x + 0.12, y + 0.12, x + 0.88, y + 0.88, H, 0x6b7584, 0x4a5262, 0x363c4a, 1);
+    // A dark plinth band at the foot and a lighter lip on the top, so it reads as heavy.
+    const foot = this.corners(x + 0.1, y + 0.1, x + 0.9, y + 0.9, 0);
+    g.poly(foot.flatMap((q) => [q.x, q.y])).fill({ color: 0x000000, alpha: 0.35 });
+    const lid = this.corners(x + 0.18, y + 0.18, x + 0.82, y + 0.82, H);
+    g.poly(lid.flatMap((q) => [q.x, q.y])).stroke({ width: 1.5, color: 0x3a404c, alpha: 0.8 });
+    let tx = -n.y;
+    let ty = n.x;
+    const fx = x + 0.5 + n.x * 0.385;
+    const fy = y + 0.5 + n.y * 0.385;
+    if (project(this.proj, fx + tx, fy + ty).x < project(this.proj, fx, fy).x) {
+      tx = -tx;
+      ty = -ty;
+    }
+    const faceVisible = c * n.x - sn * n.y + (sn * n.x + c * n.y) > 0.3;
+    // The front face's own coordinates: game pixels, x along the face (left to right on screen), y down it.
+    const o = project(this.proj, fx, fy, H / 2);
+    const along = project(this.proj, fx + tx, fy + ty, H / 2);
+    const m = new Matrix((along.x - o.x) / 58.8, (along.y - o.y) / 58.8, 0, 1, o.x, o.y);
+    const W = 20; // half the face's width
+    if (faceVisible) {
+      g.save();
+      g.setTransform(m);
+      if (open) {
+        // The empty inside: dark, a shelf, a few loose papers left behind.
+        g.rect(-W + 3, -H / 2 + 4, W * 2 - 6, H - 8).fill({ color: 0x14161c }).stroke({ width: 2, color: 0x1c1233 });
+        g.rect(-W + 4, -1, W * 2 - 8, 2).fill({ color: 0x3a404c });
+        g.poly([-10, 15, -2, 13, 0, 17, -8, 19]).fill({ color: 0xe8e2d0, alpha: 0.8 });
+        g.poly([4, -6, 11, -7, 12, -3, 5, -2]).fill({ color: 0xe8e2d0, alpha: 0.6 });
+      } else {
+        // The door: an inset steel panel with rivets, hinges on the left, a brass plate at the top.
+        g.rect(-W + 3, -H / 2 + 4, W * 2 - 6, H - 8).fill({ color: 0x7c8696 }).stroke({ width: 2, color: 0x1c1233 });
+        for (const [rx, ry] of [[-W + 6, -H / 2 + 7], [W - 6, -H / 2 + 7], [-W + 6, H / 2 - 7], [W - 6, H / 2 - 7]]) g.circle(rx, ry, 1.3).fill({ color: 0xc9d0dc });
+        for (const hy of [-H / 2 + 10, H / 2 - 12]) g.rect(-W + 1, hy, 3, 6).fill({ color: 0x2a2f3a });
+        g.rect(-7, -H / 2 + 6, 14, 4).fill({ color: 0xd9b14a }).stroke({ width: 1, color: 0x6b4f1e });
+        // The dial: ticks round a black face, its knob turning while it's locked.
+        g.circle(-4, 0, 8.5).fill({ color: 0xe4e8ef }).stroke({ width: 2, color: 0x1c1233 });
+        for (let i = 0; i < 12; i++) {
+          const a = (i * Math.PI) / 6;
+          g.moveTo(-4 + Math.cos(a) * 6.5, Math.sin(a) * 6.5).lineTo(-4 + Math.cos(a) * 8, Math.sin(a) * 8).stroke({ width: 1, color: 0x1c1233 });
+        }
+        g.circle(-4, 0, 4).fill({ color: 0x2a2f3a });
+        const turn = this.time * 0.7 + cracks;
+        g.moveTo(-4, 0).lineTo(-4 + Math.cos(turn) * 3.5, Math.sin(turn) * 3.5).stroke({ width: 1.5, color: 0xe4e8ef });
+        // The handle: three spokes round a hub.
+        for (let i = 0; i < 3; i++) {
+          const a = (i * Math.PI * 2) / 3 + 0.4;
+          g.moveTo(11, 4).lineTo(11 + Math.cos(a) * 6, 4 + Math.sin(a) * 6).stroke({ width: 2, color: 0x2a2f3a, cap: 'round' });
+        }
+        g.circle(11, 4, 2.2).fill({ color: 0xc9d0dc }).stroke({ width: 1, color: 0x1c1233 });
+        // A tumbler light for each go it takes: green once cracked, dim until then.
+        for (let i = 0; i < goes; i++) g.circle(-4 - (goes - 1) * 3 + i * 6, 13, 1.8).fill({ color: i < cracks ? 0x4dff88 : 0x2a3a30 }).stroke({ width: 0.8, color: 0x1c1233 });
+      }
+      g.restore();
+      g.beginPath();
+    }
+    if (open) {
+      // The door, swung out wide on its hinge into the room: anyone walking past sees it at once.
+      const hinge = { x: fx - tx * 0.34, y: fy - ty * 0.34 };
+      const swing = (105 * Math.PI) / 180;
+      const dx = tx * Math.cos(swing) + n.x * Math.sin(swing);
+      const dy = ty * Math.cos(swing) + n.y * Math.sin(swing);
+      const len = 0.66;
+      const p0 = project(this.proj, hinge.x, hinge.y, 4);
+      const p1 = project(this.proj, hinge.x + dx * len, hinge.y + dy * len, 4);
+      const p2 = project(this.proj, hinge.x + dx * len, hinge.y + dy * len, H - 4);
+      const p3 = project(this.proj, hinge.x, hinge.y, H - 4);
+      g.poly([p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y]).fill({ color: 0x8a94a4 }).stroke({ width: 2, color: 0x1c1233 });
+      // The door's thickness, and the dial still on its outside.
+      const q = project(this.proj, hinge.x + dx * len * 0.55, hinge.y + dy * len * 0.55, H / 2);
+      g.circle(q.x, q.y, 5).fill({ color: 0xe4e8ef }).stroke({ width: 1.5, color: 0x1c1233 });
+      g.circle(q.x, q.y, 2).fill({ color: 0x2a2f3a });
     }
   }
+
 
   /** A card-reader door: steel, with a red light, green once Leo has the card. */
   private keydoor(g: Graphics, x: number, y: number, h: number, alpha: number, canOpen: boolean): void {

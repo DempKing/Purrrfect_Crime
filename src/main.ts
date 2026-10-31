@@ -1323,6 +1323,7 @@ async function boot(): Promise<void> {
       version++;
       syncActors();
     },
+    lootIndexAt: (x: number, y: number) => lootAt(level, x, y),
     get music() {
       return sound.nowPlaying;
     },
