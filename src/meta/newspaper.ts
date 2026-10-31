@@ -38,7 +38,7 @@ export interface HeistFacts {
   first: boolean;
   replay: boolean;
   /** A rival who raced Leo for the centrepiece, and who won. */
-  rival?: { name: string; won: boolean; prize: string } | null;
+  rival?: { name: string; won: boolean; prize: string; caught?: boolean; caughtBy?: string | null } | null;
 }
 
 export const MASTHEAD = 'The Whisker Times';
@@ -64,7 +64,12 @@ export function writePaper(f: HeistFacts): Paper {
 
   let headline: string;
   let subhead: string;
-  if (f.rival && !f.rival.won) {
+  if (f.rival?.caught) {
+    // Two thieves in, one hauled off by the guards.
+    const NAME = f.rival.name.toUpperCase();
+    headline = centre ? `${NAME} NABBED AS TUXEDO CAT ESCAPES WITH THE ${CENTRE}` : pick([`${NAME} NABBED AT ${PLACE}`, `GUARDS COLLAR ${NAME} AT ${PLACE}`], seed);
+    subhead = `${f.rival.caughtBy ?? 'A guard'} caught ${f.rival.name} red-pawed at ${f.place} last night${centre ? `, but the tuxedo cat slipped away with ${the(centre.name)} in the confusion` : '; the other thief, in a bow tie, was never found'}.`;
+  } else if (f.rival && !f.rival.won) {
     headline = `${f.rival.name.toUpperCase()} BEATS TUXEDO CAT TO THE ${f.rival.prize.toUpperCase()}`;
     subhead = `Two thieves in one night at ${f.place}. Only one of them got ${the(f.rival.prize)}.`;
   } else if (f.rival && f.rival.won) {

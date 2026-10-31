@@ -590,6 +590,18 @@ dial, a three-spoke handle, hinges, rivets, a brass plate, and a tumbler light f
 Leo cracks it. Once it's open the door hangs wide on its hinge and the empty inside shows, which is what tells a
 passing guard it's been robbed ("found the safe hanging open", and the alarm), just like an empty display case.
 
+**Rivals in the building.** A rival who's after the centrepiece comes in on the turn the rumour said, with a
+banner ("Luna Luck is in the building!") and, while they're off screen, an arrow at the edge pointing their way;
+walls in front of them drop like Leo's. They sneak like he does, routing round what any guard can see and waiting
+for a gap, though after two turns of waiting they risk it. A guard who spots one collars them: they're out of the
+heist, whatever they took goes back on display, and the guards stay on edge. Luna Luck, being lucky, is only
+caught up close. A caught rival counts as beaten (75 XP, the record), makes the morning paper ("SAMMY SWIPES
+NABBED AS TUXEDO CAT ESCAPES WITH THE ..."), and the report says so.
+
+The red-cross and orange-ring warnings only count what Leo brings on himself (an alarm a rival sets off would ring
+wherever he stood), and the note says what actually happens: "Caught: Rex saw Leo", "Alarm: Big Ben whistles for
+help", and so on.
+
 **Layout rules.** No passage is one tile wide: every corridor and doorway gap is at least two. A laser's beams
 run across the gap it guards, from wall to wall (worked out from the map: along the line of lasers that has a
 wall at both ends), in the heist and on the planning board's floor plan alike.

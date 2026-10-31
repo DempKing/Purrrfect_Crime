@@ -142,6 +142,11 @@ export interface Rival {
   phase: 'waiting' | 'in' | 'leaving' | 'gone';
   prize: boolean;
   alarmed: boolean; // Mittens has set off her alarm
+  /** Collared by a guard: out of the heist, and whatever they'd taken goes back. */
+  caught: boolean;
+  caughtBy: string | null;
+  /** Turns spent waiting for a way past the guards; after two they risk it. */
+  waited?: number;
 }
 
 /** Unlimited uses, while Leo has the skill. */
@@ -284,7 +289,7 @@ export function newHeist(level: Level, perks: Perks = BASE_PERKS, rival: RivalPl
     napTurns: 0,
     rival:
       rival && entrance && level.plinth
-        ? { id: rival.id, name: RIVALS[rival.id].name, x: entrance.x, y: entrance.y, facing: 0, arrive: rival.arrive, entrance: { ...entrance }, phase: 'waiting', prize: false, alarmed: false }
+        ? { id: rival.id, name: RIVALS[rival.id].name, x: entrance.x, y: entrance.y, facing: 0, arrive: rival.arrive, entrance: { ...entrance }, phase: 'waiting', prize: false, alarmed: false, caught: false, caughtBy: null }
         : null,
     rivalLoot: [],
     rivalBeaten: false,
@@ -1487,12 +1492,16 @@ function noticeThings(level: Level, s: State, g: Guard): void {
 // The rival's turn, after the guards'
 
 /** The next tile toward any of the goals for a rival. */
-function rivalStep(level: Level, s: State, r: Rival, goals: Point[]): Point | null {
+function rivalStep(level: Level, s: State, r: Rival, goals: Point[], careful = true): Point | null {
   // Rivals are pros: they get through any door, vault or wire.
   const goal = new Set(goals.map((g) => key(g.x, g.y)));
   if (goal.has(key(r.x, r.y))) return null;
+  // Rivals are careful too: they keep out of what any guard can see (they'd rather wait than be caught).
+  const watched = new Set<string>();
+  for (const g of s.guards) if (!g.asleep) for (const k of guardView(level, s, g)) watched.add(k);
   const ok = (x: number, y: number) => {
     const t = tileNow(level, s, x, y);
+    if (careful && watched.has(key(x, y)) && !goal.has(key(x, y))) return false;
     return (t === 'door' || t === 'keydoor' || t === 'vault' || t === 'wire' || !blocksMove(t)) && !(s.layer === 'floor' && s.leo.x === x && s.leo.y === y);
   };
   const prev = new Map<string, string>([[key(r.x, r.y), '']]);
@@ -1554,14 +1563,18 @@ function runRival(level: Level, s: State): GuardStep[] {
       s.log.push(`${r.name} grabs ${the(level.def.loot[centre].name)}!`);
       break;
     }
-    const next = rivalStep(level, s, r, r.phase === 'in' ? around : [r.entrance]);
+    const goals = r.phase === 'in' ? around : [r.entrance];
+    // The safe way if there is one; after waiting two turns for the guards to move off, any way at all.
+    const next = rivalStep(level, s, r, goals) ?? ((r.waited ?? 0) >= 2 ? rivalStep(level, s, r, goals, false) : null);
     if (!next) {
+      if (i === 0 && !(r.phase === 'leaving' && r.x === r.entrance.x && r.y === r.entrance.y)) r.waited = (r.waited ?? 0) + 1;
       if (r.phase === 'leaving' && r.x === r.entrance.x && r.y === r.entrance.y) {
         r.phase = 'gone';
         s.log.push(RIVALS[r.id].won);
       }
       break;
     }
+    r.waited = 0;
     const was = { x: r.x, y: r.y };
     r.facing = faceToward(r, next);
     r.x = next.x;
@@ -1596,13 +1609,20 @@ function rivalHabits(level: Level, s: State, r: Rival, was: Point): void {
   }
 }
 
-/** A guard who spots a rival raises the hue and cry; the rival bolts (with the prize, if they have it). */
+/**
+ * A guard who spots a rival collars them: they're out of the heist, and whatever they'd taken goes back where it
+ * was (the prize too). The guards are on edge afterwards. Luna Luck, being lucky, only gets caught up close.
+ */
 function rivalSpotted(level: Level, s: State, r: Rival): boolean {
-  if (r.id === 'luna') return false; // a little too lucky
-  const g = s.guards.find((g) => !g.asleep && guardSees(level, s, g, r.x, r.y, true));
+  const g = s.guards.find((g) => !g.asleep && guardSees(level, s, g, r.x, r.y, true) && (r.id !== 'luna' || Math.hypot(g.x - r.x, g.y - r.y) <= 2.5));
   if (!g) return false;
-  s.log.push(`${g.name} spots ${r.name}! ${r.name} bolts${r.prize ? ' with the prize' : ''}.`);
+  const had = s.rivalLoot.length;
+  s.log.push(`${g.name} collars ${r.name}! The guards haul them off${had ? `, and ${had === 1 ? 'the loot goes' : 'everything they took goes'} back on display` : ''}.`);
+  s.rivalLoot = [];
+  r.prize = false;
   r.phase = 'gone';
+  r.caught = true;
+  r.caughtBy = g.name;
   for (const o of s.guards) {
     if (o !== g && Math.hypot(o.x - g.x, o.y - g.y) > CAPTAIN_CALL) continue;
     o.asleep = false;
@@ -1695,19 +1715,27 @@ export function danger(level: Level, s: State, p: Point): 0 | 1 | 2 {
   return worst;
 }
 
-/** What happens if Leo walks to a tile and the guards then take their turn: the worst of it, for the player's preview. */
-export type Aftermath = 'caught' | 'alarm' | 'seen' | null;
+/** What happens if Leo ends his turn on a tile and the guards then take theirs: the worst of it, and why. */
+export type Aftermath = { kind: 'caught' | 'alarm' | 'seen'; why: string } | null;
 
 /**
  * Plays it forward on a copy: Leo moves to `to`, then the guards and cameras take their turn (they move and
- * turn, which the danger on the path alone doesn't show). Tells the player what would happen if they ended
- * their turn there.
+ * turn, which the danger on the path alone doesn't show). Only what Leo brings on himself counts: an alarm a
+ * rival sets off would ring wherever he stood.
  */
 export function aftermath(level: Level, s: State, to: Point): Aftermath {
   const sim = structuredClone(s);
   sim.log = [];
   if (!(to.x === s.leo.x && to.y === s.leo.y) && !moveLeo(level, sim, to).ok) return null;
-  const judge = (): Aftermath => (sim.status === 'caught' ? 'caught' : sim.alarm !== null && s.alarm === null ? 'alarm' : sim.seen && !s.seen ? 'seen' : null);
+  const judge = (): Aftermath => {
+    if (sim.status === 'caught') return { kind: 'caught', why: sim.caughtWhy ? `Caught: ${sim.caughtWhy}` : 'Caught when the guards move' };
+    if (sim.alarmRaised && !s.alarmRaised) {
+      const line = sim.log.find((l) => l.startsWith('Alarm!'));
+      return { kind: 'alarm', why: line ? line.replace(/^Alarm! /, 'Alarm: ').replace(/\. Lockdown.*$/, '') : 'Raises the alarm' };
+    }
+    if (sim.seen && !s.seen) return { kind: 'seen', why: 'Spotted when the guards move' };
+    return null;
+  };
   const now = judge();
   if (now || sim.status !== 'playing') return now;
   endTurn(level, sim);

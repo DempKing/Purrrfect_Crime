@@ -257,20 +257,28 @@ test('if Leo takes the centrepiece first, the rival gives up; the race doesn’t
   assert.equal(s.alarmRaised, false);
 });
 
-test('a guard who spots a rival sends the guards searching, but it isn’t Leo’s alarm; Luna is never spotted', () => {
+test('a guard who spots a rival collars them and goes searching, but it isn’t Leo’s alarm; Luna is only caught up close', () => {
   const guards: GuardDef[] = [{ name: 'Rex', start: { x: 15, y: 3 }, route: [{ x: 15, y: 3 }] }]; // standing still
   const level = parseLevel({ ...HALL, ambient: 'lit', guards });
   const s = newHeist(level, BASE_PERKS, plan('paws', 1));
   s.guards[0].facing = 6; // looking north, at the way in
   endTurn(level, s);
   assert.equal(s.rival!.phase, 'gone');
+  assert.equal(s.rival!.caught, true);
+  assert.equal(s.rival!.caughtBy, 'Rex');
   assert.equal(s.guards[0].mode, 'searching');
   assert.equal(s.alarm, null);
   assert.equal(s.alarmRaised, false);
   const luna = newHeist(level, BASE_PERKS, plan('luna', 1));
   luna.guards[0].facing = 6;
   endTurn(level, luna);
-  assert.equal(luna.rival!.phase, 'in');
+  assert.equal(luna.rival!.caught, true, 'right under his nose');
+  // Further off, the same guard looking straight at her doesn't make her out.
+  const far = parseLevel({ ...HALL, ambient: 'lit', guards: [{ name: 'Rex', start: { x: 15, y: 5 }, route: [{ x: 15, y: 5 }] }] });
+  const lucky = newHeist(far, BASE_PERKS, plan('luna', 1));
+  lucky.guards[0].facing = 6;
+  endTurn(far, lucky);
+  assert.equal(lucky.rival!.caught, false);
 });
 
 test('Mittens sets off an alarm (not Leo’s); Sammy pockets loot he passes', () => {

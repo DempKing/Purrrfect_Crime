@@ -191,7 +191,7 @@ export interface HeistReport {
   spacesUsed: number;
   spaces: number;
   par: number | undefined;
-  rival: { id: RivalId; won: boolean } | null;
+  rival: { id: RivalId; won: boolean; caught: boolean } | null;
   levelId: string;
   levelName: string;
   turns: number;
@@ -224,7 +224,8 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
   const centrepiece = s.inventory.some(isCentre);
   const flawless = !s.seen && !s.alarmRaised;
   // The race: did a rival come, and who got the centrepiece?
-  const rival = s.rival && s.rival.phase !== 'waiting' ? { id: s.rival.id, won: s.rivalBeaten } : s.rival && s.rivalBeaten ? { id: s.rival.id, won: true } : null;
+  // A rival the guards caught lost the race too.
+  const rival = s.rival && (s.rival.phase !== 'waiting' || s.rivalBeaten) ? { id: s.rival.id, won: s.rivalBeaten || s.rival.caught, caught: s.rival.caught } : null;
 
   const xp: XpLine[] = [{ label: 'Heist complete', amount: def.xp ?? 100 }];
   if (!s.seen) xp.push({ label: 'Never seen', amount: 50 });
@@ -232,7 +233,7 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
   if (centrepiece) xp.push({ label: 'The centrepiece', amount: 100 });
   if (total > 0) xp.push({ label: 'Loot value', amount: Math.floor(total / 200) });
   if (def.par && s.turn < def.par) xp.push({ label: 'Quick work', amount: (def.par - s.turn) * 5 });
-  if (rival?.won) xp.push({ label: `Beat ${RIVALS[rival.id].name} to it`, amount: 75 });
+  if (rival?.won) xp.push({ label: rival.caught && !s.rivalBeaten ? `${RIVALS[rival.id].name} nabbed by the guards` : `Beat ${RIVALS[rival.id].name} to it`, amount: 75 });
   const finale = !!def.finale && s.tagged;
   if (finale) xp.push({ label: 'Crept up on NightClaw', amount: 1000 });
   const base = xp.reduce((n, l) => n + l.amount, 0);
@@ -274,7 +275,7 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
     turns: s.turn,
     first: p.heists === 1,
     replay,
-    rival: rival ? { name: RIVALS[rival.id].name, won: rival.won, prize: def.loot.find((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y)?.name ?? 'prize' } : null,
+    rival: rival ? { name: RIVALS[rival.id].name, won: rival.won, caught: rival.caught, caughtBy: s.rival?.caughtBy ?? null, prize: def.loot.find((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y)?.name ?? 'prize' } : null,
   });
   p.papers.unshift(paper);
   p.day++;

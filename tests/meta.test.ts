@@ -278,12 +278,12 @@ test('a rival who wins: the level remembers, the record counts it, the paper say
   const p = newProfile();
   const s = play(corner, CORNER_GALLERY_ROUTE);
   // Pretend Luna was in tonight and got the pearl first, leaving Leo the small pieces.
-  s.rival = { id: 'luna', name: 'Luna Luck', x: 0, y: 0, facing: 0, arrive: 3, entrance: { x: 0, y: 0 }, phase: 'gone', prize: true, alarmed: false };
+  s.rival = { id: 'luna', name: 'Luna Luck', x: 0, y: 0, facing: 0, arrive: 3, entrance: { x: 0, y: 0 }, phase: 'gone', prize: true, alarmed: false, caught: false, caughtBy: null };
   s.inventory = s.inventory.filter((i) => i !== 0);
   s.rivalLoot = [0];
   p.rivals[CORNER_GALLERY.id] = { id: 'luna', arrive: 3, entrance: 0 };
   const r = completeHeist(p, corner, s);
-  assert.deepEqual(r.rival, { id: 'luna', won: false });
+  assert.deepEqual(r.rival, { id: 'luna', won: false, caught: false });
   assert.equal(p.records[CORNER_GALLERY.id].lostTo, 'luna');
   assert.deepEqual(p.rivalRecord.luna, { won: 0, lost: 1 });
   assert.equal(p.lastRival, 'luna');
@@ -294,7 +294,7 @@ test('a rival who wins: the level remembers, the record counts it, the paper say
 test('beating a rival to it pays a bonus and makes the headline', () => {
   const p = newProfile();
   const s = play(corner, CORNER_GALLERY_ROUTE);
-  s.rival = { id: 'paws', name: 'Professor Paws', x: 0, y: 0, facing: 0, arrive: 3, entrance: { x: 0, y: 0 }, phase: 'gone', prize: false, alarmed: false };
+  s.rival = { id: 'paws', name: 'Professor Paws', x: 0, y: 0, facing: 0, arrive: 3, entrance: { x: 0, y: 0 }, phase: 'gone', prize: false, alarmed: false, caught: false, caughtBy: null };
   s.rivalBeaten = true;
   const r = completeHeist(p, corner, s);
   assert.ok(r.xp.some((l) => l.label === 'Beat Professor Paws to it'));

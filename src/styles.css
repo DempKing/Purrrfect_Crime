@@ -829,6 +829,12 @@ body.reduce-motion .credits.rolling .roll { animation-duration: 28s !important; 
 
 .hud .buttons button#restart.armed { background: var(--red); color: #fff; }
 
+/* A rival off screen: an arrow at the edge pointing their way, with their name. */
+.rival-arrow { position: fixed; z-index: 14; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none; }
+.rival-arrow i { width: 0; height: 0; border-left: 22px solid var(--purple); border-top: 13px solid transparent; border-bottom: 13px solid transparent; transform: rotate(var(--turn)); filter: drop-shadow(2px 2px 0 var(--ink)); animation: rival-pulse 1s ease-in-out infinite; }
+.rival-arrow span { padding: 2px 8px; border: 2px solid var(--ink); border-radius: 999px; background: var(--purple); color: #fff; font: 800 0.75em/1.3 var(--body); white-space: nowrap; }
+@keyframes rival-pulse { 50% { opacity: 0.55; } }
+
 /* --- Phones ------------------------------------------------------------------------------------------ */
 @media (max-width: 700px) {
   .status { min-width: 0; flex: 1 1 100%; }
