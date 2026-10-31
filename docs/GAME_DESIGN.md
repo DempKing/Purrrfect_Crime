@@ -600,6 +600,15 @@ heist, whatever they took goes back on display, and the guards stay on edge. Lun
 caught up close. A caught rival counts as beaten (75 XP, the record), makes the morning paper ("SAMMY SWIPES
 NABBED AS TUXEDO CAT ESCAPES WITH THE ..."), and the report says so.
 
+**Whose alarm.** A rival only raises the alarm through the usual ways: a guard finding a case they've emptied, or a
+camera catching them on film (rivals steer clear of camera views too). A guard who spots one collars them instead.
+An alarm that isn't Leo's doesn't spoil a flawless run: shut it off at the camera panel in time and nothing is
+lost. Left to ring, it locks the building down, but Leo plays on: the exits are sealed ("LOCKDOWN · exits sealed
+until the guards catch Mischief Mittens"), and when the guards catch the rival the lockdown lifts (if the rival has
+already gone, the guards stand down after four turns of searching). Leo's own alarm still ends with the police at
+the door. Mischief Mittens no longer sets off alarms; she knocks something over on the far side of the building
+to draw the guards away.
+
 The red-cross and orange-ring warnings only count what Leo brings on himself (an alarm a rival sets off would ring
 wherever he stood), and the note says what actually happens: "Caught: Rex saw Leo", "Alarm: Big Ben whistles for
 help", and so on.

@@ -1092,8 +1092,11 @@ function updateHud(): void {
   li.textContent = hidden ? 'In a crate' : l < 0 ? (state.layer === 'vent' ? 'In the vents' : 'In the rafters') : LIGHT_NAMES[l];
   li.className = `light l${l < 0 ? 'v' : l}`;
   const al = $('alarm');
-  if (state.alarm !== null && state.status === 'playing') {
-    al.textContent = `ALARM · lockdown in ${state.alarm} turn${state.alarm === 1 ? '' : 's'}${state.camerasOff ? '' : ' · shut it off at the camera panel'}`;
+  if (state.lockdown && state.status === 'playing') {
+    al.textContent = `LOCKDOWN · exits sealed until the guards catch ${state.rival && (state.rival.phase === 'in' || state.rival.phase === 'leaving') ? state.rival.name : 'the intruder'}`;
+    show('alarm');
+  } else if (state.alarm !== null && state.status === 'playing') {
+    al.textContent = `ALARM${state.alarmByLeo ? '' : ' (not yours)'} · lockdown in ${state.alarm} turn${state.alarm === 1 ? '' : 's'}${state.camerasOff ? '' : ' · shut it off at the camera panel'}`;
     show('alarm');
   } else hide('alarm');
   ($('end') as HTMLButtonElement).disabled = busy || state.status !== 'playing';

@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseLevel, type GuardDef, type LevelDef } from '../src/core/level';
-import { BASE_PERKS, actionsHere, aftermath, roboOff, beaconTiles, danger, doAction, endTurn, flooded, guardSees, guardView, key, leoReach, lightNow, makeNoise, motionTrip, moveLeo, newHeist, planRival, useAbility, type Perks, type RivalPlan, type State } from '../src/core/game';
+import { BASE_PERKS, actionsHere, aftermath, triggerAlarm, roboOff, beaconTiles, danger, doAction, endTurn, flooded, guardSees, guardView, key, leoReach, lightNow, makeNoise, motionTrip, moveLeo, newHeist, planRival, useAbility, type Perks, type RivalPlan, type State } from '../src/core/game';
 import { ALL_LEVELS } from '../src/levels';
 import { exhibitLoot } from '../src/core/exhibits';
 
@@ -281,14 +281,14 @@ test('a guard who spots a rival collars them and goes searching, but it isn’t 
   assert.equal(lucky.rival!.caught, false);
 });
 
-test('Mittens sets off an alarm (not Leo’s); Sammy pockets loot he passes', () => {
+test('Mittens makes a racket far away, not an alarm; Sammy pockets loot he passes', () => {
   const guards: GuardDef[] = [{ name: 'Rex', start: { x: 2, y: 2 }, route: [{ x: 3, y: 2 }] }];
   const level = parseLevel({ ...HALL, guards });
   const s = newHeist(level, BASE_PERKS, plan('mittens', 1));
   endTurn(level, s);
   endTurn(level, s);
-  assert.notEqual(s.alarm, null);
-  assert.equal(s.alarmRaised, false);
+  assert.equal(s.alarm, null);
+  assert.ok(s.noises.length > 0 || s.guards[0].mode !== 'patrol', 'the guards heard something');
   // Sammy comes in by the trinket's case.
   const sammyLevel = parseLevel({ ...HALL, rivalEntrances: [{ x: 1, y: 4 }] });
   const t = newHeist(sammyLevel, BASE_PERKS, plan('sammy', 1));
@@ -654,4 +654,41 @@ test('a guard who walks into a rival collars them, looking or not', () => {
   endTurn(level, s);
   assert.equal(s.rival!.caught, true);
   assert.equal(s.rival!.caughtBy, 'Rex');
+});
+
+test('somebody else’s alarm: silenced in time, the run stays flawless; left to ring, the building locks down until the rival is caught', () => {
+  const level = parseLevel({ ...HALL, guards: [{ name: 'Rex', start: { x: 4, y: 5 }, route: [{ x: 4, y: 5 }] }] });
+  const s = newHeist(level, BASE_PERKS, plan('paws', 99));
+  triggerAlarm(s, { x: 9, y: 3 }, 'A camera caught Professor Paws on film', false);
+  assert.equal(s.alarmByLeo, false);
+  assert.equal(s.alarmRaised, false, 'not Leo\'s, so a flawless run is still on');
+  // Left to ring: a lockdown, but Leo plays on; the exit is sealed.
+  s.rival!.phase = 'in';
+  s.rival!.x = 16;
+  s.rival!.y = 2;
+  s.alarm = 1;
+  endTurn(level, s);
+  assert.equal(s.status, 'playing');
+  assert.equal(s.lockdown, true);
+  s.inventory = [1];
+  s.leo = { x: 15, y: 5 };
+  s.ap = 2;
+  moveLeo(level, s, { x: 17, y: 5 });
+  assert.equal(s.status, 'playing', 'the exit is sealed');
+  // The guards catch the rival: the lockdown lifts and the exit opens.
+  s.guards[0].x = 16;
+  s.guards[0].y = 3;
+  endTurn(level, s);
+  assert.equal(s.rival!.caught, true);
+  assert.equal(s.lockdown, false);
+  s.leo = { x: 15, y: 5 };
+  s.ap = 2;
+  moveLeo(level, s, { x: 17, y: 5 });
+  assert.equal(s.status, 'escaped');
+  // Leo's own alarm still ends in the police at the door.
+  const t = newHeist(level, BASE_PERKS);
+  triggerAlarm(t, { x: 9, y: 3 }, 'test', true);
+  t.alarm = 1;
+  endTurn(level, t);
+  assert.equal(t.status, 'caught');
 });

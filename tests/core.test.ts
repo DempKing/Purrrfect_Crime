@@ -179,6 +179,7 @@ test('an alarm counts down to lockdown; the camera panel silences it', () => {
   assert.ok(s.camerasOff);
   const t = quiet();
   t.alarm = 1;
+  t.alarmByLeo = true;
   endTurn(night, t);
   assert.equal(t.status, 'caught');
 });

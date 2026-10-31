@@ -222,6 +222,12 @@ export interface State {
   /** For the stealth bonuses and the newspaper: was Leo ever glimpsed or filmed, did an alarm ever go off. */
   seen: boolean;
   alarmRaised: boolean;
+  /** Whether the alarm ringing now is Leo's doing (if it isn't, a lockdown doesn't end the heist). */
+  alarmByLeo: boolean;
+  /** Locked down by somebody else's alarm: the exits are sealed until the rival is caught or gone. */
+  lockdown: boolean;
+  /** Turns left on a lockdown with no rival in the building to catch. */
+  lockdownTurns: number;
   perks: Perks;
   charges: Partial<Record<Ability, number>>; // left this heist
   used: { ghostStep: boolean; vanish: boolean; laserMirror: boolean };
@@ -280,6 +286,9 @@ export function newHeist(level: Level, perks: Perks = BASE_PERKS, rival: RivalPl
     alarm: null,
     seen: false,
     alarmRaised: false,
+    alarmByLeo: false,
+    lockdown: false,
+    lockdownTurns: 0,
     perks: structuredClone(perks),
     charges: { ...perks.charges },
     used: { ghostStep: false, vanish: false, laserMirror: false },
@@ -703,7 +712,9 @@ function captainCalls(s: State, g: Guard, p: Point): void {
 /** Sets off the alarm. Only Leo's alarms count against a flawless heist, not a rival's. */
 export function triggerAlarm(s: State, p: Point, why: string, byLeo = true): void {
   if (byLeo) s.alarmRaised = true;
-  if (s.alarm === null) {
+  if (s.alarm === null) s.alarmByLeo = byLeo;
+  else if (byLeo) s.alarmByLeo = true;
+  if (s.alarm === null && (!s.lockdown || byLeo)) {
     s.alarm = ALARM_TURNS;
     s.log.push(`Alarm! ${why}. Lockdown in ${ALARM_TURNS} turns.`);
   }
@@ -713,6 +724,13 @@ export function triggerAlarm(s: State, p: Point, why: string, byLeo = true): voi
     g.point = { ...p };
     g.look = 3;
   }
+}
+
+/** The exits open again. */
+function liftLockdown(s: State, why: string): void {
+  s.lockdown = false;
+  s.lockdownTurns = 0;
+  s.log.push(why);
 }
 
 /** Is Leo seen at p right now? Handles guards (suspicion or a catch) and cameras (alarm). */
@@ -900,7 +918,10 @@ export function walkPath(level: Level, s: State, path: Point[], cost: number): M
     makeNoise(level, s, s.leo, NOISE.dash);
     s.log.push('Dashing makes noise.');
   }
-  if (s.layer === 'floor' && s.inventory.length && s.leo.x === level.exit.x && s.leo.y === level.exit.y) s.status = 'escaped';
+  if (s.layer === 'floor' && s.inventory.length && s.leo.x === level.exit.x && s.leo.y === level.exit.y) {
+    if (s.lockdown) s.log.push('The exit is sealed: the building is in lockdown until the guards catch the other thief.');
+    else s.status = 'escaped';
+  }
   return { ok: true, path: walked };
 }
 
@@ -1293,7 +1314,7 @@ export function useAbility(level: Level, s: State, kind: Ability, at?: Point): b
       pickUpCard(level, s, at!);
       dogsBark(level, s, s.leo, new Set());
       checkExposure(level, s, s.leo);
-      if (s.status === 'playing' && s.inventory.length && s.leo.x === level.exit.x && s.leo.y === level.exit.y) s.status = 'escaped';
+      if (s.status === 'playing' && !s.lockdown && s.inventory.length && s.leo.x === level.exit.x && s.leo.y === level.exit.y) s.status = 'escaped';
       break;
     case 'second-wind':
       s.ap += 1;
@@ -1543,11 +1564,12 @@ function runRival(level: Level, s: State): GuardStep[] {
     out.push({ guard: -1, to: { x: r.x, y: r.y, facing: r.facing } });
     if (rivalSpotted(level, s, r)) return out;
   }
-  // Mittens sets off an alarm on the far side of the building, to pull the guards away from her.
+  // Mittens knocks something over on the far side of the building, to pull the guards away from her.
   if (r.id === 'mittens' && !r.alarmed && s.turn >= r.arrive + 1) {
     r.alarmed = true;
     const far = level.guards.flatMap((g) => g.route).reduce((a, b) => (Math.hypot(b.x - r.x, b.y - r.y) > Math.hypot(a.x - r.x, a.y - r.y) ? b : a), { x: r.x, y: r.y });
-    triggerAlarm(s, far, 'Somebody set off an alarm on the far side of the building', false);
+    s.log.push('CRASH! Something topples over on the far side of the building.');
+    makeNoise(level, s, far, 7, false);
   }
   const around: Point[] = [];
   for (const d of DIRS) around.push({ x: level.plinth.x + d.x, y: level.plinth.y + d.y });
@@ -1594,6 +1616,7 @@ function runRival(level: Level, s: State): GuardStep[] {
     out.push({ guard: -1, to: { x: r.x, y: r.y, facing: r.facing } });
     rivalHabits(level, s, r, was);
     if (rivalSpotted(level, s, r)) break;
+    camerasSeeRival(level, s, r);
   }
   return out;
 }
@@ -1635,6 +1658,8 @@ function rivalDanger(level: Level, s: State): Set<string> {
   sim.layer = 'vent';
   sim.log = [];
   runGuards(level, sim, true);
+  // And the cameras: being filmed brings the alarm down on everyone.
+  for (const c of s.cameras) if (camerasActive(s, c)) for (const k of cameraView(level, s, c)) out.add(k);
   for (const g of [...s.guards, ...sim.guards]) {
     if (g.asleep) continue;
     for (const k of guardView(level, g === sim.guards.find((o) => o === g) ? sim : s, g)) out.add(k);
@@ -1647,6 +1672,13 @@ function rivalDanger(level: Level, s: State): Set<string> {
 function guardsMeetRival(level: Level, s: State): void {
   const r = s.rival;
   if (r && (r.phase === 'in' || r.phase === 'leaving')) rivalSpotted(level, s, r);
+}
+
+/** A camera that catches a rival on film raises the alarm, though it isn't Leo's alarm. */
+function camerasSeeRival(level: Level, s: State, r: Rival): void {
+  if (s.alarm !== null || s.lockdown) return;
+  const c = s.cameras.find((c) => cameraSees(level, s, c, r.x, r.y));
+  if (c) triggerAlarm(s, r, `A camera caught ${r.name} on film`, false);
 }
 
 /**
@@ -1664,6 +1696,7 @@ function rivalSpotted(level: Level, s: State, r: Rival): boolean {
   r.phase = 'gone';
   r.caught = true;
   r.caughtBy = g.name;
+  if (s.lockdown) liftLockdown(s, 'With the intruder caught, the lockdown is lifted.');
   for (const o of s.guards) {
     if (o !== g && Math.hypot(o.x - g.x, o.y - g.y) > CAPTAIN_CALL) continue;
     o.asleep = false;
@@ -1723,7 +1756,22 @@ export function endTurn(level: Level, s: State): GuardStep[] {
   s.prints = s.prints.filter((p) => p.turns > 0);
   if (s.status === 'playing' && s.alarm !== null) {
     s.alarm -= 1;
-    if (s.alarm <= 0) catchLeo(s, 'The police', 'Lockdown: every door sealed');
+    if (s.alarm <= 0) {
+      if (s.alarmByLeo) catchLeo(s, 'The police', 'Lockdown: every door sealed');
+      else {
+        // Not Leo's alarm: the building seals up and the guards hunt the other thief. Leo plays on, but can't leave.
+        s.alarm = null;
+        s.lockdown = true;
+        s.lockdownTurns = 4;
+        s.log.push('Lockdown! Every exit is sealed while the guards hunt for the intruder.');
+      }
+    }
+  }
+  if (s.status === 'playing' && s.lockdown) {
+    const r = s.rival;
+    const inside = !!r && (r.phase === 'in' || r.phase === 'leaving');
+    // With nobody left to catch, the guards stand down after a few turns of searching.
+    if (!inside && --s.lockdownTurns <= 0) liftLockdown(s, 'The guards find nobody and the lockdown is lifted.');
   }
   if (s.status === 'playing') {
     s.turn++;
