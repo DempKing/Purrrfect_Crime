@@ -882,7 +882,7 @@ export class HeistView {
     g.stroke({ width, color, alpha, cap: 'round', join: 'round' });
   }
 
-  /** A mark on a tile Leo shouldn't end his turn on: a red cross (caught or alarm) or an orange ring (spotted). */
+  /** A mark on a tile Leo shouldn't walk to (or, with his last action point, end his turn on): a red cross (caught or alarm) or an orange ring (spotted). */
   private riskMark(g: Graphics, x: number, y: number, r: 'caught' | 'alarm' | 'seen'): void {
     const c = project(this.proj, x + 0.5, y + 0.5);
     if (r === 'seen') {

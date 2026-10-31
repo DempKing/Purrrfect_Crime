@@ -262,10 +262,10 @@ function computed() {
 
 // --- what happens when the guards move: worked out a few tiles a frame, for every tile Leo can reach -------
 
-/** For each reachable tile: what would happen if Leo ended his turn there (the guards move and the cameras turn). */
+/** For each reachable tile: what walking there would bring, and, if it uses his last action point, the guards' turn after. */
 const risk = new Map<string, Aftermath>();
 let riskVersion = -1;
-let riskQueue: Point[] = [];
+let riskQueue: (Point & { ends: boolean })[] = [];
 
 /** Works through the reachable tiles for a few milliseconds a frame, so the game never stutters. */
 function workOnRisk(): void {
@@ -273,17 +273,18 @@ function workOnRisk(): void {
   if (riskVersion !== version) {
     riskVersion = version;
     risk.clear();
-    riskQueue = [{ ...state.leo }];
+    riskQueue = [{ x: state.leo.x, y: state.leo.y, ends: true }];
     for (const [k, cost] of computed().reach.cost) {
       if (!cost || moveAp(state, cost) > state.ap) continue;
       const [x, y] = k.split(',').map(Number);
-      riskQueue.push({ x, y });
+      // Only a move that spends Leo's last action point ends his turn there, so only then do the guards' turn count.
+      riskQueue.push({ x, y, ends: moveAp(state, cost) >= state.ap });
     }
   }
   const t0 = performance.now();
   while (riskQueue.length && performance.now() - t0 < 5) {
     const p = riskQueue.shift()!;
-    risk.set(key(p.x, p.y), aftermath(level, state, p));
+    risk.set(key(p.x, p.y), aftermath(level, state, p, p.ends));
   }
 }
 

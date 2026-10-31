@@ -637,6 +637,8 @@ test('the look-ahead: a tile that looks safe now, but a guard walks into view of
   s.leo = { x: 4, y: 7 };
   s.guards[0].facing = 4;
   assert.equal(aftermath(level, s, s.leo) !== null, true, 'he walks right up to Leo');
+  // With an action point still to spend Leo needn’t stay, so only the walk there counts.
+  assert.equal(aftermath(level, s, s.leo, false), null, 'standing there for now is safe');
   // Behind the wall, out of his way, the guards' turn passes quietly.
   s.leo = { x: 1, y: 1 };
   assert.equal(aftermath(level, s, s.leo), null);

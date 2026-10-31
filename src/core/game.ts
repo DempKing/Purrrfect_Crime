@@ -1847,11 +1847,11 @@ export function danger(level: Level, s: State, p: Point): 0 | 1 | 2 {
 export type Aftermath = { kind: 'caught' | 'alarm' | 'seen'; why: string } | null;
 
 /**
- * Plays it forward on a copy: Leo moves to `to`, then the guards and cameras take their turn (they move and
+ * Plays it forward on a copy: Leo moves to `to`, then (if that uses his last action point, `endsTurn`) the guards and cameras take their turn (they move and
  * turn, which the danger on the path alone doesn't show). Only what Leo brings on himself counts: an alarm a
  * rival sets off would ring wherever he stood.
  */
-export function aftermath(level: Level, s: State, to: Point): Aftermath {
+export function aftermath(level: Level, s: State, to: Point, endsTurn = true): Aftermath {
   const sim = structuredClone(s);
   sim.log = [];
   if (!(to.x === s.leo.x && to.y === s.leo.y) && !moveLeo(level, sim, to).ok) return null;
@@ -1865,7 +1865,8 @@ export function aftermath(level: Level, s: State, to: Point): Aftermath {
     return null;
   };
   const now = judge();
-  if (now || sim.status !== 'playing') return now;
+  // A tile Leo would still have action points left on: only walking there counts, not the guards' turn after.
+  if (now || sim.status !== 'playing' || !endsTurn) return now;
   endTurn(level, sim);
   return judge();
 }
