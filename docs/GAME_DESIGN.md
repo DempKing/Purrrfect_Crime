@@ -579,6 +579,10 @@ report: a painted one where there is one, otherwise a drawing chosen from its na
 with a scene to suit, cut gems in the right colour, pearls, crowns, pocket watches, scrolls, fossils,
 figurines in jade, gold or silver...). Paintings uploaded under the names in `art/LOOT_LIST.md` replace them.
 
+**Layout rules.** No passage is one tile wide: every corridor and doorway gap is at least two. A laser's beams
+run across the gap it guards, from wall to wall (worked out from the map: along the line of lasers that has a
+wall at both ends), in the heist and on the planning board's floor plan alike.
+
 ### 12.2 Audio, settings and accessibility as built (M6)
 
 - **Audio** is synthesised in the browser (Web Audio), so there are no files to load: a swing loop of

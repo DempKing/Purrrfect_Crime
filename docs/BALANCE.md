@@ -12,7 +12,7 @@ plan, and a player only sees a turn or two ahead.
 | The Cobblestone Coin Museum | 11 | 22 | 22 | 120 | $13,200 | $5,200 | 3 |
 | The Clocktower Archive | 10 | 20 | 20 | 150 | $6,400 | $6,400 | 4 |
 | The Pawnbroker Penthouse | 13 | 26 | 26 | 180 | $18,650 | $7,800 | 5 |
-| The Opera House Costume Vault | 8 | 24 | 18 | 220 | $9,500 | $9,500 | 6 |
+| The Opera House Costume Vault | 8 | 18 | 18 | 220 | $9,500 | $9,500 | 6 |
 | The Natural History Museum | 7 | 17 | 17 | 260 | $23,250 | $11,000 | 7 |
 | The Egyptian Wing | 9 | 19 | 19 | 280 | $23,000 | $12,500 | 8 |
 | The Modern Art Atrium | 7 | 17 | 17 | 300 | $34,300 | $14,000 | 9 |

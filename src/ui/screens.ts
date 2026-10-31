@@ -2,7 +2,7 @@
 // the narrator, the calling card, the morning paper, the heist report, the city map, the lair and
 // the briefing before a heist. They're dressed as things from a 1960s caper (a film poster, luggage
 // tags, index cards on cork, a ledger, blueprints, a manila case file); the look lives in styles.css.
-import { parseLevel, the, type LevelDef, type LootCategory } from '../core/level';
+import { laserAxis, parseLevel, the, type LevelDef, type LootCategory } from '../core/level';
 import { RIVALS, type RivalPlan } from '../core/game';
 import { allLoot } from '../core/exhibits';
 import type { Paper } from '../meta/newspaper';
@@ -915,7 +915,12 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
         cells.push(`<rect x="${x * S}" y="${y * S}" width="${S}" height="${S}" fill="${fill}"/>`);
         if (level.ducts[y][x]) cells.push(`<rect x="${x * S + 5}" y="${y * S + 5}" width="6" height="6" fill="none" stroke="#dce9f5" stroke-dasharray="2 1" opacity="0.8"/>`);
         if (t === 'wire') cells.push(`<line x1="${x * S}" y1="${y * S + 8}" x2="${x * S + S}" y2="${y * S + 8}" stroke="#c8ccd8" stroke-width="1.5"/>`);
-        if (t === 'laser') cells.push(`<line x1="${x * S}" y1="${y * S + 8}" x2="${x * S + S}" y2="${y * S + 8}" stroke="#ff2a2a" stroke-width="2"/>`);
+        if (t === 'laser')
+          cells.push(
+            laserAxis(level, x, y) === 'x'
+              ? `<line x1="${x * S}" y1="${y * S + 8}" x2="${x * S + S}" y2="${y * S + 8}" stroke="#ff2a2a" stroke-width="2"/>`
+              : `<line x1="${x * S + 8}" y1="${y * S}" x2="${x * S + 8}" y2="${y * S + S}" stroke="#ff2a2a" stroke-width="2"/>`,
+          );
         if (t === 'panel' || t === 'fuse') cells.push(`<rect x="${x * S + 4}" y="${y * S + 4}" width="8" height="8" fill="${t === 'panel' ? '#55d6c2' : '#f2c94c'}"/>`);
       }
   const marks: string[] = [];

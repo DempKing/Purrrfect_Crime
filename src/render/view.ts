@@ -2,7 +2,7 @@
 // Placeholder art for now; generated sprites replace the character and prop drawing later.
 import { Container, Graphics, Matrix, type Texture } from 'pixi.js';
 import { DIRS, KIND_SIGHT, PRINT_TURNS, ROBO_RANGE, SIGHT_HALF_ANGLE, SIGHT_RANGE, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, roboOff, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
-import { blocksSight, type Level, type Point } from '../core/level';
+import { blocksSight, laserAxis, type Level, type Point } from '../core/level';
 import { DISTRICTS } from '../levels';
 import { exhibitAt, tileHash } from '../core/exhibits';
 import { project, screenDir, TILE_H, TILE_W, type Projector } from './iso';
@@ -366,7 +366,7 @@ export class HeistView {
           if (!this.exhibitUnderLight(items, d, x, y, !off, gone)) items.push({ depth: d, draw: (g) => this.lamp(g, x, y, !off) });
           ceiling.push({ x, y, on: !off, lamp: true });
         } else if (t === 'laser') {
-          items.push({ depth: d + 0.3, draw: (g) => this.laser(g, x, y, lasersOn) });
+          items.push({ depth: d + 0.3, draw: (g) => this.laser(g, level, x, y, lasersOn) });
         } else if (t === 'exit') {
           items.push({ depth: d - 0.4, draw: (g) => this.exitSign(g, x, y) });
         } else if (t === 'safe') {
@@ -1073,10 +1073,12 @@ export class HeistView {
     if (on) g.circle(top.x, top.y + 4, 28 + Math.sin(this.time * 3 + x) * 1.5).fill({ color: COL.lampGlow, alpha: 0.12 });
   }
 
-  private laser(g: Graphics, x: number, y: number, on: boolean): void {
+  /** A laser: two beams across the gap, wall to wall (see laserAxis), dotted when they're switched off. */
+  private laser(g: Graphics, level: Level, x: number, y: number, on: boolean): void {
+    const across = laserAxis(level, x, y) === 'x';
     for (const z of [14, 30]) {
-      const a = project(this.proj, x, y + 0.5, z);
-      const b = project(this.proj, x + 1, y + 0.5, z);
+      const a = across ? project(this.proj, x, y + 0.5, z) : project(this.proj, x + 0.5, y, z);
+      const b = across ? project(this.proj, x + 1, y + 0.5, z) : project(this.proj, x + 0.5, y + 1, z);
       if (on) {
         g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 5, color: COL.laser, alpha: 0.25 });
         g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1.8, color: 0xff8080, alpha: 0.95 });
