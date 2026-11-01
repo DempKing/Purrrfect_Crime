@@ -1,6 +1,5 @@
-// Leo's progression: levels, attributes, the three skill trees, and the lair's rooms.
-// Everything here is data plus small pure functions; perksFor() turns a profile into what Leo brings
-// into a heist.
+// Leo's progression: levels, attributes, skill trees and lair rooms.
+// perksFor() turns a profile into Leo's perks for a heist.
 import { BASE_PERKS, type Ability, type Perks } from '../core/game';
 import type { Profile } from './profile';
 
@@ -20,6 +19,7 @@ export function xpForLevel(l: number): number {
   return total;
 }
 
+/** Leo's level for an amount of XP. */
 export function playerLevel(xp: number): number {
   let l = 1;
   while (l < LEVEL_CAP && xp >= xpForLevel(l + 1)) l++;
@@ -38,6 +38,7 @@ export interface AttributeInfo {
   ranks: string[];
 }
 
+/** The attributes and what each level of them does. */
 export const ATTRIBUTES: AttributeInfo[] = [
   {
     id: 'agility',
@@ -93,6 +94,7 @@ export const ATTRIBUTES: AttributeInfo[] = [
   },
 ];
 
+/** Info for one attribute. */
 export const attributeInfo = (id: Attribute) => ATTRIBUTES.find((a) => a.id === id)!;
 
 /** Catnip for the next rank of an attribute (the Gym takes 15% off per tier). */
@@ -101,12 +103,14 @@ export function attributeCost(p: Profile, id: Attribute): number {
   return Math.round(150 * (rank + 1) * (1 - 0.15 * p.rooms.gym));
 }
 
+/** Why an attribute can't be raised (null if it can). */
 export function canRaise(p: Profile, id: Attribute): string | null {
   if (p.attributes[id] >= attributeInfo(id).ranks.length) return 'Already at the top rank.';
   if (p.catnip < attributeCost(p, id)) return 'Not enough Catnip.';
   return null;
 }
 
+/** Raises an attribute, if possible. */
 export function raise(p: Profile, id: Attribute): boolean {
   if (canRaise(p, id)) return false;
   p.catnip -= attributeCost(p, id);
@@ -146,12 +150,14 @@ export interface SkillInfo {
   later?: string;
 }
 
+/** The three skill trees. */
 export const TREES: { id: Tree; name: string; blurb: string }[] = [
   { id: 'shadow', name: 'Shadow', blurb: 'Stay unseen.' },
   { id: 'tech', name: 'Tech', blurb: 'Beat the machines.' },
   { id: 'acrobat', name: 'Acrobat', blurb: 'Go where nobody else can.' },
 ];
 
+/** All skills: tree, level needed, cost and prerequisite. */
 export const SKILLS: SkillInfo[] = [
   {
     id: 'blend',
@@ -287,8 +293,10 @@ export const SKILLS: SkillInfo[] = [
   },
 ];
 
+/** Info for one skill. */
 export const skillInfo = (id: SkillId) => SKILLS.find((s) => s.id === id)!;
 
+/** Why a skill can't be learned (null if it can). */
 export function canLearn(p: Profile, id: SkillId): string | null {
   const s = skillInfo(id);
   if (p.skills.includes(id)) return 'Already learned.';
@@ -299,6 +307,7 @@ export function canLearn(p: Profile, id: SkillId): string | null {
   return null;
 }
 
+/** Learns a skill, if possible. */
 export function learn(p: Profile, id: SkillId): boolean {
   if (canLearn(p, id)) return false;
   p.catnip -= skillInfo(id).cost;
@@ -317,6 +326,7 @@ export interface RoomInfo {
   tiers: { cost: number; text: string }[];
 }
 
+/** The lair rooms and what each tier gives. */
 export const ROOMS: RoomInfo[] = [
   {
     id: 'planning',
@@ -385,13 +395,16 @@ export const ROOMS: RoomInfo[] = [
   },
 ];
 
+/** Info for one room. */
 export const roomInfo = (id: Room) => ROOMS.find((r) => r.id === id)!;
 
+/** Cost of the next tier of a room (null at max). */
 export function upgradeCost(p: Profile, id: Room): number | null {
   const t = roomInfo(id).tiers[p.rooms[id]];
   return t ? t.cost : null;
 }
 
+/** Why a room can't be upgraded (null if it can). */
 export function canUpgrade(p: Profile, id: Room): string | null {
   const cost = upgradeCost(p, id);
   if (cost === null) return 'Fully upgraded.';
@@ -399,6 +412,7 @@ export function canUpgrade(p: Profile, id: Room): string | null {
   return null;
 }
 
+/** Upgrades a room, if possible. */
 export function upgrade(p: Profile, id: Room): boolean {
   if (canUpgrade(p, id)) return false;
   p.catnip -= upgradeCost(p, id)!;

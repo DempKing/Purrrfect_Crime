@@ -1,5 +1,4 @@
-// Everything that lasts between heists: Catnip, XP, the stash of unsold loot, the lair, the front pages.
-// Pure functions over a plain object, so the save is just JSON and the rules can be unit-tested.
+// The save: everything that lasts between heists (Catnip, XP, stash, lair, papers). Plain JSON.
 import type { Level, LevelDef, LootCategory } from '../core/level';
 import { RIVALS, type RivalId, type RivalPlan, type State } from '../core/game';
 import { finalePaper, writePaper, type Paper } from './newspaper';
@@ -65,6 +64,7 @@ export interface Profile {
   achievements: string[];
 }
 
+/** A brand new save. */
 export function newProfile(): Profile {
   return {
     version: 2,
@@ -96,6 +96,7 @@ export function newProfile(): Profile {
 
 const RIVAL_IDS = Object.keys(RIVALS) as RivalId[];
 
+/** A number from a string, for rolls that stay the same. */
 function hash(text: string): number {
   let h = 2166136261;
   for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
@@ -145,6 +146,7 @@ export function collectorWants(p: Profile): number | null {
   return p.stash.reduce((best, s) => (score(s.id) > score(best.id) ? s : best)).id;
 }
 
+/** What the fence pays for an item today. */
 export function priceOf(p: Profile, item: StashItem): number {
   const bonus = demand(p.day) === item.category ? 1 + DEMAND_BONUS : 1;
   const office = 1 + 0.05 * p.rooms.fence;
@@ -159,6 +161,7 @@ export function priceOf(p: Profile, item: StashItem): number {
   );
 }
 
+/** Sells a stash item. Returns the Catnip earned. */
 export function sell(p: Profile, id: number): number {
   const i = p.stash.findIndex((s) => s.id === id);
   if (i < 0) return 0;
@@ -179,6 +182,7 @@ export function narratorBuysTutorialLoot(p: Profile, tutorialId: string): number
   return STARTING_CATNIP;
 }
 
+/** Buys the lair, if there's enough Catnip. */
 export function buyLair(p: Profile): boolean {
   if (p.lairOwned || p.catnip < LAIR_PRICE) return false;
   p.catnip -= LAIR_PRICE;
@@ -377,6 +381,7 @@ export function upgradeProfile(raw: unknown): Profile | null {
   };
 }
 
+/** Loads a save slot (null if empty or broken). */
 export function loadSlot(storage: Pick<Storage, 'getItem'> | null, slot: number): Profile | null {
   try {
     const raw = storage?.getItem(slotKey(slot));
@@ -398,6 +403,7 @@ export function lastSlot(storage: Pick<Storage, 'getItem'> | null): number | nul
   }
 }
 
+/** Saves a profile to a slot. */
 export function saveSlot(storage: Pick<Storage, 'setItem'> | null, slot: number, p: Profile): void {
   try {
     storage?.setItem(slotKey(slot), JSON.stringify(p));
@@ -407,6 +413,7 @@ export function saveSlot(storage: Pick<Storage, 'setItem'> | null, slot: number,
   }
 }
 
+/** Deletes a save slot. */
 export function deleteSlot(storage: Pick<Storage, 'removeItem'> | null, slot: number): void {
   try {
     storage?.removeItem(slotKey(slot));

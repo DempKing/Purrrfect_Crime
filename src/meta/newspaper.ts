@@ -1,5 +1,5 @@
-// The morning paper after each heist: a headline written for how it went, photos of the empty displays
-// with the estimated value of each piece, and side stories. Deterministic, so a day's paper never changes.
+// The morning paper after each heist: a headline for how it went, photos of the stolen pieces, side stories.
+// Always the same paper for the same day.
 import { the } from '../core/level';
 
 export interface Photo {
@@ -43,18 +43,22 @@ export interface HeistFacts {
 
 export const MASTHEAD = 'The Whisker Times';
 
+/** A number from a string, for picking text that stays the same. */
 function hash(text: string): number {
   let h = 2166136261;
   for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
   return h >>> 0;
 }
 
+/** Picks an item using a seed. */
 function pick<T>(list: T[], seed: number): T {
   return list[(seed >>> 0) % list.length];
 }
 
+/** Formats a number as dollars. */
 const money = (n: number) => `$${n.toLocaleString('en-US')}`;
 
+/** Writes the newspaper for a heist: headline, story, photos and side stories. */
 export function writePaper(f: HeistFacts): Paper {
   const seed = hash(`${f.day}|${f.levelId}`);
   const PLACE = f.place.toUpperCase();

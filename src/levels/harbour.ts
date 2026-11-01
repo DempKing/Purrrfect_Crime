@@ -1,13 +1,10 @@
-// Harbour: the fourth district. Docks, salt and fog: crates to hide in, a lighthouse, the tide, the fish
-// market's stink, and a gala where the lights can be switched off.
+// Harbour (district 4): crates to hide in, a lighthouse, the tide, the fish market, light switches.
 import type { LevelDef } from '../core/level';
 
 /**
- * Level 15. Leo slips in at the loading dock, where Snout (a sniffer) walks. The warehouse floor is rows of
- * stacked crates with gaps to cut through, and open crates to hide in along every aisle: Captain Haddock
- * walks the middle aisle, Tally the south one, Stamp the north one past the seized-goods cage, where the
- * Smuggler's Jade Cat waits behind a locked door. The clerk dozes in the customs office next door. A camera
- * watches the cage door. Out by the far end of the loading dock.
+ * Level 15: Customs warehouse. Crate stacks and open crates to hide in.
+ * Prize: Smuggler's Jade Cat in the seized-goods cage (locked door, camera).
+ * Guards: Snout (sniffer), Captain Haddock, Tally, Stamp; the clerk dozes.
  */
 export const CUSTOMS_WAREHOUSE: LevelDef = {
   id: 'l15-customs',
@@ -111,12 +108,9 @@ export const CUSTOMS_WAREHOUSE: LevelDef = {
 };
 
 /**
- * Level 16. A lighthouse on a rocky headland, its keeper's cottage and its old buildings turned into a
- * museum of the sea. Leo lands at the boathouse. The courtyard between everything is swept by the
- * lighthouse beam, an eighth of a turn each turn; Gull and Kipper (a sniffer) walk its edge in opposite
- * directions, and Captain Mariner crosses it. The Golden Lantern is in the lens gallery, behind a locked
- * door, under a camera, where Pearl the curator dozes. The keeper dozes
- * in his cottage, at the far end of an old smugglers' tunnel from the boathouse. Out through the gift shop.
+ * Level 16: The lighthouse. Its beam sweeps the courtyard 1/8 turn per turn.
+ * Prize: Golden Lantern in the lens gallery (locked door, camera). Guards: Gull, Kipper (sniffer),
+ * Captain Mariner; Pearl and the keeper doze. A tunnel runs from the boathouse to the cottage.
  */
 export const LIGHTHOUSE: LevelDef = {
   id: 'l16-lighthouse',
@@ -192,7 +186,7 @@ export const LIGHTHOUSE: LevelDef = {
   ],
   cameras: [{ at: { x: 25, y: 3 }, sweep: [5, 4], range: 5 }],
   guards: [
-    // Gull and Kipper walk the edge of the courtyard in opposite directions; Mariner crosses it.
+    // Gull and Kipper circle the courtyard in opposite directions; Mariner crosses it.
     {
       name: 'Gull',
       start: { x: 1, y: 12 },
@@ -246,11 +240,9 @@ export const LIGHTHOUSE: LevelDef = {
 };
 
 /**
- * Level 17. A museum built over a sea cave, with the wreck of the Salty Kipper sitting on a sandbank in the
- * middle of it. Leo swims in at the cave mouth, at high tide. The sand round the wreck is under water for
- * three turns, then dry for three. Captain Nemo walks the lamplit ledge round the top of the cave, Shelly (a sniffer) the
- * east walkway, and Davy Jones dozes on the wreck beside the Captain's Pearl. Upstairs, Ahab and Marlin walk
- * the two galleries; out through the front door at the far west end.
+ * Level 17: The Shipwreck Museum. Tidal sand round the wreck: 3 turns flooded, 3 dry.
+ * Prize: Captain's Pearl on the wreck, beside dozing Davy Jones.
+ * Guards: Captain Nemo (ledge), Shelly (sniffer), Ahab and Marlin upstairs.
  */
 export const SHIPWRECK: LevelDef = {
   id: 'l17-shipwreck',
@@ -356,12 +348,9 @@ export const SHIPWRECK: LevelDef = {
 };
 
 /**
- * Level 18. The First Fishermen's Bank, built over the fish market so the money never has far to go. Leo
- * comes in among the market stalls, where the smell of fish is so strong that sniffers can't smell a cat:
- * handy, because the bank's guards are almost all sniffers. Trout walks the market; Pike and Perch each walk
- * half of the marble banking hall upstairs, and a camera watches the vault door. The Golden Sardine is in the vault; its combination
- * is in the manager's desk, behind a locked door. The night teller dozes over his ledgers. Out at the
- * market's east end.
+ * Level 18: First Fishermen's Bank. The fish market floor hides Leo's scent from sniffers.
+ * Prize: Golden Sardine in the vault (combination in the manager's desk, behind a locked door).
+ * Guards: Trout, Pike and Perch (sniffers), a camera on the vault; the teller dozes.
  */
 export const FISH_BANK: LevelDef = {
   id: 'l18-fish-bank',
@@ -469,12 +458,9 @@ export const FISH_BANK: LevelDef = {
 };
 
 /**
- * Level 19, the end of the Harbour. The aquarium's gala night is over and the guests have gone home, but the
- * chandeliers are still blazing round the great tank in the atrium. Leo slips in through the foyer, where
- * Finn walks. Admiral (a captain) circles the tank, Marina walks the far side of the atrium and Gill (a
- * sniffer) the near side. The Narwhal Tiara is in the VIP lounge, behind a locked door, under a camera. Out
- * through the shark tunnel, where Reef walks. The atrium's lights are on a switch by the west wall, the
- * lounge's on one by its door: whoever's nearest comes to put them back on.
+ * Level 19: The aquarium (end of the Harbour). Bright chandeliers round the great tank.
+ * Prize: Narwhal Tiara in the VIP lounge (locked door, camera). Guards: Finn, Admiral (captain),
+ * Marina, Gill (sniffer), Reef. Light switches: the nearest guard comes to turn them back on.
  */
 export const AQUARIUM: LevelDef = {
   id: 'l19-aquarium',

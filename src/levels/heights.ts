@@ -1,13 +1,10 @@
-// The Heights: the third district. Money lives up here, and it buys better security: card-reader doors,
-// glass walls, guard dogs and vaults. The rooftops between the buildings are for anyone with Tightrope.
+// The Heights (district 3): keycard doors, glass walls, guard dogs, vaults, and wires for Tightrope.
 import type { LevelDef } from '../core/level';
 
 /**
- * Level 10. In over the garden wall, out through the ballroom. The Fabergé Fish is in the gallery,
- * behind a card-reader door off the marble hall, where Sterling (a captain) walks. The keycard was left
- * in the library by the reading chair, where Jeeves the butler dozes. Bruno walks the long corridor that
- * joins everything; Duchess, a sniffer, minds the ballroom by the way out. A vent runs from the garden to
- * the library.
+ * Level 10: The mansion. Prize: Faberge Fish behind a keycard door off the marble hall.
+ * The keycard is in the library (Jeeves dozes there; a vent runs from the garden).
+ * Guards: Sterling (captain), Bruno, Duchess (sniffer).
  */
 export const MANSION: LevelDef = {
   id: 'l10-mansion',
@@ -111,11 +108,9 @@ export const MANSION: LevelDef = {
 };
 
 /**
- * Level 11. Three rooftops above the city. Leo comes up the service stairs onto the west roof, where Basil
- * walks between the two little bridges to the roof garden. Ivy the gardener (a sniffer) walks a ring round
- * the penthouse suite (and Rosa the other way) in the middle of the garden: glass on its north side, a locked door on the south, a
- * camera inside, and the Sapphire Swan on its plinth. Captain Monty guards the one bridge to the east roof
- * and its fire escape. Wires strung across the gaps are for anyone with Tightrope.
+ * Level 11: Rooftop gardens. Wires over the gaps need Tightrope.
+ * Prize: Sapphire Swan in the penthouse (glass north side, locked door, camera inside).
+ * Guards: Basil, Ivy (sniffer) and Rosa circling the penthouse, Captain Monty on the east bridge.
  */
 export const SKY_GARDEN: LevelDef = {
   id: 'l11-sky-garden',
@@ -230,12 +225,9 @@ export const SKY_GARDEN: LevelDef = {
 };
 
 /**
- * Level 12. Forty floors up, on auction night. Leo comes up in the service lift; Bonham (a sniffer) minds
- * the lobby. The auction floor is echoing marble, with rows of bidders' seats, and in the middle stands the
- * vitrine: a glass room with a camera inside and the Crown of the Cat King on its plinth. Sotheby (a
- * captain) circles it; Phillips walks the west aisles, Christie the east one by the service stairs. Three
- * glass-fronted viewing rooms along the north wall hold tomorrow's lots. Glass shows everything and
- * carries no sound: inside a glass room, picking a lock is heard by nobody outside.
+ * Level 12: Auction house, 40 floors up. Glass rooms show everything but carry no sound.
+ * Prize: Crown of the Cat King in the glass vitrine (camera inside).
+ * Guards: Bonham (sniffer), Sotheby (captain), Phillips, Christie.
  */
 export const GLASS_TOWER: LevelDef = {
   id: 'l12-glass-tower',
@@ -373,13 +365,9 @@ export const GLASS_TOWER: LevelDef = {
 };
 
 /**
- * Level 13. Leo rows in to the end of the east pier. The Commodore's Golden Compass is in the cabin of his
- * yacht, moored by the middle pier, with Skipper (a captain) pacing
- * its bow; the cabin door is round the far side. Bosun walks the boardwalk,
- * past two guard dogs dozing in their kennels; Barnacle (a sniffer) prowls the little yacht's
- * deck, and Old Salt naps at the head of the west pier, where the dinghy home is tied up. The clubhouse has a few
- * trophies for the greedy. A mooring line runs from the big yacht to the east pier, for Tightrope; the
- * one-tile gaps beside the yachts can be crossed with a Pounce.
+ * Level 13: Yacht club. Prize: Golden Compass in the yacht's cabin (door on the far side).
+ * Guards: Skipper (captain), Bosun, Barnacle (sniffer), Old Salt (dozing), two guard dogs.
+ * Mooring line for Tightrope; 1-tile gaps can be crossed with Pounce.
  */
 export const YACHT_CLUB: LevelDef = {
   id: 'l13-yacht-club',
@@ -469,11 +457,9 @@ export const YACHT_CLUB: LevelDef = {
 };
 
 /**
- * Level 14, the end of the Heights. A star-gazer's estate on the hill. Leo comes over the wall into the
- * grounds, where Rufus walks and a guard dog sleeps by the path. The Comet Diamond is in the vault, off the
- * long marble gallery that Captain Hubert walks end to end; its combination is taped inside the study desk
- * next door. In through the glass-fronted conservatory, or by the vent to the terrace room. Astra, the
- * astronomer, dozes at her telescope in the dome upstairs, among the star charts.
+ * Level 14: The observatory estate (end of the Heights). Prize: Comet Diamond in the vault;
+ * combination in the study desk. Guards: Rufus, a guard dog, Captain Hubert; Astra dozes.
+ * Ways in: the glass conservatory or the vent to the terrace room.
  */
 export const OBSERVATORY: LevelDef = {
   id: 'l14-observatory',

@@ -1,5 +1,4 @@
-// The narrator's tutorial for the Corner Gallery: short steps, each waiting for the player to do the thing.
-// Steps whose thing is optional (a dash, which is loud) also have a "Got it" button.
+// The narrator's tutorial steps. Each waits for the player to do something (optional ones have a Got it button).
 import type { State } from '../core/game';
 
 /** What the player has done so far this heist, recorded by the controller. */
@@ -18,10 +17,12 @@ export interface TutorialStep {
   done: (s: State, ev: TutorialEvents) => boolean;
 }
 
+// Where Leo is in the tutorial map.
 const inHallEast = (s: State) => s.layer === 'floor' && s.leo.y <= 4 && s.leo.x >= 16;
 const pastCorridor = (s: State) => s.leo.y >= 5 && s.leo.x >= 14;
 const inGallery = (s: State) => s.leo.x <= 8 && s.leo.y >= 6;
 
+/** The tutorial steps, in order. */
 export const TUTORIAL: TutorialStep[] = [
   {
     id: 'move',

@@ -1,14 +1,10 @@
-// NightClaw's challenge museum, opened by his second letter (he chose every lock, lens and laser in it), and
-// his own lair, opened by his fourth.
+// NightClaw's levels: his challenge museum (opened by Letter 2) and his lair (opened by Letter 4).
 import type { LevelDef } from '../core/level';
 
 /**
- * The Midnight Museum. Leo comes in at the foyer, whose glass wall looks onto the hall of plates, where
- * Ward walks and Snooze dozes beside a keycard NightClaw seems to have dropped. The laser corridor (the
- * fuse box is back in the foyer) leads up to the great hall: Captain Vigil's rounds, a guard dog, a camera
- * and a searchlight. The curator's office, off the hall, has the vault combination in its desk. The
- * keycard opens the Midnight Wing, whose antechamber has motion sensors and Nosey the sniffer; the vault
- * beyond it holds the Midnight Music Box. Out through the skylight in the great hall.
+ * NightClaw's challenge: The Midnight Museum. Keycard by dozing Snooze, laser corridor (fuse box in
+ * the foyer), great hall with Captain Vigil, a dog, a camera and a searchlight. Combination in the curator's desk.
+ * Prize: Midnight Music Box in the vault past motion sensors and Nosey (sniffer). Exit: the skylight.
  */
 export const MIDNIGHT_MUSEUM: LevelDef = {
   id: 'nc-midnight-museum',
@@ -125,13 +121,10 @@ export const MIDNIGHT_MUSEUM: LevelDef = {
 };
 
 /**
- * NightClaw's Lair, in the old bell tower on Moon Street: the last heist. Leo comes in at the foyer, past a
- * dozing guard dog. NightClaw stalks the belfry hall himself, quick on his feet and with a cat's eyes for the
- * dark. His prized possession lies in the sanctum, behind a card door, a laser curtain, motion sensors and
- * pressure plates; the keycard is on the reading table in his study, where Alfred the butler dozes. The fuse
- * box is in the workshop, where Cog, a Robo-Guard, keeps the machines company. His trophies line a glass-
- * fronted gallery, minded by Rook the sniffer. Take the prize, then creep up on NightClaw and tap him on the
- * shoulder while he isn't expecting it.
+ * NightClaw's Lair: the final heist. NightClaw patrols the belfry hall (fast, sees in the dark).
+ * Prize: his prized possession in the sanctum (keycard door, lasers, motion sensors, plates);
+ * keycard in the study (Alfred dozes). Cog (Robo-Guard) by the fuse box, Rook (sniffer) in the gallery.
+ * To win: take the prize, then tap NightClaw from behind.
  */
 export const NIGHTCLAW_LAIR: LevelDef = {
   id: 'nc-lair',

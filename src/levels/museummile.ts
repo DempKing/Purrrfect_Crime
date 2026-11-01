@@ -1,12 +1,10 @@
-// Museum Mile: the second district. Bigger buildings and cleverer security: pressure plates, motion
-// sensors, and the first rival thieves turning up for the same prizes.
+// Museum Mile (district 2): pressure plates, motion sensors, and the first rival thieves.
 import type { LevelDef } from '../core/level';
 
 /**
- * Level 5. In through the loading bay, out by the front steps. Rexford, a captain, walks the great hall
- * around the T-rex (whose bones block sight). The Golden Raptor Egg sits in the egg room on a plinth
- * ringed with pressure plates, under lamplight, with Doc dozing in the corner. Bones walks the fossil
- * gallery by the front door; Moose minds the mammals. The vents run from the loading bay to the egg room.
+ * Level 5: Natural history museum. The T-rex in the great hall blocks sight.
+ * Prize: Golden Raptor Egg on a plinth ringed with pressure plates (Doc dozes nearby).
+ * Guards: Rexford (captain), Bones, Moose. Vents: loading bay to the egg room.
  */
 export const NATURAL_HISTORY: LevelDef = {
   id: 'l5-natural-history',
@@ -14,7 +12,7 @@ export const NATURAL_HISTORY: LevelDef = {
   tip: 'Pressure plates (the raised squares) set off the alarm the moment you step on one. Step around them, or Pounce over them.',
   objective: 'Take the Golden Raptor Egg from among the pressure plates, then leave by the front steps.',
   ambient: 'dim',
-  // Shadows: under the T-rex, behind the fossil cases, the back of the loading bay and the mammal hall's far wall.
+  // Shadow areas.
   shadows: [
     { x: 11, y: 8, w: 7, h: 3 },
     { x: 1, y: 3, w: 1, h: 7 },
@@ -131,10 +129,9 @@ export const NATURAL_HISTORY: LevelDef = {
 };
 
 /**
- * Level 6. A long gallery of statues, walked by Ramses and sniffed by Anubis. The only way up to the
- * burial chamber is the tomb corridor, wired with motion sensors: one tile per move, or the alarm. The
- * fuse box that powers them is at the gallery's far end, a vent away from the entrance hall. Khufu dozes in
- * the chamber, where the Scarab of Bastet sits between two sarcophagi (safes) under a camera.
+ * Level 6: Egyptian wing. The tomb corridor has motion sensors (1 tile per move);
+ * the fuse box is at the far end of the gallery, a vent from the entrance.
+ * Prize: Scarab of Bastet between two safes, under a camera. Guards: Ramses, Anubis (sniffer), Khufu (dozing).
  */
 export const EGYPTIAN_WING: LevelDef = {
   id: 'l6-egyptian-wing',
@@ -211,10 +208,8 @@ export const EGYPTIAN_WING: LevelDef = {
 };
 
 /**
- * Level 7. In by the west gallery, out by the east. Between them is the atrium: echoing marble, a few
- * sculptures to hide behind, and an art spotlight circling the middle, with the Curator (a captain)
- * walking its edge. The Blue Period Cat hangs in the masterpiece room up top, behind a camera and a
- * horseshoe of pressure plates. A catwalk runs over the atrium for anyone with Ceiling Climb.
+ * Level 7: Modern art. A spotlight circles the marble atrium; Curator (captain) walks its edge.
+ * Prize: Blue Period Cat behind a camera and pressure plates. Catwalk overhead for Ceiling Climb.
  */
 export const MODERN_ART: LevelDef = {
   id: 'l7-modern-art',
@@ -327,10 +322,8 @@ export const MODERN_ART: LevelDef = {
 };
 
 /**
- * Level 8. Down through a skylight onto the roof landing; out through the loading door at the far end.
- * The Star of Siam is in the vault behind a curtain of lasers, with motion sensors inside: the fuse box
- * that cuts both is in the security office, where Night Owl dozes over the camera panel. Topaz (a captain)
- * walks the long crystal hall; Quartz, a sniffer, prowls by the vault door; Flint minds the loading area.
+ * Level 8: Gem hall. Prize: Star of Siam in the vault behind lasers and motion sensors;
+ * the fuse box is in the security office (Night Owl dozes). Guards: Topaz (captain), Quartz (sniffer), Flint.
  */
 export const GEM_HALL: LevelDef = {
   id: 'l8-gem-hall',
@@ -421,19 +414,16 @@ export const GEM_HALL: LevelDef = {
 };
 
 /**
- * Level 9, the end of Museum Mile. A starlit dome with rings of seats and the star projector in the middle,
- * whose two beams sweep the room in opposite circles. Galileo (a captain) walks the dome. The Midnight
- * Meteorite is up in the observatory, behind a locked door or an open archway, with Hubble asleep at his
- * telescope, under a camera. Halley circles the dome the other way from Galileo. In by the west lobby,
- * where Comet the sniffer prowls; out by the east, past Kepler. A catwalk
- * runs from the west lobby to the observatory, for anyone with Ceiling Climb.
+ * Level 9: Planetarium (end of Museum Mile). Two projector beams sweep in opposite circles.
+ * Prize: Midnight Meteorite in the observatory (Hubble dozes, camera). Guards: Galileo (captain),
+ * Halley, Comet (sniffer), Kepler. Catwalk to the observatory for Ceiling Climb.
  */
 export const PLANETARIUM: LevelDef = {
   id: 'l9-planetarium',
   name: 'The Planetarium',
   tip: 'The stars light the dome dimly, and two spotlights sweep it in opposite directions. The darkest spots are just inside the rings of seats.',
   objective: 'Take the Midnight Meteorite from the observatory and slip out through the east lobby.',
-  // The projected stars give the whole dome a dim glow; it's darkest just inside the rings of seats.
+  // Dim starlight everywhere, darkest inside the rings of seats.
   ambient: 'dim',
   shadows: [
     { x: 9, y: 8, w: 3, h: 1 },

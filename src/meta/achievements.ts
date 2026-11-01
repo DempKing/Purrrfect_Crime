@@ -1,5 +1,4 @@
-// Achievements: checked against the save after every heist and every visit to the lair. Each has a Steam API
-// name, ready for when the Steam build is wired up; in the browser they live in the save.
+// Achievements, checked after every heist and lair visit. Each has a Steam API name for the Steam build.
 import { RIVALS, type RivalId } from '../core/game';
 import { DISTRICTS } from '../levels';
 import { challengeDone, hasLetter } from './letters';
@@ -16,11 +15,13 @@ export interface Achievement {
   earned: (p: Profile, r: HeistReport | null) => boolean;
 }
 
+// Helpers for the achievement checks.
 const cleared = (p: Profile, ids: string[]) => ids.every((id) => p.records[id]);
 const districtIds = (i: number) => DISTRICTS[i].levels.map((l) => l.id);
 const centrepieces = (p: Profile) => Object.values(p.records).filter((r) => r.centrepiece).length;
 const beat = (p: Profile, id: RivalId) => (p.rivalRecord[id]?.won ?? 0) > 0;
 
+/** All achievements and how each is earned. */
 export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'first-night',

@@ -14,6 +14,7 @@ export interface District {
   levels: LevelDef[];
 }
 
+/** The districts, in unlock order. */
 export const DISTRICTS: District[] = [
   {
     id: 'old-town',
@@ -32,7 +33,7 @@ export const DISTRICTS: District[] = [
   },
   { id: 'harbour', name: 'Harbour', levels: [CUSTOMS_WAREHOUSE, LIGHTHOUSE, SHIPWRECK, FISH_BANK, AQUARIUM] },
   { id: 'downtown', name: 'Downtown', levels: [GRAND_BANK, CASINO, MINT, MISCHIEF, TREASURY] },
-  // NightClaw's challenge (opened by his second letter) and his lair (by his fourth), not by clearing the heist before.
+  // NightClaw's levels unlock by letters, not by clearing the heist before.
   { id: 'nightclaw', name: 'NightClaw’s Challenge', levels: [MIDNIGHT_MUSEUM, NIGHTCLAW_LAIR] },
 ];
 

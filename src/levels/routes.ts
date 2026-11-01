@@ -1,10 +1,8 @@
-// Known winning routes, replayed by the tests so changes to the rules can't quietly break them.
+// Known winning routes, replayed by the tests so rule changes can't silently break them.
 /** One step of a route: a move to a tile, or an action at a tile. */
 export type RouteStep = [number, number] | { a: string; x: number; y: number };
 
-// The tutorial, played the way the narrator teaches it: follow Gus into the hall, wait in the dark along
-// the far wall while he walks back, cross the marble, slip down the corridor while the camera looks
-// away, crawl under the laser hallway, pick one case, smash the other, take the pearl and leave.
+// The tutorial route, the way the narrator teaches it.
 export const CORNER_GALLERY_ROUTE: RouteStep[][] = [
   [[6, 3]],
   [[10, 4]],
@@ -25,10 +23,7 @@ export const CORNER_GALLERY_ROUTE: RouteStep[][] = [
   [[0, 11]],
 ];
 
-// A known way through the Night Gallery (not flawless: Brutus finds an empty case and the alarm goes off).
-// A camera watches the office's vent grate, so Leo waits in the duct until it looks away, climbs out and
-// steps clear before it turns back, then kills the cameras. Rocco circles the marble hall but never looks
-// up the east side.
+// A known (not flawless) route through the Night Gallery: wait in the vent for the camera to look away.
 export const NIGHT_GALLERY_ROUTE: RouteStep[][] = [
   [[4, 14], { a: 'enter-vent', x: 4, y: 14 }],
   [[5, 9]],

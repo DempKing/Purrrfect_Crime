@@ -1,7 +1,5 @@
-// Sound, all synthesised with Web Audio, so there are no files to load: a sneaky jazz loop that adds layers
-// as the guards grow suspicious and turns into a big-band chase when an alarm trips, and short effects for
-// footsteps, locks, glass, dogs, robots and the rest. Silent until the first click or key press (browsers
-// won't start audio before then), and silent where Web Audio isn't available.
+// Sound: music tracks (with a synthesised jazz loop as fallback) and synthesised sound effects (Web Audio).
+// The music gets more intense with suspicion and alarms. Silent until the first click or key press.
 
 export type Sfx =
   | 'tick'
@@ -36,20 +34,21 @@ export type Sfx =
   | 'tap'
   | 'achievement';
 
-/** 0 silence, 1 the sneaky loop, 2 plus vibraphone (someone's suspicious), 3 the chase (an alarm). */
+/** Music intensity: 0 silent, 1 sneaky, 2 suspicious, 3 chase (alarm). */
 export type Tension = 0 | 1 | 2 | 3;
 
 const BPM = { calm: 92, chase: 150 };
-// A ii-V-I-vi loop in D minor-ish, as walking-bass roots and chord tones (MIDI note numbers).
+// The fallback jazz loop's chords (MIDI note numbers).
 const BARS = [
   { bass: [38, 41, 45, 43], chord: [62, 65, 69, 72] }, // Dm7
   { bass: [43, 47, 50, 49], chord: [59, 62, 65, 69] }, // G7
   { bass: [36, 40, 43, 45], chord: [60, 64, 67, 71] }, // Cmaj7
   { bass: [45, 44, 43, 40], chord: [57, 60, 64, 67] }, // Am7
 ];
+/** MIDI note number to frequency in Hz. */
 const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 
-/** Which music fits where. Each scene plays art/music/<scene>.mp3 if it's there (see art/music/README.md). */
+/** Music scenes; each plays art/music/<scene>.mp3 if present. */
 export type MusicScene =
   | 'title'
   | 'lair'
@@ -136,11 +135,13 @@ export class Sound {
     }
   }
 
+  /** Sets the master, music and effects volumes (0..1). */
   setLevels(master: number, music: number, sfx: number): void {
     this.levels = { master, music, sfx };
     this.applyLevels();
   }
 
+  /** Applies the volumes to the audio graph. */
   private applyLevels(): void {
     for (const t of this.tracks.values()) t.el.volume = this.trackVolume(t.vol);
     if (!this.ctx || !this.master || !this.musicBus || !this.sfxBus) return;
@@ -166,7 +167,7 @@ export class Sound {
     this.finale = on;
   }
 
-  /** Changes the music for a screen, crossfading. Takes effect once audio is unlocked by a click or key. */
+  /** Crossfades to a scene's music (once audio is unlocked). */
   setScene(scene: MusicScene): void {
     if (scene === this.scene) return;
     this.scene = scene;
@@ -174,6 +175,7 @@ export class Sound {
     this.pickTrack();
   }
 
+  /** The audio element for a scene's music file (created once). */
   private track(scene: MusicScene) {
     let t = this.tracks.get(scene);
     if (!t) {
@@ -206,7 +208,7 @@ export class Sound {
     return t;
   }
 
-  /** The first track in the scene's list that exists; while one is still being checked, waits for it. */
+  /** The first available track for a scene. */
   private pickTrack(): void {
     if (!this.ctx || !this.scene) return;
     for (const s of MUSIC_FALLBACK[this.scene]) {
@@ -217,6 +219,7 @@ export class Sound {
     this.fadeTo(null); // no file: the synthesised music in a heist, quiet elsewhere
   }
 
+  /** Music file volume for a 0..1 level. */
   private trackVolume(v: number): number {
     return Math.max(0, Math.min(1, v * this.levels.master * this.levels.music));
   }
@@ -239,6 +242,7 @@ export class Sound {
     }, 50);
   }
 
+  /** Stops all music. */
   stop(): void {
     window.clearInterval(this.timer);
     void this.ctx?.close();
@@ -271,6 +275,7 @@ export class Sound {
     o.stop(at + dur + 0.02);
   }
 
+  /** Filtered noise: brushes, glass, splashes. */
   private hiss(
     bus: GainNode,
     at: number,
@@ -299,7 +304,7 @@ export class Sound {
     src.stop(at + dur + 0.02);
   }
 
-  /** Struck metal: a few inharmonic partials that ring and die away (locks, latches, bottle caps, ducts). */
+  /** A struck-metal sound (locks, latches, bottle caps). */
   private metal(
     bus: GainNode,
     at: number,
@@ -351,6 +356,7 @@ export class Sound {
     }
   }
 
+  /** One eighth note of the fallback jazz loop. */
   private playEighth(at: number, beat: number): void {
     const bus = this.musicBus!;
     const bar = BARS[Math.floor(beat / 8) % BARS.length];
@@ -416,7 +422,7 @@ export class Sound {
         this.metal(b, t + 0.13, this.vary(3600, 0.1), 0.06, 0.04, [1, 2.3]);
         return;
       case 'unlock':
-        // The lock gives: pins setting one by one, then the bolt shoots back with a solid clunk, and a ring.
+        // Unlock: pins clicking, then the bolt.
         [0, 0.07, 0.13].forEach((d, k) => this.metal(b, t + d, 2800 + k * 350, 0.05, 0.045, [1, 2.2]));
         this.thud(b, t + 0.22, 160, 0.35, 0.14);
         this.metal(b, t + 0.22, 820, 0.35, 0.12);
@@ -546,7 +552,7 @@ export class Sound {
   }
 }
 
-/** The sounds a turn's log calls for, in order, for things that aren't a direct result of a click. */
+/** Sounds to play for things in a turn's log (not direct results of a click). */
 export function soundsInLog(log: string[]): Sfx[] {
   const out: Sfx[] = [];
   const text = log.join(' ');

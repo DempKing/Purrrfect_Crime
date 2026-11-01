@@ -1,6 +1,5 @@
-// NightClaw's letters. The first two come from two triggers, in whichever order Leo reaches them (ten
-// heists, and 10,000 Catnip sold on the black market); the third is hidden inside the challenge item, and
-// the fourth comes when his challenge is done.
+// NightClaw's letters. Letters 1 and 2: after 10 heists and after selling 10,000 Catnip (either order).
+// Letter 3: inside the challenge prize. Letter 4: when the challenge is done.
 import type { LevelDef } from '../core/level';
 import { ALL_LEVELS } from '../levels';
 import type { Profile } from './profile';
@@ -20,6 +19,7 @@ export const CHALLENGE_PLACE = 'the Midnight Museum';
 export const TRIGGER_HEISTS = 10;
 export const TRIGGER_SOLD = 10000;
 
+/** The letters' titles and text. */
 export const LETTERS: Record<LetterId, { title: string; body: string[] }> = {
   1: {
     title: 'A fan',
@@ -57,9 +57,10 @@ export const LETTERS: Record<LetterId, { title: string; body: string[] }> = {
   },
 };
 
-/** The NightClaw Challenge: every heist in the city, its centrepiece taken in a flawless heist. */
+/** The NightClaw Challenge: every centrepiece taken in a flawless heist. */
 export const CHALLENGE_LEVELS: LevelDef[] = ALL_LEVELS.filter((l) => !l.challenge && !l.finale);
 
+/** How many centrepieces have been taken flawlessly. */
 export function challengeProgress(p: Profile): { done: number; of: number } {
   return {
     done: CHALLENGE_LEVELS.filter((l) => p.records[l.id]?.flawless).length,
@@ -67,17 +68,16 @@ export function challengeProgress(p: Profile): { done: number; of: number } {
   };
 }
 
+/** Is the NightClaw Challenge complete? */
 export function challengeDone(p: Profile): boolean {
   const { done, of } = challengeProgress(p);
   return done === of;
 }
 
+/** Has this letter arrived? */
 export const hasLetter = (p: Profile, id: LetterId) => p.letters.some((l) => l.id === id);
 
-/**
- * Posts Letters 1 and 2 as their triggers are reached, in order: the first trigger reached brings Letter 1,
- * the second brings Letter 2. Returns the letters that just arrived.
- */
+/** Delivers Letters 1 and 2 as their triggers are met (whichever comes first is Letter 1). Returns new letters. */
 export function deliverLetters(p: Profile): LetterId[] {
   const triggers = (p.heists >= TRIGGER_HEISTS ? 1 : 0) + (p.soldTotal >= TRIGGER_SOLD ? 1 : 0);
   const out: LetterId[] = [];

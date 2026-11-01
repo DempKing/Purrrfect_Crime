@@ -1,7 +1,5 @@
-// Level 0: the tutorial. One room per lesson, in the order the narrator teaches them:
-// the lobby (moving, dashing, the camera), the hall (light, a guard, noisy marble), the corridor
-// (a sweeping camera), the storeroom and its vent (crawling under the laser hallway), and the gallery
-// (picking a lock, loot, the centrepiece) with the exit beside it.
+// Level 0: the tutorial. One room per lesson: moving and the camera, light and guards, a sweeping camera,
+// crawling through a vent, then picking a lock and taking the centrepiece.
 import type { LevelDef } from '../core/level';
 
 export const CORNER_GALLERY: LevelDef = {

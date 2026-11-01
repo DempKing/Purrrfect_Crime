@@ -36,7 +36,7 @@ export const GREY_GALLERY: LevelDef = {
   loot: [{ at: { x: 11, y: 5 }, name: 'Moonstone', value: 5000, space: 2, category: 'jewel' }],
 };
 
-/** M1 stealth sandbox: light and shadow, noise, cameras, lasers, locks, vents and an inventory that fills up. */
+/** Stealth sandbox: light, noise, cameras, lasers, locks, vents and a filling bag. */
 export const NIGHT_GALLERY: LevelDef = {
   id: 'm1-night-gallery',
   name: 'The Night Gallery',

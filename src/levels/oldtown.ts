@@ -1,12 +1,10 @@
-// Old Town: the first district after the tutorial. Each level brings in one or two new ideas:
-// the Coin Museum a sleepy guard, squeaky floorboards and a safe; the Clocktower the rafters and a
-// captain; the Pawnbroker a sniffer; the Opera House spotlights.
+// Old Town (district 1). New in each level: sleepy guards, squeaky floors and safes (Coin Museum),
+// rafters and a captain (Clocktower), a sniffer (Pawnbroker), spotlights (Opera House).
 import type { LevelDef } from '../core/level';
 
 /**
- * Level 1. Barnaby dozes at the ticket desk, ringed by loose floorboards; the quiet way past is the
- * lane along the west wall, or the vent from the foyer to the curator's office. Rex walks the coin hall.
- * The Double Doubloon sits under a lamp in the vault, behind a camera, or behind the office's locked door.
+ * Level 1: Coin museum. Barnaby dozes at the ticket desk behind squeaky boards; quiet ways past:
+ * the west wall or the vent to the office. Prize: Double Doubloon in the vault (camera, or the office door).
  */
 export const COIN_MUSEUM: LevelDef = {
   id: 'l1-coin-museum',
@@ -124,10 +122,8 @@ export const COIN_MUSEUM: LevelDef = {
 };
 
 /**
- * Level 2. A long archive hall full of bookshelves. Captain Big Ben walks its edge and whistles up Tick
- * from the middle aisle if he hears anything. The Brass Astrolabe is in the clock chamber, where Tock
- * dozes by the plinth, behind squeaky boards or a locked door. With Ceiling Climb, the rafters run from
- * the hall's corner straight over everyone's heads to a ladder in the chamber.
+ * Level 2: Clocktower archive. Captain Big Ben calls Tick if he hears anything.
+ * Prize: Brass Astrolabe in the clock chamber (Tock dozes). Rafters for Ceiling Climb.
  */
 export const CLOCKTOWER: LevelDef = {
   id: 'l2-clocktower',
@@ -236,10 +232,9 @@ export const CLOCKTOWER: LevelDef = {
 };
 
 /**
- * Level 3. In over the roof. The top hall is crossed by pulsing lasers (on every other turn; the fuse
- * box is on Leo's side), the shop floor below is full of glass cases and walked by Lou, and the back
- * office, with two safes, is Biscuit's beat: a sniffer who smells Leo through the walls. The Pawned
- * Tiara is in the owner's vault, behind a locked door and a camera. Out by the shop's fire escape.
+ * Level 3: Pawnbroker. Pulsing lasers (every other turn) in the top hall; fuse box on Leo's side.
+ * Lou walks the shop floor, Biscuit (sniffer) the back office with two safes.
+ * Prize: Pawned Tiara in the owner's vault (locked door, camera).
  */
 export const PAWNBROKER: LevelDef = {
   id: 'l3-pawnbroker',
@@ -340,10 +335,8 @@ export const PAWNBROKER: LevelDef = {
 };
 
 /**
- * Level 4. In by the stage door, out by the front doors, the whole opera house in between. Two
- * spotlights were left running: one sweeps the stage, the other the stalls, where Maestro (a captain)
- * walks the marble aisles. The Phantom's Mask is in the costume vault among the racks, reached from
- * the lobby under a camera, or through the locked door off the stage, or by the fly loft's rafters.
+ * Level 4: Opera house. Two spotlights sweep the stage and the stalls; Maestro (captain) walks the aisles.
+ * Prize: Phantom's Mask in the costume vault (lobby camera, locked stage door, or the rafters).
  */
 export const OPERA_HOUSE: LevelDef = {
   id: 'l4-opera-house',
@@ -418,7 +411,7 @@ export const OPERA_HOUSE: LevelDef = {
     { x: 20, y: 12, w: 7, h: 3 },
     { x: 1, y: 1, w: 5, h: 11 },
   ], // the lobby's glass doors
-  // Hanging from the lobby's ceiling, swinging between the front doors and the door to the stalls.
+  // Lobby spotlight, swinging between the front doors and the stalls door.
   cameras: [
     { at: { x: 23, y: 13 }, sweep: [0, 4], range: 5 },
     { at: { x: 5, y: 12 }, sweep: [5, 6, 7, 6], range: 6 },
@@ -463,7 +456,7 @@ export const OPERA_HOUSE: LevelDef = {
         { x: 8, y: 2 },
       ],
     },
-    // The guard dog sniffs up and down the far end of the vault, by the way out to the lobby, not the stage door.
+    // The guard dog patrols the lobby end of the vault.
     {
       name: 'Tenor',
       kind: 'sniffer',

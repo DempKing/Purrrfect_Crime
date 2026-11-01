@@ -1,13 +1,10 @@
-// Downtown: the fifth district, and the end of the city's campaign. The richest buildings, the newest
-// security: Robo-Guards, slot machines, conveyor belts, wet paint and a time-locked vault.
+// Downtown (district 5, the last): Robo-Guards, slot machines, conveyor belts, wet paint, a time-locked vault.
 import type { LevelDef } from '../core/level';
 
 /**
- * Level 20. The Grand Bank, where the Robo-Guards are on trial. RX-1 rolls round the marble banking hall,
- * RX-2 round the lobby where Leo comes in; Captain Banks walks between the tellers' counters and the
- * manager dozes in his office. The Gold Bullion Mouse is in the vault, behind a locked door and a laser
- * curtain. The fuse box in the maintenance room cuts the lasers and powers down both robots; a vent runs
- * there from the lobby.
+ * Level 20: The Grand Bank. Prize: Gold Bullion Mouse in the vault (locked door + lasers).
+ * Guards: Robo-Guards RX-1 (banking hall) and RX-2 (lobby), Captain Banks, a dozing manager.
+ * The fuse box (maintenance room, vent from the lobby) cuts the lasers and both robots.
  */
 export const GRAND_BANK: LevelDef = {
   id: 'l20-grand-bank',
@@ -125,11 +122,9 @@ export const GRAND_BANK: LevelDef = {
 };
 
 /**
- * Level 21. Casino Royale-Paws, after closing. The slot machines on the casino floor still jingle and
- * flash all night, so loud that nobody hears a thing Leo does among them, but the floor is bright and
- * watched: Ace (a captain) walks the edge of it, Deuce the middle aisle, and two cameras sweep it. The Royal
- * Flush Diamond is in the high rollers' room, behind a locked door, with Chip, a Robo-Guard, rolling round
- * it. The croupier dozes over the card tables next door, by the fuse box. Out through the front doors.
+ * Level 21: Casino Royale-Paws. Slot machines hide all noise but the floor is bright and watched.
+ * Prize: Royal Flush Diamond in the high rollers' room (locked door, Robo-Guard Chip).
+ * Guards: Ace (captain), Deuce, two cameras; the croupier dozes by the fuse box.
  */
 export const CASINO: LevelDef = {
   id: 'l21-casino',
@@ -221,11 +216,9 @@ export const CASINO: LevelDef = {
 };
 
 /**
- * Level 22. The Mint, running its night shift with nobody but machines and guards. Three wide conveyor belts
- * cross the production floor between the coin presses, carrying anyone who stands on them a tile at the
- * end of each turn. Penny and Nickel, two Robo-Guards, roll along the top and bottom aisles; Captain
- * Quarter and Shilling walk the two between, and Florin walks up and down across them. The Golden Coin Die is in the die vault, behind a locked door; the assayer
- * dozes in his office. The fuse box is at the east end of the floor. In and out through the loading bay.
+ * Level 22: The Mint. Three conveyor belts move anyone on them 1 tile per turn.
+ * Prize: Golden Coin Die in the die vault (locked door). Guards: Robo-Guards Penny and Nickel,
+ * Captain Quarter, Shilling, Florin; the assayer dozes. Fuse box at the east end.
  */
 export const MINT: LevelDef = {
   id: 'l22-mint',
@@ -359,12 +352,9 @@ export const MINT: LevelDef = {
 };
 
 /**
- * Level 23. The Museum of Modern Mischief, where every exhibit is a prank. The lobby's floor is the
- * Whoopee Cushion Floor (exactly as loud as it sounds), with Frida (a sniffer) walking it. The action
- * painting hall upstairs is still wet, with a fresh floor piece right across it: step in the paint and Leo leaves paw prints for his next four
- * steps, which any guard who sees them will follow. Captain Pollock walks the edge of the hall and Banksy
- * crosses it. The Prank of the Century hangs in the top gallery, where Warhol, a Robo-Guard, rolls back and
- * forth (robots don't care about paw prints). Basquiat dozes among the video art. Out by the fire door.
+ * Level 23: Museum of Modern Mischief. A whoopee-cushion floor (loud), and wet paint that leaves
+ * paw prints guards follow. Prize: Prank of the Century, guarded by Robo-Guard Warhol.
+ * Guards: Frida (sniffer), Captain Pollock, Banksy; Basquiat dozes.
  */
 export const MISCHIEF: LevelDef = {
   id: 'l23-mischief',
@@ -471,12 +461,9 @@ export const MISCHIEF: LevelDef = {
 };
 
 /**
- * Level 24, the end of Downtown and of the city. City Hall's treasury holds the Key to the City, behind a
- * vault door with a time lock: whatever Leo does, its dials won't turn before turn 12. In front of it, a
- * laser curtain, and Bylaw, a Robo-Guard; the fuse box that powers both is in the wall between the mayor's
- * office and the records room. The combination is in the mayor's desk, where his secretary dozes. The clerk
- * (a sniffer) works late in the records room, Alderman (a captain) walks the marble rotunda, and the usher
- * minds the foyer where Leo comes in. Out through the council chamber, to the clock tower stairs.
+ * Level 24: City Hall treasury (end of Downtown). Prize: Key to the City in a time-locked vault
+ * (dials won't turn before turn 12), behind lasers and Robo-Guard Bylaw. Combination in the mayor's desk.
+ * Guards: secretary (dozing), clerk (sniffer), Alderman (captain), usher.
  */
 export const TREASURY: LevelDef = {
   id: 'l24-treasury',
