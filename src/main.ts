@@ -629,8 +629,46 @@ function doThere(target: Point, kind: Action['kind']): void {
 }
 
 /** Moves Leo to a tile, animating the walk; `then` runs once he's there, if he's still free to act. */
+/** The finale: walking out of the door before tapping NightClaw ends the night without the ending, so ask first. */
+let leaveOk = false;
+function leavingWithoutTap(tile: Point): boolean {
+  if (leaveOk || !level.def.finale || state.tagged || state.layer !== 'floor' || !state.inventory.length) return false;
+  if (tile.x !== level.exit.x || tile.y !== level.exit.y) return false;
+  return true;
+}
+
+function confirmLeave(go: () => void): void {
+  const box = $('leave-confirm');
+  box.classList.remove('hidden');
+  const close = () => {
+    box.classList.add('hidden');
+    $('leave-stay').onclick = $('leave-go').onclick = null;
+    window.removeEventListener('keydown', onKey, true);
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      close();
+      say('Find NightClaw, creep up behind him, and tap him on the shoulder.');
+    }
+  };
+  window.addEventListener('keydown', onKey, true);
+  $('leave-stay').onclick = () => {
+    close();
+    say('Find NightClaw, creep up behind him, and tap him on the shoulder.');
+  };
+  $('leave-go').onclick = () => {
+    close();
+    leaveOk = true;
+    go();
+    leaveOk = false;
+  };
+  ($('leave-stay') as HTMLButtonElement).focus();
+}
+
 function walkTo(tile: Point, then?: () => void): void {
   if (tile.x === state.leo.x && tile.y === state.leo.y) return then?.();
+  if (leavingWithoutTap(tile)) return confirmLeave(() => walkTo(tile, then));
   recentre(); // the camera catches up with Leo when he moves
   state.log = [];
   const apBefore = state.ap;
@@ -760,6 +798,7 @@ function cancelTargeting(): void {
 }
 
 function runAbility(kind: Ability, at?: Point): void {
+  if (kind === 'pounce' && at && leavingWithoutTap(at)) return confirmLeave(() => runAbility(kind, at));
   const from = { ...state.leo };
   state.log = [];
   targeting = null;
@@ -912,6 +951,7 @@ function startHeist(def: LevelDef): void {
 
 /** Leaves the heist for the screens between heists. */
 function leaveHeist(): void {
+  $('leave-confirm').classList.add('hidden');
   toggleBag(false);
   closeLootMenu();
   inHeist = false;
@@ -1134,6 +1174,7 @@ function restart(): void {
   closeLootMenu();
   state = newHeist(level, perksFor(profile), rivalPlan);
   alerts = [];
+  $('leave-confirm').classList.add('hidden');
   rivalWasIn = false;
   targeting = null;
   queue = [];
@@ -1419,6 +1460,8 @@ async function boot(): Promise<void> {
     // Nothing reaches the heist while a screen (the settings, say) is open over it.
     if (!inHeist || !$('screens').classList.contains('hidden')) return;
     if (e.target instanceof HTMLInputElement) return;
+    // The leave-the-lair question has the keys (its buttons, Esc to stay) while it's up.
+    if (!$('leave-confirm').classList.contains('hidden')) return;
     if (lootMenu) {
       // The loot tag has the keys while it's open: its numbers, or Esc to put it away.
       if (/^[1-9]$/.test(e.key)) lootChoices[Number(e.key) - 1]?.();
@@ -1469,12 +1512,13 @@ async function boot(): Promise<void> {
       if (visibleEl('screens')) return $('screens');
       if (!inHeist) return document.body;
       if (visibleEl('caught')) return $('caught');
+      if (visibleEl('leave-confirm')) return $('leave-confirm');
       if (lootMenu) return $('loot-menu');
       if (bagOpen()) return $('bag');
       if (hudPad) return document.body;
       return null;
     },
-    onMap: () => inHeist && !visibleEl('screens') && !visibleEl('caught') && !lootMenu && !bagOpen(),
+    onMap: () => inHeist && !visibleEl('screens') && !visibleEl('caught') && !visibleEl('leave-confirm') && !lootMenu && !bagOpen(),
     moveCursor: (dx, dy) => moveCursor(dx, dy),
     confirm: () => {
       if (state.status !== 'playing') return;
