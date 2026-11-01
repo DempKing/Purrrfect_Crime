@@ -115,7 +115,7 @@ export const CUSTOMS_WAREHOUSE: LevelDef = {
 export const LIGHTHOUSE: LevelDef = {
   id: 'l16-lighthouse',
   name: 'The Lighthouse Collection',
-  tip: 'The lighthouse beam sweeps the courtyard, a wedge of bright light that turns an eighth of the way round each turn. Cross behind it.',
+  tip: 'The lighthouse beam sweeps the courtyard, a wedge of bright light that turns an eighth of the way around each turn. Cross behind it.',
   objective:
     'Cross the headland to the lens gallery, take the Golden Lantern, and leave through the gift shop.',
   // A moonlit headland: dark only in the lee of the boulders, and indoors.
@@ -240,14 +240,14 @@ export const LIGHTHOUSE: LevelDef = {
 };
 
 /**
- * Level 17: The Shipwreck Museum. Tidal sand round the wreck: 3 turns flooded, 3 dry.
+ * Level 17: The Shipwreck Museum. Tidal sand around the wreck: 3 turns flooded, 3 dry.
  * Prize: Captain's Pearl on the wreck, beside dozing Davy Jones.
  * Guards: Captain Nemo (ledge), Shelly (sniffer), Ahab and Marlin upstairs.
  */
 export const SHIPWRECK: LevelDef = {
   id: 'l17-shipwreck',
   name: 'The Shipwreck Museum',
-  tip: 'The tide: the sand round the wreck is under water for three turns, then dry for three (the HUD counts down). Don’t get stranded on the wreck.',
+  tip: 'The tide: the sand around the wreck is under water for three turns, then dry for three (the HUD counts down). Don’t get stranded on the wreck.',
   objective:
     'Cross the sand at low tide to the wreck, take the Captain’s Pearl, then get up through the museum to the front door.',
   ambient: 'dark',
@@ -458,7 +458,7 @@ export const FISH_BANK: LevelDef = {
 };
 
 /**
- * Level 19: The aquarium (end of the Harbor). Bright chandeliers round the great tank.
+ * Level 19: The aquarium (end of the Harbor). Bright chandeliers around the great tank.
  * Prize: Narwhal Tiara in the VIP lounge (locked door, camera). Guards: Finn, Admiral (captain),
  * Marina, Gill (sniffer), Reef. Light switches: the nearest guard comes to turn them back on.
  */
@@ -504,7 +504,7 @@ export const AQUARIUM: LevelDef = {
     { at: { x: 25, y: 2 }, radius: 2 },
     { at: { x: 13, y: 14 }, radius: 2 },
   ],
-  // The tank glows blue: dim light all round it.
+  // The tank glows blue: dim light all around it.
   moonlight: [
     { x: 8, y: 6, w: 12, h: 6 },
     { x: 1, y: 2, w: 12, h: 2 },

@@ -131,7 +131,7 @@ await page.evaluate(() => {
     const x = out.getContext('2d');
     x.imageSmoothingQuality = 'high';
     if (rim) {
-      // A pale rim of moonlight round the silhouette, so characters read on dark floors.
+      // A pale rim of moonlight around the silhouette, so characters read on dark floors.
       const sil = document.createElement('canvas');
       sil.width = out.width;
       sil.height = out.height;

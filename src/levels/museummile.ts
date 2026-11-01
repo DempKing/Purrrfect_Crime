@@ -537,7 +537,7 @@ export const PLANETARIUM: LevelDef = {
         { x: 23, y: 7 },
       ],
     },
-    // Halley circles the dome the other way round from Galileo.
+    // Halley circles the dome the other way around from Galileo.
     {
       name: 'Halley',
       start: { x: 20, y: 14 },

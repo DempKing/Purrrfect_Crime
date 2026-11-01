@@ -195,7 +195,7 @@ export const SKY_GARDEN: LevelDef = {
         { x: 10, y: 4 },
       ],
     },
-    // Rosa walks the garden the other way round from Ivy.
+    // Rosa walks the garden the other way around from Ivy.
     {
       name: 'Rosa',
       start: { x: 17, y: 13 },

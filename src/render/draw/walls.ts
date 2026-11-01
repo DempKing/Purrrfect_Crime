@@ -237,7 +237,7 @@ export function clockFace(
   }
   g.restore();
 }
-/** A flat picture on a wall face, `width` tiles wide, centerd `middle` px up. */
+/** A flat picture on a wall face, `width` tiles wide, centered `middle` px up. */
 export function onWall(
   view: HeistView,
   g: Graphics,
@@ -367,7 +367,7 @@ export function controlBox(
     g.beginPath();
   }
 }
-/** A pressure plate: a raised metal square with a seam round it. */
+/** A pressure plate: a raised metal square with a seam around it. */
 export function plate(view: HeistView, g: Graphics, x: number, y: number): void {
   diamond(view, g, x, y, 0.36, 0x6a7080, 1);
   diamondOutline(view, g, x, y, 0x2a2e38, 1.5, 0.16, 0.9);

@@ -27,7 +27,7 @@ export function figure(
     asleep?: boolean;
     off?: boolean;
     scale?: number;
-    torch?: boolean;
+    flashlight?: boolean;
   } = {},
 ): { x: number; top: number } | null {
   const still = charFrame(name, 'idle');
@@ -124,8 +124,8 @@ export function figure(
       alpha: 0.35 * (1 - Math.min(0.7, a.bob / 50)),
     });
   // The drawings face left: mirror them to face right, and lean into the way they're going.
-  if (o.torch) {
-    // The torch's beam on the floor, out the way the guard is looking.
+  if (o.flashlight) {
+    // The flashlight's beam on the floor, out the way the guard is looking.
     const d = DIRS[a.facing];
     const len = Math.hypot(d.x, d.y);
     const ux = d.x / len;
@@ -266,7 +266,7 @@ export function drawGuard(view: HeistView, g: Graphics, a: Actor, guard: Guard, 
     asleep: guard.asleep,
     tint: actorTint(view, a),
     scale: guard.kind === 'captain' ? 1.12 : 1,
-    torch: false,
+    flashlight: false,
   });
   if (!r) return;
   if (guard.kind === 'captain') {

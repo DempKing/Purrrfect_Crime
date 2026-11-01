@@ -36,7 +36,7 @@ const DOCKS: LevelDef = {
   guards: [],
   loot: [{ at: { x: 8, y: 4 }, name: 'Prize', value: 1000, space: 1, category: 'jewel' }],
 };
-test('in a crate nobody sees or smells Leo, and guards walk round it', () => {
+test('in a crate nobody sees or smells Leo, and guards walk around it', () => {
   // Rex stands still, looking west at the crate; Sniff is right beside it.
   const guards: GuardDef[] = [
     { name: 'Rex', start: { x: 6, y: 1 }, route: [{ x: 6, y: 1 }] },

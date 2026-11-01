@@ -69,7 +69,7 @@ async function bake(url: string, o: BakeOptions): Promise<Baked> {
   model.updateMatrixWorld(true);
   box = new THREE.Box3().setFromObject(model);
   const c = box.getCenter(new THREE.Vector3());
-  // Floor props centerd on the origin; wall props with their back on z = 0.
+  // Floor props centered on the origin; wall props with their back on z = 0.
   model.position.set(
     -c.x,
     o.mount === 'wall' ? -c.y + o.height / ZPX : -box.min.y,

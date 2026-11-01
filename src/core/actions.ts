@@ -327,7 +327,7 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
     case 'tap':
       s.tagged = true;
       s.status = 'escaped';
-      s.log.push('Tap, tap. NightClaw turns round, very slowly, and smiles.');
+      s.log.push('Tap, tap. NightClaw turns around, very slowly, and smiles.');
       break;
     // Switches, the desk and the vault.
     case 'lights': {

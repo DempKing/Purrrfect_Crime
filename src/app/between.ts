@@ -44,7 +44,7 @@ export function ending(r: ReturnType<typeof completeHeist>): void {
   const nc = { name: 'NightClaw', portrait: screens.NIGHTCLAW_SVG };
   screens.narratorScene(
     [
-      '“Tap, tap.” He doesn’t jump. He turns round slowly, and for a long moment he just looks at you.',
+      '“Tap, tap.” He doesn’t jump. He turns around slowly, and for a long moment he just looks at you.',
       '“Do you know how long it has been since anyone crept up on me? Neither do I. Long enough to forget what it feels like.”',
       'He nods at what’s in your paw. “You found it. That collar is the only thing I never stole. I wore it when I was a kitten, before I was anybody. The tag says Midnight: that was my name, once.”',
       '“Keep it. You have earned it, and I have no more use for it. The city needs a thief who is better than its locks, and it has one now.”',
