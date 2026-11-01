@@ -52,3 +52,28 @@ test('the log’s events become sounds', () => {
   assert.deepEqual(soundsInLog(['Creeeak!', 'CRASH! The glass breaks.']), ['creak', 'smash']);
   assert.deepEqual(soundsInLog(['Leo pockets the keycard.']), []);
 });
+
+test('controls can be remapped: a key taken from another action swaps, and saved bindings are checked', async () => {
+  const { defaultKeys, defaultPad, rebind, actionForKey, actionForButton, cleanKeys, cleanPad } = await import('../src/controls');
+  // End turn moves to E; turning the camera right (which had E) takes Space.
+  const k = rebind(defaultKeys(), 'endTurn', 'e');
+  assert.equal(actionForKey(k, 'e'), 'endTurn');
+  assert.equal(actionForKey(k, ' '), 'turnRight');
+  // A fresh key leaves everything else alone.
+  const k2 = rebind(defaultKeys(), 'bag', 'b');
+  assert.deepEqual(k2.bag, ['b']);
+  assert.equal(actionForKey(k2, 'i'), null);
+  // Controller: bag on A; A's old job (confirm) takes Y.
+  const p = rebind(defaultPad(), 'bag', 0);
+  assert.equal(actionForButton(p, 0), 'bag');
+  assert.equal(actionForButton(p, 3), 'confirm');
+  // Broken or reserved saved bindings fall back to the defaults.
+  assert.deepEqual(cleanKeys({ bag: ['escape'], endTurn: 'x', up: ['k'] }).bag, ['i']);
+  assert.deepEqual(cleanKeys({ up: ['k'] }).up, ['k']);
+  assert.deepEqual(cleanPad({ confirm: [13] }).confirm, [0]);
+  // And they're kept with the settings.
+  const st = memory();
+  saveSettings(st, { ...defaultSettings(), keys: k, pad: p });
+  assert.deepEqual(loadSettings(st).keys.endTurn, ['e']);
+  assert.deepEqual(loadSettings(st).pad.bag, [0]);
+});

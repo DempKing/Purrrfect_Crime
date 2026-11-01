@@ -57,6 +57,7 @@ import * as screens from './ui/screens';
 import { loadCharacters, loadLootIcons, lootPictureUrl } from './render/characters';
 import { ABILITY_ICONS } from './ui/pictures';
 import { startGamepad } from './ui/gamepad';
+import { actionForKey, keyName, padName, type KeyAction } from './controls';
 import { loadProps } from './render/props';
 import { loadSurfaces } from './render/surfaces';
 import { loadFlats } from './render/flats';
@@ -1356,7 +1357,7 @@ function moveCursor(sx: number, sy: number): void {
   selected = { x: Math.min(level.w - 1, Math.max(0, from.x + best.x)), y: Math.min(level.h - 1, Math.max(0, from.y + best.y)) };
   const a = clickAction(selected);
   const cost = computed().reach.cost.get(key(selected.x, selected.y));
-  const ok = document.body.classList.contains('pad') ? 'A' : 'Enter';
+  const ok = document.body.classList.contains('pad') ? padName(settings.pad.confirm[0]) : keyName(settings.keys.confirm[0]);
   say(a ? `${a.label}: press ${ok}.` : cost !== undefined && cost > 0 ? `${ok}: move here (${moveAp(state, cost)} action point${moveAp(state, cost) === 1 ? '' : 's'}).` : 'Leo can’t get there this turn.');
 }
 
@@ -1454,7 +1455,10 @@ async function boot(): Promise<void> {
     const b = (e.target as HTMLElement).closest?.('button');
     if (b && !b.disabled && !b.closest('#actions')) sound.play('ui');
   });
-  window.addEventListener('keyup', (e) => panKeys.delete(e.key.toLowerCase()));
+  window.addEventListener('keyup', (e) => {
+    const a = actionForKey(settings.keys, e.key.toLowerCase());
+    if (a) panKeys.delete(a);
+  });
   window.addEventListener('blur', () => panKeys.clear());
   window.addEventListener('keydown', (e) => {
     // Nothing reaches the heist while a screen (the settings, say) is open over it.
@@ -1468,31 +1472,33 @@ async function boot(): Promise<void> {
       else if (e.key === 'Escape') closeLootMenu();
       if (/^[1-9]$/.test(e.key) || e.key === 'Escape') return;
     }
+    // The keys are the player's own (Settings → Controls); Esc and 1–9 are fixed.
     const k = e.key.toLowerCase();
-    if (k === 'i') return toggleBag();
+    const a = actionForKey(settings.keys, k);
+    if (a === 'bag') return toggleBag();
     if (e.key === 'Escape' && bagOpen()) return toggleBag(false);
-    if (k === 'w' || k === 'a' || k === 's' || k === 'd') {
-      panKeys.add(k);
+    if (a === 'panUp' || a === 'panLeft' || a === 'panDown' || a === 'panRight') {
+      panKeys.add(a);
       return;
     }
-    if (k === 'c' || k === 'f') return recentre();
-    const arrows: Record<string, [number, number]> = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
-    if (e.key in arrows) {
+    if (a === 'recentre') return recentre();
+    const cursor: Partial<Record<KeyAction, [number, number]>> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+    if (a && cursor[a]) {
       e.preventDefault();
-      moveCursor(...arrows[e.key]);
-    } else if (e.key === 'q' || e.key === 'Q') turnCamera(1);
-    else if (e.key === '+' || e.key === '=') zoomBy(1.25);
-    else if (e.key === '-' || e.key === '_') zoomBy(0.8);
-    else if (e.key === 'e' || e.key === 'E') turnCamera(-1);
-    else if (e.key === 'Enter' && selected && state.status === 'playing') {
+      moveCursor(...cursor[a]!);
+    } else if (a === 'turnLeft') turnCamera(1);
+    else if (a === 'zoomIn') zoomBy(1.25);
+    else if (a === 'zoomOut') zoomBy(0.8);
+    else if (a === 'turnRight') turnCamera(-1);
+    else if (a === 'confirm' && selected && state.status === 'playing') {
       e.preventDefault();
       const t = selected;
       act(t);
-    } else if (e.key === ' ' || e.key === 'Enter') {
+    } else if (a === 'endTurn' || a === 'confirm') {
       e.preventDefault();
       if (state.status === 'playing') doEndTurn();
       else if (state.status === 'caught') restart();
-    } else if (e.key === 'r' || e.key === 'R') {
+    } else if (a === 'restart') {
       if (state.status === 'caught') restart();
       else askRestart();
     }
@@ -1508,6 +1514,7 @@ async function boot(): Promise<void> {
   const blur = () => (document.activeElement as HTMLElement | null)?.blur?.();
   const visibleEl = (id: string) => !$(id).classList.contains('hidden');
   startGamepad({
+    padMap: () => settings.pad,
     menuRoot: () => {
       if (visibleEl('screens')) return $('screens');
       if (!inHeist) return document.body;
@@ -1525,7 +1532,7 @@ async function boot(): Promise<void> {
       if (selected) act(selected);
       else {
         selected = { ...state.leo };
-        say('Move the cursor with the D-pad or the left stick, then press A.');
+        say(`Move the cursor with the D-pad or the left stick, then press ${padName(settings.pad.confirm[0])}.`);
       }
     },
     endTurn: () => state.status === 'playing' && doEndTurn(),
@@ -1546,7 +1553,7 @@ async function boot(): Promise<void> {
       // Straight to the first action (or gadget) if there is one, otherwise End turn.
       const first = [...document.querySelectorAll<HTMLButtonElement>('#actions button:not(:disabled), #abilities button:not(:disabled)')].find((b) => b.offsetParent);
       (first ?? $('end')).focus();
-      say('The buttons: D-pad to choose, A to press, B or View to go back to the map.');
+      say(`The buttons: D-pad to choose, ${padName(settings.pad.confirm[0])} to press, ${padName(settings.pad.cancel[0])} or ${padName(settings.pad.hud[0])} to go back to the map.`);
     },
     cancel: () => {
       if (hudPad) {
@@ -1707,10 +1714,10 @@ function fit(dt = 0): void {
   // WASD pans the view across the screen at a steady speed, however far zoomed in.
   if (panKeys.size && dt) {
     const speed = (700 / scale) * dt;
-    if (panKeys.has('a')) pan.x -= speed;
-    if (panKeys.has('d')) pan.x += speed;
-    if (panKeys.has('w')) pan.y -= speed;
-    if (panKeys.has('s')) pan.y += speed;
+    if (panKeys.has('panLeft')) pan.x -= speed;
+    if (panKeys.has('panRight')) pan.x += speed;
+    if (panKeys.has('panUp')) pan.y -= speed;
+    if (panKeys.has('panDown')) pan.y += speed;
   }
   let cx = (x0 + x1) / 2 + (focus.x - (x0 + x1) / 2) * t + pan.x;
   let cy = (y0 + y1) / 2 + (focus.y - (y0 + y1) / 2) * t + pan.y;

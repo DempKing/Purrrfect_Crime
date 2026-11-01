@@ -13,8 +13,20 @@
 //   right stick          pan the camera; click either stick to bring it back to Leo
 //   View / Select        the heist's buttons: actions, gadgets, Restart, Quit…
 //   Menu / Start         settings
+//
+// Those are the defaults: the player can rebind every button but the D-pad in Settings → Controls (src/controls.ts).
+
+import { actionForButton, type PadMap } from '../controls';
+
+/** While the settings wait for a button to bind, every press goes there instead. */
+let capture: ((b: number) => void) | null = null;
+export function capturePadButton(fn: ((b: number) => void) | null): void {
+  capture = fn;
+}
 
 export interface PadHooks {
+  /** The player's button bindings (Settings → Controls). */
+  padMap(): PadMap;
   /** The buttons to move between, or null when the controller drives the map. */
   menuRoot(): HTMLElement | null;
   /** In a heist with nothing open over it. */
@@ -37,7 +49,7 @@ export interface PadHooks {
   pressed(): void;
 }
 
-const A = 0, B = 1, X = 2, Y = 3, LB = 4, RB = 5, LT = 6, RT = 7, VIEW = 8, MENU = 9, L3 = 10, R3 = 11, UP = 12, DOWN = 13, LEFT = 14, RIGHT = 15;
+const UP = 12, DOWN = 13, LEFT = 14, RIGHT = 15;
 const DEAD = 0.45;
 const FIRST_REPEAT = 320;
 const REPEAT = 130;
@@ -100,31 +112,33 @@ export function startGamepad(h: PadHooks): void {
       active = true;
       document.body.classList.add('pad');
     }
+    if (capture) return capture(b);
+    const act = actionForButton(h.padMap(), b);
     const root = h.menuRoot();
-    if (b === MENU) return h.settings();
+    if (act === 'settings') return h.settings();
     if (root) {
-      if (b === A) {
+      if (act === 'confirm') {
         const f = document.activeElement as HTMLElement | null;
         if (f && root.contains(f) && f !== document.body) {
           f.click();
           h.pressed();
         }
         else nextFocus(root, null, 0, 0)?.focus();
-      } else if (b === B) h.cancel();
-      else if (b === VIEW) h.toggleHud();
+      } else if (act === 'cancel') h.cancel();
+      else if (act === 'hud') h.toggleHud();
       return;
     }
     if (!h.onMap()) return;
-    if (b === A) h.confirm();
-    else if (b === B) h.cancel();
-    else if (b === X) h.endTurn();
-    else if (b === Y) h.bag();
-    else if (b === LB) h.turnCamera(1);
-    else if (b === RB) h.turnCamera(-1);
-    else if (b === LT) h.zoomBy(0.8);
-    else if (b === RT) h.zoomBy(1.25);
-    else if (b === L3 || b === R3) h.recentre();
-    else if (b === VIEW) h.toggleHud();
+    if (act === 'confirm') h.confirm();
+    else if (act === 'cancel') h.cancel();
+    else if (act === 'endTurn') h.endTurn();
+    else if (act === 'bag') h.bag();
+    else if (act === 'turnLeft') h.turnCamera(1);
+    else if (act === 'turnRight') h.turnCamera(-1);
+    else if (act === 'zoomOut') h.zoomBy(0.8);
+    else if (act === 'zoomIn') h.zoomBy(1.25);
+    else if (act === 'recentre') h.recentre();
+    else if (act === 'hud') h.toggleHud();
   };
 
   const direction = (dx: number, dy: number) => {
@@ -152,7 +166,8 @@ export function startGamepad(h: PadHooks): void {
     const pad = [...(navigator.getGamepads?.() ?? [])].find((p) => p && p.connected);
     if (pad) {
       const down = (i: number) => !!pad.buttons[i]?.pressed || (pad.buttons[i]?.value ?? 0) > 0.5;
-      for (const b of [A, B, X, Y, LB, RB, LT, RT, VIEW, MENU, L3, R3]) {
+      for (let b = 0; b < Math.min(18, pad.buttons.length); b++) {
+        if (b >= UP && b <= RIGHT && !capture) continue; // the D-pad moves (below)
         const d = down(b);
         if (d && !prev[b]) press(b);
         prev[b] = d;
@@ -168,7 +183,7 @@ export function startGamepad(h: PadHooks): void {
         else if (Math.abs(ly) > Math.abs(lx) * 1.6) dx = 0;
       }
       const dir = dx || dy ? `${dx},${dy}` : '';
-      if (dir && (dir !== heldDir || now >= nextRepeat)) {
+      if (dir && !capture && (dir !== heldDir || now >= nextRepeat)) {
         if (!active) {
           active = true;
           document.body.classList.add('pad');

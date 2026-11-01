@@ -1,6 +1,8 @@
 // Settings: sound, speed, motion, text size, colours and hints. They belong to the browser, not to a save
 // slot, so they're kept under their own key.
 
+import { cleanKeys, cleanPad, defaultKeys, defaultPad, type KeyMap, type PadMap } from './controls';
+
 export type Speed = 'normal' | 'fast' | 'instant';
 export type Palette = 'standard' | 'colourblind';
 
@@ -14,12 +16,15 @@ export interface Settings {
   palette: Palette;
   /** The narrator's tips in the tutorial. */
   hints: boolean;
+  /** The player's own key and controller-button bindings. */
+  keys: KeyMap;
+  pad: PadMap;
 }
 
 export const SETTINGS_KEY = 'purrrfect-crime-settings';
 
 export function defaultSettings(reduceMotion = false): Settings {
-  return { master: 0.8, music: 0.6, sfx: 0.8, speed: reduceMotion ? 'fast' : 'normal', reduceMotion, largeText: false, palette: 'standard', hints: true };
+  return { master: 0.8, music: 0.6, sfx: 0.8, speed: reduceMotion ? 'fast' : 'normal', reduceMotion, largeText: false, palette: 'standard', hints: true, keys: defaultKeys(), pad: defaultPad() };
 }
 
 /** How long animations take, as a share of normal. */
@@ -43,6 +48,8 @@ export function loadSettings(storage: Pick<Storage, 'getItem'> | null, prefersRe
       largeText: typeof s.largeText === 'boolean' ? s.largeText : d.largeText,
       palette: s.palette === 'colourblind' ? 'colourblind' : 'standard',
       hints: typeof s.hints === 'boolean' ? s.hints : d.hints,
+      keys: cleanKeys(s.keys),
+      pad: cleanPad(s.pad),
     };
   } catch {
     return d;
