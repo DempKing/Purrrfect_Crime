@@ -129,7 +129,7 @@ function stateKey(s: State): string {
 
 const USEFUL: ActionKind[] = ['pick-door', 'swipe-card', 'read-notes', 'turn-dials', 'lights', 'tap', 'panel', 'fuse', 'enter-vent', 'exit-vent', 'climb-up', 'climb-down', 'drop'];
 
-export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?: number; clean?: boolean; weight?: number; turns?: number } = {}): { plan: RouteStep[][]; s: State; expanded: number } | null {
+export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?: number; clean?: boolean; weight?: number; turns?: number; start?: State } = {}): { plan: RouteStep[][]; s: State; expanded: number } | null {
   const centre = level.def.loot.findIndex((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y);
   if (centre < 0) throw new Error('no centrepiece');
   const c = level.def.loot[centre].at;
@@ -169,7 +169,7 @@ export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?:
   };
   period = levelPeriod(level);
   timeLock = level.def.timeLock ?? 0;
-  const start = newHeist(level, opts.perks ?? BASE_PERKS);
+  const start = opts.start ?? newHeist(level, opts.perks ?? BASE_PERKS);
   const open = new Heap();
   const seen = new Set<string>();
   open.push({ s: start, parent: null, step: null, f: h(start) });
@@ -245,7 +245,7 @@ export function formatRoute(plan: RouteStep[][]): string {
 
 // --- command line -------------------------------------------------------------------------------------
 const args = process.argv.slice(2);
-if (args.length) {
+if (args.length && !process.env.SOLVE_LIB) {
   const id = args[0];
   const def = ALL_LEVELS.find((l) => l.id === id || l.id.includes(id));
   if (!def) throw new Error(`no level ${id}: ${ALL_LEVELS.map((l) => l.id).join(', ')}`);

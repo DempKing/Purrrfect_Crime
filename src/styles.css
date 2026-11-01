@@ -653,6 +653,7 @@ table.stash .hand { font: 400 1.3em/1 var(--display); color: #2d7d32; }
 .floater { position: absolute; transform: translate(-50%, -50%); font: 400 1.5em/1 var(--display); letter-spacing: 0.03em; color: var(--mustard); -webkit-text-stroke: 1.5px var(--ink); text-shadow: 3px 3px 0 var(--ink); white-space: nowrap; animation: float-up 1.8s cubic-bezier(.2, .9, .3, 1) forwards; }
 .floater.big { font-size: 2.2em; color: var(--mustard); }
 .floater.red { color: var(--red); }
+.floater.warn { color: #ffb347; }
 .floater.small { font-size: 1.05em; color: #fff; opacity: 1; }
 @keyframes float-up { 0% { transform: translate(-50%, -30%) scale(0.4); opacity: 0; } 10% { transform: translate(-50%, -60%) scale(1.2); opacity: 1; } 22% { transform: translate(-50%, -70%) scale(1); opacity: 1; } 75% { opacity: 1; } 100% { transform: translate(-50%, -170%) scale(1); opacity: 0; } }
 #stage.shake { animation: shake 0.35s linear; }

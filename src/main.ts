@@ -43,10 +43,12 @@ import {
   type RivalPlan,
   type Action,
   type GuardStep,
+  type Notice,
   type State,
 } from './core/game';
 import { ALL_LEVELS, DISTRICTS } from './levels';
 import { CORNER_GALLERY } from './levels/tutorial';
+import { fairRival } from './levels/fairRival';
 import { buyLair, rivalFor, completeHeist, deleteSlot, lastSlot, loadSlot, loadSlots, narratorBuysTutorialLoot, newProfile, saveSlot, sell, type Profile } from './meta/profile';
 import { learn, perksFor, raise, upgrade } from './meta/progression';
 import { deliverLetters } from './meta/letters';
@@ -297,7 +299,7 @@ function overlay(): Overlay {
   if (targeting && live) {
     const targets = abilityTargets(level, state, targeting);
     const target = selected ?? hover;
-    return { reach1, reach2, vision: c.vision, cameraVision: c.cameraVision, footprints: c.footprints, path: [], pathDanger: new Map(), hover: target && targets.has(key(target.x, target.y)) ? target : null, targets, rivalPath: c.rivalPath, risky: new Map() };
+    return { reach1, reach2, vision: c.vision, cameraVision: c.cameraVision, footprints: c.footprints, path: [], pathDanger: new Map(), hover: target && targets.has(key(target.x, target.y)) ? target : null, targets, rivalPath: c.rivalPath, risky: new Map(), alerts: liveAlerts() };
   }
   if (live)
     for (const [k, cost] of c.reach.cost) {
@@ -335,10 +337,11 @@ function overlay(): Overlay {
     path,
     pathDanger,
     // The tile under the pointer is always outlined (in the colour of the walk there, if there is one).
-    hover: target,
+    hover: live ? target : null,
     targets: new Set(),
     rivalPath: state.status === 'playing' ? c.rivalPath : [],
     risky: live && riskVersion === version ? risk : new Map(),
+    alerts: liveAlerts(),
   };
 }
 
@@ -655,8 +658,8 @@ function floatText(at: Point, text: string, cls = ''): void {
   const el = document.createElement('div');
   el.className = `floater ${cls}`;
   el.textContent = text;
-  el.style.left = `${p.x}px`;
-  el.style.top = `${p.y}px`;
+  el.style.left = `${Math.max(140, Math.min(window.innerWidth - 140, p.x))}px`;
+  el.style.top = `${Math.max(60, Math.min(window.innerHeight - 60, p.y))}px`;
   $('floaters').appendChild(el);
   window.setTimeout(() => el.remove(), 1900);
 }
@@ -756,11 +759,42 @@ function runAbility(kind: Ability, at?: Point): void {
   if (at) leo.facing = faceToward(state.leo, at);
 }
 
+// --- who noticed what: shown on the map for a few seconds --------------------------------------------
+
+let alerts: { n: Notice; until: number }[] = [];
+function liveAlerts(): Notice[] {
+  const now = performance.now();
+  alerts = alerts.filter((a) => a.until > now);
+  return alerts.map((a) => a.n);
+}
+
+/** Puts this step's notices on the map: a label over the spot, a ring and a line back to the guard or camera. */
+function showNotices(): void {
+  const list = state.notices ?? [];
+  state.notices = [];
+  if (!list.length) return;
+  for (const n of list) alerts.push({ n, until: performance.now() + (n.kind === 'caught' ? 60000 : 6000) });
+  // The labels go up once the camera has moved (below), so they sit over the spot, not where it used to be.
+  window.setTimeout(() => list.forEach((n) => floatText(n.at, n.label, n.kind === 'spotted' ? 'warn' : 'red')), 80);
+  // If it happened off screen, the camera goes to look (on Leo's next move it comes back to him).
+  const worst = list.find((n) => n.kind === 'caught') ?? list.find((n) => n.kind !== 'spotted') ?? list[0];
+  const spot = worst.from && worst.kind === 'caught' ? { x: (worst.from.x + worst.at.x) / 2, y: (worst.from.y + worst.at.y) / 2 } : worst.at;
+  const sp = world.toGlobal(project(view.proj, spot.x + 0.5, spot.y + 0.5));
+  const margin = 120;
+  if (sp.x < margin || sp.y < margin || sp.x > window.innerWidth - margin || sp.y > window.innerHeight - margin) {
+    const a = project(view.proj, spot.x + 0.5, spot.y + 0.5);
+    const b = project(view.proj, state.leo.x + 0.5, state.leo.y + 0.5);
+    pan.x = a.x - b.x;
+    pan.y = a.y - b.y;
+  }
+}
+
 function afterLeoActs(): void {
   spawnRipples();
   syncActors();
   updateHud();
   if (state.log.length) say(state.log.join(' '));
+  showNotices();
   sfx(...soundsInLog(state.log));
   tutorialUpdate();
   if (state.status === 'caught') return caught();
@@ -803,6 +837,7 @@ function doEndTurn(): void {
     syncActors();
     updateHud();
     if (state.log.length) say(state.log.join(' '));
+    showNotices();
     tutorialUpdate();
     if (state.status === 'caught') return caught();
     updateHud();
@@ -820,7 +855,10 @@ function doEndTurn(): void {
 function rivalPlanFor(def: LevelDef): RivalPlan | null {
   if (def.id === CORNER_GALLERY.id) return null;
   const district = DISTRICTS.findIndex((d) => d.levels.includes(def));
-  const plan = rivalFor(profile, def, Math.max(0, district));
+  // Never one who'd make a flawless run impossible: they come in later, or by the other door, if they would.
+  const rolled = rivalFor(profile, def, Math.max(0, district));
+  const plan = fairRival(def, rolled);
+  if (plan !== rolled) profile.rivals[def.id] = plan;
   persist();
   return plan;
 }
@@ -952,7 +990,7 @@ function levelPhoto(def: LevelDef): Promise<string> {
     v.proj = { angle: (best * Math.PI) / 2, cx: lv.w / 2, cy: lv.h / 2 };
     v.time = 2;
     const actor = (x: number, y: number, facing: number) => ({ x: x + 0.5, y: y + 0.5, facing, bob: 0 });
-    const none: Overlay = { reach1: new Set(), reach2: new Set(), vision: new Set(), cameraVision: new Set(), footprints: [], rivalPath: [], path: [], pathDanger: new Map(), hover: null, targets: new Set(), risky: new Map() };
+    const none: Overlay = { reach1: new Set(), reach2: new Set(), vision: new Set(), cameraVision: new Set(), footprints: [], rivalPath: [], path: [], pathDanger: new Map(), hover: null, targets: new Set(), risky: new Map(), alerts: liveAlerts() };
     v.draw(lv, st, none, actor(st.leo.x, st.leo.y, 2), st.guards.map((g) => actor(g.x, g.y, g.facing)), [], undefined);
     const holder = new Container();
     holder.addChild(v.root);
@@ -1082,6 +1120,7 @@ function restart(): void {
   lastHaul = 0;
   closeLootMenu();
   state = newHeist(level, perksFor(profile), rivalPlan);
+  alerts = [];
   rivalWasIn = false;
   targeting = null;
   queue = [];
@@ -1213,8 +1252,11 @@ function updateHud(): void {
 function caught(): void {
   sfx('caught');
   $('caught-who').textContent = state.caughtBy ?? 'A guard';
-  $('caught-why').textContent = state.caughtWhy ? `${state.caughtWhy}.` : '';
-  setTimeout(() => show('caught'), 600);
+  say(`Caught by ${state.caughtBy ?? 'a guard'}${state.caughtWhy ? `: ${state.caughtWhy}` : ''}.`);
+  $('caught-why').textContent = state.caughtWhy ? `${state.caughtWhy[0].toUpperCase()}${state.caughtWhy.slice(1)}.` : '';
+  // A moment to see where it happened (the guard, Leo and the line between them) before the card comes up.
+  const done = state;
+  setTimeout(() => state === done && show('caught'), 1700);
 }
 
 function escaped(): void {

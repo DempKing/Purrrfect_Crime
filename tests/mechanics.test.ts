@@ -717,3 +717,27 @@ test('putting loot down to make room, and picking it back up', () => {
   s.dropped = [{ li: 0, x: 12, y: 5 }];
   assert.match(actionsHere(level, s).find((a) => a.kind === 'pick-up')!.blocked!, /No room/);
 });
+
+test('the player is told who noticed what, and where: missing loot by name, and who caught Leo', () => {
+  const { level, s } = heist(sandbox([{ name: 'Rex', start: { x: 9, y: 4 }, route: [{ x: 12, y: 4 }] }], { ambient: 'lit' }));
+  s.inventory = [0];
+  s.leo = { x: 1, y: 1 };
+  for (let i = 0; i < 3 && !s.alarmRaised; i++) endTurn(level, s);
+  assert.ok(s.alarmRaised, 'Rex sees the open safe');
+  const n = s.notices.find((x) => x.kind === 'missing');
+  assert.ok(n, 'a notice for the missing loot');
+  assert.equal(n.who, 'Rex');
+  assert.deepEqual(n.at, { x: 13, y: 5 });
+  assert.ok(n.from);
+  assert.match(n.label, /Gold Coin/);
+  assert.ok(s.log.some((l) => l.includes('Gold Coin')), s.log.join(' | '));
+  // Caught: by whom, from where, and on which tile.
+  const t = heist(sandbox([{ name: 'Rex', start: { x: 4, y: 2 }, route: [{ x: 4, y: 2 }] }], { ambient: 'lit' }));
+  t.s.guards[0].facing = 4;
+  moveLeo(t.level, t.s, { x: 3, y: 2 });
+  assert.equal(t.s.status, 'caught');
+  const c = t.s.notices.find((x) => x.kind === 'caught')!;
+  assert.equal(c.who, 'Rex');
+  assert.deepEqual(c.from, { x: 4, y: 2 });
+  assert.deepEqual(c.at, t.s.leo, 'where Leo was stopped');
+});

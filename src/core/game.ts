@@ -202,6 +202,19 @@ export interface Noise {
   r: number;
 }
 
+/**
+ * Something Leo should know about: who caught or spotted him, what set off an alarm, which loot was noticed missing.
+ * `from` is where the guard or camera was, `at` the tile it was about (Leo, or the empty display).
+ */
+export interface Notice {
+  kind: 'caught' | 'spotted' | 'alarm' | 'missing';
+  who: string;
+  from: Point | null;
+  at: Point;
+  /** A word or two to pop up over the spot. */
+  label: string;
+}
+
 export interface State {
   leo: Point;
   layer: Layer;
@@ -212,6 +225,8 @@ export interface State {
   status: Status;
   caughtBy: string | null;
   caughtWhy: string | null;
+  /** What went wrong this step or turn, and where, so the player can see who noticed what (cleared by the UI). */
+  notices: Notice[];
   inventory: number[]; // indexes into level.def.loot
   smashed: string[]; // cases whose glass is broken
   openDoors: string[];
@@ -281,6 +296,7 @@ export function newHeist(level: Level, perks: Perks = BASE_PERKS, rival: RivalPl
     status: 'playing',
     caughtBy: null,
     caughtWhy: null,
+    notices: [],
     inventory: [],
     smashed: [],
     openDoors: [],
@@ -645,11 +661,16 @@ export function cameraView(level: Level, s: State, c: Camera, idx = c.idx): Set<
 // Getting noticed
 
 /** Ends the heist. Returns true, so callers can say `return catchLeo(…)`. */
-function catchLeo(s: State, by: string, why: string): boolean {
+function catchLeo(s: State, by: string, why: string, from: Point | null = null): boolean {
   s.status = 'caught';
   s.caughtBy = by;
   s.caughtWhy = why;
+  note(s, { kind: 'caught', who: by, from, at: { ...s.leo }, label: `Caught by ${by}!` });
   return true;
+}
+
+function note(s: State, n: Notice): void {
+  (s.notices ??= []).push({ ...n, from: n.from && { x: n.from.x, y: n.from.y }, at: { x: n.at.x, y: n.at.y } });
 }
 
 /** A guard sees Leo at p. Returns true if that ended the heist. */
@@ -661,16 +682,17 @@ function spotted(level: Level, s: State, g: Guard, p: Point): boolean {
   }
   s.seen = true;
   const close = Math.hypot(p.x - g.x, p.y - g.y) <= 2;
-  if (g.kind === 'nightclaw') return catchLeo(s, g.name, '“Not tonight, Leo.” He tips his hat');
+  if (g.kind === 'nightclaw') return catchLeo(s, g.name, '“Not tonight, Leo.” He tips his hat', g);
   if (g.kind === 'robo') {
-    if (close) return catchLeo(s, g.name, 'heat signature confirmed');
-    triggerAlarm(s, p, `${g.name} picked up Leo’s heat signature`);
+    if (close) return catchLeo(s, g.name, 'heat signature confirmed', g);
+    triggerAlarm(s, p, `${g.name} picked up Leo’s heat signature`, true, { who: g.name, from: g, label: `${g.name} saw Leo!` });
     return false;
   }
   const lit = lightNow(level, s, p.x, p.y) === 2;
   if (g.mode === 'searching' || g.meter >= 1 || close || lit) {
-    return catchLeo(s, g.name, close ? 'right in front of him' : lit ? 'in the light' : 'a second time');
+    return catchLeo(s, g.name, close ? 'right in front of him' : lit ? 'in the light' : 'a second time', g);
   }
+  note(s, { kind: 'spotted', who: g.name, from: g, at: p, label: `${g.name} glimpsed Leo` });
   g.meter = 1;
   g.mode = 'suspicious';
   g.point = { ...p };
@@ -689,7 +711,8 @@ function smelled(s: State, g: Guard, p: Point): boolean {
     return false;
   }
   s.seen = true;
-  if (g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 1.5) return catchLeo(s, g.name, 'sniffed him out');
+  if (g.mode === 'searching' || g.meter >= 1 || Math.hypot(p.x - g.x, p.y - g.y) <= 1.5) return catchLeo(s, g.name, 'sniffed him out', g);
+  note(s, { kind: 'spotted', who: g.name, from: g, at: p, label: `${g.name} smelled Leo` });
   g.meter = 1;
   g.mode = 'suspicious';
   g.point = { ...p };
@@ -716,7 +739,8 @@ function captainCalls(s: State, g: Guard, p: Point): void {
 }
 
 /** Sets off the alarm. Only Leo's alarms count against a flawless heist, not a rival's. */
-export function triggerAlarm(s: State, p: Point, why: string, byLeo = true): void {
+export function triggerAlarm(s: State, p: Point, why: string, byLeo = true, by?: { who: string; from: Point | null; label: string; kind?: Notice['kind'] }): void {
+  note(s, { kind: by?.kind ?? 'alarm', who: by?.who ?? 'Alarm', from: by?.from ?? null, at: p, label: by?.label ?? 'Alarm!' });
   if (byLeo) s.alarmRaised = true;
   if (s.alarm === null) s.alarmByLeo = byLeo;
   else if (byLeo) s.alarmByLeo = true;
@@ -754,7 +778,7 @@ function checkExposure(level: Level, s: State, p: Point): void {
   for (const c of s.cameras)
     if (cameraSees(level, s, c, p.x, p.y)) {
       s.seen = true;
-      triggerAlarm(s, p, 'A camera caught Leo on film');
+      triggerAlarm(s, p, 'A camera caught Leo on film', true, { who: 'A camera', from: c.at, label: 'Caught on camera!' });
     }
 }
 
@@ -905,8 +929,8 @@ export function walkPath(level: Level, s: State, path: Point[], cost: number): M
     if (s.layer === 'floor') {
       const t = tileNow(level, s, p.x, p.y);
       if (t === 'laser' && lasersActive(level, s)) breakLaser(s, p, 'Leo broke a laser beam');
-      if (t === 'plate') triggerAlarm(s, p, 'A pressure plate clicked under Leo’s paw');
-      if (level.motion[p.y][p.x] && sensorsActive(s) && ++inZone === 2) triggerAlarm(s, p, 'A motion sensor saw Leo move');
+      if (t === 'plate') triggerAlarm(s, p, 'A pressure plate clicked under Leo’s paw', true, { who: 'A pressure plate', from: null, label: 'Pressure plate!' });
+      if (level.motion[p.y][p.x] && sensorsActive(s) && ++inZone === 2) triggerAlarm(s, p, 'A motion sensor saw Leo move', true, { who: 'A motion sensor', from: null, label: 'Motion sensor!' });
       if (t === 'marble' && !ghost) makeNoise(level, s, p, NOISE.marble);
       if (t === 'squeaky' && !ghost) {
         makeNoise(level, s, p, NOISE.squeaky);
@@ -1347,7 +1371,7 @@ export function useAbility(level: Level, s: State, kind: Ability, at?: Point): b
       s.leo = { ...at! };
       s.log.push('Pounce!');
       if (tileNow(level, s, at!.x, at!.y) === 'laser' && lasersActive(level, s)) breakLaser(s, at!, 'Leo landed on a laser beam');
-      if (tileNow(level, s, at!.x, at!.y) === 'plate') triggerAlarm(s, at!, 'A pressure plate clicked under Leo’s paw');
+      if (tileNow(level, s, at!.x, at!.y) === 'plate') triggerAlarm(s, at!, 'A pressure plate clicked under Leo’s paw', true, { who: 'A pressure plate', from: null, label: 'Pressure plate!' });
       pickUpCard(level, s, at!);
       dogsBark(level, s, s.leo, new Set());
       checkExposure(level, s, s.leo);
@@ -1492,7 +1516,7 @@ function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
       guardFixesLights(level, s, g, dry);
       if (dry) continue;
       if (s.layer === 'floor' && g.x === s.leo.x && g.y === s.leo.y) {
-        catchLeo(s, g.name, 'by walking straight into him');
+        catchLeo(s, g.name, 'by walking straight into him', g);
         break;
       }
       if (s.layer === 'floor' && s.napTurns <= 0 && !hiddenAt(level, s, s.leo) && guardSees(level, s, g, s.leo.x, s.leo.y)) {
@@ -1532,7 +1556,12 @@ function noticeThings(level: Level, s: State, g: Guard): void {
     const k = key(d.x, d.y);
     if (!g.noticed.includes(k) && guardSees(level, s, g, d.x, d.y, true)) {
       g.noticed.push(k);
-      triggerAlarm(s, d, tileAt(level, d.x, d.y) === 'safe' ? `${g.name} found the safe hanging open` : `${g.name} found an empty display`, d.byLeo);
+      // Say what's gone: the guard knows his building.
+      const li = lootAt(level, d.x, d.y);
+      const what = li >= 0 ? level.def.loot[li].name : null;
+      const safe = tileAt(level, d.x, d.y) === 'safe';
+      const why = safe ? `${g.name} found the safe hanging open${what ? ` and the ${what} gone` : ''}` : what ? `${g.name} noticed the ${what} is missing` : `${g.name} found an empty display`;
+      triggerAlarm(s, d, why, d.byLeo, { kind: 'missing', who: g.name, from: g, label: what ? `${what}: missing!` : 'Missing!' });
     }
   }
   for (const d of [...s.decoys, ...s.prints])
@@ -1716,7 +1745,7 @@ function guardsMeetRival(level: Level, s: State): void {
 function camerasSeeRival(level: Level, s: State, r: Rival): void {
   if (s.alarm !== null || s.lockdown) return;
   const c = s.cameras.find((c) => cameraSees(level, s, c, r.x, r.y));
-  if (c) triggerAlarm(s, r, `A camera caught ${r.name} on film`, false);
+  if (c) triggerAlarm(s, r, `A camera caught ${r.name} on film`, false, { who: 'A camera', from: c.at, label: `${r.name} on camera!` });
 }
 
 /**

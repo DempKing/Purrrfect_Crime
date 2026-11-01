@@ -1,7 +1,7 @@
 // Draws a heist: floors and overlays first, then walls, furniture and characters sorted by depth.
 // Placeholder art for now; generated sprites replace the character and prop drawing later.
 import { Container, Graphics, Matrix, type Texture } from 'pixi.js';
-import { lootGone, DIRS, KIND_SIGHT, PRINT_TURNS, ROBO_RANGE, SIGHT_HALF_ANGLE, SIGHT_RANGE, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, roboOff, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type RivalId, type State } from '../core/game';
+import { lootGone, DIRS, KIND_SIGHT, PRINT_TURNS, ROBO_RANGE, SIGHT_HALF_ANGLE, SIGHT_RANGE, RIVALS, beaconFacing, beaconTiles, camerasActive, hiddenAt, roboOff, sensorsActive, key, lasersActive, lightMap, lootAt, spotlightsNow, tileNow, type Guard, type Notice, type RivalId, type State } from '../core/game';
 import { blocksMove, blocksSight, laserAxis, type Level, type Point } from '../core/level';
 import { DISTRICTS } from '../levels';
 import { exhibitAt, tileHash } from '../core/exhibits';
@@ -77,6 +77,8 @@ export interface Overlay {
   targets: Set<string>;
   /** Tiles where ending the turn goes wrong once the guards move: caught, alarm or seen. */
   risky: Map<string, { kind: 'caught' | 'alarm' | 'seen'; why: string } | null>;
+  /** What just went wrong, for a few seconds: a ring on the spot and a line back to whoever noticed. */
+  alerts: Notice[];
 }
 
 /** How a character is moving, which picks their animation. */
@@ -295,7 +297,9 @@ export class HeistView {
       const d = ov.pathDanger.get(key(ov.path[i].x, ov.path[i].y)) ?? 0;
       f.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 4, color: d === 2 ? COL.danger : d === 1 ? COL.warn : COL.path, alpha: 0.95 });
     }
+    for (const a of ov.alerts) this.alert(f, a);
     if (ov.hover) {
+      // The tile under the pointer, outlined in the colour of what walking there would bring.
       const worst = Math.max(0, ...ov.pathDanger.values());
       this.diamondOutline(f, ov.hover.x, ov.hover.y, worst === 2 ? COL.danger : worst === 1 ? COL.warn : COL.path, 3.5, 0.02, 1);
     }
@@ -858,6 +862,25 @@ export class HeistView {
     const pulse = 1 + Math.sin(this.time * 2.5) * 0.12;
     if (alpha > 0) g.poly(pts).fill({ color, alpha: alpha * pulse }).stroke({ width: 2, color, alpha: 0.55, join: 'round' });
     else g.poly(pts).stroke({ width: 1.5, color, alpha: 0.35 + Math.sin(this.time * 4) * 0.1, join: 'round' });
+  }
+
+  /** Who noticed what: a pulsing ring on the spot, a dashed line from the guard or camera, and a ring round them. */
+  private alert(g: Graphics, a: Notice): void {
+    const color = a.kind === 'spotted' ? COL.warn : COL.danger;
+    const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 160);
+    const at = project(this.proj, a.at.x + 0.5, a.at.y + 0.5);
+    this.diamondOutline(g, a.at.x, a.at.y, color, 4, 0.02 - 0.08 * pulse, 0.6 + 0.4 * pulse);
+    if (!a.from) return;
+    const from = project(this.proj, a.from.x + 0.5, a.from.y + 0.5);
+    const len = Math.hypot(at.x - from.x, at.y - from.y);
+    const n = Math.max(1, Math.floor(len / 14));
+    for (let i = 0; i < n; i += 2) {
+      const t0 = i / n;
+      const t1 = Math.min(1, (i + 1) / n);
+      g.moveTo(from.x + (at.x - from.x) * t0, from.y + (at.y - from.y) * t0).lineTo(from.x + (at.x - from.x) * t1, from.y + (at.y - from.y) * t1);
+    }
+    g.stroke({ width: 3, color, alpha: 0.9, cap: 'round' });
+    g.ellipse(from.x, from.y, 22, 11).stroke({ width: 3, color, alpha: 0.6 + 0.4 * pulse });
   }
 
   /**

@@ -54,3 +54,17 @@ test('level ids are unique and every district has levels', () => {
   assert.equal(new Set(ids).size, ids.length);
   for (const d of DISTRICTS) assert.ok(d.levels.length > 0, d.id);
 });
+
+test('a rival never rules out a flawless heist: one who would comes in later or by the other door', async () => {
+  const { fairRival, routeSurvives } = await import('../src/levels/fairRival');
+  const ship = ALL_LEVELS.find((l) => l.id === 'l17-shipwreck')!;
+  // Luna, in early from the beach, would always beat Leo to the Captain’s Pearl.
+  const luna = { id: 'luna' as const, arrive: 3, entrance: 0 };
+  assert.equal(routeSurvives(ship, luna), false);
+  const fair = fairRival(ship, luna);
+  assert.ok(fair && routeSurvives(ship, fair));
+  for (const def of ALL_LEVELS.filter((l) => l.rivalEntrances?.length)) {
+    const plan = fairRival(def, { id: 'mittens', arrive: 3, entrance: 0 });
+    assert.ok(plan && routeSurvives(def, plan), def.id);
+  }
+});

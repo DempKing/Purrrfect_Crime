@@ -201,7 +201,9 @@ for (let i = 0; i < 40 && (await page.evaluate(() => window.__pc.state.status)) 
   if (await page.evaluate(() => window.__pc.state.ap > 0)) await page.click('#end');
   await page.waitForTimeout(300); await idle();
 }
-await page.waitForTimeout(1200);
+await page.waitForTimeout(700);
+await shot('20-caught-where.png'); // who caught Leo, and where, before the card comes up
+await page.waitForTimeout(1400);
 const caughtStatus = await page.evaluate(() => window.__pc.state.status);
 await shot('20-caught.png');
 await page.click('#quit2');
