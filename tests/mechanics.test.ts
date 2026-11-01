@@ -741,3 +741,26 @@ test('the player is told who noticed what, and where: missing loot by name, and 
   assert.deepEqual(c.from, { x: 4, y: 2 });
   assert.deepEqual(c.at, t.s.leo, 'where Leo was stopped');
 });
+
+test('the finale: Leo can walk up behind NightClaw on the marble and tap him, though he hears the last step', () => {
+  const level = parseLevel(ALL_LEVELS.find((d) => d.id === 'nc-lair')!);
+  const s = newHeist(level);
+  s.inventory = [0];
+  for (let i = 0; i < 2; i++) endTurn(level, s);
+  const nc = s.guards[0];
+  s.leo = { x: nc.x - 3, y: nc.y };
+  assert.ok(moveLeo(level, s, { x: nc.x - 1, y: nc.y }).ok);
+  assert.equal(nc.mode, 'suspicious', 'he heard the step on the marble');
+  const tap = actionsHere(level, s).find((a) => a.kind === 'tap');
+  assert.ok(tap && !tap.blocked, tap?.blocked);
+  assert.ok(doAction(level, s, 'tap', tap.at));
+  assert.equal(s.status, 'escaped');
+  assert.ok(s.tagged);
+  // Hunting for Leo (an alarm), he's on his guard.
+  const t = newHeist(level);
+  t.inventory = [0];
+  for (let i = 0; i < 2; i++) endTurn(level, t);
+  t.leo = { x: t.guards[0].x - 1, y: t.guards[0].y };
+  t.guards[0].mode = 'searching';
+  assert.ok(actionsHere(level, t).find((a) => a.kind === 'tap')?.blocked);
+});

@@ -1029,7 +1029,13 @@ export function actionsHere(level: Level, s: State): Action[] {
         label: 'Tap NightClaw on the shoulder',
         ap: 1,
         noise: 0,
-        blocked: !s.inventory.includes(prize) ? 'Not yet: take his prized possession first.' : nc.mode !== 'patrol' ? 'He’s on his guard. Wait until he isn’t.' : undefined,
+        // Hearing a step behind him isn't enough: he hasn't turned round yet, so the tap still lands. Only a NightClaw
+        // who is hunting (an alarm, a sighting) or looking right at Leo is on his guard.
+        blocked: !s.inventory.includes(prize)
+          ? 'Not yet: take his prized possession first.'
+          : nc.mode === 'searching' || nc.meter >= 1 || guardSees(level, s, nc, L.x, L.y)
+            ? 'He’s on his guard. Wait until he isn’t.'
+            : undefined,
       });
     for (let y = L.y - 1; y <= L.y + 1; y++)
       for (let x = L.x - 1; x <= L.x + 1; x++) {

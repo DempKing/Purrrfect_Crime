@@ -919,3 +919,6 @@ body.large-text { font-size: 19px; }
 body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 .map-svg .marked { pointer-events: none; }
 .map-svg .for-sale:hover rect, .map-svg .for-sale:focus rect { fill: #b89f75; }
+
+/* A controller's focus: the button the D-pad has landed on. */
+body.pad :focus { outline: 3px solid var(--mustard); outline-offset: 3px; box-shadow: 0 0 0 6px rgba(255, 200, 80, 0.25); }

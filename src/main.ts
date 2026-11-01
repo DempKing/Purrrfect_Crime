@@ -10,6 +10,7 @@ import {
   dropLoot,
   lootGone,
   aftermath,
+  guardSees,
   type Aftermath,
   lootAt,
   tileNow,
@@ -48,7 +49,6 @@ import {
 } from './core/game';
 import { ALL_LEVELS, DISTRICTS } from './levels';
 import { CORNER_GALLERY } from './levels/tutorial';
-import { fairRival } from './levels/fairRival';
 import { buyLair, rivalFor, completeHeist, deleteSlot, lastSlot, loadSlot, loadSlots, narratorBuysTutorialLoot, newProfile, saveSlot, sell, type Profile } from './meta/profile';
 import { learn, perksFor, raise, upgrade } from './meta/progression';
 import { deliverLetters } from './meta/letters';
@@ -56,6 +56,7 @@ import { TUTORIAL, advance, type TutorialEvents } from './meta/tutorial';
 import * as screens from './ui/screens';
 import { loadCharacters, loadLootIcons, lootPictureUrl } from './render/characters';
 import { ABILITY_ICONS } from './ui/pictures';
+import { startGamepad } from './ui/gamepad';
 import { loadProps } from './render/props';
 import { loadSurfaces } from './render/surfaces';
 import { loadFlats } from './render/flats';
@@ -407,6 +408,21 @@ function act(tile: Point): void {
   if (lootHere(tile) !== null) return openLootMenu(tile);
   const a = clickAction(tile);
   if (a) return runAction(a);
+  // The finale: click NightClaw from across the hall and Leo creeps up behind him, then taps him on the shoulder.
+  const nc = level.def.finale ? state.guards.find((g) => g.kind === 'nightclaw' && g.x === tile.x && g.y === tile.y) : undefined;
+  if (nc) {
+    const reach = computed().reach;
+    const spots = [-1, 0, 1].flatMap((dy) => [-1, 0, 1].map((dx) => ({ x: nc.x + dx, y: nc.y + dy })))
+      .filter((p) => (p.x !== nc.x || p.y !== nc.y) && !guardSees(level, state, nc, p.x, p.y))
+      .map((p) => ({ p, cost: reach.cost.get(key(p.x, p.y)) }))
+      .filter((o) => o.cost !== undefined && moveAp(state, o.cost) < state.ap)
+      .sort((a, b) => a.cost! - b.cost!);
+    if (!spots.length) return say('Leo can’t get behind NightClaw from here this turn.');
+    return walkTo(spots[0].p, () => {
+      const tap = clickAction(tile);
+      if (tap) runAction(tap);
+    });
+  }
   // A control box out of reach: walk over to it, then throw the switch.
   const box = boxHere(tile);
   if (box) {
@@ -855,10 +871,7 @@ function doEndTurn(): void {
 function rivalPlanFor(def: LevelDef): RivalPlan | null {
   if (def.id === CORNER_GALLERY.id) return null;
   const district = DISTRICTS.findIndex((d) => d.levels.includes(def));
-  // Never one who'd make a flawless run impossible: they come in later, or by the other door, if they would.
-  const rolled = rivalFor(profile, def, Math.max(0, district));
-  const plan = fairRival(def, rolled);
-  if (plan !== rolled) profile.rivals[def.id] = plan;
+  const plan = rivalFor(profile, def, Math.max(0, district));
   persist();
   return plan;
 }
@@ -1302,12 +1315,24 @@ function moveCursor(sx: number, sy: number): void {
   selected = { x: Math.min(level.w - 1, Math.max(0, from.x + best.x)), y: Math.min(level.h - 1, Math.max(0, from.y + best.y)) };
   const a = clickAction(selected);
   const cost = computed().reach.cost.get(key(selected.x, selected.y));
-  say(a ? `${a.label}: press Enter.` : cost !== undefined && cost > 0 ? `Enter: move here (${moveAp(state, cost)} action point${moveAp(state, cost) === 1 ? '' : 's'}).` : 'Leo can’t get there this turn.');
+  const ok = document.body.classList.contains('pad') ? 'A' : 'Enter';
+  say(a ? `${a.label}: press ${ok}.` : cost !== undefined && cost > 0 ? `${ok}: move here (${moveAp(state, cost)} action point${moveAp(state, cost) === 1 ? '' : 's'}).` : 'Leo can’t get there this turn.');
 }
 
 /** The settings, opened mid-heist: the heist waits underneath. */
 function openSettingsInHeist(): void {
   screens.settingsScreen(settings, changeSettings, () => screens.hideScreens());
+}
+
+/** The finale: a click on NightClaw himself (his body stands above his tile) counts as a click on his tile. */
+function nightClawUnder(cx: number, cy: number): Point | null {
+  if (!inHeist || !level?.def.finale) return null;
+  const nc = state.guards.find((g) => g.kind === 'nightclaw');
+  if (!nc) return null;
+  const feet = world.toGlobal(project(view.proj, nc.x + 0.5, nc.y + 0.5));
+  const head = world.toGlobal(project(view.proj, nc.x + 0.5, nc.y + 0.5, 110));
+  const half = Math.max(14, (feet.y - head.y) * 0.3);
+  return Math.abs(cx - feet.x) < half && cy < feet.y + half * 0.6 && cy > head.y ? { x: nc.x, y: nc.y } : null;
 }
 
 // --- boot -------------------------------------------------------------------------------------
@@ -1333,7 +1358,7 @@ async function boot(): Promise<void> {
   });
   app.canvas.addEventListener('pointerleave', () => (hover = null));
   app.canvas.addEventListener('pointerdown', (e) => {
-    const t = tileUnder(e.clientX, e.clientY);
+    const t = nightClawUnder(e.clientX, e.clientY) ?? tileUnder(e.clientX, e.clientY);
     closeLootMenu();
     if (!t) return;
     if (e.pointerType === 'touch' && !clickAction(t) && lootHere(t) === null && !boxHere(t) && (!selected || selected.x !== t.x || selected.y !== t.y)) {
@@ -1435,6 +1460,69 @@ async function boot(): Promise<void> {
     else if (/^[1-9]$/.test(e.key)) ($('actions').children[Number(e.key) - 1] as HTMLButtonElement | undefined)?.click();
   });
 
+  // A controller: the map cursor, or the buttons of whatever is open.
+  let hudPad = false;
+  const blur = () => (document.activeElement as HTMLElement | null)?.blur?.();
+  const visibleEl = (id: string) => !$(id).classList.contains('hidden');
+  startGamepad({
+    menuRoot: () => {
+      if (visibleEl('screens')) return $('screens');
+      if (!inHeist) return document.body;
+      if (visibleEl('caught')) return $('caught');
+      if (lootMenu) return $('loot-menu');
+      if (bagOpen()) return $('bag');
+      if (hudPad) return document.body;
+      return null;
+    },
+    onMap: () => inHeist && !visibleEl('screens') && !visibleEl('caught') && !lootMenu && !bagOpen(),
+    moveCursor: (dx, dy) => moveCursor(dx, dy),
+    confirm: () => {
+      if (state.status !== 'playing') return;
+      if (selected) act(selected);
+      else {
+        selected = { ...state.leo };
+        say('Move the cursor with the D-pad or the left stick, then press A.');
+      }
+    },
+    endTurn: () => state.status === 'playing' && doEndTurn(),
+    bag: () => toggleBag(),
+    turnCamera: (d) => turnCamera(d),
+    zoomBy: (k) => zoomBy(k),
+    pan: (dx, dy) => {
+      pan.x += (dx * 900) / world.scale.x;
+      pan.y += (dy * 900) / world.scale.y;
+    },
+    recentre: () => recentre(),
+    settings: () => {
+      if (inHeist && !visibleEl('screens')) openSettingsInHeist();
+    },
+    toggleHud: () => {
+      hudPad = !hudPad;
+      if (!hudPad) return blur();
+      // Straight to the first action (or gadget) if there is one, otherwise End turn.
+      const first = [...document.querySelectorAll<HTMLButtonElement>('#actions button:not(:disabled), #abilities button:not(:disabled)')].find((b) => b.offsetParent);
+      (first ?? $('end')).focus();
+      say('The buttons: D-pad to choose, A to press, B or View to go back to the map.');
+    },
+    cancel: () => {
+      if (hudPad) {
+        hudPad = false;
+        return blur();
+      }
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    },
+    pressed: () => {
+      // A heist button pressed: the map has the controller again (to aim a gadget, say).
+      if (hudPad) {
+        hudPad = false;
+        blur();
+      }
+    },
+    connected: (name) => {
+      banner(`Controller connected${name ? `: ${name.replace(/\(.*\)/, '').trim()}` : ''}`);
+    },
+  });
+
   // Test hook: lets the browser tests find tiles on screen, read the state and pick a level.
   (window as unknown as { __pc: unknown }).__pc = {
     get state() {
@@ -1462,6 +1550,8 @@ async function boot(): Promise<void> {
       syncActors();
     },
     lootIndexAt: (x: number, y: number) => lootAt(level, x, y),
+    /** Clicks a tile, as the mouse would (without having to find it on screen). */
+    act: (x: number, y: number) => act({ x, y }),
     get music() {
       return sound.nowPlaying;
     },
