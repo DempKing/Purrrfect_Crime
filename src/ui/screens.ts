@@ -236,7 +236,8 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
       ${toggle('largeText', 'Larger text', 'Bigger text in the HUD and on every screen.')}
       ${toggle('reduceMotion', 'Reduce motion', 'No spinning newspapers or rolling credits; quicker animations.')}
       ${choice('palette', 'Colours', [['standard', 'Standard'], ['colourblind', 'Colour-blind friendly']])}
-      <p class="small note">Keyboard: arrow keys move the cursor, Enter moves Leo there (or does what's there), Space ends the turn, 1–9 pick an action, Q and E turn the camera, WASD pans it (C recentres on Leo), + and − (or the mouse wheel) zoom, Esc cancels.</p>
+      <h2 class="section">Controls</h2>
+      ${controlsTabs()}
       <div class="row-buttons"><button id="settings-ok" class="primary">Done</button></div>
     </div>`,
     'overlay',
@@ -260,9 +261,73 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
       x.setAttribute('aria-checked', String(x === b));
     });
   });
+  on(el, '[data-ctab]', (e) => {
+    const id = (e.currentTarget as HTMLElement).dataset.ctab;
+    el.querySelectorAll<HTMLElement>('[data-ctab]').forEach((b) => {
+      b.classList.toggle('on', b.dataset.ctab === id);
+      b.setAttribute('aria-selected', String(b.dataset.ctab === id));
+    });
+    el.querySelectorAll<HTMLElement>('[data-cpane]').forEach((t) => t.classList.toggle('hidden', t.dataset.cpane !== id));
+  });
   on(el, '#settings-ok', onClose);
   escToClose(el, onClose);
   el.querySelector<HTMLElement>('#settings-ok')?.focus();
+}
+
+// --- Controls: what every key, click and button does -----------------------------------------------------
+
+const CONTROLS: Record<'keys' | 'mouse' | 'pad', [string, string][]> = {
+  keys: [
+    ['Arrow keys', 'Move the cursor'],
+    ['Enter', 'Move Leo there, or do what’s there'],
+    ['1–9', 'Pick an action from the bar'],
+    ['Space', 'End the turn'],
+    ['I', 'Open the bag'],
+    ['Q / E', 'Turn the camera'],
+    ['W A S D', 'Pan the camera'],
+    ['C or F', 'Bring the camera back to Leo'],
+    ['+ / −', 'Zoom in / out'],
+    ['Esc', 'Cancel, close'],
+    ['R (twice)', 'Restart the heist'],
+  ],
+  mouse: [
+    ['Hover a tile', 'See the way there and what it would bring'],
+    ['Click a tile', 'Move Leo there, or do what’s there'],
+    ['Click loot', 'Open its tag: pick, take, swap…'],
+    ['Mouse wheel', 'Zoom'],
+    ['Tap (touch)', 'Pick a tile; tap it again to move there'],
+    ['Buttons on screen', 'Camera, zoom, bag, end turn, restart'],
+  ],
+  pad: [
+    ['D-pad / left stick', 'Move the cursor'],
+    ['A', 'Move Leo there, or do what’s there'],
+    ['B', 'Cancel, close, back'],
+    ['X', 'End the turn'],
+    ['Y', 'Open the bag'],
+    ['LB / RB', 'Turn the camera'],
+    ['LT / RT', 'Zoom out / in'],
+    ['Right stick', 'Pan the camera'],
+    ['Click a stick', 'Bring the camera back to Leo'],
+    ['View / Select', 'The buttons on screen: actions, gadgets, Restart…'],
+    ['Menu / Start', 'Settings'],
+    ['In menus', 'D-pad moves between buttons, A presses'],
+  ],
+};
+
+/** The controls, one tab each for the keyboard, the mouse (or touch) and a controller. */
+function controlsTabs(): string {
+  const pad = [...(navigator.getGamepads?.() ?? [])].some((g) => g?.connected);
+  const first = pad ? 'pad' : 'keys';
+  const tabs: [keyof typeof CONTROLS, string][] = [['keys', 'Keyboard'], ['mouse', 'Mouse & touch'], ['pad', 'Controller']];
+  return `<div class="controls">
+    <div class="seg controls-tabs" role="tablist">${tabs.map(([id, l]) => `<button role="tab" data-ctab="${id}" aria-selected="${id === first}" class="${id === first ? 'on' : ''}">${l}</button>`).join('')}</div>
+    ${tabs
+      .map(
+        ([id]) =>
+          `<table class="controls-list${id === first ? '' : ' hidden'}" data-cpane="${id}"><tbody>${CONTROLS[id].map(([k, v]) => `<tr><th><kbd>${esc(k)}</kbd></th><td>${esc(v)}</td></tr>`).join('')}</tbody></table>`,
+      )
+      .join('')}
+  </div>`;
 }
 
 /** A little card in the corner: an achievement unlocked. */
