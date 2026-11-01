@@ -25,7 +25,7 @@ export function cityMap(p: Profile, onBuy: () => void): void {
         ${blocks.join('')}
         <g class="park"><rect x="400" y="122" width="78" height="74"/><circle cx="425" cy="148" r="9"/><circle cx="452" cy="170" r="11"/><circle cx="440" cy="140" r="7"/></g>
         <text x="80" y="20" class="district">OLD TOWN</text><text x="300" y="20" class="district">MUSEUM MILE</text><text x="510" y="20" class="district">THE HEIGHTS</text>
-        <text x="110" y="364" class="district">HARBOUR</text><text x="470" y="364" class="district">DOWNTOWN</text>
+        <text x="110" y="364" class="district">HARBOR</text><text x="470" y="364" class="district">DOWNTOWN</text>
         <text x="300" y="318" class="street">RIVER STREET</text>
         <g class="landmark"><rect x="118" y="30" width="78" height="74"/><text x="157" y="70">Corner Gallery</text></g>
         <g class="landmark"><rect x="212" y="122" width="78" height="74"/><text x="251" y="162">City Museum</text></g>

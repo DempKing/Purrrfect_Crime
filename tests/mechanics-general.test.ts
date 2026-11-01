@@ -36,7 +36,7 @@ test('what stands on a pedestal under a light can be stolen', () => {
   assert.ok(exhibitLoot(ALL_LEVELS.find((l) => l.id === 'l19-aquarium')!).length === 0);
 });
 test('the look-ahead: a tile that looks safe now, but a guard walks into view of it on his turn', () => {
-  // Joe walks towards Leo: safe now, caught after Joe's turn.
+  // Joe walks toward Leo: safe now, caught after Joe's turn.
   const { level, s } = heist(
     sandbox([{ name: 'Joe', start: { x: 12, y: 7 }, route: [{ x: 3, y: 7 }] }], { ambient: 'lit' }),
   );
@@ -50,7 +50,7 @@ test('the look-ahead: a tile that looks safe now, but a guard walks into view of
   assert.equal(aftermath(level, s, s.leo), null);
 });
 test('a guard who walks into a rival collars them, looking or not', () => {
-  // Rex marches along row 1 towards the rival's way in, facing away from her as he passes.
+  // Rex marches along row 1 toward the rival's way in, facing away from her as he passes.
   const guards: GuardDef[] = [{ name: 'Rex', start: { x: 12, y: 1 }, route: [{ x: 16, y: 1 }] }];
   const level = parseLevel({ ...HALL, guards });
   const s = newHeist(level, BASE_PERKS, plan('mittens', 1));

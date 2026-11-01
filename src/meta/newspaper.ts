@@ -6,7 +6,7 @@ export interface Photo {
   name: string;
   value: number;
   caption: string;
-  centrepiece: boolean;
+  centerpiece: boolean;
 }
 
 export interface Story {
@@ -29,15 +29,15 @@ export interface HeistFacts {
   day: number;
   levelId: string;
   place: string;
-  items: { name: string; value: number; centrepiece: boolean }[];
-  centrepieceName: string | null;
+  items: { name: string; value: number; centerpiece: boolean }[];
+  centerpieceName: string | null;
   guards: string[];
   seen: boolean;
   alarm: boolean;
   turns: number;
   first: boolean;
   replay: boolean;
-  /** A rival who raced Leo for the centrepiece, and who won. */
+  /** A rival who raced Leo for the centerpiece, and who won. */
   rival?: { name: string; won: boolean; prize: string; caught?: boolean; caughtBy?: string | null } | null;
 }
 
@@ -62,8 +62,8 @@ const money = (n: number) => `$${n.toLocaleString('en-US')}`;
 export function writePaper(f: HeistFacts): Paper {
   const seed = hash(`${f.day}|${f.levelId}`);
   const PLACE = f.place.toUpperCase();
-  const centre = f.items.find((i) => i.centrepiece);
-  const CENTRE = centre?.name.toUpperCase();
+  const center = f.items.find((i) => i.centerpiece);
+  const CENTER = center?.name.toUpperCase();
   const guard = f.guards.length ? pick(f.guards, seed >>> 3) : 'the night watch';
 
   let headline: string;
@@ -71,10 +71,10 @@ export function writePaper(f: HeistFacts): Paper {
   if (f.rival?.caught) {
     // Two thieves in, one hauled off by the guards.
     const NAME = f.rival.name.toUpperCase();
-    headline = centre
-      ? `${NAME} NABBED AS TUXEDO CAT ESCAPES WITH THE ${CENTRE}`
+    headline = center
+      ? `${NAME} NABBED AS TUXEDO CAT ESCAPES WITH THE ${CENTER}`
       : pick([`${NAME} NABBED AT ${PLACE}`, `GUARDS COLLAR ${NAME} AT ${PLACE}`], seed);
-    subhead = `${f.rival.caughtBy ?? 'A guard'} caught ${f.rival.name} red-pawed at ${f.place} last night${centre ? `, but the tuxedo cat slipped away with ${the(centre.name)} in the confusion` : '; the other thief, in a bow tie, was never found'}.`;
+    subhead = `${f.rival.caughtBy ?? 'A guard'} caught ${f.rival.name} red-pawed at ${f.place} last night${center ? `, but the tuxedo cat slipped away with ${the(center.name)} in the confusion` : '; the other thief, in a bow tie, was never found'}.`;
   } else if (f.rival && !f.rival.won) {
     headline = `${f.rival.name.toUpperCase()} BEATS TUXEDO CAT TO THE ${f.rival.prize.toUpperCase()}`;
     subhead = `Two thieves in one night at ${f.place}. Only one of them got ${the(f.rival.prize)}.`;
@@ -83,17 +83,17 @@ export function writePaper(f: HeistFacts): Paper {
     subhead = `Witnesses describe a race through ${f.place}, and a calling card on the empty plinth.`;
   } else if (f.first) {
     headline = `NEW CAT IN TOWN: TUXEDO THIEF HITS ${PLACE}`;
-    subhead = `A calling card with a red bow tie was all the burglar left behind${centre ? `, on the plinth where ${the(centre.name)} used to sit` : ''}.`;
-  } else if (!f.seen && !f.alarm && centre) {
+    subhead = `A calling card with a red bow tie was all the burglar left behind${center ? `, on the plinth where ${the(center.name)} used to sit` : ''}.`;
+  } else if (!f.seen && !f.alarm && center) {
     headline = pick(
       [
-        `GHOST IN A TUXEDO: ${CENTRE} VANISHES FROM ${PLACE}`,
-        `NOBODY SAW A THING: ${CENTRE} GONE`,
+        `GHOST IN A TUXEDO: ${CENTER} VANISHES FROM ${PLACE}`,
+        `NOBODY SAW A THING: ${CENTER} GONE`,
         `NOT A WHISKER OUT OF PLACE AT ${PLACE}`,
       ],
       seed,
     );
-    subhead = `No alarm, no sighting, no clue, apart from the calling card where ${the(centre.name)} should be.`;
+    subhead = `No alarm, no sighting, no clue, apart from the calling card where ${the(center.name)} should be.`;
   } else if (f.alarm) {
     headline = pick(
       [
@@ -113,8 +113,8 @@ export function writePaper(f: HeistFacts): Paper {
       seed,
     );
     subhead = `${guard} glimpsed something at ${f.place} last night. By the time he looked again, the loot was gone.`;
-  } else if (f.centrepieceName && !centre) {
-    headline = `${f.centrepieceName.toUpperCase()} SAFE, BUT ${f.items.length === 1 ? 'A TREASURE' : `${f.items.length} TREASURES`} TAKEN AT ${PLACE}`;
+  } else if (f.centerpieceName && !center) {
+    headline = `${f.centerpieceName.toUpperCase()} SAFE, BUT ${f.items.length === 1 ? 'A TREASURE' : `${f.items.length} TREASURES`} TAKEN AT ${PLACE}`;
     subhead = `The tuxedo cat left the star of the show behind. Experts are baffled; the curator is relieved.`;
   } else {
     headline = `TUXEDO CAT STRIKES AGAIN AT ${PLACE}`;
@@ -125,8 +125,8 @@ export function writePaper(f: HeistFacts): Paper {
   const photos: Photo[] = f.items.map((i) => ({
     name: i.name,
     value: i.value,
-    centrepiece: i.centrepiece,
-    caption: i.centrepiece
+    centerpiece: i.centerpiece,
+    caption: i.centerpiece
       ? `${the(i.name).replace(/^t/, 'T')}'s plinth, with only a calling card left on it.`
       : pick(
           [
@@ -152,7 +152,7 @@ export function writePaper(f: HeistFacts): Paper {
       ),
     },
     {
-      title: 'Rumours',
+      title: 'Rumors',
       body: pick(
         [
           'Old-timers at the docks say the city has not seen work this neat since the days of the legendary NightClaw.',
@@ -196,7 +196,7 @@ export function finalePaper(day: number): Paper {
       },
       {
         title: 'Who is the Tuxedo Cat?',
-        body: 'Every museum in the city has had a visit, and every centrepiece has gone, with not one guard who could swear they saw him. Curators are advised to check under their plinths.',
+        body: 'Every museum in the city has had a visit, and every centerpiece has gone, with not one guard who could swear they saw him. Curators are advised to check under their plinths.',
       },
       {
         title: 'Bell tower empty',

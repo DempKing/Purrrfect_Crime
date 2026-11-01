@@ -335,7 +335,7 @@ export const ROOMS: RoomInfo[] = [
     tiers: [
       {
         cost: 400,
-        text: 'The floor plan before each heist: walls, vents, exits, loot, and the rumour board.',
+        text: 'The floor plan before each heist: walls, vents, exits, loot, and the rumor board.',
       },
       { cost: 1200, text: 'Adds every camera and lamp to the plan.' },
       {
@@ -380,9 +380,9 @@ export const ROOMS: RoomInfo[] = [
   {
     id: 'trophy',
     name: 'Trophy Room',
-    blurb: 'Show off every centrepiece Leo has stolen.',
+    blurb: 'Show off every centerpiece Leo has stolen.',
     tiers: [
-      { cost: 600, text: 'Displays the centrepieces. Fame: +5% XP from heists.' },
+      { cost: 600, text: 'Displays the centerpieces. Fame: +5% XP from heists.' },
       { cost: 1500, text: '+10% XP.' },
       { cost: 3000, text: '+15% XP.' },
     ],

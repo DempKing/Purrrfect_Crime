@@ -25,7 +25,7 @@ export type Gait = 'walk' | 'run' | 'sneak' | 'crawl' | 'leap' | 'climb';
 
 /** A character as drawn: a smooth position between tiles, plus animation state. */
 export interface Actor {
-  x: number; // grid position (tile x + 0.5 is the tile's centre)
+  x: number; // grid position (tile x + 0.5 is the tile's center)
   y: number;
   facing: number;
   bob: number;
@@ -45,7 +45,7 @@ export interface Ripple {
 }
 
 /** The 4 straight directions. */
-export const NEIGHBOURS = [
+export const NEIGHBORS = [
   { x: 1, y: 0 },
   { x: 0, y: 1 },
   { x: -1, y: 0 },

@@ -7,11 +7,11 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 export interface BakeOptions {
   /** Supersampling: frames are stored at this multiple of game pixels. */
   scale: number;
-  /** Tiles per metre, before the fit clamps it. */
-  tilesPerMetre: number;
+  /** Tiles per meter, before the fit clamps it. */
+  tilesPerMeter: number;
   /** The widest the model may be, in tiles. */
   fit: number;
-  /** 'floor': stands on the tile centre. 'wall': hangs on the wall, its middle `height` px up. */
+  /** 'floor': stands on the tile center. 'wall': hangs on the wall, its middle `height` px up. */
   mount: 'floor' | 'wall';
   height: number;
   /** Extra turn (degrees) so the model's front faces grid +y at frame 0. */
@@ -24,7 +24,7 @@ export interface Baked {
   strip: string; // a webp data URL: eight frames side by side, frame k is the view turned k x 45°
   w: number;
   h: number;
-  ax: number; // the anchor (tile centre on the floor, or the wall point) inside each frame, in stored pixels
+  ax: number; // the anchor (tile center on the floor, or the wall point) inside each frame, in stored pixels
   ay: number;
   tiles: { w: number; d: number; h: number }; // the model's size in tiles (h in game px)
 }
@@ -58,10 +58,10 @@ loader.setMeshoptDecoder(MeshoptDecoder);
 async function bake(url: string, o: BakeOptions): Promise<Baked> {
   const gltf = await loader.loadAsync(url);
   const model = gltf.scene;
-  // Size it: real size at tilesPerMetre, shrunk to fit.
+  // Size it: real size at tilesPerMeter, shrunk to fit.
   let box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
-  let k = o.tilesPerMetre;
+  let k = o.tilesPerMeter;
   const wide = Math.max(size.x, size.z) * k;
   if (wide > o.fit) k *= o.fit / wide;
   model.scale.multiplyScalar(k);
@@ -69,7 +69,7 @@ async function bake(url: string, o: BakeOptions): Promise<Baked> {
   model.updateMatrixWorld(true);
   box = new THREE.Box3().setFromObject(model);
   const c = box.getCenter(new THREE.Vector3());
-  // Floor props centred on the origin; wall props with their back on z = 0.
+  // Floor props centerd on the origin; wall props with their back on z = 0.
   model.position.set(
     -c.x,
     o.mount === 'wall' ? -c.y + o.height / ZPX : -box.min.y,

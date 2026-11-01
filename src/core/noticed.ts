@@ -189,7 +189,7 @@ export function makeNoise(level: Level, s: State, p: Point, r: number, fromLeo =
   if (r <= 0) return;
   s.noises.push({ x: p.x, y: p.y, r });
   for (const g of s.guards) {
-    if (g.kind === 'robo') continue; // robots aren't programmed to be curious
+    if (g.kind === 'robo') continue; // robots aren't programd to be curious
     if (hearingDistance(level, s, p, g, r) > r) continue;
     if (g.asleep) s.log.push(`${g.name} wakes with a snort.`);
     else if (g.mode === 'patrol') s.log.push(`${g.name} heard something.`);

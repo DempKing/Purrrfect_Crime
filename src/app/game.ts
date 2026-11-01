@@ -39,7 +39,7 @@ export interface Game {
   // Camera.
   targetAngle: number; // the angle the camera is turning to
   zoom: number;
-  zoomNow: number; // eases towards zoom
+  zoomNow: number; // eases toward zoom
   focus: { x: number; y: number } | null; // the point the camera looks at, easing after Leo
 
   // Input and the preview of a move.

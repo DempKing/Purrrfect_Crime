@@ -1,10 +1,10 @@
 // Drawn SVG pictures for loot that has no painted picture, chosen by keywords in its name
-// (coins, gems, paintings, watches...) and coloured by material.
+// (coins, gems, paintings, watches...) and colored by material.
 import type { LootCategory } from '../core/level';
 
 const INK = '#22190f';
 
-/** Colours for what a thing is made of: [light, mid, dark]. */
+/** Colors for what a thing is made of: [light, mid, dark]. */
 const MATERIALS: [RegExp, [string, string, string]][] = [
   [/jade/i, ['#b8f0c8', '#4fb37a', '#1f6b45']],
   [/sapphire/i, ['#bfe0ff', '#2f6fe0', '#14307a']],
@@ -22,13 +22,13 @@ const MATERIALS: [RegExp, [string, string, string]][] = [
 ];
 const GOLD: [string, string, string] = ['#fff1b0', '#e2b13c', '#8a6418'];
 
-/** Colours for what the loot is made of (gold, silver, jade...). */
+/** Colors for what the loot is made of (gold, silver, jade...). */
 function material(name: string): [string, string, string] {
   return MATERIALS.find(([r]) => r.test(name))?.[1] ?? GOLD;
 }
 
-/** A gem's colour, by its name. */
-function gemColour(name: string): [string, string, string] {
+/** A gem's color, by its name. */
+function gemColor(name: string): [string, string, string] {
   if (/sapphire/i.test(name)) return ['#bfe0ff', '#2f6fe0', '#14307a'];
   if (/emerald/i.test(name)) return ['#c8ffd8', '#22b35e', '#0d5a2c'];
   if (/ruby|royal flush/i.test(name)) return ['#ffc8d0', '#e0263f', '#7a0d1a'];
@@ -119,7 +119,7 @@ function coins(name: string): string {
 }
 
 function gem(name: string): string {
-  const g = gemColour(name);
+  const g = gemColor(name);
   const many = /diamonds|emeralds/i.test(name);
   const one = (x: number, y: number, s: number) =>
     `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-14 -6 L-8 -14 H8 L14 -6 L0 14Z" fill="${g[1]}" ${stroke}/><path d="M-14 -6 H14 M-8 -14 L-4 -6 L0 14 M8 -14 L4 -6 L0 14 M-4 -6 L0 -14 L4 -6" fill="none" stroke="${g[2]}" stroke-width="1"/><path d="M-8 -14 L-4 -6 H-14Z" fill="${g[0]}"/></g>`;
@@ -181,9 +181,9 @@ function trophy(name: string): string {
 
 function bell(name: string): string {
   const col = /sapphire/i.test(name)
-    ? gemColour('sapphire')
+    ? gemColor('sapphire')
     : /ruby/i.test(name)
-      ? gemColour('ruby')
+      ? gemColor('ruby')
       : material(name);
   return `<defs>${grad('m', col)}</defs><path d="M32 10 Q20 12 18 30 Q17 40 10 46 H54 Q47 40 46 30 Q44 12 32 10Z" fill="url(#m)" ${stroke}/><circle cx="32" cy="50" r="5" fill="${col[1]}" ${stroke}/><rect x="29" y="5" width="6" height="6" fill="${col[1]}" ${stroke}/>`;
 }
@@ -412,7 +412,7 @@ export function lootIconSvg(name: string, category?: LootCategory): string {
                                               ? figurine(name)
                                               : category === 'jewel'
                                                 ? gem(name)
-                                                : category === 'artefact'
+                                                : category === 'artifact'
                                                   ? figurine(name)
                                                   : box(name));
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="128" height="128">${body}</svg>`;

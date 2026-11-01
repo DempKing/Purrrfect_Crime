@@ -30,12 +30,12 @@ for (const def of ALL_LEVELS) {
       s.inventory.some(
         (i) => level.plinth && def.loot[i].at.x === level.plinth.x && def.loot[i].at.y === level.plinth.y,
       ),
-      'without the centrepiece',
+      'without the centerpiece',
     );
   });
 }
 
-test('every level has a centrepiece, a reachable exit, and loot that fits a fresh inventory', () => {
+test('every level has a centerpiece, a reachable exit, and loot that fits a fresh inventory', () => {
   for (const def of ALL_LEVELS) {
     const level = parseLevel(def);
     assert.ok(level.plinth, `${def.id}: no plinth`);

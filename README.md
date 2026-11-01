@@ -7,7 +7,7 @@ and catch the eye of the legendary **NightClaw**.
 
 There's no combat: stay hidden in the shadows and vents. Get caught and you restart the level.
 
-**Status:** prototype M6 in progress: the whole story is playable, start to credits, with synthesised sound and music, settings (volume, speed, larger text, reduced motion, a colour-blind palette), keyboard play and achievements. The art is still placeholder. There's **one mode, the hardest**: no
+**Status:** prototype M6 in progress: the whole story is playable, start to credits, with synthesised sound and music, settings (volume, speed, larger text, reduced motion, a color-blind palette), keyboard play and achievements. The art is still placeholder. There's **one mode, the hardest**: no
 difficulty choice, no checkpoints, no undo, and every level is designed to be beaten flawlessly.
 **All five districts are built (25 levels)**: after the
 tutorial come the Cobblestone Coin Museum (a sleepy guard, creaky floorboards, a safe), the Clocktower
@@ -17,15 +17,15 @@ with five dim halls: Natural History (pressure plates), the Egyptian Wing (motio
 Art Atrium, the Gem & Mineral Hall and the Planetarium. The Heights brings card-reader doors (the
 Millionaire's Mansion), rooftop gaps and wires for Tightrope (the Sky Garden Hotel), glass walls (the
 Glass Tower Auction), guard dogs and water (the Yacht Club) and a vault with a combination (the
-Observatory Estate). Harbour has crates to hide in (the Customs Warehouse), a lighthouse beam (the
+Observatory Estate). Harbor has crates to hide in (the Customs Warehouse), a lighthouse beam (the
 Lighthouse Collection), the tide (the Shipwreck Museum), a fish market where sniffers can't smell a cat
 (the Fish Market Bank) and light switches (the Aquarium Gala). Downtown brings the Robo-Guards (the Grand
 Bank), slot machines that drown out noise (Casino Royale-Paws), conveyor belts (the Mint), wet paint and
 paw prints (the Museum of Modern Mischief) and a time-locked vault (City Hall Treasury). **NightClaw's letters** arrive after ten heists and 10,000 Catnip of sales; the
 second opens his challenge museum, the Midnight Museum; the third sets the NightClaw Challenge (every
-centrepiece, flawlessly); the fourth invites Leo to **NightClaw's Lair**, where NightClaw himself is
+centerpiece, flawlessly); the fourth invites Leo to **NightClaw's Lair**, where NightClaw himself is
 waiting. Creep up on him, and the ending, credits and free play follow. **Rival thieves** (Mittens, Luna, Sammy and
-Professor Paws) sometimes race Leo for the centrepiece, with a warning on the lair's rumour board. Each
+Professor Paws) sometimes race Leo for the centerpiece, with a warning on the lair's rumor board. Each
 level opens when the one before it is cleared. Underneath is M3's progression (save slots, attributes,
 skill trees, lair rooms, the briefing) and the M2 slice (narrator, newspaper, black market).
 
@@ -58,7 +58,7 @@ node tests/e2e.mjs # plays the built game in a headless browser (needs Playwrigh
 src/core/      the rules, with no drawing: level parsing, movement and action points, guard sight
                and patrols, the turn order, and a solver that searches every way a heist can go
 src/levels/    level maps (text grids) and guard routes
-src/render/    PixiJS isometric renderer: projection, rotating camera, grey-box art
+src/render/    PixiJS isometric renderer: projection, rotating camera, gray-box art
 src/ui/        the menus, lair, planning board and reports (a cartoon caper look: see design §12.3)
 src/main.ts    input, animation, turn flow and the HUD
 tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
@@ -88,7 +88,7 @@ credit is listed in `art/music/credits.json` and shown in the end credits.
 
 | #                                                                                   | Milestone                                                                                                  |
 | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| M0 ✓                                                                                | Grey-box prototype: one map, camera rotation, action-point movement, one guard, caught = restart           |
+| M0 ✓                                                                                | Gray-box prototype: one map, camera rotation, action-point movement, one guard, caught = restart           |
 | M1 ✓                                                                                | Stealth sandbox: light, noise, alert states, cameras, lasers, vents, lockpicking, loot, escape             |
 | M2 ✓ (art pending)                                                                  | Vertical slice: the tutorial level with real art, narrator, calling card and newspaper, black market, lair |
 | M3 ✓                                                                                | Progression: attributes, skill trees, lair upgrades, saves                                                 |

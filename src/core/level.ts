@@ -8,7 +8,7 @@ export type Tile =
   | 'pillar'
   | 'stack' // a tall stack of crates: works like a pillar
   | 'case' // display case with loot inside
-  | 'plinth' // the centrepiece
+  | 'plinth' // the centerpiece
   | 'lamp' // a standing lamp: furniture you can't walk through
   | 'door' // locked door: pick it to open
   | 'grate' // vent grate in the floor
@@ -18,7 +18,7 @@ export type Tile =
   | 'squeaky' // a loose floorboard: loud underfoot
   | 'safe' // a safe with loot inside: slow to crack, but silent
   | 'ladder' // up to the rafters
-  | 'seat' // a row of theatre seats: low, so guards see over them, but in Leo's way
+  | 'seat' // a row of theater seats: low, so guards see over them, but in Leo's way
   | 'plate' // a pressure plate: step on it and the alarm goes off
   | 'keydoor' // a door with a card reader: it opens for the keycard, and can't be picked
   | 'keycard' // floor with a keycard lying on it: walk over it to pick it up
@@ -79,7 +79,7 @@ export interface LampDef {
 }
 
 /** What kind of buyer wants it: the black market's demand rotates between these. */
-export type LootCategory = 'painting' | 'jewel' | 'artefact' | 'curiosity';
+export type LootCategory = 'painting' | 'jewel' | 'artifact' | 'curiosity';
 
 export interface LootDef {
   at: Point; // a case or the plinth
@@ -96,9 +96,9 @@ export interface LevelDef {
   name: string;
   objective: string;
   /**
-   * `#` wall · `.` floor · `,` marble (noisy) · `P` pillar · `D` display case · `G` centrepiece plinth ·
+   * `#` wall · `.` floor · `,` marble (noisy) · `P` pillar · `D` display case · `G` centerpiece plinth ·
    * `L` lamp · `+` locked door · `V` vent grate · `x` laser · `C` camera panel · `F` fuse box ·
-   * `~` squeaky floorboard · `S` safe · `H` ladder to the rafters · `h` theatre seats · `^` pressure plate ·
+   * `~` squeaky floorboard · `S` safe · `H` ladder to the rafters · `h` theater seats · `^` pressure plate ·
    * `K` keycard door · `k` keycard · `_` gap (a drop, or water) · `-` wire · `|` glass wall · `B` kennel ·
    * `Y` stack of crates · `>` `<` conveyor belts · `%` wet paint · `Q` vault door · `N` desk with the combination · `O` crate to hide in · `t` tidal sand · `W` light switch ·
    * `@` Leo's start · `E` exit
@@ -141,7 +141,7 @@ export interface LevelDef {
   loot: LootDef[];
   /** What's new in this level, for the briefing. */
   tip?: string;
-  /** NightClaw's challenge museum: opened by Letter 2, and its centrepiece holds Letter 3. */
+  /** NightClaw's challenge museum: opened by Letter 2, and its centerpiece holds Letter 3. */
   challenge?: boolean;
   /** NightClaw's Lair (opened by Letter 4): ends when Leo, holding the prize, taps NightClaw. */
   finale?: boolean;

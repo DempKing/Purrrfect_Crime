@@ -18,7 +18,7 @@ export interface Achievement {
 // Helpers for the achievement checks.
 const cleared = (p: Profile, ids: string[]) => ids.every((id) => p.records[id]);
 const districtIds = (i: number) => DISTRICTS[i].levels.map((l) => l.id);
-const centrepieces = (p: Profile) => Object.values(p.records).filter((r) => r.centrepiece).length;
+const centerpieces = (p: Profile) => Object.values(p.records).filter((r) => r.centerpiece).length;
 const beat = (p: Profile, id: RivalId) => (p.rivalRecord[id]?.won ?? 0) > 0;
 
 /** All achievements and how each is earned. */
@@ -41,14 +41,14 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'ghost',
     steam: 'ACH_GHOST',
     name: 'Ghost in a Tuxedo',
-    text: 'Take a centrepiece in a flawless heist after the tutorial.',
+    text: 'Take a centerpiece in a flawless heist after the tutorial.',
     earned: (p) => Object.entries(p.records).some(([id, r]) => r.flawless && id !== 'l0-corner-gallery'),
   },
   ...DISTRICTS.slice(0, 5).map((d, i) => ({
     id: `district-${d.id}`,
     steam: `ACH_DISTRICT_${i + 1}`,
     name:
-      ['Old Town Cat', 'Museum Mile Marauder', 'High Society', 'Harbour Master', 'Downtown Legend'][i] ??
+      ['Old Town Cat', 'Museum Mile Marauder', 'High Society', 'Harbor Master', 'Downtown Legend'][i] ??
       d.name,
     text: `Clear every heist in ${d.name}.`,
     earned: (p: Profile) => cleared(p, districtIds(i)),
@@ -57,7 +57,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: `beat-${id}`,
     steam: `ACH_BEAT_${id.toUpperCase()}`,
     name: `One Up on ${RIVALS[id].name.split(' ')[0]}`,
-    text: `Beat ${RIVALS[id].name} to a centrepiece.`,
+    text: `Beat ${RIVALS[id].name} to a centerpiece.`,
     earned: (p: Profile) => beat(p, id),
   })),
   {
@@ -70,7 +70,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'fence',
     steam: 'ACH_FENCES_FRIEND',
-    name: 'The Fence’s Favourite',
+    name: 'The Fence’s Favorite',
     text: 'Sell 10,000 Catnip of loot on the black market.',
     earned: (p) => p.soldTotal >= 10000,
   },
@@ -85,8 +85,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'trophies',
     steam: 'ACH_TROPHY_HUNTER',
     name: 'Trophy Hunter',
-    text: 'Steal ten centrepieces.',
-    earned: (p) => centrepieces(p) >= 10,
+    text: 'Steal ten centerpieces.',
+    earned: (p) => centerpieces(p) >= 10,
   },
   {
     id: 'full-pockets',

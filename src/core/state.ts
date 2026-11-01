@@ -160,10 +160,10 @@ export interface State {
   lasersOffTurns: number; // lasers cut for a while (Fuse Kit, EMP Collar)
   napTurns: number; // Cat Nap: guards can't see Leo for this many of their turns
   rival: Rival | null;
-  rivalLoot: number[]; // loot a rival has taken (the centrepiece, or whatever Sammy pocketed)
+  rivalLoot: number[]; // loot a rival has taken (the centerpiece, or whatever Sammy pocketed)
   /** Loot Leo put down, lying where he left it. */
   dropped: { li: number; x: number; y: number }[];
-  rivalBeaten: boolean; // Leo took the centrepiece while a rival was after it
+  rivalBeaten: boolean; // Leo took the centerpiece while a rival was after it
   /** Who has the level's keycard: nobody yet, Leo, or a rival who swiped it. */
   card: 'leo' | 'rival' | null;
   combination: boolean; // Leo has read the vault's combination

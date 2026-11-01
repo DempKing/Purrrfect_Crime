@@ -22,8 +22,8 @@ import { floorTile, gap, grate, planks, plate } from './walls';
 import { belt, paint } from './furniture';
 import { decoyCard, drawAlert, keycard, pawPrint, region, riskMark, viewCone } from './overlays';
 
-/** The floor colour for a tile when there's no texture for it. */
-function floorColour(level: Level, s: State, x: number, y: number): number {
+/** The floor color for a tile when there's no texture for it. */
+function floorColor(level: Level, s: State, x: number, y: number): number {
   const t = tileNow(level, s, x, y);
   const odd = (x + y) % 2 === 1;
   if (t === 'floor' && level.tiles[y][x] === 'tidal') return odd ? 0xa58a5e : 0x9a8056; // wet sand
@@ -33,13 +33,13 @@ function floorColour(level: Level, s: State, x: number, y: number): number {
   return odd ? COL.carpetA : COL.carpetB;
 }
 
-/** Draws one tile into the cached floor picture: its texture or colour, then light and shade. */
+/** Draws one tile into the cached floor picture: its texture or color, then light and shade. */
 function drawCachedTile(view: HeistView, fr: Frame, level: Level, s: State, x: number, y: number): void {
   const fb = fr.fb!;
   const t = tileNow(level, s, x, y);
   const sand = t === 'floor' && level.tiles[y][x] === 'tidal';
 
-  // Texture first; plain colour if there isn't one.
+  // Texture first; plain color if there isn't one.
   const skin =
     sand || t === 'exit'
       ? null
@@ -51,7 +51,7 @@ function drawCachedTile(view: HeistView, fr: Frame, level: Level, s: State, x: n
             ? view.look.marble
             : view.look.floor;
   const skinned = !!skin && floorTile(view, fb, x, y, skin);
-  if (!skinned) diamond(view, fb, x, y, 0.5, floorColour(level, s, x, y), 1, COL.floorLine);
+  if (!skinned) diamond(view, fb, x, y, 0.5, floorColor(level, s, x, y), 1, COL.floorLine);
   if (t === 'squeaky' && !skinned) planks(view, fb, x, y);
   if (t === 'plate' && !skinned) plate(view, fb, x, y);
   if (t === 'paint') paint(view, fb, x, y);
@@ -128,12 +128,12 @@ export function drawViewCones(view: HeistView, fr: Frame, level: Level, s: State
 export function drawLayerPlan(view: HeistView, fr: Frame, level: Level): void {
   const grid = fr.inVent ? level.ducts : fr.inRafters ? level.rafters : null;
   if (!grid) return;
-  const colour = fr.inVent ? COL.duct : COL.beam;
+  const color = fr.inVent ? COL.duct : COL.beam;
   for (let y = 0; y < level.h; y++)
     for (let x = 0; x < level.w; x++) {
       if (!grid[y][x]) continue;
-      diamond(view, fr.f, x, y, 0.42, colour, fr.inVent ? 0.18 : 0.2);
-      diamondOutline(view, fr.f, x, y, colour, 1.5, 0.08, 0.6);
+      diamond(view, fr.f, x, y, 0.42, color, fr.inVent ? 0.18 : 0.2);
+      diamondOutline(view, fr.f, x, y, color, 1.5, 0.08, 0.6);
     }
 }
 
@@ -161,7 +161,7 @@ export function drawFloorMarks(view: HeistView, fr: Frame, s: State, ov: Overlay
     f.circle(sp.x + 3, sp.y - 2, 3).fill({ color: COL.rival, alpha: 0.85 });
   }
 
-  // The walk to the hovered tile, coloured by danger.
+  // The walk to the hovered tile, colored by danger.
   for (let i = 1; i < ov.path.length; i++) {
     const a = project(p, ov.path[i - 1].x + 0.5, ov.path[i - 1].y + 0.5);
     const b = project(p, ov.path[i].x + 0.5, ov.path[i].y + 0.5);
@@ -172,7 +172,7 @@ export function drawFloorMarks(view: HeistView, fr: Frame, s: State, ov: Overlay
 
   for (const a of ov.alerts) drawAlert(view, f, a);
 
-  // The hovered tile, in the colour of the worst danger on the way there.
+  // The hovered tile, in the color of the worst danger on the way there.
   if (ov.hover) {
     const worst = Math.max(0, ...ov.pathDanger.values());
     const color = worst === 2 ? COL.danger : worst === 1 ? COL.warn : COL.path;

@@ -40,7 +40,7 @@ export function figure(
   const cycle = (a.phase ?? 0) * 2;
   const half = cycle % 1;
   const hop = Math.abs(Math.sin(half * Math.PI));
-  // Standing: the front view only when facing more or less towards the camera; otherwise side on, turned
+  // Standing: the front view only when facing more or less toward the camera; otherwise side on, turned
   // the way they face, so nobody seems to look one way while watching the other.
   let frame: CharFrameName = a.gait ? (Math.floor(cycle) % 2 ? 'b' : 'a') : f.y > 0.3 ? 'idle' : 'b';
   let sx = 1;

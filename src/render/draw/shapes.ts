@@ -57,7 +57,7 @@ export function diamondOutline(
   const c = corners(view, x + inset, y + inset, x + 1 - inset, y + 1 - inset, 0);
   g.poly(c.flatMap((q) => [q.x, q.y])).stroke({ width, color, alpha });
 }
-/** A box (only the faces towards the camera are drawn). */
+/** A box (only the faces toward the camera are drawn). */
 export function prism(
   view: HeistView,
   g: Graphics,

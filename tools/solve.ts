@@ -216,18 +216,18 @@ export function solve(
     start?: State;
   } = {},
 ): { plan: RouteStep[][]; s: State; expanded: number } | null {
-  const centre = level.def.loot.findIndex(
+  const center = level.def.loot.findIndex(
     (l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y,
   );
-  if (centre < 0) throw new Error('no centrepiece');
-  const c = level.def.loot[centre].at;
+  if (center < 0) throw new Error('no centerpiece');
+  const c = level.def.loot[center].at;
   const around: Point[] = [];
   for (let dy = -1; dy <= 1; dy++)
     for (let dx = -1; dx <= 1; dx++) if (dx || dy) around.push({ x: c.x + dx, y: c.y + dy });
-  const toCentre = distanceMap(level, around);
+  const toCenter = distanceMap(level, around);
   const toExit = distanceMap(level, [level.exit]);
-  const centreToExit = Math.min(...around.map((p) => toExit[p.y]?.[p.x] ?? Infinity));
-  // Errands: things Leo must fetch first (keycard, combination, fuse) when they block the centrepiece.
+  const centerToExit = Math.min(...around.map((p) => toExit[p.y]?.[p.x] ?? Infinity));
+  // Errands: things Leo must fetch first (keycard, combination, fuse) when they block the centerpiece.
   const tilesOf = (t: Tile) =>
     level.tiles.flatMap((row, y) => row.flatMap((tt, x) => (tt === t ? [{ x, y }] : [])));
   const beside = (ps: Point[]) =>
@@ -244,11 +244,11 @@ export function solve(
     )
     .map((e) => {
       const to = distanceMap(level, e.goals);
-      return { ...e, to, onward: Math.min(...e.goals.map((g) => toCentre[g.y][g.x])) };
+      return { ...e, to, onward: Math.min(...e.goals.map((g) => toCenter[g.y][g.x])) };
     });
   // The finale ends at NightClaw, wherever he is, not at the exit.
   const toNightClaw = new Map<string, number[][]>();
-  const afterCentre = (s: State) => {
+  const afterCenter = (s: State) => {
     const nc = level.def.finale ? s.guards.find((g) => g.kind === 'nightclaw') : undefined;
     if (!nc) return toExit[s.leo.y][s.leo.x];
     const k = `${nc.x},${nc.y}`;
@@ -256,11 +256,11 @@ export function solve(
     return toNightClaw.get(k)![s.leo.y][s.leo.x];
   };
   const h = (s: State) => {
-    const has = s.inventory.includes(centre);
+    const has = s.inventory.includes(center);
     const todo = has ? [] : errands.filter((e) => !e.done(s));
-    let here = has ? afterCentre(s) : toCentre[s.leo.y][s.leo.x] + centreToExit;
+    let here = has ? afterCenter(s) : toCenter[s.leo.y][s.leo.x] + centerToExit;
     if (todo.length)
-      here = todo[0].to[s.leo.y][s.leo.x] + todo[0].onward + centreToExit + (todo.length > 1 ? 10 : 0);
+      here = todo[0].to[s.leo.y][s.leo.x] + todo[0].onward + centerToExit + (todo.length > 1 ? 10 : 0);
     return here / 5 + (has ? 0 : 1) + todo.length;
   };
   period = levelPeriod(level);
@@ -299,9 +299,9 @@ export function solve(
       for (const a of actionsHere(level, n.s)) {
         if (a.blocked) continue;
         const loot = level.def.loot.findIndex((l) => l.at.x === a.at.x && l.at.y === a.at.y);
-        const isCentre = loot === centre;
-        if (!USEFUL.includes(a.kind) && !(isCentre || (opts.loot && loot >= 0))) continue;
-        if (a.kind === 'smash-case' && !opts.loot && !isCentre) continue;
+        const isCenter = loot === center;
+        if (!USEFUL.includes(a.kind) && !(isCenter || (opts.loot && loot >= 0))) continue;
+        if (a.kind === 'smash-case' && !opts.loot && !isCenter) continue;
         const s = structuredClone(n.s);
         s.log = [];
         if (!doAction(level, s, a.kind, a.at)) continue;
@@ -309,7 +309,7 @@ export function solve(
       }
       const reach = leoReach(level, n.s);
       // Every one-point move, but only the dashes that make the most progress.
-      const dist = (x: number, y: number) => (n.s.inventory.includes(centre) ? toExit : toCentre)[y][x];
+      const dist = (x: number, y: number) => (n.s.inventory.includes(center) ? toExit : toCenter)[y][x];
       const ends = [...reach.cost]
         .filter(([, cost]) => cost > 0 && moveAp(n.s, cost) <= n.s.ap)
         .map(([kk, cost]) => {

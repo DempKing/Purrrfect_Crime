@@ -6,7 +6,7 @@ is in [§12.1 of the design doc](../docs/GAME_DESIGN.md#121-generated-sprites-wh
 ## Quick spec
 
 - 2:1 isometric. Floor tiles 128 × 64 px; full walls 128 × 192 px.
-- Characters about 96 px tall on a 128 × 128 canvas, feet at the bottom centre.
+- Characters about 96 px tall on a 128 × 128 canvas, feet at the bottom center.
 - Transparent PNG, no baked-in shadows, neutral night lighting from the top left.
 - Characters in 4 facing directions: `ne`, `se`, `sw`, `nw`.
 - Name files `group_name_direction_animation_frame.png`, for example `leo_se_walk_03.png`.

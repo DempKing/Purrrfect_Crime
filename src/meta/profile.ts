@@ -12,7 +12,7 @@ export const LAIR_PRICE = STARTING_CATNIP;
 export const DEMAND_BONUS = 0.25;
 /** Newspaper estimates are in dollars; the fences pay one Catnip for every $10 of it, before their cut. */
 export const DOLLARS_PER_CATNIP = 10;
-export const CATEGORIES: LootCategory[] = ['jewel', 'painting', 'artefact', 'curiosity'];
+export const CATEGORIES: LootCategory[] = ['jewel', 'painting', 'artifact', 'curiosity'];
 
 export interface StashItem {
   id: number;
@@ -21,7 +21,7 @@ export interface StashItem {
   value: number; // the newspaper's estimate
   levelId: string;
   levelName: string;
-  centrepiece: boolean;
+  centerpiece: boolean;
   /** Stolen on a replay: the fences say it's hot and pay half. */
   hot: boolean;
 }
@@ -29,9 +29,9 @@ export interface StashItem {
 export interface LevelRecord {
   clears: number;
   bestTurns: number;
-  centrepiece: boolean;
+  centerpiece: boolean;
   flawless: boolean;
-  /** The rival who got away with the centrepiece, while Leo hasn't stolen it himself. */
+  /** The rival who got away with the centerpiece, while Leo hasn't stolen it himself. */
   lostTo?: RivalId;
 }
 
@@ -103,7 +103,7 @@ function hash(text: string): number {
   return h >>> 0;
 }
 
-/** The chance a rival is after a heist's centrepiece: none for the first three heists, then 20%, rising by district to 35%. */
+/** The chance a rival is after a heist's centerpiece: none for the first three heists, then 20%, rising by district to 35%. */
 export function rivalChance(p: Profile, district: number): number {
   const done = p.heists - (p.tutorialDone ? 1 : 0);
   return done < 3 ? 0 : Math.min(0.35, 0.2 + 0.05 * district);
@@ -212,7 +212,7 @@ export interface HeistReport {
   turns: number;
   items: StashItem[];
   total: number;
-  centrepiece: boolean;
+  centerpiece: boolean;
   flawless: boolean;
   replay: boolean;
   xp: XpLine[];
@@ -227,11 +227,11 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
   const def = level.def;
   const prev = p.records[def.id];
   const replay = !!prev;
-  const isCentre = (i: number) =>
+  const isCenter = (i: number) =>
     !!level.plinth && def.loot[i].at.x === level.plinth.x && def.loot[i].at.y === level.plinth.y;
   // NightClaw's collar isn't for selling: it goes on the Trophy Room's top shelf.
   const items: StashItem[] = s.inventory
-    .filter((i) => !(def.finale && isCentre(i)))
+    .filter((i) => !(def.finale && isCenter(i)))
     .map((i) => {
       const l = def.loot[i];
       return {
@@ -241,14 +241,14 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
         value: l.value,
         levelId: def.id,
         levelName: def.name,
-        centrepiece: isCentre(i),
+        centerpiece: isCenter(i),
         hot: replay,
       };
     });
   const total = items.reduce((n, i) => n + i.value, 0);
-  const centrepiece = s.inventory.some(isCentre);
+  const centerpiece = s.inventory.some(isCenter);
   const flawless = !s.seen && !s.alarmRaised;
-  // The race: did a rival come, and who got the centrepiece?
+  // The race: did a rival come, and who got the centerpiece?
   // A rival the guards caught lost the race too.
   const rival =
     s.rival && (s.rival.phase !== 'waiting' || s.rivalBeaten)
@@ -258,7 +258,7 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
   const xp: XpLine[] = [{ label: 'Heist complete', amount: def.xp ?? 100 }];
   if (!s.seen) xp.push({ label: 'Never seen', amount: 50 });
   if (!s.alarmRaised) xp.push({ label: 'No alarms', amount: 50 });
-  if (centrepiece) xp.push({ label: 'The centrepiece', amount: 100 });
+  if (centerpiece) xp.push({ label: 'The centerpiece', amount: 100 });
   if (total > 0) xp.push({ label: 'Loot value', amount: Math.floor(total / 200) });
   if (def.par && s.turn < def.par) xp.push({ label: 'Quick work', amount: (def.par - s.turn) * 5 });
   if (rival?.won)
@@ -283,9 +283,9 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
   p.records[def.id] = {
     clears: (prev?.clears ?? 0) + 1,
     bestTurns: Math.min(prev?.bestTurns ?? Infinity, s.turn),
-    centrepiece: (prev?.centrepiece ?? false) || centrepiece,
-    flawless: (prev?.flawless ?? false) || (flawless && centrepiece),
-    lostTo: centrepiece || prev?.centrepiece ? undefined : rival && !rival.won ? rival.id : prev?.lostTo,
+    centerpiece: (prev?.centerpiece ?? false) || centerpiece,
+    flawless: (prev?.flawless ?? false) || (flawless && centerpiece),
+    lostTo: centerpiece || prev?.centerpiece ? undefined : rival && !rival.won ? rival.id : prev?.lostTo,
   };
   if (rival) {
     const rec = (p.rivalRecord[rival.id] ??= { won: 0, lost: 0 });
@@ -294,7 +294,7 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
     p.lastRival = rival.id;
   }
   delete p.rivals[def.id]; // a new roll next time
-  if (def.challenge && centrepiece) openMusicBox(p);
+  if (def.challenge && centerpiece) openMusicBox(p);
   const firstFinale = finale && !p.legendary;
   if (finale) p.legendary = true;
   const paper = firstFinale
@@ -303,8 +303,8 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
         day: p.day,
         levelId: def.id,
         place: def.name,
-        items: items.map((i) => ({ name: i.name, value: i.value, centrepiece: i.centrepiece })),
-        centrepieceName: level.plinth
+        items: items.map((i) => ({ name: i.name, value: i.value, centerpiece: i.centerpiece })),
+        centerpieceName: level.plinth
           ? (def.loot.find((l) => l.at.x === level.plinth!.x && l.at.y === level.plinth!.y)?.name ?? null)
           : null,
         guards: level.guards.map((g) => g.name),
@@ -339,7 +339,7 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
     turns: s.turn,
     items,
     total,
-    centrepiece,
+    centerpiece,
     flawless,
     replay,
     xp,
@@ -361,6 +361,12 @@ type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 /** Brings an older save up to date. Returns null for anything unreadable. */
 export function upgradeProfile(raw: unknown): Profile | null {
   if (!raw || typeof raw !== 'object') return null;
+  // Saves made before the switch to American spelling use the old field and category names.
+  raw = JSON.parse(
+    JSON.stringify(raw)
+      .replace(/"centrepiece/g, '"centerpiece')
+      .replace(/"artefact"/g, '"artifact"'),
+  );
   const p = raw as Omit<Partial<Profile>, 'version'> & { version?: number };
   if (p.version !== 1 && p.version !== 2) return null;
   const fresh = newProfile();

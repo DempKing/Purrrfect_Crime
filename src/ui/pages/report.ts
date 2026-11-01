@@ -17,8 +17,8 @@ export function callingCard(done: () => void): void {
   setTimeout(done, 1900);
 }
 /** The rooftop photo for the newspaper. */
-function photoSvg(centrepiece: boolean): string {
-  return centrepiece
+function photoSvg(centerpiece: boolean): string {
+  return centerpiece
     ? `<svg viewBox="0 0 80 56"><rect width="80" height="56" fill="#cfc8b8"/><rect x="28" y="22" width="24" height="30" fill="#efe9da" stroke="#555"/><rect x="24" y="18" width="32" height="6" fill="#e2dccb" stroke="#555"/><rect x="33" y="11" width="14" height="8" fill="#fff" stroke="#222"/><circle cx="40" cy="15" r="2" fill="#a81b22"/></svg>`
     : `<svg viewBox="0 0 80 56"><rect width="80" height="56" fill="#cfc8b8"/><rect x="20" y="30" width="40" height="22" fill="#8a7a66" stroke="#444"/><path d="M22 30 L22 12 L58 12 L58 30" fill="none" stroke="#666" stroke-dasharray="3 2"/><path d="M30 46 l4 -3 l2 4 M48 48 l3 -4 l3 3" stroke="#bcd" fill="none"/></svg>`;
 }
@@ -27,7 +27,7 @@ export function newspaper(paper: Paper, spin: boolean, done: () => void, button 
   const photos = paper.photos
     .map(
       (p) =>
-        `<figure>${photoSvg(p.centrepiece)}<figcaption><b>${esc(p.name)}</b> · est. ${money(p.value)}<br>${esc(p.caption)}</figcaption></figure>`,
+        `<figure>${photoSvg(p.centerpiece)}<figcaption><b>${esc(p.name)}</b> · est. ${money(p.value)}<br>${esc(p.caption)}</figcaption></figure>`,
     )
     .join('');
   const el = show(
@@ -51,7 +51,7 @@ function lootPic(name: string, category?: LootCategory): string {
 }
 /** The report photo: Leo with the prize, or the rival who beat him. */
 function reportPhoto(r: HeistReport): string {
-  const prize = r.items.find((i) => i.centrepiece);
+  const prize = r.items.find((i) => i.centerpiece);
   if (r.rival && !r.rival.won)
     return `<figure class="report-photo"><img src="${rivalRooftop(r.rival.id)}" alt=""><figcaption>${esc(RIVALS[r.rival.id].name)}, with the prize. Next time.</figcaption></figure>`;
   if (!prize) return '';
@@ -78,7 +78,7 @@ export function heistReport(r: HeistReport, p: Profile, done: () => void): void 
         <div class="meter"><div class="xpbar big"><span id="xp-fill"></span></div><p class="small" id="xp-into"></p></div>
       </div>
       <div class="levelups" id="levelups"></div>
-      ${r.rival ? `<p class="rival-line">${r.rival.caught ? `The guards caught ${esc(RIVALS[r.rival.id].name)}. One less thief in town.` : r.rival.won ? `You beat ${esc(RIVALS[r.rival.id].name)} to the prize.` : `${esc(RIVALS[r.rival.id].name)} got the centrepiece this time. Replay to take it yourself.`}</p>` : ''}
+      ${r.rival ? `<p class="rival-line">${r.rival.caught ? `The guards caught ${esc(RIVALS[r.rival.id].name)}. One less thief in town.` : r.rival.won ? `You beat ${esc(RIVALS[r.rival.id].name)} to the prize.` : `${esc(RIVALS[r.rival.id].name)} got the centerpiece this time. Replay to take it yourself.`}</p>` : ''}
       ${r.ncWaiting ? '<p class="rival-line">You got out, but NightClaw is still waiting for you to find him. Creep up and tap him on the shoulder to finish it.</p>' : ''}
       ${r.finale ? '<p class="levelup-note">NightClaw’s collar has the top shelf of the Trophy Room to itself. It is not for sale.</p>' : ''}
       ${

@@ -18,7 +18,7 @@ const models = join(root, 'art/models');
 const out = join(root, 'art/sprites');
 mkdirSync(out, { recursive: true });
 const catalog = JSON.parse(readFileSync(join(root, 'tools/bake/catalog.json'), 'utf8'));
-const DEFAULTS = { scale: 2, tilesPerMetre: 0.8, fit: 1.6, mount: 'floor', height: 0, yaw: 0, outline: 1.25 };
+const DEFAULTS = { scale: 2, tilesPerMeter: 0.8, fit: 1.6, mount: 'floor', height: 0, yaw: 0, outline: 1.25 };
 
 const page$ = await esbuild.build({
   entryPoints: [join(root, 'tools/bake/page.ts')],

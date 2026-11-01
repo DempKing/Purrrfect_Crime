@@ -106,7 +106,7 @@ export interface CharFrame {
   ay: number;
 }
 
-/** Loot picture for each loot name, where one exists (others are drawn as a coloured gem). */
+/** Loot picture for each loot name, where one exists (others are drawn as a colored gem). */
 const LOOT_PICTURES: Record<string, string> = {
   'The Tsar’s Clockwork Mouse': 'clockwork',
   'Silver Mouse Automaton': 'clockwork',
@@ -138,7 +138,7 @@ const LOOT_PICTURES: Record<string, string> = {
   'The Curator’s Pocket Watch': 'mantel_clock_01',
   'Portrait of a Gentleman Cat': 'marble_bust_01',
 };
-/** A few pictures are recoloured to fit their loot. */
+/** A few pictures are recolored to fit their loot. */
 const LOOT_TINTS: Record<string, number> = {
   'Smuggler’s Jade Cat': 0x8fe8b0,
   'Golden Lantern': 0xffd98a,

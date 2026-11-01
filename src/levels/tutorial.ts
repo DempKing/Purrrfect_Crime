@@ -1,5 +1,5 @@
 // Level 0: the tutorial. One room per lesson: moving and the camera, light and guards, a sweeping camera,
-// crawling through a vent, then picking a lock and taking the centrepiece.
+// crawling through a vent, then picking a lock and taking the centerpiece.
 import type { LevelDef } from '../core/level';
 
 export const CORNER_GALLERY: LevelDef = {
@@ -50,6 +50,6 @@ export const CORNER_GALLERY: LevelDef = {
   loot: [
     { at: { x: 4, y: 9 }, name: 'Moonlit Pearl', value: 2400, space: 2, category: 'jewel' },
     { at: { x: 2, y: 7 }, name: 'Silver Sardine Brooch', value: 650, space: 1, category: 'jewel' },
-    { at: { x: 6, y: 7 }, name: 'Tiny Bronze Mouse', value: 450, space: 1, category: 'artefact' },
+    { at: { x: 6, y: 7 }, name: 'Tiny Bronze Mouse', value: 450, space: 1, category: 'artifact' },
   ],
 };

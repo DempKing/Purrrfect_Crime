@@ -8,7 +8,7 @@ import { game } from './game';
 import { say } from './hud';
 import { runAction } from './actions';
 import { $, anim } from './common';
-import { recentre, view, world } from './camera';
+import { recenter, view, world } from './camera';
 import { play, type Segment } from './actors';
 import { afterLeoActs } from './notices';
 
@@ -67,7 +67,7 @@ export function confirmLeave(go: () => void): void {
 export function walkTo(tile: Point, then?: () => void): void {
   if (tile.x === game.state.leo.x && tile.y === game.state.leo.y) return then?.();
   if (leavingWithoutTap(tile)) return confirmLeave(() => walkTo(tile, then));
-  recentre(); // the camera catches up with Leo when he moves
+  recenter(); // the camera catches up with Leo when he moves
   game.state.log = [];
   const apBefore = game.state.ap;
   const res = moveLeo(game.level, game.state, tile);

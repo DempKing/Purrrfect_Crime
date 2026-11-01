@@ -30,5 +30,5 @@ For every track you add, add its credit to `credits.json` here, and it shows in 
 ]
 ```
 
-Any other music works too, as long as its licence allows commercial use (CC0, or CC BY with a credit).
+Any other music works too, as long as its license allows commercial use (CC0, or CC BY with a credit).
 Avoid CC BY-NC (no commercial use) and CC BY-ND.

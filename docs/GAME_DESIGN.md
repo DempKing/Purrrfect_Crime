@@ -36,9 +36,9 @@ the original pitch is kept word for word in [ORIGINAL_BRIEF.md](ORIGINAL_BRIEF.m
 ```
 
 1. **Plan** at the lair. Choose a heist from the city map and read the intel your lair upgrades have
-   revealed, including whether a rival is after the same centrepiece (§5.2).
+   revealed, including whether a rival is after the same centerpiece (§5.2).
 2. **Heist.** Get in, steal as much as you dare, and reach an exit.
-3. **Newspaper.** Leo leaves his calling card, and the next morning's paper spins in from the centre of the
+3. **Newspaper.** Leo leaves his calling card, and the next morning's paper spins in from the center of the
    screen.
 4. **Sell** the loot on the black market. Better prices come with your level.
 5. **Spend** Catnip on attributes, skills and the lair, then pick the next job.
@@ -51,7 +51,7 @@ the original pitch is kept word for word in [ORIGINAL_BRIEF.md](ORIGINAL_BRIEF.m
 - **Rotating camera** in 90° steps (Q/E or on-screen buttons) with a quick animated turn. All four views
   are drawn from the same tile data. Walls between the camera and Leo turn see-through or cut down to
   stubs, as in XCOM.
-- **Floors:** levels can have several storeys plus a separate **vent layer**. You switch the visible floor
+- **Floors:** levels can have several stories plus a separate **vent layer**. You switch the visible floor
   with Page Up/Down or on-screen buttons. The vent layer draws as a blueprint-style overlay on top of the
   dimmed floor.
 - **Night lighting:** dark-blue ambient light, warm pools from lamps, cool moonbeams through skylights,
@@ -104,9 +104,9 @@ the original pitch is kept word for word in [ORIGINAL_BRIEF.md](ORIGINAL_BRIEF.m
 
 The security staff are **Guards**. That's what the game calls them everywhere: the HUD, help, messages
 and the newspaper. They're drawn as bulldogs, and they come in several types, each with a clear
-silhouette and behaviour:
+silhouette and behavior:
 
-| Type                       | Behaviour                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Type                       | Behavior                                                                                                                                                                                                                                                                                                                                                                                                       |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Night Watch Guard**      | Standard patrol, torch cone.                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Sleepy Guard**           | Stationary and dozing; wakes to noise. Snores, so you can hear him in the dark.                                                                                                                                                                                                                                                                                                                                 |
@@ -138,11 +138,11 @@ differently.
 | **Alarm panels**                                          | Once an alarm trips, a countdown runs until the level locks down. Disarm the panel or escape before it ends.                                                                                                                                                        |
 | **Spotlights and searchlights**                           | Moving light sources that sweep areas on a timer.                                                                                                                                                                                                                   |
 | **Guard dogs' kennels / bells / squeaky floorboards**     | Noise traps. As built: a dog barks (noise 5) at Leo within 2 tiles of its kennel, once a move, and guards come to look.                                                                                                                                             |
-| **Hiding crates** (Harbour)                               | Climb into an open crate: nobody sees or smells Leo there, and guards walk round it. A noise from inside still brings them to look.                                                                                                                                 |
-| **Lighthouse beam** (Harbour)                             | A narrow wedge of bright light, 11 tiles long, turning an eighth of the way round each turn.                                                                                                                                                                        |
-| **The tide** (Harbour)                                    | Tidal sand is dry for a few turns, then under water for as many. Caught on it when the tide comes in, Leo is washed onto the nearest dry tile with a splash (noise 4).                                                                                              |
-| **The fish market** (Harbour)                             | So smelly that sniffers can't smell a cat on it.                                                                                                                                                                                                                    |
-| **Light switches** (Harbour)                              | Put a room's lamps out (silent, 1 action point). The nearest guard on his rounds heads for the switch, and any guard who passes it puts the lights back on.                                                                                                         |
+| **Hiding crates** (Harbor)                               | Climb into an open crate: nobody sees or smells Leo there, and guards walk round it. A noise from inside still brings them to look.                                                                                                                                 |
+| **Lighthouse beam** (Harbor)                             | A narrow wedge of bright light, 11 tiles long, turning an eighth of the way round each turn.                                                                                                                                                                        |
+| **The tide** (Harbor)                                    | Tidal sand is dry for a few turns, then under water for as many. Caught on it when the tide comes in, Leo is washed onto the nearest dry tile with a splash (noise 4).                                                                                              |
+| **The fish market** (Harbor)                             | So smelly that sniffers can't smell a cat on it.                                                                                                                                                                                                                    |
+| **Light switches** (Harbor)                              | Put a room's lamps out (silent, 1 action point). The nearest guard on his rounds heads for the switch, and any guard who passes it puts the lights back on.                                                                                                         |
 | **Slot machines** (Downtown)                              | So loud that no guard hears what Leo does among them. A thrown bottle cap still carries.                                                                                                                                                                            |
 | **Conveyor belts** (Downtown)                             | Carry Leo one tile along at the end of every turn he ends on one, if the way is clear.                                                                                                                                                                              |
 | **Wet paint** (Downtown)                                  | Leo leaves paw prints for his next four steps; a guard who sees one goes to follow it. They dry in four turns.                                                                                                                                                      |
@@ -160,33 +160,33 @@ differently.
 ### 5.2 Rival thieves (only when they want the same prize)
 
 Rivals are **not** on every level. A rival turns up only when they are **planning to steal the same
-centrepiece as Leo** that night. They don't fight Leo; it's a race for the prize.
+centerpiece as Leo** that night. They don't fight Leo; it's a race for the prize.
 
 **When a rival appears**
 
 - When a heist becomes available, the game rolls once to decide whether a rival is after its
-  centrepiece. The chance starts at 0% for the first three heists after the tutorial, then about 20%,
+  centerpiece. The chance starts at 0% for the first three heists after the tutorial, then about 20%,
   rising to about 35% in the later districts. One rival at most per heist, never the same one twice in a
   row.
 - The result is fixed until that heist is played, so reloading doesn't reroll it.
-- **Warnings at the lair:** the Rumour Board (part of the Planning Table) shows a rival's calling card
+- **Warnings at the lair:** the Rumor Board (part of the Planning Table) shows a rival's calling card
   pinned to the heist, _"Word is Luna Luck has her eye on the Star of Siam."_ Planning Table tier 2 also
   shows which entrance the rival will use and when they arrive (for example, turn 6).
 - Rivals never appear in the tutorial, the challenge museum or NightClaw's Lair.
 
 **How the race works**
 
-- The rival enters on a set turn and follows their own route toward the centrepiece, taking turns after
+- The rival enters on a set turn and follows their own route toward the centerpiece, taking turns after
   the guards. The rival's path and their progress toward the prize are shown on screen.
 - Rivals are subject to the guards too: a guard who spots a rival raises the alert, which can work for
   or against Leo.
-- **If Leo takes the centrepiece first**, the rival flees with a parting line, and the newspaper reports
+- **If Leo takes the centerpiece first**, the rival flees with a parting line, and the newspaper reports
   that Leo beat them to it.
 - **If the rival takes it first**, it's gone for that attempt. Leo can still steal the rest and leave. The
-  newspaper credits the rival with the centrepiece. The level is marked _"centrepiece lost to a rival"_,
+  newspaper credits the rival with the centerpiece. The level is marked _"centerpiece lost to a rival"_,
   the rival won't come back for it, and Leo can replay the level to steal it himself.
 - Losing to a rival **never blocks the NightClaw Challenge**: the challenge only asks that Leo has stolen
-  each centrepiece at some point.
+  each centerpiece at some point.
 
 | Rival                | How they race                                                                                                         |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -208,8 +208,8 @@ and a headline; the Leo tab keeps the rivalry record.
 
 ## 6. Loot, the black market and Catnip
 
-- **Loot** ranges from small items on shelves (coins, figurines) to cased artefacts, paintings and the
-  level's **centrepiece**, its most valuable and best-protected item. Each level has **6–12 stealable
+- **Loot** ranges from small items on shelves (coins, figurines) to cased artifacts, paintings and the
+  level's **centerpiece**, its most valuable and best-protected item. Each level has **6–12 stealable
   pieces**.
 - Loot takes up **inventory space**: small pieces take 1 space, bigger ones 2 or 3. Leo starts with
   **6 inventory spaces**, which limits how much he can take at once. Some levels have **stash
@@ -217,14 +217,14 @@ and a headline; the Leo tab keeps the rivalry record.
 - **Selling:** after a heist the loot goes to the stash in Leo's lair. At the black market:
   - Each item has a **base value**, the newspaper's estimate in dollars. The fence pays one Catnip per $10
     of it, minus his cut: `base ÷ 10 × (0.55 + 0.02 × level, capped at 0.95) × market demand`.
-  - **Demand** rotates per category (paintings, jewels, artefacts, curiosities): "This week's buyers want
+  - **Demand** rotates per category (paintings, jewels, artifacts, curiosities): "This week's buyers want
     jewels, +25%".
   - Higher levels unlock **better fences** and special buyers (a collector who pays ×1.5 for one listed
     item).
   - You can **hold** items for a better market, or sell straight away.
 - **Catnip** is the only currency. It's spent on attributes, skills and the lair.
 - **Replays:** any finished level can be replayed. Its loot is back on display, but sells for **50% of
-  its value** after the first clear (the fences say it's "hot"). The centrepiece does count toward the
+  its value** after the first clear (the fences say it's "hot"). The centerpiece does count toward the
   NightClaw Challenge on a replay. This lets players earn Catnip by replaying without making the economy
   trivial.
 
@@ -233,7 +233,7 @@ and a headline; the Leo tab keeps the rivalry record.
 ### 7.1 Experience and levels
 
 - XP for a successful heist: base by heist + bonuses for stealth (never seen, no alarms), loot value, the
-  centrepiece, speed (turn count) and beating a rival to the prize.
+  centerpiece, speed (turn count) and beating a rival to the prize.
 - **Level cap 30.** Each level improves black-market prices. Some skills and
   levels need a minimum player level.
 
@@ -300,11 +300,11 @@ heist; tier 3 also gives a spare charge of each once-a-heist skill); Fence's Off
 
 | Room                       | Effect                                                                                                                                                                                                                                                    |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Planning Table** (Intel) | Before a heist, see more: tier 1 shows the floor plan, exits and the Rumour Board (which rival, if any, is after the centrepiece); tier 2 camera positions and cones, plus the rival's entrance and arrival turn; tier 3 guard routes and trap locations. |
+| **Planning Table** (Intel) | Before a heist, see more: tier 1 shows the floor plan, exits and the Rumor Board (which rival, if any, is after the centerpiece); tier 2 camera positions and cones, plus the rival's entrance and arrival turn; tier 3 guard routes and trap locations. |
 | **Workshop**               | Gadget charges per heist (bottle caps, smoke pellets).                                                                                                                                                                                                    |
 | **Fence's Office**         | Better black-market prices; a second buyer.                                                                                                                                                                                                               |
 | **Gym / Scratching Tower** | Cheaper attribute upgrades.                                                                                                                                                                                                                               |
-| **Trophy Room**            | Displays every centrepiece you've stolen (a collection to fill in); small bonus to fame.                                                                                                                                                                  |
+| **Trophy Room**            | Displays every centerpiece you've stolen (a collection to fill in); small bonus to fame.                                                                                                                                                                  |
 | **Mailbox**                | Where NightClaw's letters arrive (purely story).                                                                                                                                                                                                          |
 
 ## 9. Story
@@ -341,8 +341,8 @@ Then the story runs in order:
 1. **Letter 3, hidden inside the challenge item:** NC reveals that he _is_ the legendary NightClaw and
    has been searching a long time for his equal. He sets **the NightClaw Challenge**:
    - Finish **every level** (25 at launch).
-   - Steal each level's **centrepiece**.
-   - Every centrepiece has to be stolen in a **flawless** heist: never detected and no alarms. A centrepiece stolen in a messy heist still counts for
+   - Steal each level's **centerpiece**.
+   - Every centerpiece has to be stolen in a **flawless** heist: never detected and no alarms. A centerpiece stolen in a messy heist still counts for
      the level, but that level has to be replayed flawlessly to tick it off the challenge.
 2. When the challenge is done, **Letter 4** arrives at the lair: an invitation to NightClaw's secret lair for a final
    test, to steal his _prized possession_. The letter doesn't say what it is.
@@ -356,12 +356,12 @@ Then the story runs in order:
 **As built (M4):** Letters 1 and 2 arrive at the lair the next time Leo walks in after a trigger (in the
 mailbox, or pinned to the door if there isn't one), and wait there until they're read; both can be
 reread from the Lair tab. Letter 2 opens **NightClaw's Challenge** on the heist list with _The Midnight
-Museum_; its centrepiece is the _Midnight Music Box_, and Letter 3 is folded inside it. After Letter 3,
-the heist list shows the challenge's progress: centrepieces taken in a flawless heist, out of every
+Museum_; its centerpiece is the _Midnight Music Box_, and Letter 3 is folded inside it. After Letter 3,
+the heist list shows the challenge's progress: centerpieces taken in a flawless heist, out of every
 level after the tutorial.
 
 **As built (M5):** the challenge counts all 25 levels, the tutorial included. When every one has its
-centrepiece taken in a flawless heist, **Letter 4** arrives and **NightClaw's Lair** (the old bell tower on
+centerpiece taken in a flawless heist, **Letter 4** arrives and **NightClaw's Lair** (the old bell tower on
 Moon Street) opens on the heist list. There NightClaw stalks the belfry hall himself: he moves five tiles a
 turn, sees the dark as dim and dim as lit, and one sighting is a catch. His prized possession is shown as
 just that until Leo picks it up. The heist ends when Leo, holding it, taps NightClaw on the shoulder while
@@ -374,13 +374,13 @@ are marked Legendary, and the collar sits in the Trophy Room (it can't be sold).
 
 - At the end of every successful heist, Leo **automatically leaves his calling card** at the scene, a
   short animated beat at the exit, so the paper credits him.
-- Then a **newspaper spirals in** from the centre of the screen (the classic spinning-paper shot):
+- Then a **newspaper spirals in** from the center of the screen (the classic spinning-paper shot):
   - A headline written for the heist and how it went ("TUXEDO CAT STRIKES AGAIN, MUSEUM LEFT WITHOUT ITS
     EMERALD").
   - **Photos of the empty displays** for each stolen item, with captions.
   - An **estimated value** for each item and for the whole haul. This is where the player sees what the
     haul was worth before selling.
-  - Side stories: rival thieves' antics, police quotes, NightClaw rumours, ads.
+  - Side stories: rival thieves' antics, police quotes, NightClaw rumors, ads.
 - An archive of past front pages is kept at the lair.
 
 ## 10. Tutorial (Level 0)
@@ -395,7 +395,7 @@ Short, clear prompts that each wait for the player to do the thing:
 6. **Cameras:** time a move between sweeps.
 7. **Vents:** climb in, crawl past a laser hallway, climb out.
 8. **Lockpicking:** open a display case (spends 1 AP).
-9. **Loot and inventory space:** pick two small items and the tutorial centrepiece.
+9. **Loot and inventory space:** pick two small items and the tutorial centerpiece.
 10. **Escape:** reach the exit, the calling card is left, and the first newspaper appears.
 
 Each step can be repeated, and a "Tutorial hints" setting stays on for the first few heists.
@@ -404,11 +404,11 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 
 - **25 levels at launch** in five districts of 5, plus the NightClaw challenge museum and NightClaw's Lair.
 - Every level is **at night** and **grand**: high ceilings, chandeliers, display halls, gardens, roofs.
-- Each level has **6–12 pieces of loot**, a **centrepiece**, **2+ entry points**, **2+ exits**, a **vent
+- Each level has **6–12 pieces of loot**, a **centerpiece**, **2+ entry points**, **2+ exits**, a **vent
   network** and at least one **optional room** with a secret (a safe, a hidden gallery).
 - **There is one mode, and it's the hardest one** (what was planned as _Legendary_): every level is
   designed with its full security, there are no checkpoints and no undo, and the NightClaw Challenge asks
-  for every centrepiece to be stolen flawlessly. Loot and XP aren't multiplied. Every level is designed
+  for every centerpiece to be stolen flawlessly. Loot and XP aren't multiplied. Every level is designed
   and tested for this mode only.
 
 | District        | Levels (working names)                                                                                                      |
@@ -416,7 +416,7 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | **Old Town**    | Corner Gallery (tutorial), Cobblestone Coin Museum, The Clocktower Archive, Pawnbroker Penthouse, Opera House Costume Vault |
 | **Museum Mile** | Natural History (dinosaur hall), Egyptian Wing, Modern Art Atrium, Gem & Mineral Hall, The Planetarium                      |
 | **The Heights** | Millionaire's Mansion, Sky Garden Hotel, Glass Tower Auction, The Yacht Club, The Observatory Estate                        |
-| **Harbour**     | Customs Warehouse, The Lighthouse Collection, Shipwreck Museum, Fish Market Bank (cat joke), The Aquarium Gala              |
+| **Harbor**     | Customs Warehouse, The Lighthouse Collection, Shipwreck Museum, Fish Market Bank (cat joke), The Aquarium Gala              |
 | **Downtown**    | The Grand Bank, Casino Royale-Paws, The Mint, The Museum of Modern Mischief, City Hall Treasury                             |
 | **Special**     | NightClaw's challenge museum (_The Midnight Museum_), NightClaw's Lair                                                      |
 
@@ -428,7 +428,7 @@ Each step can be repeated, and a "Tutorial hints" setting stays on for the first
 | 1   | The Cobblestone Coin Museum   | A sleepy guard at the ticket desk, creaky floorboards, a safe.                            |
 | 2   | The Clocktower Archive        | A captain who whistles for help; rafters and ladders: a high road past the guards.        |
 | 3   | The Pawnbroker Penthouse      | A sniffer who smells through walls; pulsing lasers.                                       |
-| 4   | The Opera House Costume Vault | Spotlights that move every turn; theatre seats guards see over.                           |
+| 4   | The Opera House Costume Vault | Spotlights that move every turn; theater seats guards see over.                           |
 | 5   | The Natural History Museum    | Museum Mile's dim halls (only the marked shadows are dark); pressure plates.              |
 | 6   | The Egyptian Wing             | Motion sensors in the tomb corridor, turned off at the fuse box.                          |
 | 7   | The Modern Art Atrium         | A marble atrium where every step is heard, under a circling spotlight.                    |
@@ -465,7 +465,7 @@ for exactly that. A solver (`npm run solve`) searches
 for such a route while a level is designed; the routes are saved and replayed by the tests.
 
 A level-design checklist for each map: readable sight lines, at least three valid routes to the
-centrepiece (floor, vents, high road), a "tempting greedy detour", a lit hall that has to be crossed or
+centerpiece (floor, vents, high road), a "tempting greedy detour", a lit hall that has to be crossed or
 avoided, and an escape that changes once an alarm trips.
 
 ## 12. Art and audio direction
@@ -483,7 +483,7 @@ Sprites will be generated. To make them fit together in game, every sprite shoul
 
 - **Projection:** 2:1 isometric (the standard pixel-art "isometric" angle). Floor tiles are diamonds
   **128 × 64 px**; a full-height wall piece is 128 × 192 px. Characters stand about 96 px tall, on a
-  canvas of **128 × 128 px** with the feet at the bottom centre.
+  canvas of **128 × 128 px** with the feet at the bottom center.
 - **Format:** PNG with a transparent background, no drop shadows baked in (the game draws its own), lit
   from the top left with a neutral night tone. The game adds the moonlight and lamplight on top.
 - **Four views:** because the camera rotates, characters need **4 facing directions** (north-east,
@@ -521,7 +521,7 @@ in headless Chromium from the game's 2:1 camera, turned 0°, 45° … 315°, lit
 warm key from the top left), with a dark ink outline so they sit with the drawn characters. The game picks
 the frame from the prop's facing and the camera's turn, and tints it by the light on its tile. In use so
 far: security cameras, crates and crate stacks, desks, and whatever hangs on the walls in each district
-(pictures and mirrors in the museums and mansions; lifebuoys at the harbour; fuse boxes downtown). Wall pieces are decoration only and go on about one wall face in five.
+(pictures and mirrors in the museums and mansions; lifebuoys at the harbor; fuse boxes downtown). Wall pieces are decoration only and go on about one wall face in five.
 
 ### 12.1b Characters and their animation
 
@@ -534,7 +534,7 @@ in the vents; stretched along the arc of a Pounce; swaying as he climbs to and f
 into a crate to hide; and fidgeting head-down while he picks a lock, cracks a safe or lifts loot. Sleeping
 guards slump; switched-off robots sag. Characters are darker in shadow. Loot with a picture shows it in its
 case or on its plinth, hops into Leo's bag when taken, and appears in the fence's ledger and the report.
-Standing characters use the front view only when facing roughly towards the camera, and otherwise stand side
+Standing characters use the front view only when facing roughly toward the camera, and otherwise stand side
 on, turned the way they face, so a guard never seems to look one way while watching the other; guards' torches
 throw a beam on the floor the way they're looking. Back and three-quarter drawings would still help.
 
@@ -577,7 +577,7 @@ the time. Night windows only go in outside walls.
 
 Every piece of loot shows a picture of itself in its case, on its plinth, in the loot tag, the ledger and the
 report: a painted one where there is one, otherwise a drawing chosen from its name (coins, a framed painting
-with a scene to suit, cut gems in the right colour, pearls, crowns, pocket watches, scrolls, fossils,
+with a scene to suit, cut gems in the right color, pearls, crowns, pocket watches, scrolls, fossils,
 figurines in jade, gold or silver...). Paintings uploaded under the names in `art/LOOT_LIST.md` replace them.
 
 **Control boxes.** Every heist with cameras has a CCTV box (a little screen of camera feeds) that shuts them
@@ -591,7 +591,7 @@ dial, a three-spoke handle, hinges, rivets, a brass plate, and a tumbler light f
 Leo cracks it. Once it's open the door hangs wide on its hinge and the empty inside shows, which is what tells a
 passing guard it's been robbed ("found the safe hanging open", and the alarm), just like an empty display case.
 
-**Rivals in the building.** A rival who's after the centrepiece comes in on the turn the rumour said, with a
+**Rivals in the building.** A rival who's after the centerpiece comes in on the turn the rumor said, with a
 banner ("Luna Luck is in the building!") and, while they're off screen, an arrow at the edge pointing their way;
 walls in front of them drop like Leo's. They sneak like he does: they route round what any guard can see now or will
 see after the guards' next move, keep off the tiles beside a guard, duck out of the way when a guard is coming
@@ -635,8 +635,8 @@ wall at both ends), in the heist and on the planning board's floor plan alike.
   or key press, as browsers require.
 - **Settings** (kept per browser, not per save): volume, music and effects levels; animation speed
   (normal, fast, instant); tutorial tips; larger text; reduced motion (it follows the system setting at
-  first); and a colour-blind friendly palette (Okabe–Ito colours, with guard sight hatched so it doesn't
-  rely on colour at all). Open from the title screen, the lair, or ⚙ in a heist.
+  first); and a color-blind friendly palette (Okabe–Ito colors, with guard sight hatched so it doesn't
+  rely on color at all). Open from the title screen, the lair, or ⚙ in a heist.
 - **Keyboard play:** the arrow keys move a cursor across the screen (whichever way the camera faces),
   Enter moves Leo there or does what's there, Space ends the turn, 1–9 pick an action. The message line
   and alarm are announced to screen readers.
@@ -648,23 +648,23 @@ wall at both ends), in the heist and on the planning board's floor plan alike.
 
 ### 12.3 Menus and the lair as built
 
-A Saturday-morning cartoon caper, not a noir: thick ink outlines, flat saturated colour on a deep purple
+A Saturday-morning cartoon caper, not a noir: thick ink outlines, flat saturated color on a deep purple
 and blue night, hard comic shadows, chunky lettering (Luckiest Guy) and friendly reading type (Nunito),
 with notes in a marker hand (Patrick Hand). Results are stickers, not rubber stamps.
 
 - **Title:** the crew key art behind the logo, the line "Sneak in. Steal big. Leave nothing but a calling card.", and a menu: Continue (the game played last), New Game (the first empty slot, or pick one to replace) and Load (the three games, to load or delete). Credits in the bottom left roll up the screen; Settings in the bottom right. Esc closes the credits, the settings and the load panel.
 - **Lair:** heists as cards pinned to a green board, Leo's file, the fence's book, the lair's blueprint, the
-  letters and the front pages, each on its own coloured tab.
+  letters and the front pages, each on its own colored tab.
 - **Planning board** (before a heist): a cork board with a photo of the building (the game draws the actual
   level, from behind Leo), a polaroid of the prize and its value, the floor plan, sticky notes for the plan
   and the tips, a mugshot card for every guard with what they're like (and their beat, with a good Planning
-  Table), the rumour about rivals, the other loot worth a look, and red string between the clues. What's on
+  Table), the rumor about rivals, the other loot worth a look, and red string between the clues. What's on
   it grows with the Planning Table.
 - **Heist report:** a score screen that plays out. Each XP line slides in and counts up into the total, the
   level badge's bar fills from where Leo was, and every level crossed bursts with confetti and a fanfare;
   then the haul drops in piece by piece with its value rolling up. A click skips to the end.
 - **In a heist:** loot values pop off the case when Leo takes something ("+$5,200", bigger for the
-  centrepiece), a smash says CRASH! and shakes the screen, a lock that needs another go says "click…", and
+  centerpiece), a smash says CRASH! and shakes the screen, a lock that needs another go says "click…", and
   the haul in the corner bumps up.
 - **Black market:** Slick Whiskers' booth in a back alley: a raccoon fence in a fedora and trench coat behind a striped
   stall under a swinging bulb and a flickering neon sign, every piece in the stash on the counter with a
@@ -676,9 +676,9 @@ with notes in a marker hand (Patrick Hand). Results are stickers, not rubber sta
 - **What the guards' turn will bring:** for every tile Leo can reach, the game plays the guards' turn
   forward on a copy (they move, cameras turn, noise draws them over, a captain whistles) and marks the tiles
   where ending the turn goes wrong: a red cross for caught or an alarm, an orange ring for spotted. Pointing
-  at one says which; the path's last step is coloured to match. It's worked out a few tiles a frame, so it
+  at one says which; the path's last step is colored to match. It's worked out a few tiles a frame, so it
   never stutters. Each camera's next direction is outlined too.
-- **Camera:** WASD pans, C recentres; it follows Leo again when he moves or the view turns.
+- **Camera:** WASD pans, C recenters; it follows Leo again when he moves or the view turns.
 - **Sound effects** are synthesised in layers: struck-metal partials for locks, latches and bottle caps,
   hollow resonant booms for the vents, wood and hinges for doors, a short room reverb on everything, and a
   separate sound for a lock giving way, a safe door swinging, a vent hatch and the menu buttons.
@@ -724,7 +724,7 @@ small: 3.5 MB, down from 4.8 MB. Animation time steps are capped at 0.2 s, so sl
 
 | #      | Milestone          | Contents                                                                                                                                       |
 | ------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **M0** | Grey-box prototype | One flat test map, iso grid, 4-way rotation, AP movement, one guard with sight and patrol, caught = restart. Proves the core turn loop is fun. |
+| **M0** | Gray-box prototype | One flat test map, iso grid, 4-way rotation, AP movement, one guard with sight and patrol, caught = restart. Proves the core turn loop is fun. |
 | **M1** | Stealth sandbox    | Light map, noise, alert states, cameras, lasers, vents, lockpicking, loot and inventory space, escape.                                         |
 | **M2** | Vertical slice     | Tutorial level with final art direction, narrator, calling card + newspaper, black market, Catnip, XP, the lair purchase.                      |
 | **M3** | Progression        | Attributes, all three skill trees, lair upgrades and the Intel reveal, saves.                                                                  |
@@ -740,7 +740,7 @@ The web build goes live from M0 onward, so every milestone can be playtested fro
 | ------------------------------------------------------------------------------- | ----- |
 | Tutorial, opening, lair                                                         | 0.5   |
 | First pass through the 25 levels (about 25–30 minutes each, including restarts) | 11–12 |
-| Replays for loot, centrepieces lost to rivals, skill grinding                   | 2–4   |
+| Replays for loot, centerpieces lost to rivals, skill grinding                   | 2–4   |
 | NightClaw Challenge clean-up (flawless replays)                                 | 1–2   |
 | Challenge museum and NightClaw's Lair                                           | 1–1.5 |
 
@@ -751,7 +751,7 @@ The web build goes live from M0 onward, so every milestone can be playtested fro
 | 1   | Art pipeline | **Generated sprites**, following the spec in §12.1.                                                                                                  |
 | 2   | Difficulty   | **One mode only, the hardest** (originally _Legendary_). Replaces "chosen once for the whole game" (§11).                                            |
 | 3   | Checkpoints  | **None**, and no undo, now that there's one mode (§4.4).                                                                                             |
-| 4   | Rivals       | **Only appear when they're after the same centrepiece** as Leo, warned about at the lair. Losing a race never blocks the NightClaw Challenge (§5.2). |
+| 4   | Rivals       | **Only appear when they're after the same centerpiece** as Leo, warned about at the lair. Losing a race never blocks the NightClaw Challenge (§5.2). |
 | 5   | Replays      | **Yes**, loot is back on display at 50% value after the first clear (§6).                                                                            |
 | 6   | Platforms    | **Both** a web build and a Steam build (§13).                                                                                                        |
 | 7   | Length       | **15–20 hours** (§14).                                                                                                                               |

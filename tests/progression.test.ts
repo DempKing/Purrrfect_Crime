@@ -361,11 +361,11 @@ test('the Fence’s Office pays more, and a collector pays half again for one it
   p.stash = [1, 2, 3].map((id) => ({
     id,
     name: `Thing ${id}`,
-    category: 'artefact' as const,
+    category: 'artifact' as const,
     value: 1000,
     levelId: 'x',
     levelName: 'X',
-    centrepiece: false,
+    centerpiece: false,
     hot: false,
   }));
   assert.equal(priceOf(p, p.stash[0]), 57);

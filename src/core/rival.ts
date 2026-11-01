@@ -57,12 +57,12 @@ export function planRival(level: Level, s: State): Point[] {
   sim.log = [];
   return runRival(level, sim).map((st) => ({ x: st.to.x, y: st.to.y }));
 }
-/** The rival's turn: arrive, head for the centrepiece, then leave. */
+/** The rival's turn: arrive, head for the centerpiece, then leave. */
 export function runRival(level: Level, s: State): GuardStep[] {
   const r = s.rival;
   const out: GuardStep[] = [];
   if (!r || r.phase === 'gone' || !level.plinth) return out;
-  const centre = lootAt(level, level.plinth.x, level.plinth.y);
+  const center = lootAt(level, level.plinth.x, level.plinth.y);
   // Arriving: appears at the entrance on their turn.
   if (r.phase === 'waiting') {
     if (s.turn < r.arrive) return out;
@@ -91,9 +91,9 @@ export function runRival(level: Level, s: State): GuardStep[] {
     if (r.phase === 'in' && around.some((a) => a.x === r.x && a.y === r.y)) {
       // At the plinth: grabbing the prize uses the rest of the turn.
       r.prize = true;
-      s.rivalLoot.push(centre);
+      s.rivalLoot.push(center);
       r.phase = 'leaving';
-      s.log.push(`${r.name} grabs ${the(level.def.loot[centre].name)}!`);
+      s.log.push(`${r.name} grabs ${the(level.def.loot[center].name)}!`);
       break;
     }
     const goals = r.phase === 'in' ? around : [r.entrance];

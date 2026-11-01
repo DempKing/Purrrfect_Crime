@@ -8,7 +8,7 @@ import { flat, type FlatName, STANDING_FLATS } from '../flats';
 import { prop, type PropName } from '../props';
 import { blocksMove, type Level } from '../../core/level';
 import type { HeistView } from '../view';
-import { type Drawable, NEIGHBOURS } from './types';
+import { type Drawable, NEIGHBORS } from './types';
 import { corners, diamond, prism, tintColor } from './shapes';
 import { COL, LOOT_COLORS, RAFTER_Z } from './style';
 import { lootName } from './overlays';
@@ -65,7 +65,7 @@ export function displayCase(
       22,
     );
 }
-/** The centrepiece plinth, with the prize on it until taken. */
+/** The centerpiece plinth, with the prize on it until taken. */
 export function plinth(
   view: HeistView,
   g: Graphics,
@@ -176,7 +176,7 @@ export function safe(
     while (k < 5 && !blocksMove(level.tiles[y + d.y * (k + 1)]?.[x + d.x * (k + 1)] ?? 'wall')) k++;
     return k;
   };
-  const n = NEIGHBOURS.reduce((best, d) => (run(d) > run(best) ? d : best), NEIGHBOURS[1]);
+  const n = NEIGHBORS.reduce((best, d) => (run(d) > run(best) ? d : best), NEIGHBORS[1]);
   const H = 46;
   prism(view, g, x + 0.12, y + 0.12, x + 0.88, y + 0.88, H, 0x6b7584, 0x4a5262, 0x363c4a, 1);
   // A dark plinth band at the foot and a lighter lip on the top, so it reads as heavy.
@@ -297,7 +297,7 @@ export function kennel(view: HeistView, g: Graphics, x: number, y: number): void
 /** A desk, with the combination somewhere in it (papers on top until Leo finds it). */
 export function desk(view: HeistView, g: Graphics, x: number, y: number, found: boolean): void {
   const model: PropName =
-    view.district === 'downtown' || view.district === 'harbour' ? 'metal_office_desk' : 'ClassicConsole_01';
+    view.district === 'downtown' || view.district === 'harbor' ? 'metal_office_desk' : 'ClassicConsole_01';
   const drawn = sprite(view, g, model, x + 0.5, y + 0.5, 0, 0, 1, tintColor(view, x, y));
   if (!drawn) prism(view, g, x + 0.08, y + 0.2, x + 0.92, y + 0.8, 24, 0x7a5634, 0x5e4228, 0x4a341f, 1);
   const c = project(view.proj, x + 0.5, y + 0.5, drawn ? (prop(model)?.height ?? 24) + 1 : 25);
@@ -397,7 +397,7 @@ export function belt(view: HeistView, g: Graphics, x: number, y: number, dir: nu
     g.moveTo(a.x, a.y).lineTo(m.x, m.y).lineTo(b.x, b.y).stroke({ width: 2, color: 0xf2c46b, alpha: 0.8 });
   }
 }
-/** A puddle of wet paint, in a different colour on every tile. */
+/** A puddle of wet paint, in a different color on every tile. */
 export function paint(view: HeistView, g: Graphics, x: number, y: number): void {
   const col = [0xe0314b, 0x3fbf7f, 0x5ec8ff, 0xf2c46b][(x * 7 + y * 3) % 4];
   const c = project(view.proj, x + 0.5, y + 0.5);

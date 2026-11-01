@@ -103,7 +103,7 @@ export function frameFor(turn: number, angle: number): number {
 }
 
 /** What hangs on the walls in each district: 3D props, and flat pieces (FlatName). */
-/** Clocks drawn rather than modelled, for the Clocktower: each a little odd. */
+/** Clocks drawn rather than modeled, for the Clocktower: each a little odd. */
 export type ClockFace = 'pclock_roman' | 'pclock_gears' | 'pclock_odd' | 'pclock_pendulum';
 export type WallPiece = PropName | FlatName | ClockFace;
 
@@ -124,7 +124,7 @@ export const WALL_DECOR: Record<string, WallPiece[]> = {
     'fancy_picture_frame_02',
   ],
   'the-heights': ['fancy_picture_frame_02', 'wd_manor', 'spr_window', 'fancy_picture_frame_01'],
-  harbour: ['lifebuoy', 'wd_fish', 'wd_aquarium', 'wd_warehouse'],
+  harbor: ['lifebuoy', 'wd_fish', 'wd_aquarium', 'wd_warehouse'],
   downtown: ['wd_lab', 'spr_window', 'fancy_picture_frame_01'],
   nightclaw: ['fancy_picture_frame_02', 'wd_lair', 'wd_manor', 'wd_lair'],
 };

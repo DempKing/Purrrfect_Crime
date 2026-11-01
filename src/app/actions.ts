@@ -27,8 +27,8 @@ export function runAction(a: Action): void {
   // Show the payoff where it happened: loot value, CRASH, click...
   for (const li of game.state.inventory.filter((i) => !invBefore.includes(i))) {
     const l = game.level.def.loot[li];
-    const centre = !!game.level.plinth && l.at.x === game.level.plinth.x && l.at.y === game.level.plinth.y;
-    floatText(l.at, `+$${l.value.toLocaleString('en-US')}`, centre ? 'big' : '');
+    const center = !!game.level.plinth && l.at.x === game.level.plinth.x && l.at.y === game.level.plinth.y;
+    floatText(l.at, `+$${l.value.toLocaleString('en-US')}`, center ? 'big' : '');
     sfx('coin');
   }
   if (a.kind === 'smash-case') {

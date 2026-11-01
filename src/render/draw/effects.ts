@@ -33,7 +33,7 @@ export function drawEffects(
   // Ceiling lights over lamps, cases and plinths (hidden from the vents and rafters).
   if (!fr.inVent && !fr.inRafters) for (const c of fr.ceiling) ceilingLight(view, fx, c.x, c.y, c.on, c.lamp);
 
-  // Smoke pellets: grey puffs drifting over each cloud's 3x3 tiles.
+  // Smoke pellets: gray puffs drifting over each cloud's 3x3 tiles.
   for (const c of s.smoke)
     for (let i = 0; i < 9; i++) {
       const dx = (i % 3) - 1;

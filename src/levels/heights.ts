@@ -103,7 +103,7 @@ export const MANSION: LevelDef = {
     { at: { x: 22, y: 1 }, name: 'Diamond Cufflinks', value: 3200, space: 1, category: 'jewel' },
     { at: { x: 26, y: 1 }, name: 'Portrait of a Prize Pug', value: 4100, space: 3, category: 'painting' },
     { at: { x: 22, y: 6 }, name: 'Gold-Plated Ball of Yarn', value: 2200, space: 2, category: 'curiosity' },
-    { at: { x: 26, y: 6 }, name: 'Silver Sardine Tin', value: 1500, space: 1, category: 'artefact' },
+    { at: { x: 26, y: 6 }, name: 'Silver Sardine Tin', value: 1500, space: 1, category: 'artifact' },
   ],
 };
 
@@ -352,7 +352,7 @@ export const GLASS_TOWER: LevelDef = {
       space: 3,
       category: 'painting',
     },
-    { at: { x: 16, y: 1 }, name: 'Lot 23: Jade Fishbone', value: 2700, space: 1, category: 'artefact' },
+    { at: { x: 16, y: 1 }, name: 'Lot 23: Jade Fishbone', value: 2700, space: 1, category: 'artifact' },
     { at: { x: 20, y: 1 }, name: 'Lot 31: Ruby Bell', value: 2900, space: 1, category: 'jewel' },
     {
       at: { x: 25, y: 1 },
@@ -440,8 +440,8 @@ export const YACHT_CLUB: LevelDef = {
     { name: 'Old Salt', kind: 'sleepy', start: { x: 3, y: 10 }, route: [{ x: 3, y: 11 }] },
   ],
   loot: [
-    { at: { x: 17, y: 13 }, name: 'Golden Compass', value: 20000, space: 1, category: 'artefact' },
-    { at: { x: 11, y: 1 }, name: 'Regatta Cup', value: 3600, space: 2, category: 'artefact' },
+    { at: { x: 17, y: 13 }, name: 'Golden Compass', value: 20000, space: 1, category: 'artifact' },
+    { at: { x: 11, y: 1 }, name: 'Regatta Cup', value: 3600, space: 2, category: 'artifact' },
     {
       at: { x: 14, y: 1 },
       name: 'Ship in a Bottle (with a Cat)',
@@ -451,7 +451,7 @@ export const YACHT_CLUB: LevelDef = {
     },
     { at: { x: 17, y: 1 }, name: 'Admiral’s Medal', value: 2800, space: 1, category: 'jewel' },
     { at: { x: 20, y: 1 }, name: 'The Club’s Cash Box', value: 4500, space: 2, category: 'curiosity' },
-    { at: { x: 7, y: 12 }, name: 'Brass Telescope', value: 1700, space: 2, category: 'artefact' },
+    { at: { x: 7, y: 12 }, name: 'Brass Telescope', value: 1700, space: 2, category: 'artifact' },
     { at: { x: 9, y: 13 }, name: 'Captain’s Pipe', value: 900, space: 1, category: 'curiosity' },
   ],
 };
@@ -550,12 +550,12 @@ export const OBSERVATORY: LevelDef = {
   loot: [
     { at: { x: 18, y: 10 }, name: 'Comet Diamond', value: 22000, space: 1, category: 'jewel' },
     { at: { x: 16, y: 8 }, name: 'Deeds to the Moon (Signed)', value: 5000, space: 1, category: 'curiosity' },
-    { at: { x: 21, y: 8 }, name: 'Platinum Sextant', value: 4200, space: 2, category: 'artefact' },
-    { at: { x: 2, y: 1 }, name: 'Polo Trophy', value: 1800, space: 2, category: 'artefact' },
+    { at: { x: 21, y: 8 }, name: 'Platinum Sextant', value: 4200, space: 2, category: 'artifact' },
+    { at: { x: 2, y: 1 }, name: 'Polo Trophy', value: 1800, space: 2, category: 'artifact' },
     { at: { x: 6, y: 1 }, name: 'Silver Fish Knife', value: 900, space: 1, category: 'curiosity' },
     { at: { x: 10, y: 2 }, name: 'Star Chart of the Great Cat', value: 3300, space: 2, category: 'painting' },
     { at: { x: 17, y: 2 }, name: 'Meteorite Paperweight', value: 1400, space: 1, category: 'curiosity' },
     { at: { x: 21, y: 1 }, name: 'First Edition Moby Dick', value: 2600, space: 2, category: 'curiosity' },
-    { at: { x: 25, y: 1 }, name: 'Gold Pen', value: 1100, space: 1, category: 'artefact' },
+    { at: { x: 25, y: 1 }, name: 'Gold Pen', value: 1100, space: 1, category: 'artifact' },
   ],
 };

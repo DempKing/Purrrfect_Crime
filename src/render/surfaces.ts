@@ -72,7 +72,7 @@ export interface FloorSkin {
   tiles: number;
 }
 
-/** A wall: its paper, and the colour of its cut top. */
+/** A wall: its paper, and the color of its cut top. */
 export interface WallSkin {
   tex: SurfaceName;
   top: number;
@@ -97,7 +97,7 @@ const AQUA: FloorSkin = { tex: 'tex_aqua', tiles: 2 };
 const ROOF: FloorSkin = { tex: 'ext_roof', tiles: 2 };
 const GRASS: FloorSkin = { tex: 'ext_grass', tiles: 2 };
 
-/** Shorthand for a wall texture with its top colour. */
+/** Shorthand for a wall texture with its top color. */
 const W = (tex: SurfaceName, top: number): WallSkin => ({ tex, top });
 const MUSEUM = W('w_museum', 0xd8cdb4);
 const MANOR = W('w_manor', 0x6a2a2e);
@@ -110,7 +110,7 @@ const DISTRICT_LOOKS: Record<string, Look> = {
   'old-town': { floor: CARPET, marble: MARBLE, wall: MUSEUM },
   'museum-mile': { floor: PARQUET, marble: MARBLE, wall: MUSEUM },
   'the-heights': { floor: CARPET, marble: CHECKER, wall: MANOR },
-  harbour: { floor: PLANKS, marble: STONE, wall: W('tex_brick', 0x4a3f44) },
+  harbor: { floor: PLANKS, marble: STONE, wall: W('tex_brick', 0x4a3f44) },
   downtown: { floor: CARPET, marble: MARBLE, wall: MARBLE_WALL },
   nightclaw: { floor: CARPET, marble: CHECKER, wall: GOTHIC },
 };

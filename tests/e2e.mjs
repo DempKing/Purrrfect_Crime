@@ -38,7 +38,7 @@ await shot('01-title.png');
 await page.click('#title-settings');
 await page.waitForSelector('.settings');
 await page.click('[data-toggle="largeText"]');
-await page.click('[data-choice="palette"][data-value="colourblind"]');
+await page.click('[data-choice="palette"][data-value="colorblind"]');
 await shot('01b-settings.png');
 const settingsApplied = await page.evaluate(() => ({
   large: document.body.classList.contains('large-text'),
@@ -279,7 +279,7 @@ await page.evaluate(() => {
   window.__pc.profile.rooms.planning = 2;
 });
 await page.click('[data-job="1"]');
-await page.waitForSelector('.board .rumour');
+await page.waitForSelector('.board .rumor');
 await shot('21-briefing-rival.png');
 await page.click('#go');
 await page.waitForTimeout(600);
@@ -338,7 +338,7 @@ await page.evaluate(() => {
   const p = window.__pc.profile;
   for (const l of window.__pc.levels)
     if (!l.challenge && !l.finale)
-      p.records[l.id] = { clears: 1, bestTurns: 10, centrepiece: true, flawless: true };
+      p.records[l.id] = { clears: 1, bestTurns: 10, centerpiece: true, flawless: true };
   p.letters.push({ id: 3, day: p.day, read: true });
 });
 await page.click('[data-job="1"]');
@@ -466,7 +466,7 @@ const ok =
   settingsApplied.large &&
   !menuBeforeSaves.cont &&
   menuBeforeSaves.loadDisabled &&
-  settingsApplied.saved.palette === 'colourblind' &&
+  settingsApplied.saved.palette === 'colorblind' &&
   keyboard.moved &&
   ['first-night', 'home', 'legendary'].every((a) => earned.includes(a));
 process.exit(errors.length || !ok ? 1 : 0);

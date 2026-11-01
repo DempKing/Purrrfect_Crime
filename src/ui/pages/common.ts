@@ -20,7 +20,7 @@ export const tilt = (seed: string, max = 1.6) => {
 export const CATEGORY_NAMES: Record<LootCategory, string> = {
   jewel: 'Jewels',
   painting: 'Paintings',
-  artefact: 'Artefacts',
+  artifact: 'Artifacts',
   curiosity: 'Curiosities',
 };
 /** The narrator's portrait. */

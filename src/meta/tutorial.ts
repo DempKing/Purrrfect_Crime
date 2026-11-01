@@ -68,7 +68,7 @@ export const TUTORIAL: TutorialStep[] = [
   },
   {
     id: 'loot',
-    text: "Every piece takes up inventory space, and you've got six. Grab both small pieces and the Moonlit Pearl from its plinth. That's the centrepiece, the prize of the place.",
+    text: "Every piece takes up inventory space, and you've got six. Grab both small pieces and the Moonlit Pearl from its plinth. That's the centerpiece, the prize of the place.",
     optional: true,
     done: (s) => s.inventory.length >= 3,
   },

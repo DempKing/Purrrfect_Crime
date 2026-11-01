@@ -42,7 +42,7 @@ export const LETTERS: Record<LetterId, { title: string; body: string[] }> = {
     body: [
       'So. You opened it.',
       'Yes, Leo: I am NightClaw. For a very long time I have been looking for a thief to match me, and I think I may have found one.',
-      'Here is my challenge. Clear every heist in this city, and take every centrepiece in a flawless heist: never seen, no alarms. A centrepiece lost to a rival still counts once you have taken it back yourself.',
+      'Here is my challenge. Clear every heist in this city, and take every centerpiece in a flawless heist: never seen, no alarms. A centerpiece lost to a rival still counts once you have taken it back yourself.',
       'Do that, and I will write one last time.',
     ],
   },
@@ -50,17 +50,17 @@ export const LETTERS: Record<LetterId, { title: string; body: string[] }> = {
     title: 'An invitation',
     body: [
       'Leo,',
-      'Every centrepiece in the city, and not one of them missed. I have not seen work like it since I was young, and I was very good.',
+      'Every centerpiece in the city, and not one of them missed. I have not seen work like it since I was young, and I was very good.',
       'One test is left. My lair is in the old bell tower on Moon Street; the door will not be locked, but nothing else will be easy. In it is the thing I treasure most. Take it, and then come and find me. If I see you first, we will try again another night.',
       'I will be waiting.',
     ],
   },
 };
 
-/** The NightClaw Challenge: every centrepiece taken in a flawless heist. */
+/** The NightClaw Challenge: every centerpiece taken in a flawless heist. */
 export const CHALLENGE_LEVELS: LevelDef[] = ALL_LEVELS.filter((l) => !l.challenge && !l.finale);
 
-/** How many centrepieces have been taken flawlessly. */
+/** How many centerpieces have been taken flawlessly. */
 export function challengeProgress(p: Profile): { done: number; of: number } {
   return {
     done: CHALLENGE_LEVELS.filter((l) => p.records[l.id]?.flawless).length,

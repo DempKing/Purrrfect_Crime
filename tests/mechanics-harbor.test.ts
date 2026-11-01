@@ -1,4 +1,4 @@
-// Harbour mechanics: crates, the lighthouse, the tide, the fish market, light switches.
+// Harbor mechanics: crates, the lighthouse, the tide, the fish market, light switches.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { type GuardDef, type LevelDef, parseLevel } from '../src/core/level';
@@ -15,7 +15,7 @@ import {
   newHeist,
 } from '../src/core/game';
 
-// Harbour: crates, the lighthouse, the tide, the fish market, light switches
+// Harbor: crates, the lighthouse, the tide, the fish market, light switches
 
 const DOCKS: LevelDef = {
   id: 'docks',

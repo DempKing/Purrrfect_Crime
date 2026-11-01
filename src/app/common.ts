@@ -27,7 +27,7 @@ const prefersReducedMotion =
 export const settings: Settings = loadSettings(storage(), prefersReducedMotion);
 /** An animation length adjusted for the speed setting. */
 export const anim = (seconds: number) => seconds * SPEED_FACTOR[settings.speed] * game.slowMotion;
-/** Applies the current settings (text size, motion, sound, colours). */
+/** Applies the current settings (text size, motion, sound, colors). */
 export function applySettings(): void {
   document.body.classList.toggle('large-text', settings.largeText);
   document.body.classList.toggle('reduce-motion', settings.reduceMotion);

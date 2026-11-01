@@ -196,7 +196,7 @@ export function useAbility(level: Level, s: State, kind: Ability, at?: Point): b
   }
   return true;
 }
-// Take the centrepiece from beside its plinth (used by the warm-up level and the solver).
+// Take the centerpiece from beside its plinth (used by the warm-up level and the solver).
 export function canSteal(level: Level, s: State): boolean {
   return (
     !!level.plinth &&
@@ -205,7 +205,7 @@ export function canSteal(level: Level, s: State): boolean {
     )
   );
 }
-/** Takes the centrepiece from the plinth (Leo must be beside it). */
+/** Takes the centerpiece from the plinth (Leo must be beside it). */
 export function steal(level: Level, s: State): boolean {
   return !!level.plinth && doAction(level, s, 'take', level.plinth);
 }

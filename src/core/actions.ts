@@ -157,7 +157,7 @@ export function actionsHere(level: Level, s: State): Action[] {
             blocked: noRoom,
           });
         }
-        // Plinth (the centrepiece) and exhibits under lights: just take them.
+        // Plinth (the centerpiece) and exhibits under lights: just take them.
         if (t === 'plinth' && loot && !taken)
           out.push({ kind: 'take', at: p, label: `Take ${loot.name}`, ap: 1, noise: 0, blocked: noRoom });
         if (t === 'lamp' && loot && !taken)
@@ -276,7 +276,7 @@ function take(level: Level, s: State, at: Point): void {
   s.inventory.push(li);
   const l = level.def.loot[li];
   s.log.push(l.revealed ? `Got it. It isn’t treasure at all: it’s ${l.revealed}.` : `Got ${the(l.name)}.`);
-  // Leo got the centrepiece first: the rival gives up.
+  // Leo got the centerpiece first: the rival gives up.
   const r = s.rival;
   if (r && r.phase !== 'gone' && level.plinth && at.x === level.plinth.x && at.y === level.plinth.y) {
     if (r.phase !== 'waiting') s.log.push(RIVALS[r.id].beaten);

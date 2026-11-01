@@ -53,7 +53,7 @@ test('motion sensors: one tile at a time inside the zone, or the alarm; the fuse
   moveLeo(level, off, { x: 13, y: 4 });
   assert.equal(off.alarm, null);
 });
-test('a rival arrives on their turn, runs for the centrepiece and gets away with it', () => {
+test('a rival arrives on their turn, runs for the centerpiece and gets away with it', () => {
   const level = parseLevel(HALL);
   const s = newHeist(level, BASE_PERKS, plan('luna', 2));
   endTurn(level, s);
@@ -67,7 +67,7 @@ test('a rival arrives on their turn, runs for the centrepiece and gets away with
   s.leo = { x: 7, y: 2 };
   assert.ok(!actionsHere(level, s).some((a) => a.kind === 'take'), 'nothing left to take');
 });
-test('if Leo takes the centrepiece first, the rival gives up; the race doesn’t spoil a flawless heist', () => {
+test('if Leo takes the centerpiece first, the rival gives up; the race doesn’t spoil a flawless heist', () => {
   const level = parseLevel(HALL);
   const s = newHeist(level, BASE_PERKS, plan('paws', 1));
   endTurn(level, s);

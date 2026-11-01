@@ -1,7 +1,7 @@
 // Wires a game controller (ui/gamepad.ts) to the game: the map cursor, or the buttons of whatever is open.
 import { padName } from '../controls';
 import { startGamepad } from '../ui/gamepad';
-import { pan, recentre, turnCamera, world, zoomBy } from './camera';
+import { pan, recenter, turnCamera, world, zoomBy } from './camera';
 import { act } from './clicks';
 import { $, settings } from './common';
 import { game } from './game';
@@ -52,7 +52,7 @@ export function bindGamepad(): void {
       pan.x += (dx * 900) / world.scale.x;
       pan.y += (dy * 900) / world.scale.y;
     },
-    recentre: () => recentre(),
+    recenter: () => recenter(),
     settings: () => {
       if (game.inHeist && !visibleEl('screens')) openSettingsInHeist();
     },

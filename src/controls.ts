@@ -16,7 +16,7 @@ export type KeyAction =
   | 'panLeft'
   | 'panDown'
   | 'panRight'
-  | 'recentre'
+  | 'recenter'
   | 'zoomIn'
   | 'zoomOut'
   | 'restart';
@@ -30,7 +30,7 @@ export type PadAction =
   | 'turnRight'
   | 'zoomOut'
   | 'zoomIn'
-  | 'recentre'
+  | 'recenter'
   | 'hud'
   | 'settings';
 
@@ -52,7 +52,7 @@ export const KEY_ACTIONS: [KeyAction, string][] = [
   ['panLeft', 'Pan the camera left'],
   ['panDown', 'Pan the camera down'],
   ['panRight', 'Pan the camera right'],
-  ['recentre', 'Bring the camera back to Leo'],
+  ['recenter', 'Bring the camera back to Leo'],
   ['zoomIn', 'Zoom in'],
   ['zoomOut', 'Zoom out'],
   ['restart', 'Restart the heist (press twice)'],
@@ -68,7 +68,7 @@ export const PAD_ACTIONS: [PadAction, string][] = [
   ['turnRight', 'Turn the camera right'],
   ['zoomOut', 'Zoom out'],
   ['zoomIn', 'Zoom in'],
-  ['recentre', 'Bring the camera back to Leo'],
+  ['recenter', 'Bring the camera back to Leo'],
   ['hud', 'The buttons on screen: actions, gadgets, Restart…'],
   ['settings', 'Settings'],
 ];
@@ -89,7 +89,7 @@ export function defaultKeys(): KeyMap {
     panLeft: ['a'],
     panDown: ['s'],
     panRight: ['d'],
-    recentre: ['c', 'f'],
+    recenter: ['c', 'f'],
     zoomIn: ['+', '='],
     zoomOut: ['-', '_'],
     restart: ['r'],
@@ -109,7 +109,7 @@ export function defaultPad(): PadMap {
     zoomIn: [7],
     hud: [8],
     settings: [9],
-    recentre: [10, 11],
+    recenter: [10, 11],
   };
 }
 

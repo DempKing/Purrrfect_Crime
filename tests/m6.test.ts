@@ -30,7 +30,7 @@ test('settings save, load, and fall back to the defaults when missing or broken'
   const s = {
     ...defaultSettings(),
     music: 0.2,
-    palette: 'colourblind' as const,
+    palette: 'colorblind' as const,
     largeText: true,
     speed: 'instant' as const,
   };
@@ -64,7 +64,7 @@ test('achievements: each awarded once, from the save or the heist just finished;
     ['full-pockets', 'quick'],
   );
   for (const l of CHALLENGE_LEVELS)
-    p.records[l.id] = { clears: 1, bestTurns: 9, centrepiece: true, flawless: true };
+    p.records[l.id] = { clears: 1, bestTurns: 9, centerpiece: true, flawless: true };
   p.legendary = true;
   const ids = checkAchievements(p).map((a) => a.id);
   for (const id of ['ghost', 'district-old-town', 'district-downtown', 'trophies', 'challenge', 'legendary'])
@@ -112,4 +112,10 @@ test('controls can be remapped: a key taken from another action swaps, and saved
   saveSettings(st, { ...defaultSettings(), keys: k, pad: p });
   assert.deepEqual(loadSettings(st).keys.endTurn, ['e']);
   assert.deepEqual(loadSettings(st).pad.bag, [0]);
+});
+
+test('the colorblind palette setting from older saves (spelled colourblind) still loads', () => {
+  const st = memory();
+  st.setItem(SETTINGS_KEY, JSON.stringify({ palette: 'colourblind' }));
+  assert.equal(loadSettings(st).palette, 'colorblind');
 });

@@ -109,7 +109,7 @@ export const GRAND_BANK: LevelDef = {
     { at: { x: 11, y: 1 }, name: 'Deposit Box of Rare Stamps', value: 4800, space: 1, category: 'curiosity' },
     { at: { x: 16, y: 1 }, name: 'Deposit Box of Emeralds', value: 6900, space: 1, category: 'jewel' },
     { at: { x: 11, y: 3 }, name: 'Bearer Bonds', value: 5500, space: 1, category: 'curiosity' },
-    { at: { x: 16, y: 3 }, name: 'The Founder’s Gold Watch', value: 3100, space: 1, category: 'artefact' },
+    { at: { x: 16, y: 3 }, name: 'The Founder’s Gold Watch', value: 3100, space: 1, category: 'artifact' },
     {
       at: { x: 22, y: 1 },
       name: 'Portrait of the Chairman’s Cat',
@@ -117,7 +117,7 @@ export const GRAND_BANK: LevelDef = {
       space: 3,
       category: 'painting',
     },
-    { at: { x: 25, y: 1 }, name: 'Silver Fountain Pen', value: 900, space: 1, category: 'artefact' },
+    { at: { x: 25, y: 1 }, name: 'Silver Fountain Pen', value: 900, space: 1, category: 'artifact' },
   ],
 };
 
@@ -316,7 +316,7 @@ export const MINT: LevelDef = {
     { name: 'The Assayer', kind: 'sleepy', start: { x: 4, y: 2 }, route: [{ x: 4, y: 3 }] },
   ],
   loot: [
-    { at: { x: 13, y: 2 }, name: 'Golden Coin Die', value: 34000, space: 1, category: 'artefact' },
+    { at: { x: 13, y: 2 }, name: 'Golden Coin Die', value: 34000, space: 1, category: 'artifact' },
     {
       at: { x: 11, y: 1 },
       name: 'Proof Set of the Year of the Cat',
@@ -333,7 +333,7 @@ export const MINT: LevelDef = {
     },
     { at: { x: 11, y: 3 }, name: 'Gold Planchets', value: 4300, space: 2, category: 'jewel' },
     { at: { x: 16, y: 3 }, name: 'Engraver’s Original Drawing', value: 3800, space: 2, category: 'painting' },
-    { at: { x: 2, y: 1 }, name: 'Assay Scales', value: 1300, space: 2, category: 'artefact' },
+    { at: { x: 2, y: 1 }, name: 'Assay Scales', value: 1300, space: 2, category: 'artifact' },
     {
       at: { x: 21, y: 1 },
       name: 'Bag of Freshly Minted Coins',
@@ -444,10 +444,10 @@ export const MISCHIEF: LevelDef = {
   loot: [
     { at: { x: 13, y: 2 }, name: 'The Prank of the Century', value: 36000, space: 3, category: 'painting' },
     { at: { x: 9, y: 1 }, name: 'A Banana Taped to a Fish', value: 6100, space: 1, category: 'curiosity' },
-    { at: { x: 18, y: 1 }, name: 'Unmade Cat Bed', value: 4300, space: 3, category: 'artefact' },
+    { at: { x: 18, y: 1 }, name: 'Unmade Cat Bed', value: 4300, space: 3, category: 'artifact' },
     { at: { x: 9, y: 4 }, name: 'Invisible Painting', value: 5000, space: 1, category: 'painting' },
     { at: { x: 18, y: 4 }, name: 'Glass Whoopee Cushion', value: 2800, space: 1, category: 'curiosity' },
-    { at: { x: 2, y: 1 }, name: 'Balloon Mouse (Gold)', value: 4700, space: 2, category: 'artefact' },
+    { at: { x: 2, y: 1 }, name: 'Balloon Mouse (Gold)', value: 4700, space: 2, category: 'artifact' },
     { at: { x: 5, y: 1 }, name: 'Soup Can, Signed', value: 1900, space: 1, category: 'curiosity' },
     {
       at: { x: 22, y: 1 },
@@ -456,7 +456,7 @@ export const MISCHIEF: LevelDef = {
       space: 1,
       category: 'curiosity',
     },
-    { at: { x: 25, y: 1 }, name: 'Neon Sign: MEOW', value: 2600, space: 2, category: 'artefact' },
+    { at: { x: 25, y: 1 }, name: 'Neon Sign: MEOW', value: 2600, space: 2, category: 'artifact' },
   ],
 };
 
@@ -556,7 +556,7 @@ export const TREASURY: LevelDef = {
     },
   ],
   loot: [
-    { at: { x: 22, y: 2 }, name: 'Key to the City', value: 40000, space: 1, category: 'artefact' },
+    { at: { x: 22, y: 2 }, name: 'Key to the City', value: 40000, space: 1, category: 'artifact' },
     {
       at: { x: 20, y: 1 },
       name: 'The City’s Gold Reserve (One Bar)',
@@ -581,6 +581,6 @@ export const TREASURY: LevelDef = {
       category: 'curiosity',
     },
     { at: { x: 15, y: 1 }, name: 'Parking Fines Petty Cash', value: 1800, space: 1, category: 'curiosity' },
-    { at: { x: 6, y: 1 }, name: 'The Mayor’s Lucky Fish', value: 1200, space: 1, category: 'artefact' },
+    { at: { x: 6, y: 1 }, name: 'The Mayor’s Lucky Fish', value: 1200, space: 1, category: 'artifact' },
   ],
 };

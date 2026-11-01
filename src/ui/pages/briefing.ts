@@ -111,7 +111,7 @@ export function briefing(
         `<polyline points="${pts}" fill="none" stroke="#ff8a5a" stroke-width="2" stroke-dasharray="4 3"/><circle cx="${g.start.x * S + 8}" cy="${g.start.y * S + 8}" r="4" fill="#ff8a5a"/>`,
       );
     }
-  const centre =
+  const center =
     def.loot.find((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y)?.name ??
     'prize';
   const entrance =
@@ -120,12 +120,12 @@ export function briefing(
     marks.push(
       `<text x="${entrance.x * S + 8}" y="${entrance.y * S + 12}" text-anchor="middle" font-size="12" fill="#b05cff">R</text>`,
     );
-  const rumour =
+  const rumor =
     tier < 1
       ? ''
       : rival
-        ? `<p class="rumour"><img class="rival-mug" src="${portrait(rival.id)}" alt=""><b>Rumour:</b> word is ${esc(RIVALS[rival.id].name)} has an eye on ${the(esc(centre))} tonight.${tier >= 2 && entrance ? ` They’ll come in on turn ${rival.arrive}, by the spot marked R.` : ' A better Planning Table would tell you when, and where they’ll come in.'} Get it first.</p>`
-        : '<p class="rumour quiet-rumour"><b>Rumour:</b> no rival thieves are after this one.</p>';
+        ? `<p class="rumor"><img class="rival-mug" src="${portrait(rival.id)}" alt=""><b>Rumor:</b> word is ${esc(RIVALS[rival.id].name)} has an eye on ${the(esc(center))} tonight.${tier >= 2 && entrance ? ` They’ll come in on turn ${rival.arrive}, by the spot marked R.` : ' A better Planning Table would tell you when, and where they’ll come in.'} Get it first.</p>`
+        : '<p class="rumor quiet-rumor"><b>Rumor:</b> no rival thieves are after this one.</p>';
   const plan = tier
     ? `<svg class="plan" viewBox="0 0 ${level.w * S} ${level.h * S}">${cells.join('')}${marks.join('')}</svg>
        <p class="legend">red ring: the prize · dots: loot · dashed squares: vents · red lines: lasers${tier >= 2 ? ' · purple: cameras · yellow: lamps' : ''}${tier >= 3 ? ' · orange dashes: guard routes' : ''}</p>`
@@ -162,7 +162,7 @@ export function briefing(
         </ul></div>
         ${def.tip ? `<div class="sticky-note tip-note" style="--tilt:-2.5deg"><span class="pin"></span><b>New here</b>${esc(def.tip)}</div>` : ''}
         <div class="guards-strip">${guardCards}</div>
-        ${rumour ? `<div class="rumour-card linked" style="--tilt:2deg"><span class="pin"></span>${rumour}</div>` : ''}
+        ${rumor ? `<div class="rumor-card linked" style="--tilt:2deg"><span class="pin"></span>${rumor}</div>` : ''}
         ${tier >= 1 && others.length ? `<div class="loot-strip" style="--tilt:-0.5deg"><span class="pin"></span><b class="card-label">Also worth a look</b><div class="loot-row">${others.map((l) => `<figure><img src="${lootPictureUrl(l.name, l.category)}" alt=""><figcaption>${esc(l.name)}<br><b>$${l.value.toLocaleString('en-US')}</b></figcaption></figure>`).join('')}</div></div>` : ''}
         <div class="board-buttons"><button id="go" class="primary big-go">Let’s do this!</button><button id="back">Back to the lair</button></div>
       </div>

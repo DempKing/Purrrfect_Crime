@@ -1,4 +1,4 @@
-// Harbour (district 4): crates to hide in, a lighthouse, the tide, the fish market, light switches.
+// Harbor (district 4): crates to hide in, a lighthouse, the tide, the fish market, light switches.
 import type { LevelDef } from '../core/level';
 
 /**
@@ -98,11 +98,11 @@ export const CUSTOMS_WAREHOUSE: LevelDef = {
     { name: 'The Clerk', kind: 'sleepy', start: { x: 18, y: 2 }, route: [{ x: 18, y: 3 }] },
   ],
   loot: [
-    { at: { x: 11, y: 2 }, name: 'Smuggler’s Jade Cat', value: 21000, space: 2, category: 'artefact' },
+    { at: { x: 11, y: 2 }, name: 'Smuggler’s Jade Cat', value: 21000, space: 2, category: 'artifact' },
     { at: { x: 9, y: 1 }, name: 'Crate of Contraband Caviar', value: 2400, space: 2, category: 'curiosity' },
     { at: { x: 13, y: 1 }, name: 'Undeclared Diamonds', value: 5600, space: 1, category: 'jewel' },
     { at: { x: 9, y: 3 }, name: 'Forged Old Master', value: 3100, space: 3, category: 'painting' },
-    { at: { x: 13, y: 3 }, name: 'Ivory-Free Netsuke', value: 1900, space: 1, category: 'artefact' },
+    { at: { x: 13, y: 3 }, name: 'Ivory-Free Netsuke', value: 1900, space: 1, category: 'artifact' },
     { at: { x: 21, y: 1 }, name: 'The Customs Petty Cash', value: 1500, space: 1, category: 'curiosity' },
   ],
 };
@@ -221,8 +221,8 @@ export const LIGHTHOUSE: LevelDef = {
     { name: 'The Keeper', kind: 'sleepy', start: { x: 4, y: 2 }, route: [{ x: 4, y: 3 }] },
   ],
   loot: [
-    { at: { x: 22, y: 2 }, name: 'Golden Lantern', value: 23000, space: 2, category: 'artefact' },
-    { at: { x: 18, y: 1 }, name: 'Brass Fresnel Lens', value: 3800, space: 2, category: 'artefact' },
+    { at: { x: 22, y: 2 }, name: 'Golden Lantern', value: 23000, space: 2, category: 'artifact' },
+    { at: { x: 18, y: 1 }, name: 'Brass Fresnel Lens', value: 3800, space: 2, category: 'artifact' },
     { at: { x: 26, y: 1 }, name: 'Shipwreck Silver', value: 4200, space: 1, category: 'jewel' },
     { at: { x: 18, y: 3 }, name: 'Storm at Sea, in Oils', value: 5100, space: 3, category: 'painting' },
     { at: { x: 26, y: 3 }, name: 'Mermaid Figurehead (Small)', value: 2600, space: 2, category: 'curiosity' },
@@ -331,7 +331,7 @@ export const SHIPWRECK: LevelDef = {
   loot: [
     { at: { x: 13, y: 11 }, name: 'Captain’s Pearl', value: 24000, space: 1, category: 'jewel' },
     { at: { x: 11, y: 12 }, name: 'Barnacled Doubloons', value: 3400, space: 2, category: 'curiosity' },
-    { at: { x: 16, y: 12 }, name: 'The Ship’s Bell', value: 2900, space: 3, category: 'artefact' },
+    { at: { x: 16, y: 12 }, name: 'The Ship’s Bell', value: 2900, space: 3, category: 'artifact' },
     { at: { x: 2, y: 1 }, name: 'Message in a Bottle', value: 800, space: 1, category: 'curiosity' },
     { at: { x: 6, y: 1 }, name: 'Pirate Cat’s Eyepatch', value: 1500, space: 1, category: 'curiosity' },
     {
@@ -342,7 +342,7 @@ export const SHIPWRECK: LevelDef = {
       category: 'painting',
     },
     { at: { x: 16, y: 1 }, name: 'Coral Crown', value: 4400, space: 2, category: 'jewel' },
-    { at: { x: 20, y: 1 }, name: 'Sextant of Admiral Whiskers', value: 2700, space: 1, category: 'artefact' },
+    { at: { x: 20, y: 1 }, name: 'Sextant of Admiral Whiskers', value: 2700, space: 1, category: 'artifact' },
     { at: { x: 24, y: 1 }, name: 'Kraken Ink Drawing', value: 3900, space: 2, category: 'painting' },
   ],
 };
@@ -446,7 +446,7 @@ export const FISH_BANK: LevelDef = {
       space: 2,
       category: 'curiosity',
     },
-    { at: { x: 23, y: 1 }, name: 'Silver Herring Paperweight', value: 1100, space: 1, category: 'artefact' },
+    { at: { x: 23, y: 1 }, name: 'Silver Herring Paperweight', value: 1100, space: 1, category: 'artifact' },
     {
       at: { x: 26, y: 1 },
       name: 'Portrait of the Founding Fishmonger',
@@ -458,7 +458,7 @@ export const FISH_BANK: LevelDef = {
 };
 
 /**
- * Level 19: The aquarium (end of the Harbour). Bright chandeliers round the great tank.
+ * Level 19: The aquarium (end of the Harbor). Bright chandeliers round the great tank.
  * Prize: Narwhal Tiara in the VIP lounge (locked door, camera). Guards: Finn, Admiral (captain),
  * Marina, Gill (sniffer), Reef. Light switches: the nearest guard comes to turn them back on.
  */
@@ -572,7 +572,7 @@ export const AQUARIUM: LevelDef = {
     },
     {
       at: { x: 16, y: 3 },
-      name: 'Ice Sculpture Mould of a Whale',
+      name: 'Ice Sculpture Mold of a Whale',
       value: 1200,
       space: 3,
       category: 'curiosity',

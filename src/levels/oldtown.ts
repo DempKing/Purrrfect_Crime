@@ -111,13 +111,13 @@ export const COIN_MUSEUM: LevelDef = {
   ],
   loot: [
     { at: { x: 21, y: 11 }, name: 'Double Doubloon', value: 5200, space: 2, category: 'curiosity' },
-    { at: { x: 23, y: 1 }, name: 'The Mint Ledger', value: 2600, space: 1, category: 'artefact' },
+    { at: { x: 23, y: 1 }, name: 'The Mint Ledger', value: 2600, space: 1, category: 'artifact' },
     { at: { x: 4, y: 3 }, name: 'Cobblestone Penny', value: 300, space: 1, category: 'curiosity' },
     { at: { x: 8, y: 3 }, name: 'Silver Florin', value: 750, space: 1, category: 'curiosity' },
     { at: { x: 12, y: 3 }, name: 'Gold Sovereign', value: 1400, space: 1, category: 'jewel' },
     { at: { x: 4, y: 5 }, name: 'Pirate Piece of Eight', value: 950, space: 1, category: 'curiosity' },
     { at: { x: 8, y: 5 }, name: 'Bent Lucky Sixpence', value: 200, space: 1, category: 'curiosity' },
-    { at: { x: 12, y: 5 }, name: 'Royal Mint Die', value: 1800, space: 2, category: 'artefact' },
+    { at: { x: 12, y: 5 }, name: 'Royal Mint Die', value: 1800, space: 2, category: 'artifact' },
   ],
 };
 
@@ -228,7 +228,7 @@ export const CLOCKTOWER: LevelDef = {
       ],
     },
   ],
-  loot: [{ at: { x: 24, y: 4 }, name: 'Brass Astrolabe', value: 6400, space: 2, category: 'artefact' }],
+  loot: [{ at: { x: 24, y: 4 }, name: 'Brass Astrolabe', value: 6400, space: 2, category: 'artifact' }],
 };
 
 /**
@@ -323,13 +323,13 @@ export const PAWNBROKER: LevelDef = {
   loot: [
     { at: { x: 21, y: 13 }, name: 'Pawned Tiara', value: 7800, space: 2, category: 'jewel' },
     { at: { x: 24, y: 6 }, name: 'Stack of IOUs', value: 1900, space: 1, category: 'curiosity' },
-    { at: { x: 16, y: 9 }, name: 'Grandfather’s Medals', value: 2300, space: 1, category: 'artefact' },
+    { at: { x: 16, y: 9 }, name: 'Grandfather’s Medals', value: 2300, space: 1, category: 'artifact' },
     { at: { x: 4, y: 7 }, name: 'Pearl Cufflinks', value: 900, space: 1, category: 'jewel' },
-    { at: { x: 7, y: 7 }, name: 'Pocket Telescope', value: 650, space: 1, category: 'artefact' },
+    { at: { x: 7, y: 7 }, name: 'Pocket Telescope', value: 650, space: 1, category: 'artifact' },
     { at: { x: 10, y: 7 }, name: 'Silver Snuffbox', value: 700, space: 1, category: 'curiosity' },
     { at: { x: 4, y: 10 }, name: 'Cameo Brooch', value: 1100, space: 1, category: 'jewel' },
     { at: { x: 7, y: 10 }, name: 'Oil Portrait of a Pug', value: 1600, space: 2, category: 'painting' },
-    { at: { x: 10, y: 10 }, name: 'Ivory Chess Set', value: 1300, space: 2, category: 'artefact' },
+    { at: { x: 10, y: 10 }, name: 'Ivory Chess Set', value: 1300, space: 2, category: 'artifact' },
     { at: { x: 13, y: 12 }, name: 'Gramophone Record', value: 400, space: 1, category: 'curiosity' },
   ],
 };
@@ -467,5 +467,5 @@ export const OPERA_HOUSE: LevelDef = {
       ],
     },
   ],
-  loot: [{ at: { x: 23, y: 4 }, name: 'Phantom’s Mask', value: 9500, space: 1, category: 'artefact' }],
+  loot: [{ at: { x: 23, y: 4 }, name: 'Phantom’s Mask', value: 9500, space: 1, category: 'artifact' }],
 };

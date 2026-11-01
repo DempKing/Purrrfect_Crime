@@ -1,9 +1,9 @@
-// Colours and sizes for drawing the heist, and the colour-blind palette switch.
+// Colors and sizes for drawing the heist, and the color-blind palette switch.
 export const WALL_H = 84;
 export const STUB_H = 12;
 /** How high the rafters are. */
 export const RAFTER_Z = 92;
-/** All the colours used for drawing. */
+/** All the colors used for drawing. */
 export const COL = {
   carpetA: 0x4a2a3c,
   carpetB: 0x44263a,
@@ -34,7 +34,7 @@ export const COL = {
   motion: 0xff6a6a,
   beam: 0xd9a066,
 };
-// Overlay colours: the standard set and a colour-blind friendly set (Okabe-Ito).
+// Overlay colors: the standard set and a color-blind friendly set (Okabe-Ito).
 const STANDARD = {
   reach1: COL.reach1,
   reach2: COL.reach2,
@@ -44,8 +44,8 @@ const STANDARD = {
   danger: COL.danger,
   path: COL.path,
 };
-/** Colour-blind friendly overlay colours. */
-const COLOURBLIND = {
+/** Color-blind friendly overlay colors. */
+const COLORBLIND = {
   reach1: 0x0072b2,
   reach2: 0xf0e442,
   vision: 0xd55e00,
@@ -55,10 +55,10 @@ const COLOURBLIND = {
   path: 0xffffff,
 };
 export let hatchVision = false;
-/** Switches between the standard and colour-blind overlay colours. */
-export function setPalette(palette: 'standard' | 'colourblind'): void {
-  Object.assign(COL, palette === 'colourblind' ? COLOURBLIND : STANDARD);
-  hatchVision = palette === 'colourblind';
+/** Switches between the standard and color-blind overlay colors. */
+export function setPalette(palette: 'standard' | 'colorblind'): void {
+  Object.assign(COL, palette === 'colorblind' ? COLORBLIND : STANDARD);
+  hatchVision = palette === 'colorblind';
 }
-/** Loot colours by index, so each piece reads differently on its stand. */
+/** Loot colors by index, so each piece reads differently on its stand. */
 export const LOOT_COLORS = [0x9fe8ff, 0xf2c46b, 0xf5f0ff, 0xffd84a, 0xe0314b, 0xd9b36c, 0x3fbf7f, 0xb6a4ff];

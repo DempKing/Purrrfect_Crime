@@ -18,7 +18,7 @@ const BUST: Exhibit = {
   pedestal: true,
   loot: {
     names: ['Marble Bust of a Distinguished Cat', 'Marble Bust of the Founder', 'Bust of a Forgotten Poet'],
-    category: 'artefact',
+    category: 'artifact',
     value: 1400,
     space: 2,
   },
@@ -28,7 +28,7 @@ const HORSE: Exhibit = {
   pedestal: true,
   loot: {
     names: ['Bronze Racehorse', 'Little Bronze Stallion'],
-    category: 'artefact',
+    category: 'artifact',
     value: 1800,
     space: 2,
   },
@@ -36,12 +36,12 @@ const HORSE: Exhibit = {
 const MANTEL: Exhibit = {
   model: 'mantel_clock_01',
   pedestal: true,
-  loot: { names: ['Gilt Mantel Clock', 'Carriage Clock'], category: 'artefact', value: 1200, space: 2 },
+  loot: { names: ['Gilt Mantel Clock', 'Carriage Clock'], category: 'artifact', value: 1200, space: 2 },
 };
 const CAT_IDOL: Exhibit = {
   model: 'concrete_cat_statue',
   pedestal: true,
-  loot: { names: ['Stone Cat Idol', 'Temple Cat Figure'], category: 'artefact', value: 1600, space: 2 },
+  loot: { names: ['Stone Cat Idol', 'Temple Cat Figure'], category: 'artifact', value: 1600, space: 2 },
 };
 const CONCH: Exhibit = {
   model: 'lambis_shell',
@@ -71,7 +71,7 @@ const CHEST: Exhibit = {
 const CAT_STATUE: Exhibit = {
   flat: 'spr_statue',
   pedestal: false,
-  loot: { names: ['Alabaster Cat on a Plinth'], category: 'artefact', value: 2000, space: 2 },
+  loot: { names: ['Alabaster Cat on a Plinth'], category: 'artifact', value: 2000, space: 2 },
 };
 const STATUE: Exhibit = { model: 'gothic_statue', pedestal: false };
 const PLANT: Exhibit = { model: 'potted_plant_01', pedestal: false };
@@ -85,7 +85,7 @@ const BY_DISTRICT: Record<string, Exhibit[]> = {
   'old-town': [BUST, HORSE, MANTEL, STATUE],
   'museum-mile': [BUST, STATUE, CAT_STATUE, HORSE],
   'the-heights': [PLANT, BUST, PLANT2, STATUE],
-  harbour: [CONCH, CHEST, LANTERN, CONCH],
+  harbor: [CONCH, CHEST, LANTERN, CONCH],
   downtown: [PLANT, HORSE, PLANT2, BUST],
   nightclaw: [STATUE, MANTEL, CAT_IDOL, BUST],
 };
@@ -101,7 +101,7 @@ const BY_LEVEL: Record<string, Exhibit[]> = {
 export function districtOfLevel(id: string): string {
   if (id.startsWith('nc-')) return 'nightclaw';
   const n = Number(/^l(\d+)-/.exec(id)?.[1] ?? 0);
-  return ['old-town', 'museum-mile', 'the-heights', 'harbour', 'downtown'][Math.min(4, Math.floor(n / 5))];
+  return ['old-town', 'museum-mile', 'the-heights', 'harbor', 'downtown'][Math.min(4, Math.floor(n / 5))];
 }
 
 /** A tile's own number, for picking things: the same tile always gets the same one. */

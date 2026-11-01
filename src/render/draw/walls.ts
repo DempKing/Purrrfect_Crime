@@ -16,7 +16,7 @@ import {
 import { tileHash } from '../../core/exhibits';
 import { flat, type FlatName, WALL_FLATS } from '../flats';
 import type { HeistView } from '../view';
-import { type Drawable, NEIGHBOURS } from './types';
+import { type Drawable, NEIGHBORS } from './types';
 import { corners, diamond, diamondOutline, prism, tintColor } from './shapes';
 import { sprite } from './characters';
 import { WALL_H } from './style';
@@ -49,7 +49,7 @@ export function wallDecor(
   const choices = LEVEL_WALL_DECOR[level.def.id] ?? WALL_DECOR[view.district] ?? WALL_DECOR['old-town'];
   const c = Math.cos(view.proj.angle);
   const sn = Math.sin(view.proj.angle);
-  NEIGHBOURS.forEach((n, i) => {
+  NEIGHBORS.forEach((n, i) => {
     const fx = x + n.x;
     const fy = y + n.y;
     if (fx < 0 || fy < 0 || fx >= level.w || fy >= level.h) return;
@@ -237,7 +237,7 @@ export function clockFace(
   }
   g.restore();
 }
-/** A flat picture on a wall face, `width` tiles wide, centred `middle` px up. */
+/** A flat picture on a wall face, `width` tiles wide, centerd `middle` px up. */
 export function onWall(
   view: HeistView,
   g: Graphics,
@@ -303,7 +303,7 @@ export function controlBox(
 ): void {
   const c = Math.cos(view.proj.angle);
   const sn = Math.sin(view.proj.angle);
-  for (const n of NEIGHBOURS) {
+  for (const n of NEIGHBORS) {
     const t = tileNow(level, s, x + n.x, y + n.y);
     if (blocksSight(t) || t === 'gap' || t === 'wire') continue;
     if (c * n.x - sn * n.y + (sn * n.x + c * n.y) <= 0.3) continue; // the face turned away from the camera
@@ -431,7 +431,7 @@ export function gap(view: HeistView, g: Graphics, level: Level, x: number, y: nu
     g.circle(c.x, c.y, 1.5).fill({ color: 0xf2c46b, alpha: 0.7 });
   }
 }
-/** A wire strung across a gap, from each neighbour that isn't open air. */
+/** A wire strung across a gap, from each neighbor that isn't open air. */
 export function wire(view: HeistView, g: Graphics, level: Level, x: number, y: number): void {
   const c = project(view.proj, x + 0.5, y + 0.5, 4);
   for (const d of [
@@ -445,7 +445,7 @@ export function wire(view: HeistView, g: Graphics, level: Level, x: number, y: n
     g.moveTo(c.x, c.y).lineTo(e.x, e.y).stroke({ width: 2, color: 0xc8ccd8 });
   }
 }
-/** A glass wall: see-through panes that join up with their neighbours. */
+/** A glass wall: see-through panes that join up with their neighbors. */
 export function glass(view: HeistView, g: Graphics, level: Level, x: number, y: number): void {
   const t = (dx: number, dy: number) =>
     ['glass', 'wall', 'pillar'].includes(level.tiles[y + dy]?.[x + dx] ?? '');

@@ -102,7 +102,7 @@ export function endTurn(level: Level, s: State): GuardStep[] {
   }
   return steps;
 }
-/** Danger of standing on p, for colouring the path: 0 safe, 1 noticed, 2 caught or alarm. */
+/** Danger of standing on p, for coloring the path: 0 safe, 1 noticed, 2 caught or alarm. */
 export function danger(level: Level, s: State, p: Point): 0 | 1 | 2 {
   if (s.layer !== 'floor' || hiddenAt(level, s, p)) return 0;
   let worst: 0 | 1 | 2 = 0;

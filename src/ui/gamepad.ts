@@ -9,7 +9,7 @@
 //   Y                    the bag
 //   LB / RB              turn the camera
 //   LT / RT              zoom out / in
-//   right stick          pan the camera; click a stick to recentre on Leo
+//   right stick          pan the camera; click a stick to recenter on Leo
 //   View / Select        the heist's on-screen buttons
 //   Menu / Start         settings
 //
@@ -38,7 +38,7 @@ export interface PadHooks {
   turnCamera(dir: 1 | -1): void;
   zoomBy(k: number): void;
   pan(dx: number, dy: number): void;
-  recentre(): void;
+  recenter(): void;
   settings(): void;
   /** View/Select: the heist's buttons get the controller (or give it back). */
   toggleHud(): void;
@@ -148,7 +148,7 @@ export function startGamepad(h: PadHooks): void {
     else if (act === 'turnRight') h.turnCamera(-1);
     else if (act === 'zoomOut') h.zoomBy(0.8);
     else if (act === 'zoomIn') h.zoomBy(1.25);
-    else if (act === 'recentre') h.recentre();
+    else if (act === 'recenter') h.recenter();
     else if (act === 'hud') h.toggleHud();
   };
 

@@ -82,7 +82,7 @@ export function drawAlert(view: HeistView, g: Graphics, a: Notice): void {
   g.stroke({ width: 3, color, alpha: 0.9, cap: 'round' });
   g.ellipse(from.x, from.y, 22, 11).stroke({ width: 3, color, alpha: 0.6 + 0.4 * pulse });
 }
-/** Outlines an area of tiles (only its outer edges). Dashed for guard sight in the colour-blind palette. */
+/** Outlines an area of tiles (only its outer edges). Dashed for guard sight in the color-blind palette. */
 export function region(
   view: HeistView,
   g: Graphics,

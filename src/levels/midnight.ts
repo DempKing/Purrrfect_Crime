@@ -115,8 +115,8 @@ export const MIDNIGHT_MUSEUM: LevelDef = {
       space: 3,
       category: 'painting',
     },
-    { at: { x: 17, y: 18 }, name: 'Silver Mouse Automaton', value: 4000, space: 2, category: 'artefact' },
-    { at: { x: 5, y: 12 }, name: 'The Curator’s Pocket Watch', value: 2500, space: 1, category: 'artefact' },
+    { at: { x: 17, y: 18 }, name: 'Silver Mouse Automaton', value: 4000, space: 2, category: 'artifact' },
+    { at: { x: 5, y: 12 }, name: 'The Curator’s Pocket Watch', value: 2500, space: 1, category: 'artifact' },
   ],
 };
 
@@ -231,7 +231,7 @@ export const NIGHTCLAW_LAIR: LevelDef = {
       name: 'The Tsar’s Clockwork Mouse',
       value: 12000,
       space: 2,
-      category: 'artefact',
+      category: 'artifact',
     },
     { at: { x: 11, y: 18 }, name: 'A Very Famous Fish Fork', value: 4000, space: 1, category: 'curiosity' },
     {

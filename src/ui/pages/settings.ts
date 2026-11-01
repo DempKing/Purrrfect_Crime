@@ -34,9 +34,9 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
       <h2 class="section">Accessibility</h2>
       ${toggle('largeText', 'Larger text', 'Bigger text in the HUD and on every screen.')}
       ${toggle('reduceMotion', 'Reduce motion', 'No spinning newspapers or rolling credits; quicker animations.')}
-      ${choice('palette', 'Colours', [
+      ${choice('palette', 'Colors', [
         ['standard', 'Standard'],
-        ['colourblind', 'Colour-blind friendly'],
+        ['colorblind', 'Color-blind friendly'],
       ])}
       <h2 class="section">Controls</h2>
       <div class="controls"></div>

@@ -22,6 +22,7 @@ import {
   sell,
   xpForLevel,
   type StashItem,
+  upgradeProfile,
 } from '../src/meta/profile';
 import { TUTORIAL, advance, type TutorialEvents } from '../src/meta/tutorial';
 
@@ -99,7 +100,7 @@ const item = (over: Partial<StashItem> = {}): StashItem => ({
   value: 1000,
   levelId: 'x',
   levelName: 'X',
-  centrepiece: false,
+  centerpiece: false,
   hot: false,
   ...over,
 });
@@ -111,7 +112,7 @@ test('fences pay more as Leo levels up, up to 95%', () => {
 });
 
 test('the fences pay one Catnip per $10 of estimate, before their cut', () => {
-  assert.equal(priceOf(newProfile(), item({ category: 'artefact', value: 10_000 })), 570);
+  assert.equal(priceOf(newProfile(), item({ category: 'artifact', value: 10_000 })), 570);
 });
 
 test('demand rotates every three days, and the wanted category sells for 25% more', () => {
@@ -120,17 +121,17 @@ test('demand rotates every three days, and the wanted category sells for 25% mor
   assert.equal(demand(4), 'painting');
   const p = newProfile();
   assert.equal(priceOf(p, item()), Math.round(100 * 0.57 * 1.25));
-  assert.equal(priceOf(p, item({ category: 'artefact' })), 57);
+  assert.equal(priceOf(p, item({ category: 'artifact' })), 57);
 });
 
 test('replayed loot is hot and sells for half', () => {
   const p = newProfile();
-  assert.equal(priceOf(p, item({ category: 'artefact', value: 2000, hot: true })), 57);
+  assert.equal(priceOf(p, item({ category: 'artifact', value: 2000, hot: true })), 57);
 });
 
 test('selling moves the price into Catnip and the lifetime total', () => {
   const p = newProfile();
-  p.stash = [item({ id: 7, category: 'artefact' })];
+  p.stash = [item({ id: 7, category: 'artifact' })];
   assert.equal(sell(p, 7), 57);
   assert.equal(p.catnip, 57);
   assert.equal(p.soldTotal, 57);
@@ -145,7 +146,7 @@ test('the opening: tutorial loot goes to the stash, the narrator buys it, and th
   const s = play(corner, CORNER_GALLERY_ROUTE);
   const r = completeHeist(p, corner, s);
   assert.equal(r.items.length, 3);
-  assert.ok(r.centrepiece);
+  assert.ok(r.centerpiece);
   assert.ok(r.flawless);
   assert.equal(p.stash.length, 3);
   assert.equal(p.heists, 1);
@@ -154,7 +155,7 @@ test('the opening: tutorial loot goes to the stash, the narrator buys it, and th
   assert.equal(r.paper.photos.length, 3);
   assert.equal(r.paper.total, 2400 + 650 + 450);
   assert.ok(r.xp.some((l) => l.label === 'Never seen'));
-  assert.ok(r.xp.some((l) => l.label === 'The centrepiece'));
+  assert.ok(r.xp.some((l) => l.label === 'The centerpiece'));
 
   assert.equal(buyLair(p), false, 'no Catnip yet');
   narratorBuysTutorialLoot(p, CORNER_GALLERY.id);
@@ -277,8 +278,8 @@ test('every paper has text in every story, whatever the day', async () => {
           day,
           levelId: `l${day % 7}`,
           place: 'Somewhere',
-          items: [{ name: 'Thing', value: 100, centrepiece: day % 2 === 0 }],
-          centrepieceName: 'Thing',
+          items: [{ name: 'Thing', value: 100, centerpiece: day % 2 === 0 }],
+          centerpieceName: 'Thing',
           guards: ['Gus'],
           seen,
           alarm,
@@ -411,7 +412,7 @@ test('Letter 1 comes with the first trigger reached and Letter 2 with the second
   assert.ok(both.letters.every((l) => !l.read));
 });
 
-test('Letter 3 is inside the challenge centrepiece, and only there', () => {
+test('Letter 3 is inside the challenge centerpiece, and only there', () => {
   const p = newProfile();
   completeHeist(p, corner, play(corner, CORNER_GALLERY_ROUTE));
   assert.equal(p.letters.length, 0);
@@ -434,14 +435,14 @@ test('older saves start with no letters', async () => {
 
 // The endgame
 
-test('Letter 4 comes once every centrepiece in the city has been taken flawlessly, after Letter 3', async () => {
+test('Letter 4 comes once every centerpiece in the city has been taken flawlessly, after Letter 3', async () => {
   const { CHALLENGE_LEVELS, challengeProgress, deliverLetters, hasLetter, openMusicBox } = await import(
     '../src/meta/letters'
   );
   const p = newProfile();
   assert.equal(CHALLENGE_LEVELS.length, 25, 'the tutorial and all five districts');
   for (const l of CHALLENGE_LEVELS)
-    p.records[l.id] = { clears: 1, bestTurns: 10, centrepiece: true, flawless: true };
+    p.records[l.id] = { clears: 1, bestTurns: 10, centerpiece: true, flawless: true };
   deliverLetters(p);
   assert.ok(!hasLetter(p, 4), 'not before Letter 3');
   openMusicBox(p);
@@ -466,10 +467,21 @@ test('the finale: tapping NightClaw makes Leo Legendary; the collar isn’t for 
   assert.ok(r.finale && p.legendary);
   assert.equal(r.paper.headline, 'NIGHTCLAW’S SUCCESSOR?');
   assert.ok(
-    !p.stash.some((i) => i.levelId === NIGHTCLAW_LAIR.id && i.centrepiece),
+    !p.stash.some((i) => i.levelId === NIGHTCLAW_LAIR.id && i.centerpiece),
     'the collar stays on the shelf',
   );
-  assert.ok(p.records[NIGHTCLAW_LAIR.id].centrepiece);
+  assert.ok(p.records[NIGHTCLAW_LAIR.id].centerpiece);
   const again = completeHeist(p, lair, play(lair, SOLUTIONS[NIGHTCLAW_LAIR.id]));
   assert.ok(!again.finale, 'the ending plays once');
+});
+
+test('saves from before the switch to American spelling still load', () => {
+  const old = JSON.parse(JSON.stringify(newProfile()));
+  old.records = { 'l1-coin-museum': { clears: 1, bestTurns: 9, centrepiece: true, flawless: true } };
+  old.stash = [
+    { id: 1, name: 'Old Vase', value: 100, category: 'artefact', day: 1, levelId: 'l1-coin-museum' },
+  ];
+  const p = upgradeProfile(old)!;
+  assert.equal(p.records['l1-coin-museum'].centerpiece, true);
+  assert.equal(p.stash[0].category, 'artifact');
 });

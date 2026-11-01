@@ -115,16 +115,16 @@ export const NATURAL_HISTORY: LevelDef = {
     },
   ],
   loot: [
-    { at: { x: 14, y: 2 }, name: 'Golden Raptor Egg', value: 11000, space: 2, category: 'artefact' },
+    { at: { x: 14, y: 2 }, name: 'Golden Raptor Egg', value: 11000, space: 2, category: 'artifact' },
     { at: { x: 2, y: 2 }, name: 'Ammonite', value: 900, space: 1, category: 'curiosity' },
-    { at: { x: 4, y: 2 }, name: 'Sabre-Tooth Fang', value: 1400, space: 1, category: 'artefact' },
+    { at: { x: 4, y: 2 }, name: 'Sabre-Tooth Fang', value: 1400, space: 1, category: 'artifact' },
     { at: { x: 2, y: 5 }, name: 'Trilobite in Amber', value: 2100, space: 1, category: 'jewel' },
-    { at: { x: 4, y: 5 }, name: 'Pterodactyl Wing Bone', value: 1800, space: 2, category: 'artefact' },
+    { at: { x: 4, y: 5 }, name: 'Pterodactyl Wing Bone', value: 1800, space: 2, category: 'artifact' },
     { at: { x: 2, y: 8 }, name: 'Dodo Egg', value: 2600, space: 2, category: 'curiosity' },
     { at: { x: 4, y: 8 }, name: 'Mammoth Hair Comb', value: 700, space: 1, category: 'curiosity' },
     { at: { x: 25, y: 3 }, name: 'Stuffed Pine Marten', value: 600, space: 2, category: 'curiosity' },
     { at: { x: 27, y: 7 }, name: 'Golden Eagle Feather', value: 1200, space: 1, category: 'jewel' },
-    { at: { x: 25, y: 11 }, name: 'Platypus Skull', value: 950, space: 1, category: 'artefact' },
+    { at: { x: 25, y: 11 }, name: 'Platypus Skull', value: 950, space: 1, category: 'artifact' },
   ],
 };
 
@@ -200,10 +200,10 @@ export const EGYPTIAN_WING: LevelDef = {
   ],
   loot: [
     { at: { x: 15, y: 2 }, name: 'Scarab of Bastet', value: 12500, space: 1, category: 'jewel' },
-    { at: { x: 9, y: 2 }, name: 'Golden Death Mask of a Cat', value: 5200, space: 2, category: 'artefact' },
+    { at: { x: 9, y: 2 }, name: 'Golden Death Mask of a Cat', value: 5200, space: 2, category: 'artifact' },
     { at: { x: 21, y: 2 }, name: 'Canopic Jar of Catnip', value: 2400, space: 2, category: 'curiosity' },
     { at: { x: 3, y: 10 }, name: 'Papyrus of the Nine Lives', value: 1800, space: 1, category: 'painting' },
-    { at: { x: 5, y: 13 }, name: 'Faience Hippo', value: 1100, space: 1, category: 'artefact' },
+    { at: { x: 5, y: 13 }, name: 'Faience Hippo', value: 1100, space: 1, category: 'artifact' },
   ],
 };
 
@@ -406,10 +406,10 @@ export const GEM_HALL: LevelDef = {
     { at: { x: 3, y: 8 }, name: 'Geode Half', value: 900, space: 2, category: 'curiosity' },
     { at: { x: 9, y: 8 }, name: 'Opal Fish', value: 2400, space: 1, category: 'jewel' },
     { at: { x: 21, y: 8 }, name: 'Meteorite Fragment', value: 3100, space: 2, category: 'curiosity' },
-    { at: { x: 6, y: 10 }, name: 'Rose Quartz Kitten', value: 1700, space: 1, category: 'artefact' },
+    { at: { x: 6, y: 10 }, name: 'Rose Quartz Kitten', value: 1700, space: 1, category: 'artifact' },
     { at: { x: 12, y: 10 }, name: 'Sapphire Bell', value: 3600, space: 1, category: 'jewel' },
     { at: { x: 15, y: 10 }, name: 'Fool’s Gold Nugget', value: 300, space: 1, category: 'curiosity' },
-    { at: { x: 19, y: 10 }, name: 'Amber with a Flea', value: 1300, space: 1, category: 'artefact' },
+    { at: { x: 19, y: 10 }, name: 'Amber with a Flea', value: 1300, space: 1, category: 'artifact' },
   ],
 };
 

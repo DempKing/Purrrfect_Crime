@@ -14,7 +14,7 @@ export const pan = { x: 0, y: 0 };
 /** WASD keys held down right now. */
 export const panKeys = new Set<string>();
 /** Back to following Leo. */
-export function recentre(): void {
+export function recenter(): void {
   pan.x = 0;
   pan.y = 0;
 }
@@ -41,7 +41,7 @@ export function cameraBehindLeo(): void {
   view.proj.angle = game.targetAngle;
   game.zoom = game.zoomNow = ZOOM_START;
   game.focus = null;
-  recentre();
+  recenter();
 }
 /** The Pixi app, the world container that pans and zooms, and the heist drawing inside it. */
 export const app = new Application();
@@ -50,7 +50,7 @@ export const view = new HeistView();
 /** Turns the camera 90 degrees (1 = left, -1 = right). */
 export function turnCamera(dir: 1 | -1): void {
   closeLootMenu();
-  recentre();
+  recenter();
   game.targetAngle += (dir * Math.PI) / 2;
   if (game.tutorial) {
     game.tutorial.ev.rotated = true;
@@ -90,7 +90,7 @@ export function fit(dt = 0): void {
   const whole = Math.min((w - 24) / (x1 - x0), (h - top - bottom) / (y1 - y0), 1.5);
   game.zoomNow += (game.zoom - game.zoomNow) * (dt ? 1 - Math.exp(-dt * 8) : 1);
   const scale = Math.min(whole * game.zoomNow, 2.2);
-  // Ease towards Leo; the more zoomed in, the more centred on him.
+  // Ease toward Leo; the more zoomed in, the more centerd on him.
   const leoAt = project(view.proj, leo.x, leo.y, 30);
   const want = { x: Math.max(x0, Math.min(x1, leoAt.x)), y: Math.max(y0, Math.min(y1, leoAt.y)) };
   if (!game.focus || !dt) game.focus = { ...want };

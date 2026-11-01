@@ -108,7 +108,7 @@ await page.evaluate(() => {
     return { w: img.width, h: img.height, x0, y0, x1, y1, feet: n ? sum / n : (x0 + x1) / 2 };
   };
   /** Crops and scales an image (halving steps, for smoothness) to a webp data URL. */
-  window.resize = async (url, sx, sy, sw, sh, w, h, rim = 0, rimColour = 'rgba(232,222,196,0.8)') => {
+  window.resize = async (url, sx, sy, sw, sh, w, h, rim = 0, rimColor = 'rgba(232,222,196,0.8)') => {
     const img = new Image();
     img.src = url;
     await img.decode();
@@ -139,7 +139,7 @@ await page.evaluate(() => {
       sx.imageSmoothingQuality = 'high';
       sx.drawImage(c, rim, rim, w, h);
       sx.globalCompositeOperation = 'source-in';
-      sx.fillStyle = rimColour;
+      sx.fillStyle = rimColor;
       sx.fillRect(0, 0, sil.width, sil.height);
       for (let i = 0; i < 16; i++)
         x.drawImage(sil, Math.cos((i * Math.PI) / 8) * rim, Math.sin((i * Math.PI) / 8) * rim);

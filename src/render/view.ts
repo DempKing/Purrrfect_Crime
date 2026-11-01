@@ -31,7 +31,7 @@ export class HeistView {
   time = 0; // seconds, set by the game loop
   lastTime = 0;
 
-  // The current level's look (textures and colours for its district).
+  // The current level's look (textures and colors for its district).
   district = '';
   districtOf = '';
   look: Look = lookFor('old-town', '');

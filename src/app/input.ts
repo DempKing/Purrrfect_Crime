@@ -3,7 +3,7 @@ import { actionForKey, type KeyAction } from '../controls';
 import * as screens from '../ui/screens';
 import { cancelTargeting } from './actions';
 import { quit } from './between';
-import { app, panKeys, recentre, turnCamera, zoomBy } from './camera';
+import { app, panKeys, recenter, turnCamera, zoomBy } from './camera';
 import { act, clickAction } from './clicks';
 import { $, settings, sound, tutorialUpdate } from './common';
 import { game } from './game';
@@ -119,7 +119,7 @@ export function bindKeyboard(): void {
       panKeys.add(a);
       return;
     }
-    if (a === 'recentre') return recentre();
+    if (a === 'recenter') return recenter();
     const cursor: Partial<Record<KeyAction, [number, number]>> = {
       up: [0, -1],
       down: [0, 1],

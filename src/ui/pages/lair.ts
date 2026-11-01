@@ -73,11 +73,11 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   const job = (def: LevelDef) => {
     const i = cb.jobs.indexOf(def);
     const rec = p.records[def.id];
-    const centre = def.loot.find((l) => def.map[l.at.y][l.at.x] === 'G');
+    const center = def.loot.find((l) => def.map[l.at.y][l.at.x] === 'G');
     const t = tilt(def.id);
     if (!unlocked(i))
       return `<article class="job locked" style="--tilt:${t}deg"><span class="pin"></span><h3>${esc(def.name)}</h3><p class="typed">${def.finale ? 'NightClaw will write when his challenge is done.' : `Clear ${esc(cb.jobs[i - 1].name)} first.`}</p></article>`;
-    const rumour = p.rivals[def.id] && p.rooms.planning >= 1 ? p.rivals[def.id]! : null;
+    const rumor = p.rivals[def.id] && p.rooms.planning >= 1 ? p.rivals[def.id]! : null;
     return `<article class="job" style="--tilt:${t}deg">
         <span class="pin"></span>
         ${rec ? `<span class="stamp ${rec.flawless ? 'blue' : ''}">${rec.flawless ? 'Flawless' : 'Cleared'}</span>` : '<span class="stamp new">New</span>'}
@@ -85,11 +85,11 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
         <p class="objective">${esc(def.objective)}</p>
         <ul class="facts">
           <li>${allLoot(def).length} piece${allLoot(def).length === 1 ? '' : 's'} of loot</li>
-          ${centre ? `<li>Prize: ${esc(centre.name)}${rec?.centrepiece ? ' <span class="tick">✓</span>' : ''}</li>` : ''}
+          ${center ? `<li>Prize: ${esc(center.name)}${rec?.centerpiece ? ' <span class="tick">✓</span>' : ''}</li>` : ''}
           ${rec ? `<li>Best: ${rec.bestTurns} turns</li>` : ''}
         </ul>
-        ${rec?.lostTo ? `<p class="scrawl rival-line">${esc(RIVALS[rec.lostTo].name)} got away with ${the(esc(centre?.name ?? 'centrepiece'))}. Replay to steal it yourself.</p>` : ''}
-        ${rumour ? `<p class="scrawl rival-line">Rumour: ${esc(RIVALS[rumour.id].name)} is after ${the(esc(centre?.name ?? 'centrepiece'))}.</p>` : ''}
+        ${rec?.lostTo ? `<p class="scrawl rival-line">${esc(RIVALS[rec.lostTo].name)} got away with ${the(esc(center?.name ?? 'centerpiece'))}. Replay to steal it yourself.</p>` : ''}
+        ${rumor ? `<p class="scrawl rival-line">Rumor: ${esc(RIVALS[rumor.id].name)} is after ${the(esc(center?.name ?? 'centerpiece'))}.</p>` : ''}
         ${rec ? '<p class="small warn">Replay: the loot is back, but the fences will call it hot and pay half.</p>' : ''}
         <button class="primary" data-job="${i}">${rec ? 'Replay' : 'Plan the heist'}</button>
       </article>`;
@@ -98,9 +98,9 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   const challenge = p.legendary
     ? '<div class="challenge note-card"><b>Leo Tuxedo, Legendary.</b><p>NightClaw has retired. The city is yours: every heist can be replayed, and the fences are still buying.</p></div>'
     : hasLetter(p, 4)
-      ? '<div class="challenge note-card"><b>The NightClaw Challenge: done.</b><p>Every centrepiece, every one flawless. NightClaw is waiting in his lair.</p></div>'
+      ? '<div class="challenge note-card"><b>The NightClaw Challenge: done.</b><p>Every centerpiece, every one flawless. NightClaw is waiting in his lair.</p></div>'
       : hasLetter(p, 3)
-        ? `<div class="challenge note-card"><b>The NightClaw Challenge</b> ${pips(progress.done, progress.of)}<p>${progress.done} of ${progress.of} centrepieces taken in a flawless heist (never seen, no alarms). NightClaw wants every one.</p></div>`
+        ? `<div class="challenge note-card"><b>The NightClaw Challenge</b> ${pips(progress.done, progress.of)}<p>${progress.done} of ${progress.of} centerpieces taken in a flawless heist (never seen, no alarms). NightClaw wants every one.</p></div>`
         : '';
   const heists =
     challenge +
@@ -174,7 +174,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
             : s.hot
               ? 'hot: half price'
               : '';
-      return `<div class="ware${s.centrepiece ? ' prize-ware' : ''}" style="--tilt:${tilt(`ware${s.id}`, 4)}deg;--i:${i}" data-ware="${s.id}">
+      return `<div class="ware${s.centerpiece ? ' prize-ware' : ''}" style="--tilt:${tilt(`ware${s.id}`, 4)}deg;--i:${i}" data-ware="${s.id}">
         <img src="${lootPictureUrl(s.name, s.category)}" alt="">
         <div class="price-tag"><b>${priceOf(p, s).toLocaleString('en-US')}</b><span class="nip"></span>${deal ? `<small>${deal}</small>` : ''}</div>
         <p class="ware-name">${esc(s.name)}<span>${CATEGORY_NAMES[s.category]} · est. ${money(s.value)}</span></p>
@@ -216,7 +216,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
       ${cost !== null ? `<button data-upgrade="${r.id}" ${why ? 'disabled' : ''} title="${esc(why ?? '')}">${catnip(cost)}</button>` : '<span class="stamp small-stamp">Done</span>'}</div>`;
   }).join('');
   const trophies = Object.entries(p.records)
-    .filter(([, r]) => r.centrepiece)
+    .filter(([, r]) => r.centerpiece)
     .map(([id]) => {
       const def = cb.jobs.find((j) => j.id === id);
       const c = def?.loot.find((l) => def.map[l.at.y][l.at.x] === 'G');
@@ -232,7 +232,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     <p class="blueprint-title">Plans for the lair <span>every upgrade fixes the building up a little more</span></p>
     <div class="ups">${rooms}</div>
     ${letters}
-    ${p.rooms.trophy ? `<h2 class="section">Trophy Room</h2>${trophies ? `<ul class="trophies">${trophies}</ul>` : '<p class="small">Empty shelves, waiting for centrepieces.</p>'}` : ''}`;
+    ${p.rooms.trophy ? `<h2 class="section">Trophy Room</h2>${trophies ? `<ul class="trophies">${trophies}</ul>` : '<p class="small">Empty shelves, waiting for centerpieces.</p>'}` : ''}`;
 
   // Papers tab: old front pages.
   const papers = p.papers.length

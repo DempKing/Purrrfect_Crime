@@ -22,9 +22,9 @@ import {
   type State,
 } from '../src/core/game';
 import { solve } from '../src/core/solver';
-import { GREY_GALLERY, NIGHT_GALLERY } from '../src/levels/prototype';
+import { GRAY_GALLERY, NIGHT_GALLERY } from '../src/levels/prototype';
 
-const grey = parseLevel(GREY_GALLERY);
+const gray = parseLevel(GRAY_GALLERY);
 const night = parseLevel(NIGHT_GALLERY);
 
 /** A heist with every guard and camera out of the way, for testing one mechanic at a time. */
@@ -38,66 +38,66 @@ function quiet(level = night): State {
 // The warm-up level
 
 test('levels parse: start, exit, plinth, vents line up with grates', () => {
-  assert.deepEqual(grey.start, { x: 1, y: 1 });
+  assert.deepEqual(gray.start, { x: 1, y: 1 });
   assert.equal(night.tiles[night.exit.y][night.exit.x], 'exit');
   assert.ok(night.ducts[3][2] && night.ducts[14][4] && night.ducts[8][22]);
 });
 
 test('one action point buys five tiles, two buy ten', () => {
-  const s = newHeist(grey);
-  const reach = leoReach(grey, s);
+  const s = newHeist(gray);
+  const reach = leoReach(gray, s);
   assert.equal(apCost(reach.cost.get(key(6, 1))!), 1);
   assert.equal(apCost(reach.cost.get(key(1, 10))!), 2);
   assert.equal(reach.cost.has(key(7, 1)), false, 'walls block movement');
 });
 
 test('moving spends action points; a dash spends both', () => {
-  const s = newHeist(grey);
-  assert.ok(moveLeo(grey, s, { x: 4, y: 1 }).ok);
+  const s = newHeist(gray);
+  assert.ok(moveLeo(gray, s, { x: 4, y: 1 }).ok);
   assert.equal(s.ap, AP_PER_TURN - 1);
-  const t = newHeist(grey);
-  assert.ok(moveLeo(grey, t, { x: 1, y: 10 }).ok);
+  const t = newHeist(gray);
+  assert.ok(moveLeo(gray, t, { x: 1, y: 10 }).ok);
   assert.equal(t.ap, 0);
-  assert.equal(moveLeo(grey, t, { x: 2, y: 10 }).ok, false, 'no points left');
+  assert.equal(moveLeo(gray, t, { x: 2, y: 10 }).ok, false, 'no points left');
 });
 
 test('guards see in a cone, and walls and pillars block their view', () => {
-  const s = newHeist(grey);
+  const s = newHeist(gray);
   const g = { x: 9, y: 3, facing: 0 };
-  assert.ok(guardSees(grey, s, g, 13, 3), 'straight ahead');
-  assert.equal(guardSees(grey, s, g, 6, 3), false, 'behind');
-  assert.equal(guardSees(grey, s, g, 9, 9), false, 'outside the cone');
-  assert.equal(guardSees(grey, s, g, 16, 3), false, 'out of range');
+  assert.ok(guardSees(gray, s, g, 13, 3), 'straight ahead');
+  assert.equal(guardSees(gray, s, g, 6, 3), false, 'behind');
+  assert.equal(guardSees(gray, s, g, 9, 9), false, 'outside the cone');
+  assert.equal(guardSees(gray, s, g, 16, 3), false, 'out of range');
   assert.equal(
-    guardSees(grey, s, { x: 9, y: 4, facing: 0 }, 12, 4),
+    guardSees(gray, s, { x: 9, y: 4, facing: 0 }, 12, 4),
     false,
     'the pillar at 11,4 blocks the view',
   );
 });
 
 test('in a lit room, walking into a guard’s view is an instant catch', () => {
-  const s = newHeist(grey);
+  const s = newHeist(gray);
   s.leo = { x: 9, y: 5 };
   Object.assign(s.guards[0], { x: 9, y: 1, facing: 2 });
-  const r = moveLeo(grey, s, { x: 9, y: 4 });
+  const r = moveLeo(gray, s, { x: 9, y: 4 });
   assert.equal(s.status, 'caught');
   assert.equal(r.path.at(-1)!.y, 4);
 });
 
 test('stealing needs Leo next to the plinth, and escaping needs loot', () => {
-  const s = newHeist(grey);
-  assert.equal(canSteal(grey, s), false);
+  const s = newHeist(gray);
+  assert.equal(canSteal(gray, s), false);
   s.leo = { x: 11, y: 6 };
-  assert.ok(steal(grey, s));
+  assert.ok(steal(gray, s));
   assert.deepEqual(s.inventory, [0]);
-  const t = quiet(grey);
+  const t = quiet(gray);
   t.leo = { x: 17, y: 8 };
-  moveLeo(grey, t, { x: 18, y: 8 });
+  moveLeo(gray, t, { x: 18, y: 8 });
   assert.equal(t.status, 'playing', 'no loot, no escape');
 });
 
 test('the warm-up level can be beaten, but not trivially', () => {
-  const sol = solve(grey);
+  const sol = solve(gray);
   assert.ok(sol, 'the solver found no way to win');
   assert.ok(sol.turns >= 4, `too easy: ${sol.turns} turns`);
 });

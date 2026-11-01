@@ -1,10 +1,10 @@
-// Settings: sound, speed, motion, text size, colours, hints and controls.
+// Settings: sound, speed, motion, text size, colors, hints and controls.
 // Saved per browser (not per save slot), under their own key.
 
 import { cleanKeys, cleanPad, defaultKeys, defaultPad, type KeyMap, type PadMap } from './controls';
 
 export type Speed = 'normal' | 'fast' | 'instant';
-export type Palette = 'standard' | 'colourblind';
+export type Palette = 'standard' | 'colorblind';
 
 export interface Settings {
   master: number; // 0..1
@@ -63,7 +63,9 @@ export function loadSettings(
       speed: s.speed === 'fast' || s.speed === 'instant' || s.speed === 'normal' ? s.speed : d.speed,
       reduceMotion: typeof s.reduceMotion === 'boolean' ? s.reduceMotion : d.reduceMotion,
       largeText: typeof s.largeText === 'boolean' ? s.largeText : d.largeText,
-      palette: s.palette === 'colourblind' ? 'colourblind' : 'standard',
+      // Older saves spelled it 'colourblind'.
+      palette:
+        s.palette === 'colorblind' || (s.palette as string) === 'colourblind' ? 'colorblind' : 'standard',
       hints: typeof s.hints === 'boolean' ? s.hints : d.hints,
       keys: cleanKeys(s.keys),
       pad: cleanPad(s.pad),

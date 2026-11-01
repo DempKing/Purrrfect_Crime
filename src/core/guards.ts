@@ -28,7 +28,7 @@ function disturbances(level: Level, s: State): (Point & { byLeo: boolean })[] {
 function guardWalkable(level: Level, s: State, x: number, y: number): boolean {
   return !blocksMove(tileNow(level, s, x, y));
 }
-/** A guard's next step towards `target`, avoiding other guards. Null if he's there or stuck. */
+/** A guard's next step toward `target`, avoiding other guards. Null if he's there or stuck. */
 export function nextStepToward(
   level: Level,
   s: State,
