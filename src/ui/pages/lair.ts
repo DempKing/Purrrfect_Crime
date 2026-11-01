@@ -1,7 +1,30 @@
 // The lair: heists, Leo's skills, the black market, rooms and old papers.
 import { type LevelDef, the } from '../../core/level';
-import { type Attribute, attributeCost, ATTRIBUTES, canLearn, canRaise, canUpgrade, lairCondition, type Room, ROOMS, type SkillId, SKILLS, TREES, upgradeCost } from '../../meta/progression';
-import { collectorWants, demand, DEMAND_BONUS, fenceRate, playerLevel, priceOf, type Profile, xpForLevel } from '../../meta/profile';
+import {
+  type Attribute,
+  attributeCost,
+  ATTRIBUTES,
+  canLearn,
+  canRaise,
+  canUpgrade,
+  lairCondition,
+  type Room,
+  ROOMS,
+  type SkillId,
+  SKILLS,
+  TREES,
+  upgradeCost,
+} from '../../meta/progression';
+import {
+  collectorWants,
+  demand,
+  DEMAND_BONUS,
+  fenceRate,
+  playerLevel,
+  priceOf,
+  type Profile,
+  xpForLevel,
+} from '../../meta/profile';
 import { challengeProgress, hasLetter, LETTERS } from '../../meta/letters';
 import { allLoot } from '../../core/exhibits';
 import { RIVALS } from '../../core/game';

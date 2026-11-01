@@ -1,6 +1,20 @@
 // Settings -> Controls: the list of controls and remapping keys and controller buttons.
 import type { Settings } from '../../settings';
-import { actionForButton, actionForKey, defaultKeys, defaultPad, KEY_ACTIONS, type KeyAction, keyName, PAD_ACTIONS, type PadAction, padName, rebind, reservedButton, reservedKey } from '../../controls';
+import {
+  actionForButton,
+  actionForKey,
+  defaultKeys,
+  defaultPad,
+  KEY_ACTIONS,
+  type KeyAction,
+  keyName,
+  PAD_ACTIONS,
+  type PadAction,
+  padName,
+  rebind,
+  reservedButton,
+  reservedKey,
+} from '../../controls';
 import { capturePadButton } from '../gamepad';
 import { esc } from './common';
 
@@ -46,7 +60,11 @@ function controlsHtml(st: Settings, tab: ControlsTab, waiting: string | null, no
     ${tab !== 'mouse' ? `<div class="row-buttons"><button class="quiet" data-creset="${tab}">Reset ${tab === 'pad' ? 'controller' : 'keyboard'} to defaults</button></div>` : ''}`;
 }
 /** Wires up the Controls section: tabs, waiting for a key or button, swaps, and resets. */
-export function controlsSection(box: HTMLElement, st: Settings, change: (p: Partial<Settings>) => void): void {
+export function controlsSection(
+  box: HTMLElement,
+  st: Settings,
+  change: (p: Partial<Settings>) => void,
+): void {
   const pad = [...(navigator.getGamepads?.() ?? [])].some((g) => g?.connected);
   let tab: ControlsTab = pad ? 'pad' : 'keys';
   let waiting: string | null = null;

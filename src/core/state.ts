@@ -77,7 +77,7 @@ export const DIRS: Point[] = [
   { x: 1, y: -1 },
 ];
 export type Light = 0 | 1 | 2;
- // dark, dim, lit
+// dark, dim, lit
 /** Where Leo is: on the floor, in a vent, or up in the rafters. Nobody sees him in the last two. */
 export type Layer = 'floor' | 'vent' | 'rafter';
 export type GuardMode = 'patrol' | 'suspicious' | 'searching';

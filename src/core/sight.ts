@@ -14,7 +14,13 @@ export function faceToward(from: Point, to: Point): number {
   const i = DIRS.findIndex((d) => d.x === dx && d.y === dy);
   return i < 0 ? 0 : i;
 }
-export function clearLine(level: Level, a: Point, b: Point, blocks: (t: Tile) => boolean, s?: State): boolean {
+export function clearLine(
+  level: Level,
+  a: Point,
+  b: Point,
+  blocks: (t: Tile) => boolean,
+  s?: State,
+): boolean {
   const steps = Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y)) * 3;
   for (let i = 1; i < steps; i++) {
     const t = i / steps;

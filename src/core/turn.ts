@@ -4,7 +4,15 @@ import { key, type State } from './state';
 import { flooded, hiddenAt, lasersActive, tideTurnsLeft, tileNow } from './world';
 import { guardTiles, walkable } from './movement';
 import { moveLeo, walkPath } from './walk';
-import { breakLaser, canSmell, catchLeo, checkExposure, kennelsNear, liftLockdown, makeNoise } from './noticed';
+import {
+  breakLaser,
+  canSmell,
+  catchLeo,
+  checkExposure,
+  kennelsNear,
+  liftLockdown,
+  makeNoise,
+} from './noticed';
 import { AP_PER_TURN, NOISE } from './constants';
 import { type GuardStep, runGuards } from './guards';
 import { guardsMeetRival, runRival } from './rival';
