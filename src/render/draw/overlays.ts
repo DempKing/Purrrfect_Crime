@@ -3,7 +3,7 @@ import { Graphics } from 'pixi.js';
 import { blocksSight, type Level, type Point } from '../../core/level';
 import { DIRS, key, type Notice, SIGHT_HALF_ANGLE, type State, tileNow } from '../../core/game';
 import { project } from '../iso';
-import { HeistView } from '../view';
+import type { HeistView } from '../view';
 import { COL } from './style';
 import { diamondOutline } from './shapes';
 

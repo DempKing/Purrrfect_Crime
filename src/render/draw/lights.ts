@@ -3,7 +3,7 @@ import { Graphics } from 'pixi.js';
 import { project, screenDir } from '../iso';
 import { laserAxis, type Level, type Point } from '../../core/level';
 import { beaconFacing, DIRS, type State } from '../../core/game';
-import { HeistView } from '../view';
+import type { HeistView } from '../view';
 import { COL, WALL_H } from './style';
 import { sprite } from './characters';
 

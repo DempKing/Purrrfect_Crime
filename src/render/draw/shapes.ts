@@ -3,7 +3,7 @@ import { Graphics, Matrix } from 'pixi.js';
 import type { Level } from '../../core/level';
 import { project } from '../iso';
 import { surface, type WallSkin } from '../surfaces';
-import { HeistView } from '../view';
+import type { HeistView } from '../view';
 import { WALL_H } from './style';
 
 /** Props are lit like the floor they stand on: dim in the dark, brightest under a lamp. */

@@ -4,7 +4,8 @@ import { charFrame, type CharFrameName, type CharName } from '../characters';
 import { project, screenDir } from '../iso';
 import { DIRS, type Guard, type RivalId, RIVALS } from '../../core/game';
 import { frameFor, prop, type PropName } from '../props';
-import { type Actor, HeistView } from '../view';
+import type { HeistView } from '../view';
+import { type Actor } from './types';
 import { COL } from './style';
 import { mark } from './overlays';
 

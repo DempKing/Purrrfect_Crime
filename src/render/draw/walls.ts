@@ -15,7 +15,8 @@ import {
 } from '../props';
 import { tileHash } from '../../core/exhibits';
 import { flat, type FlatName, WALL_FLATS } from '../flats';
-import { type Drawable, HeistView, NEIGHBOURS } from '../view';
+import type { HeistView } from '../view';
+import { type Drawable, NEIGHBOURS } from './types';
 import { corners, diamond, diamondOutline, prism, tintColor } from './shapes';
 import { sprite } from './characters';
 import { WALL_H } from './style';
