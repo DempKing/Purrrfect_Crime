@@ -83,9 +83,109 @@ import { checkAchievements } from './meta/achievements';
 /** Heists on offer at the lair, in order. The tutorial can be replayed like any other. */
 const JOBS: LevelDef[] = ALL_LEVELS;
 
-let level: Level = parseLevel(CORNER_GALLERY);
-let state: State = newHeist(level);
-let inHeist = false;
+// --- the game's changing state ----------------------------------------------------------------
+
+/** Camera zoom: where it starts and how far it goes. */
+const ZOOM_START = 1.9;
+const ZOOM_MAX = 3;
+
+/** Everything about the running game that changes as it's played, in one place. */
+export interface Game {
+  // The heist being played and the save it belongs to.
+  level: Level;
+  state: State;
+  inHeist: boolean;
+  slot: number; // which save slot
+  profile: Profile;
+  tutorial: { step: number; ev: TutorialEvents; hidden: boolean } | null;
+  rivalPlan: RivalPlan | null; // tonight's rival for this heist, if any
+  rivalWasIn: boolean; // the rival has already arrived
+
+  // Animation.
+  slowMotion: number; // the browser tests slow animations down to catch them mid-step
+  guards: Actor[]; // how each guard is drawn (smooth positions between tiles)
+  queue: Segment[]; // moves waiting to be animated
+  busy: boolean; // an animation is playing, so input waits
+  afterAnim: (() => void) | null; // what to do once the queue is done
+  ripples: Ripple[]; // noise rings on the floor
+  noisesSeen: number;
+
+  // Camera.
+  targetAngle: number; // the angle the camera is turning to
+  zoom: number;
+  zoomNow: number; // eases towards zoom
+  focus: { x: number; y: number } | null; // the point the camera looks at, easing after Leo
+
+  // Input and the preview of a move.
+  hover: Point | null; // tile under the mouse
+  selected: Point | null; // keyboard/controller cursor (touch: first tap previews)
+  version: number; // bumped whenever the state changes, so cached work is redone
+  cache: {
+    v: number;
+    reach: ReturnType<typeof leoReach>;
+    vision: Set<string>;
+    cameraVision: Set<string>;
+    footprints: Point[];
+    rivalPath: Point[];
+  } | null;
+  riskVersion: number; // which version the danger marks were worked out for
+  riskQueue: (Point & { ends: boolean })[]; // tiles still to check for danger
+  targeting: Ability | null; // the gadget being aimed
+  lootMenu: Point | null; // the loot tag that's open
+  lootChoices: (() => void)[]; // its buttons, for the number keys
+  leaveOk: boolean; // the player said yes to leaving the lair without tapping NightClaw
+  lastHaul: number;
+  alerts: { n: Notice; until: number }[]; // who-noticed-what markers on the map
+  restartArmed: number; // time of the first Restart press (it takes two)
+  bannerTimer: number;
+
+  // Art loading in the background.
+  artReady: Promise<void>;
+  artLoaded: boolean;
+}
+
+const startLevel = parseLevel(CORNER_GALLERY);
+
+export const game: Game = {
+  level: startLevel,
+  state: newHeist(startLevel),
+  inHeist: false,
+  slot: 0,
+  profile: newProfile(),
+  tutorial: null,
+  rivalPlan: null,
+  rivalWasIn: false,
+  slowMotion: 1,
+  guards: [],
+  queue: [],
+  busy: false,
+  afterAnim: null,
+  ripples: [],
+  noisesSeen: 0,
+  targetAngle: 0,
+  zoom: ZOOM_START,
+  zoomNow: ZOOM_START,
+  focus: null,
+  hover: null,
+  selected: null,
+  version: 0,
+  cache: null,
+  riskVersion: -1,
+  riskQueue: [],
+  targeting: null,
+  lootMenu: null,
+  lootChoices: [],
+  leaveOk: false,
+  lastHaul: 0,
+  alerts: [],
+  restartArmed: 0,
+  bannerTimer: 0,
+  artReady: Promise.resolve(),
+  artLoaded: false,
+};
+
+
+
 
 // --- the save ---------------------------------------------------------------------------------
 
@@ -96,9 +196,9 @@ function storage(): Storage | null {
     return null;
   }
 }
-let slot = 0;
-let profile: Profile = newProfile();
-const persist = () => saveSlot(storage(), slot, profile);
+
+
+const persist = () => saveSlot(storage(), game.slot, game.profile);
 
 // --- settings and sound ------------------------------------------------------------------------
 
@@ -106,16 +206,15 @@ const sound = new Sound();
 const prefersReducedMotion =
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const settings: Settings = loadSettings(storage(), prefersReducedMotion);
-/** Animation time, scaled by the speed setting. */
-let slowMotion = 1; // for the browser tests, to catch animations mid-step
-const anim = (seconds: number) => seconds * SPEED_FACTOR[settings.speed] * slowMotion;
+
+const anim = (seconds: number) => seconds * SPEED_FACTOR[settings.speed] * game.slowMotion;
 
 function applySettings(): void {
   document.body.classList.toggle('large-text', settings.largeText);
   document.body.classList.toggle('reduce-motion', settings.reduceMotion);
   sound.setLevels(settings.master, settings.music, settings.sfx);
   setPalette(settings.palette);
-  version++;
+  game.version++;
 }
 
 function changeSettings(s: Settings): void {
@@ -130,7 +229,7 @@ function sfx(...names: Sfx[]): void {
 
 /** Achievements just earned: saved, and announced. */
 function award(r: Parameters<typeof checkAchievements>[1] = null): void {
-  const fresh = checkAchievements(profile, r);
+  const fresh = checkAchievements(game.profile, r);
   if (!fresh.length) return;
   persist();
   fresh.forEach((a, i) =>
@@ -141,20 +240,17 @@ function award(r: Parameters<typeof checkAchievements>[1] = null): void {
   );
 }
 
-// --- the narrator's tutorial ------------------------------------------------------------------
-
-let tutorial: { step: number; ev: TutorialEvents; hidden: boolean } | null = null;
 
 function tutorialUpdate(): void {
   const box = $('narrator');
-  if (!tutorial || !inHeist) return box.classList.add('hidden');
-  tutorial.step = advance(state, tutorial.ev, tutorial.step);
-  const step = TUTORIAL[tutorial.step];
-  if (!step || state.status !== 'playing') return box.classList.add('hidden');
+  if (!game.tutorial || !game.inHeist) return box.classList.add('hidden');
+  game.tutorial.step = advance(game.state, game.tutorial.ev, game.tutorial.step);
+  const step = TUTORIAL[game.tutorial.step];
+  if (!step || game.state.status !== 'playing') return box.classList.add('hidden');
   box.classList.remove('hidden');
-  box.classList.toggle('collapsed', tutorial.hidden);
+  box.classList.toggle('collapsed', game.tutorial.hidden);
   $('narrator-text').textContent = step.text;
-  $('narrator-count').textContent = `Tip ${tutorial.step + 1} of ${TUTORIAL.length}`;
+  $('narrator-count').textContent = `Tip ${game.tutorial.step + 1} of ${TUTORIAL.length}`;
   $('narrator-ok').classList.toggle('hidden', !step.optional);
 }
 
@@ -164,16 +260,16 @@ const money = (n: number) => `$${n.toLocaleString('en-US')}`;
 // --- display state: where things are drawn, which lags the rules while animating -----------------
 
 const leo: Actor = { x: 0, y: 0, facing: 0, bob: 0 };
-let guards: Actor[] = [];
+
 const rival: Actor = { x: 0, y: 0, facing: 0, bob: 0 };
 function syncActors(): void {
-  leo.x = state.leo.x + 0.5;
-  leo.y = state.leo.y + 0.5;
-  guards = state.guards.map((g) => ({ x: g.x + 0.5, y: g.y + 0.5, facing: g.facing, bob: 0 }));
-  if (state.rival) {
-    rival.x = state.rival.x + 0.5;
-    rival.y = state.rival.y + 0.5;
-    rival.facing = state.rival.facing;
+  leo.x = game.state.leo.x + 0.5;
+  leo.y = game.state.leo.y + 0.5;
+  game.guards = game.state.guards.map((g) => ({ x: g.x + 0.5, y: g.y + 0.5, facing: g.facing, bob: 0 }));
+  if (game.state.rival) {
+    rival.x = game.state.rival.x + 0.5;
+    rival.y = game.state.rival.y + 0.5;
+    rival.facing = game.state.rival.facing;
   }
 }
 
@@ -188,34 +284,27 @@ interface Segment {
   leap?: boolean; // a Pounce: a high arc instead of a walk
   gait?: Gait;
 }
-let queue: Segment[] = [];
-let busy = false;
-let afterAnim: (() => void) | null = null;
+
+
+
 
 function play(segments: Segment[], then: () => void): void {
-  queue = segments;
-  busy = segments.length > 0;
-  afterAnim = then;
-  if (!busy) then();
+  game.queue = segments;
+  game.busy = segments.length > 0;
+  game.afterAnim = then;
+  if (!game.busy) then();
 }
 
-let ripples: Ripple[] = [];
-let noisesSeen = 0;
+
 function spawnRipples(): void {
-  for (const n of state.noises.slice(noisesSeen)) ripples.push({ x: n.x, y: n.y, r: n.r, t: 0 });
-  noisesSeen = state.noises.length;
+  for (const n of game.state.noises.slice(game.noisesSeen)) game.ripples.push({ x: n.x, y: n.y, r: n.r, t: 0 });
+  game.noisesSeen = game.state.noises.length;
 }
 
-// --- camera -----------------------------------------------------------------------------------
-
-let targetAngle = 0;
 /** 1 shows the whole map; more is closer in, following Leo. */
-const ZOOM_START = 1.9;
-const ZOOM_MAX = 3;
-let zoom = ZOOM_START;
-let zoomNow = ZOOM_START;
-/** The point the camera looks at (in the world's own coordinates), easing after Leo. */
-let focus: { x: number; y: number } | null = null;
+
+
+
 /** How far the player has panned the camera away from Leo (WASD), in the world's own pixels. */
 const pan = { x: 0, y: 0 };
 /** WASD keys held down right now. */
@@ -227,7 +316,7 @@ function recentre(): void {
 }
 
 function zoomBy(k: number): void {
-  zoom = Math.max(1, Math.min(ZOOM_MAX, zoom * k));
+  game.zoom = Math.max(1, Math.min(ZOOM_MAX, game.zoom * k));
 }
 
 /** Turns the camera so it looks over Leo's shoulder: he's nearest the camera, the level stretches away. */
@@ -237,18 +326,18 @@ function cameraBehindLeo(): void {
   for (let k = 0; k < 4; k++) {
     const d = project(
       { angle: (k * Math.PI) / 2, cx: view.proj.cx, cy: view.proj.cy },
-      state.leo.x + 0.5,
-      state.leo.y + 0.5,
+      game.state.leo.x + 0.5,
+      game.state.leo.y + 0.5,
     ).depth;
     if (d > bestDepth + 0.01) {
       bestDepth = d;
       best = k;
     }
   }
-  targetAngle = (best * Math.PI) / 2;
-  view.proj.angle = targetAngle;
-  zoom = zoomNow = ZOOM_START;
-  focus = null;
+  game.targetAngle = (best * Math.PI) / 2;
+  view.proj.angle = game.targetAngle;
+  game.zoom = game.zoomNow = ZOOM_START;
+  game.focus = null;
   recentre();
 }
 const view = new HeistView();
@@ -256,72 +345,62 @@ const view = new HeistView();
 function turnCamera(dir: 1 | -1): void {
   closeLootMenu();
   recentre();
-  targetAngle += (dir * Math.PI) / 2;
-  if (tutorial) {
-    tutorial.ev.rotated = true;
+  game.targetAngle += (dir * Math.PI) / 2;
+  if (game.tutorial) {
+    game.tutorial.ev.rotated = true;
     tutorialUpdate();
   }
 }
 
-// --- input and preview ------------------------------------------------------------------------
 
-let hover: Point | null = null;
-let selected: Point | null = null; // touch: first tap previews, second tap confirms
-let version = 0;
-let cache: {
-  v: number;
-  reach: ReturnType<typeof leoReach>;
-  vision: Set<string>;
-  cameraVision: Set<string>;
-  footprints: Point[];
-  rivalPath: Point[];
-} | null = null;
+
+
 
 function computed() {
-  if (!cache || cache.v !== version) {
+  if (!game.cache || game.cache.v !== game.version) {
     const vision = new Set<string>();
-    for (const g of state.guards) for (const k of guardView(level, state, g)) vision.add(k);
+    for (const g of game.state.guards) for (const k of guardView(game.level, game.state, g)) vision.add(k);
     const cameraVision = new Set<string>();
-    if (!state.camerasOff)
-      for (const c of state.cameras) for (const k of cameraView(level, state, c)) cameraVision.add(k);
-    const footprints = planGuards(level, state).flat();
-    cache = {
-      v: version,
-      reach: leoReach(level, state),
+    if (!game.state.camerasOff)
+      for (const c of game.state.cameras) for (const k of cameraView(game.level, game.state, c)) cameraVision.add(k);
+    const footprints = planGuards(game.level, game.state).flat();
+    game.cache = {
+      v: game.version,
+      reach: leoReach(game.level, game.state),
       vision,
       cameraVision,
       footprints,
-      rivalPath: planRival(level, state),
+      rivalPath: planRival(game.level, game.state),
     };
   }
-  return cache;
+  return game.cache;
 }
 
 // --- what happens when the guards move: worked out a few tiles a frame, for every tile Leo can reach -------
 
 /** For each reachable tile: what walking there would bring, and, if it uses his last action point, the guards' turn after. */
 const risk = new Map<string, Aftermath>();
-let riskVersion = -1;
-let riskQueue: (Point & { ends: boolean })[] = [];
+
+
 
 /** Works through the reachable tiles for a few milliseconds a frame, so the game never stutters. */
 function workOnRisk(): void {
-  if (!inHeist || busy || state.status !== 'playing' || targeting) return;
-  if (riskVersion !== version) {
-    riskVersion = version;
+  if (!game.inHeist || game.busy || game.state.status !== 'playing' || game.targeting) return;
+  if (game.riskVersion !== game.version) {
+    game.riskVersion = game.version;
     risk.clear();
-    riskQueue = [{ x: state.leo.x, y: state.leo.y, ends: true }];
+    game.riskQueue = [{ x: game.state.leo.x, y: game.state.leo.y, ends: true }];
     for (const [k, cost] of computed().reach.cost) {
-      if (!cost || moveAp(state, cost) > state.ap) continue;
+      if (!cost || moveAp(game.state, cost) > game.state.ap) continue;
       const [x, y] = k.split(',').map(Number);
       // Only a move that spends Leo's last action point ends his turn there, so only then do the guards' turn count.
-      riskQueue.push({ x, y, ends: moveAp(state, cost) >= state.ap });
+      game.riskQueue.push({ x, y, ends: moveAp(game.state, cost) >= game.state.ap });
     }
   }
   const t0 = performance.now();
-  while (riskQueue.length && performance.now() - t0 < 5) {
-    const p = riskQueue.shift()!;
-    risk.set(key(p.x, p.y), aftermath(level, state, p, p.ends));
+  while (game.riskQueue.length && performance.now() - t0 < 5) {
+    const p = game.riskQueue.shift()!;
+    risk.set(key(p.x, p.y), aftermath(game.level, game.state, p, p.ends));
   }
 }
 
@@ -329,10 +408,10 @@ function overlay(): Overlay {
   const c = computed();
   const reach1 = new Set<string>();
   const reach2 = new Set<string>();
-  const live = state.status === 'playing' && !busy;
-  if (targeting && live) {
-    const targets = abilityTargets(level, state, targeting);
-    const target = selected ?? hover;
+  const live = game.state.status === 'playing' && !game.busy;
+  if (game.targeting && live) {
+    const targets = abilityTargets(game.level, game.state, game.targeting);
+    const target = game.selected ?? game.hover;
     return {
       reach1,
       reach2,
@@ -351,24 +430,24 @@ function overlay(): Overlay {
   if (live)
     for (const [k, cost] of c.reach.cost) {
       if (cost === 0) continue;
-      const ap = moveAp(state, cost);
-      if (ap > state.ap) continue;
+      const ap = moveAp(game.state, cost);
+      if (ap > game.state.ap) continue;
       (ap === 1 ? reach1 : reach2).add(k);
     }
-  const target = selected ?? hover;
+  const target = game.selected ?? game.hover;
   let path: Point[] = [];
   const pathDanger = new Map<string, number>();
   if (target && live) {
     // Pointing at loot: show the way to where Leo would stand to get at it.
     const goal = lootHere(target) !== null || boxHere(target) ? (standFor(target)?.at ?? target) : target;
     path = pathTo(c.reach, goal) ?? [];
-    if (path.length && moveAp(state, c.reach.cost.get(key(goal.x, goal.y)) ?? 99) > state.ap) path = [];
+    if (path.length && moveAp(game.state, c.reach.cost.get(key(goal.x, goal.y)) ?? 99) > game.state.ap) path = [];
     for (const p of path.slice(1)) {
-      const d = danger(level, state, p);
+      const d = danger(game.level, game.state, p);
       if (d) pathDanger.set(key(p.x, p.y), d);
     }
     // Two steps inside a motion-sensor zone in one move trips it.
-    const trip = motionTrip(level, state, path);
+    const trip = motionTrip(game.level, game.state, path);
     if (trip > 0) for (const p of path.slice(trip)) pathDanger.set(key(p.x, p.y), 2);
     // And where the walk ends: what the guards' turn would bring.
     const end = path.length ? path[path.length - 1] : null;
@@ -384,14 +463,14 @@ function overlay(): Overlay {
     reach2,
     vision: c.vision,
     cameraVision: c.cameraVision,
-    footprints: state.status === 'playing' ? c.footprints : [],
+    footprints: game.state.status === 'playing' ? c.footprints : [],
     path,
     pathDanger,
     // The tile under the pointer is always outlined (in the colour of the walk there, if there is one).
     hover: live ? target : null,
     targets: new Set(),
-    rivalPath: state.status === 'playing' ? c.rivalPath : [],
-    risky: live && riskVersion === version ? risk : new Map(),
+    rivalPath: game.state.status === 'playing' ? c.rivalPath : [],
+    risky: live && game.riskVersion === game.version ? risk : new Map(),
     alerts: liveAlerts(),
   };
 }
@@ -399,8 +478,8 @@ function overlay(): Overlay {
 /** While a rival is in the building but off screen, an arrow at the screen's edge points to them. */
 function placeRivalArrow(): void {
   const el = $('rival-arrow');
-  const r = state?.rival;
-  if (!inHeist || !r || (r.phase !== 'in' && r.phase !== 'leaving')) return el.classList.add('hidden');
+  const r = game.state?.rival;
+  if (!game.inHeist || !r || (r.phase !== 'in' && r.phase !== 'leaving')) return el.classList.add('hidden');
   const p = world.toGlobal(project(view.proj, rival.x, rival.y, 30));
   const w = window.innerWidth;
   const h = window.innerHeight;
@@ -422,15 +501,15 @@ function placeRivalArrow(): void {
 /** A note by the pointer when the tile under it isn't safe to end the turn on. */
 function placeRiskNote(): void {
   const box = $('risk-note');
-  const target = selected ?? hover;
-  const live = inHeist && state.status === 'playing' && !busy && !targeting && !lootMenu;
+  const target = game.selected ?? game.hover;
+  const live = game.inHeist && game.state.status === 'playing' && !game.busy && !game.targeting && !game.lootMenu;
   const goal =
     target && live
       ? lootHere(target) !== null || boxHere(target)
         ? (standFor(target)?.at ?? null)
         : target
       : null;
-  const r = goal && riskVersion === version ? risk.get(key(goal.x, goal.y)) : null;
+  const r = goal && game.riskVersion === game.version ? risk.get(key(goal.x, goal.y)) : null;
   if (!r || !goal) {
     box.classList.add('hidden');
     return;
@@ -447,38 +526,38 @@ function tileUnder(clientX: number, clientY: number): Point | null {
   const g = unproject(view.proj, local.x, local.y);
   const x = Math.floor(g.x);
   const y = Math.floor(g.y);
-  if (x < 0 || y < 0 || x >= level.w || y >= level.h) return null;
+  if (x < 0 || y < 0 || x >= game.level.w || y >= game.level.h) return null;
   return { x, y };
 }
 
 /** What clicking a tile does when it's something to interact with: the quiet option first. */
 function clickAction(tile: Point): Action | null {
-  const here = actionsHere(level, state).filter(
+  const here = actionsHere(game.level, game.state).filter(
     (a) => a.at.x === tile.x && a.at.y === tile.y && a.kind !== 'smash-case',
   );
   return here.find((a) => !a.blocked) ?? here[0] ?? null;
 }
 
 function act(tile: Point): void {
-  if (busy || state.status !== 'playing') return;
-  if (targeting) {
-    if (abilityTargets(level, state, targeting).has(key(tile.x, tile.y))) return runAbility(targeting, tile);
+  if (game.busy || game.state.status !== 'playing') return;
+  if (game.targeting) {
+    if (abilityTargets(game.level, game.state, game.targeting).has(key(tile.x, tile.y))) return runAbility(game.targeting, tile);
     return cancelTargeting();
   }
   if (lootHere(tile) !== null) return openLootMenu(tile);
   const a = clickAction(tile);
   if (a) return runAction(a);
   // The finale: click NightClaw from across the hall and Leo creeps up behind him, then taps him on the shoulder.
-  const nc = level.def.finale
-    ? state.guards.find((g) => g.kind === 'nightclaw' && g.x === tile.x && g.y === tile.y)
+  const nc = game.level.def.finale
+    ? game.state.guards.find((g) => g.kind === 'nightclaw' && g.x === tile.x && g.y === tile.y)
     : undefined;
   if (nc) {
     const reach = computed().reach;
     const spots = [-1, 0, 1]
       .flatMap((dy) => [-1, 0, 1].map((dx) => ({ x: nc.x + dx, y: nc.y + dy })))
-      .filter((p) => (p.x !== nc.x || p.y !== nc.y) && !guardSees(level, state, nc, p.x, p.y))
+      .filter((p) => (p.x !== nc.x || p.y !== nc.y) && !guardSees(game.level, game.state, nc, p.x, p.y))
       .map((p) => ({ p, cost: reach.cost.get(key(p.x, p.y)) }))
-      .filter((o) => o.cost !== undefined && moveAp(state, o.cost) < state.ap)
+      .filter((o) => o.cost !== undefined && moveAp(game.state, o.cost) < game.state.ap)
       .sort((a, b) => a.cost! - b.cost!);
     if (!spots.length) return say('Leo can’t get behind NightClaw from here this turn.');
     return walkTo(spots[0].p, () => {
@@ -500,26 +579,26 @@ function act(tile: Point): void {
 
 /** A camera panel or power box that's still on, which Leo can walk over to and use. */
 function boxHere(t: Point): 'panel' | 'fuse' | null {
-  if (!level || !state || state.layer !== 'floor') return null;
-  const tile = tileNow(level, state, t.x, t.y);
-  if (tile === 'panel' && !state.camerasOff) return 'panel';
-  if (tile === 'fuse' && !state.lasersOff) return 'fuse';
+  if (!game.level || !game.state || game.state.layer !== 'floor') return null;
+  const tile = tileNow(game.level, game.state, t.x, t.y);
+  if (tile === 'panel' && !game.state.camerasOff) return 'panel';
+  if (tile === 'fuse' && !game.state.lasersOff) return 'fuse';
   return null;
 }
 
 /** The piece of loot on a tile, if it's still there to be had (in a case, on a plinth, in a safe, under a light). */
 function lootHere(t: Point): number | null {
-  if (!level || !state || state.layer !== 'floor') return null;
-  const tile = tileNow(level, state, t.x, t.y);
+  if (!game.level || !game.state || game.state.layer !== 'floor') return null;
+  const tile = tileNow(game.level, game.state, t.x, t.y);
   if (tile !== 'case' && tile !== 'plinth' && tile !== 'safe' && tile !== 'lamp') return null;
-  const li = lootAt(level, t.x, t.y);
-  return li >= 0 && !lootGone(state, li) ? li : null;
+  const li = lootAt(game.level, t.x, t.y);
+  return li >= 0 && !lootGone(game.state, li) ? li : null;
 }
 
 /** Where Leo would stand to work on a tile this turn: where he is if he can, else the cheapest, safest spot beside it. */
 function standFor(target: Point): { at: Point; ap: number; danger: number } | null {
   const near = (p: Point) => Math.max(Math.abs(p.x - target.x), Math.abs(p.y - target.y)) === 1;
-  if (near(state.leo)) return { at: { ...state.leo }, ap: 0, danger: 0 };
+  if (near(game.state.leo)) return { at: { ...game.state.leo }, ap: 0, danger: 0 };
   const reach = computed().reach;
   let best: { at: Point; ap: number; d: number } | null = null;
   for (let dy = -1; dy <= 1; dy++)
@@ -527,9 +606,9 @@ function standFor(target: Point): { at: Point; ap: number; danger: number } | nu
       const p = { x: target.x + dx, y: target.y + dy };
       const cost = reach.cost.get(key(p.x, p.y));
       if ((!dx && !dy) || cost === undefined) continue;
-      const ap = moveAp(state, cost);
-      if (ap >= state.ap) continue; // leave a point for the job itself
-      const d = danger(level, state, p);
+      const ap = moveAp(game.state, cost);
+      if (ap >= game.state.ap) continue; // leave a point for the job itself
+      const d = danger(game.level, game.state, p);
       // Never a spot where he'd be caught if there's another; then the cheapest; then the least noticed.
       if (
         !best ||
@@ -546,13 +625,13 @@ function closerTo(target: Point): Point | null {
   let best: Point | null = null;
   let bd = Infinity;
   for (const [k, cost] of computed().reach.cost) {
-    if (!cost || moveAp(state, cost) > state.ap) continue;
+    if (!cost || moveAp(game.state, cost) > game.state.ap) continue;
     const [x, y] = k.split(',').map(Number);
-    if (danger(level, state, { x, y }) === 2) continue; // not into a guard's arms
+    if (danger(game.level, game.state, { x, y }) === 2) continue; // not into a guard's arms
     const d =
       Math.max(Math.abs(x - target.x), Math.abs(y - target.y)) * 10 +
-      moveAp(state, cost) * 4 +
-      danger(level, state, { x, y }) * 6;
+      moveAp(game.state, cost) * 4 +
+      danger(game.level, game.state, { x, y }) * 6;
     if (d < bd) {
       bd = d;
       best = { x, y };
@@ -567,18 +646,18 @@ const VERBS: Partial<Record<Action['kind'], string>> = {
   'smash-case': 'Smash the glass',
   'crack-safe': 'Crack the safe',
 };
-let lootMenu: Point | null = null;
-let lootChoices: (() => void)[] = [];
+
+
 
 /** A tag by the loot: what it is, and what Leo can do about it, with what each costs. */
 function openLootMenu(target: Point): void {
   const li = lootHere(target);
   if (li === null) return;
-  const loot = level.def.loot[li];
+  const loot = game.level.def.loot[li];
   const stand = standFor(target);
   const choices: { label: string; detail: string; run?: () => void; blocked?: string; loud?: boolean }[] = [];
   if (stand) {
-    const there = { ...state, leo: stand.at, ap: state.ap - stand.ap } as State;
+    const there = { ...game.state, leo: stand.at, ap: game.state.ap - stand.ap } as State;
     const walk = stand.ap ? `walk over (${stand.ap} AP), then ` : '';
     const warn =
       stand.danger === 2
@@ -586,12 +665,12 @@ function openLootMenu(target: Point): void {
         : stand.danger === 1
           ? ' · a guard would notice'
           : '';
-    for (const a of actionsHere(level, there).filter((x) => x.at.x === target.x && x.at.y === target.y)) {
+    for (const a of actionsHere(game.level, there).filter((x) => x.at.x === target.x && x.at.y === target.y)) {
       const noise = a.noise >= 6 ? 'loud: guards will come running' : a.noise > 0 ? 'quiet' : 'silent';
       const k = key(target.x, target.y);
       const goes =
-        a.kind === 'pick-case' ? state.perks.casePicks : a.kind === 'crack-safe' ? state.perks.safeCracks : 1;
-      const steps = goes > 1 ? ` (${state.picks[k] ?? 0}/${goes})` : '';
+        a.kind === 'pick-case' ? game.state.perks.casePicks : a.kind === 'crack-safe' ? game.state.perks.safeCracks : 1;
+      const steps = goes > 1 ? ` (${game.state.picks[k] ?? 0}/${goes})` : '';
       choices.push({
         label: (VERBS[a.kind] ?? a.label) + steps,
         detail: `${walk}${a.ap} AP${goes > 1 ? ' a go' : ''} · ${noise}${warn}`,
@@ -601,16 +680,16 @@ function openLootMenu(target: Point): void {
           walkTo(stand.at, () => {
             doThere(target, a.kind);
             // Not done yet (a lock that takes more than one go): the tag comes straight back for the next.
-            if (lootHere(target) !== null && state.status === 'playing' && state.ap > 0 && !busy)
+            if (lootHere(target) !== null && game.state.status === 'playing' && game.state.ap > 0 && !game.busy)
               openLootMenu(target);
           }),
       });
       // The bag's full: offer to put something down to make room for this.
       if (a.blocked?.startsWith('No room')) {
-        const used = inventoryUsed(level, state);
-        for (const old of state.inventory) {
-          const o = level.def.loot[old];
-          if (used - o.space + loot.space > state.perks.spaces) continue;
+        const used = inventoryUsed(game.level, game.state);
+        for (const old of game.state.inventory) {
+          const o = game.level.def.loot[old];
+          if (used - o.space + loot.space > game.state.perks.spaces) continue;
           choices.push({
             label: `Swap: leave ${o.name}`,
             detail: `${walk}put it down, then ${(VERBS[a.kind] ?? a.label).toLowerCase()} · $${o.value.toLocaleString('en-US')} → $${loot.value.toLocaleString('en-US')}`,
@@ -628,7 +707,7 @@ function openLootMenu(target: Point): void {
     if (closer)
       choices.push({
         label: 'Walk closer',
-        detail: `${moveAp(state, computed().reach.cost.get(key(closer.x, closer.y)) ?? 0)} AP`,
+        detail: `${moveAp(game.state, computed().reach.cost.get(key(closer.x, closer.y)) ?? 0)} AP`,
         run: () => walkTo(closer),
       });
   }
@@ -638,16 +717,16 @@ function openLootMenu(target: Point): void {
     ${stand ? '' : '<p class="lm-note">Too far to reach and work on this turn. Leo needs to get beside it with an action point to spare.</p>'}
     ${choices.map((c, i) => `<button data-i="${i}" class="${c.loud ? 'loud' : ''}" ${c.blocked || !c.run ? 'disabled' : ''}><span class="k">${c.run ? i + 1 : '·'}</span><span class="lm-label">${c.label}</span><small>${c.blocked ?? c.detail}</small></button>`).join('')}
     <button class="quiet lm-close">Never mind (Esc)</button>`;
-  lootChoices = choices.map((c) => () => {
+  game.lootChoices = choices.map((c) => () => {
     if (c.blocked || !c.run) return;
     closeLootMenu();
     c.run();
   });
   box
     .querySelectorAll<HTMLButtonElement>('button[data-i]')
-    .forEach((b) => b.addEventListener('click', () => lootChoices[Number(b.dataset.i)]?.()));
+    .forEach((b) => b.addEventListener('click', () => game.lootChoices[Number(b.dataset.i)]?.()));
   box.querySelector('.lm-close')!.addEventListener('click', closeLootMenu);
-  lootMenu = target;
+  game.lootMenu = target;
   box.classList.remove('hidden');
   placeLootMenu();
   sfx('click');
@@ -655,9 +734,9 @@ function openLootMenu(target: Point): void {
 
 /** Keeps the tag beside its loot (the camera may be moving), and on screen. */
 function placeLootMenu(): void {
-  if (!lootMenu) return;
+  if (!game.lootMenu) return;
   const box = $('loot-menu');
-  const p = world.toGlobal(project(view.proj, lootMenu.x + 0.5, lootMenu.y + 0.5, 50));
+  const p = world.toGlobal(project(view.proj, game.lootMenu.x + 0.5, game.lootMenu.y + 0.5, 50));
   const w = box.offsetWidth;
   const h = box.offsetHeight;
   const x = p.x + 34 + w > window.innerWidth - 8 ? p.x - 34 - w : p.x + 34;
@@ -666,19 +745,19 @@ function placeLootMenu(): void {
 }
 
 function closeLootMenu(): void {
-  lootMenu = null;
-  lootChoices = [];
+  game.lootMenu = null;
+  game.lootChoices = [];
   $('loot-menu').classList.add('hidden');
 }
 
 /** Puts a piece of loot down where Leo stands (free), and shows it. */
 function putDown(li: number): void {
-  state.log = [];
-  if (!dropLoot(level, state, li)) return;
+  game.state.log = [];
+  if (!dropLoot(game.level, game.state, li)) return;
   sfx('take');
-  version++;
+  game.version++;
   updateHud();
-  say(state.log.join(' '));
+  say(game.state.log.join(' '));
   renderBag();
 }
 
@@ -695,23 +774,23 @@ function toggleBag(open = !bagOpen()): void {
 
 /** The bag's contents: each piece with its picture, worth and size, and a button to put it down. */
 function renderBag(): void {
-  if (!bagOpen() || !state) return;
-  const used = inventoryUsed(level, state);
-  const canDrop = state.status === 'playing' && state.layer === 'floor' && !busy;
+  if (!bagOpen() || !game.state) return;
+  const used = inventoryUsed(game.level, game.state);
+  const canDrop = game.state.status === 'playing' && game.state.layer === 'floor' && !game.busy;
   const box = $('bag');
-  box.innerHTML = `<div class="bag-head"><b>Leo’s bag</b><span>${used} / ${state.perks.spaces} spaces · $${inventoryValue(level, state).toLocaleString('en-US')}</span></div>
-    <div class="bag-slots" style="--n:${state.perks.spaces}">${Array.from({ length: state.perks.spaces }, (_, i) => `<i class="${i < used ? 'full' : ''}"></i>`).join('')}</div>
+  box.innerHTML = `<div class="bag-head"><b>Leo’s bag</b><span>${used} / ${game.state.perks.spaces} spaces · $${inventoryValue(game.level, game.state).toLocaleString('en-US')}</span></div>
+    <div class="bag-slots" style="--n:${game.state.perks.spaces}">${Array.from({ length: game.state.perks.spaces }, (_, i) => `<i class="${i < used ? 'full' : ''}"></i>`).join('')}</div>
     ${
-      state.inventory.length
-        ? `<ul class="bag-items">${state.inventory
+      game.state.inventory.length
+        ? `<ul class="bag-items">${game.state.inventory
             .map((li) => {
-              const l = level.def.loot[li];
+              const l = game.level.def.loot[li];
               return `<li><img src="${lootPictureUrl(l.name, l.category)}" alt=""><div><b>${l.name}</b><span>$${l.value.toLocaleString('en-US')} · ${l.space} space${l.space === 1 ? '' : 's'}</span></div><button data-drop="${li}" ${canDrop ? '' : 'disabled'} title="${canDrop ? 'Put it down here, to make room' : 'Not from up here'}">Put down</button></li>`;
             })
             .join('')}</ul>`
         : '<p class="bag-empty">Empty. Go steal something.</p>'
     }
-    ${state.dropped.length ? `<p class="bag-note">Left behind: ${state.dropped.map((d) => level.def.loot[d.li].name).join(', ')}. Walk back to pick it up (1 AP).</p>` : '<p class="bag-note">Putting something down is free. It stays where you leave it, to pick up later.</p>'}
+    ${game.state.dropped.length ? `<p class="bag-note">Left behind: ${game.state.dropped.map((d) => game.level.def.loot[d.li].name).join(', ')}. Walk back to pick it up (1 AP).</p>` : '<p class="bag-note">Putting something down is free. It stays where you leave it, to pick up later.</p>'}
     <button class="quiet bag-close">Close (I or Esc)</button>`;
   box
     .querySelectorAll<HTMLButtonElement>('[data-drop]')
@@ -721,7 +800,7 @@ function renderBag(): void {
 
 /** Does an action on a tile Leo has just arrived beside. */
 function doThere(target: Point, kind: Action['kind']): void {
-  const a = actionsHere(level, state).find(
+  const a = actionsHere(game.level, game.state).find(
     (x) => x.kind === kind && x.at.x === target.x && x.at.y === target.y,
   );
   if (!a) return;
@@ -729,13 +808,11 @@ function doThere(target: Point, kind: Action['kind']): void {
   runAction(a);
 }
 
-/** Moves Leo to a tile, animating the walk; `then` runs once he's there, if he's still free to act. */
-/** The finale: walking out of the door before tapping NightClaw ends the night without the ending, so ask first. */
-let leaveOk = false;
+/** The finale: leaving before tapping NightClaw skips the ending, so ask first. */
 function leavingWithoutTap(tile: Point): boolean {
-  if (leaveOk || !level.def.finale || state.tagged || state.layer !== 'floor' || !state.inventory.length)
+  if (game.leaveOk || !game.level.def.finale || game.state.tagged || game.state.layer !== 'floor' || !game.state.inventory.length)
     return false;
-  if (tile.x !== level.exit.x || tile.y !== level.exit.y) return false;
+  if (tile.x !== game.level.exit.x || tile.y !== game.level.exit.y) return false;
   return true;
 }
 
@@ -761,39 +838,40 @@ function confirmLeave(go: () => void): void {
   };
   $('leave-go').onclick = () => {
     close();
-    leaveOk = true;
+    game.leaveOk = true;
     go();
-    leaveOk = false;
+    game.leaveOk = false;
   };
   ($('leave-stay') as HTMLButtonElement).focus();
 }
 
+/** Moves Leo to a tile, animating the walk; `then` runs once he's there, if he can still act. */
 function walkTo(tile: Point, then?: () => void): void {
-  if (tile.x === state.leo.x && tile.y === state.leo.y) return then?.();
+  if (tile.x === game.state.leo.x && tile.y === game.state.leo.y) return then?.();
   if (leavingWithoutTap(tile)) return confirmLeave(() => walkTo(tile, then));
   recentre(); // the camera catches up with Leo when he moves
-  state.log = [];
-  const apBefore = state.ap;
-  const res = moveLeo(level, state, tile);
+  game.state.log = [];
+  const apBefore = game.state.ap;
+  const res = moveLeo(game.level, game.state, tile);
   if (!res.ok) return say(res.reason ?? '');
-  if (tutorial) {
-    tutorial.ev.moved = true;
-    if (apBefore - state.ap === 2) tutorial.ev.dashed = true;
-    if (state.layer === 'floor' && res.path.some((p) => level.tiles[p.y][p.x] === 'marble'))
-      tutorial.ev.onMarble = true;
+  if (game.tutorial) {
+    game.tutorial.ev.moved = true;
+    if (apBefore - game.state.ap === 2) game.tutorial.ev.dashed = true;
+    if (game.state.layer === 'floor' && res.path.some((p) => game.level.tiles[p.y][p.x] === 'marble'))
+      game.tutorial.ev.onMarble = true;
   }
-  selected = null;
-  version++;
+  game.selected = null;
+  game.version++;
   const segs: Segment[] = [];
-  const crawl = state.layer === 'vent' ? 1.4 : 1; // beams are walked at the usual pace
-  const layer = state.layer;
+  const crawl = game.state.layer === 'vent' ? 1.4 : 1; // beams are walked at the usual pace
+  const layer = game.state.layer;
   // Leo crawls in the vents, runs when he dashes, and creeps when he's heading into the dark.
-  const dark = lightMap(level, state.lampsOff);
-  const dash = apBefore - state.ap >= 2;
+  const dark = lightMap(game.level, game.state.lampsOff);
+  const dash = apBefore - game.state.ap >= 2;
   for (let i = 1; i < res.path.length; i++) {
     const p = res.path[i - 1];
     const q = res.path[i];
-    const t = level.tiles[q.y][q.x];
+    const t = game.level.tiles[q.y][q.x];
     const step: Sfx = layer === 'vent' ? 'vent' : t === 'marble' ? 'step-marble' : 'step-carpet';
     const gait: Gait =
       layer === 'vent'
@@ -816,11 +894,10 @@ function walkTo(tile: Point, then?: () => void): void {
   }
   play(segs, () => {
     afterLeoActs();
-    if (then && state.status === 'playing' && state.ap > 0) then();
+    if (then && game.state.status === 'playing' && game.state.ap > 0) then();
   });
 }
 
-let lastHaul = 0;
 
 /** Words that pop up off a tile and float away: a loot value, a crash, a lock giving. */
 function floatText(at: Point, text: string, cls = ''): void {
@@ -845,15 +922,15 @@ function shake(): void {
 }
 
 function runAction(a: Action): void {
-  if (busy || state.status !== 'playing') return;
+  if (game.busy || game.state.status !== 'playing') return;
   if (a.blocked) return say(a.blocked);
-  state.log = [];
-  const invBefore = [...state.inventory];
-  if (!doAction(level, state, a.kind, a.at)) return say('Leo can’t do that right now.');
+  game.state.log = [];
+  const invBefore = [...game.state.inventory];
+  if (!doAction(game.level, game.state, a.kind, a.at)) return say('Leo can’t do that right now.');
   // The payoff, right where it happened.
-  for (const li of state.inventory.filter((i) => !invBefore.includes(i))) {
-    const l = level.def.loot[li];
-    const centre = !!level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y;
+  for (const li of game.state.inventory.filter((i) => !invBefore.includes(i))) {
+    const l = game.level.def.loot[li];
+    const centre = !!game.level.plinth && l.at.x === game.level.plinth.x && l.at.y === game.level.plinth.y;
     floatText(l.at, `+$${l.value.toLocaleString('en-US')}`, centre ? 'big' : '');
     sfx('coin');
   }
@@ -862,7 +939,7 @@ function runAction(a: Action): void {
     shake();
   } else if (
     (a.kind === 'pick-case' || a.kind === 'pick-door' || a.kind === 'crack-safe') &&
-    state.inventory.length === invBefore.length
+    game.state.inventory.length === invBefore.length
   )
     floatText(a.at, a.kind === 'crack-safe' ? 'clunk…' : 'click…', 'small');
   const actionSound: Partial<Record<Action['kind'], Sfx>> = {
@@ -886,8 +963,8 @@ function runAction(a: Action): void {
   let snd = actionSound[a.kind];
   // The lock giving way is its own sound: a door swinging open, a case opening, a safe door.
   const opened =
-    state.inventory.length > invBefore.length ||
-    (a.kind === 'pick-door' && tileNow(level, state, a.at.x, a.at.y) !== 'door');
+    game.state.inventory.length > invBefore.length ||
+    (a.kind === 'pick-door' && tileNow(game.level, game.state, a.at.x, a.at.y) !== 'door');
   if (opened && (a.kind === 'pick-door' || a.kind === 'pick-case')) snd = 'unlock';
   if (opened && a.kind === 'crack-safe') snd = 'safe-open';
   if (snd) sfx(snd);
@@ -899,26 +976,23 @@ function runAction(a: Action): void {
     a.kind !== 'drop'
   )
     leo.work = 1;
-  if (state.inventory.length && a.kind !== 'take' && /^Got /.test(state.log.join(' '))) sfx('take');
-  selected = null;
-  version++;
+  if (game.state.inventory.length && a.kind !== 'take' && /^Got /.test(game.state.log.join(' '))) sfx('take');
+  game.selected = null;
+  game.version++;
   afterLeoActs();
-  if (a.at.x !== state.leo.x || a.at.y !== state.leo.y) leo.facing = faceToward(state.leo, a.at);
+  if (a.at.x !== game.state.leo.x || a.at.y !== game.state.leo.y) leo.facing = faceToward(game.state.leo, a.at);
 }
 
-// --- gadgets and skills ---------------------------------------------------------------------------
-
-let targeting: Ability | null = null;
 
 function startAbility(kind: Ability): void {
-  if (busy || state.status !== 'playing') return;
-  if (targeting === kind) return cancelTargeting();
-  const a = abilities(level, state).find((x) => x.kind === kind);
+  if (game.busy || game.state.status !== 'playing') return;
+  if (game.targeting === kind) return cancelTargeting();
+  const a = abilities(game.level, game.state).find((x) => x.kind === kind);
   if (!a) return;
   if (a.blocked) return say(a.blocked);
   if (a.target === 'self') return runAbility(kind);
-  targeting = kind;
-  selected = null;
+  game.targeting = kind;
+  game.selected = null;
   say(
     a.target === 'camera'
       ? `${a.name}: click a camera within reach. Esc to cancel.`
@@ -928,22 +1002,22 @@ function startAbility(kind: Ability): void {
 }
 
 function cancelTargeting(): void {
-  targeting = null;
+  game.targeting = null;
   say('');
   updateHud();
 }
 
 function runAbility(kind: Ability, at?: Point): void {
   if (kind === 'pounce' && at && leavingWithoutTap(at)) return confirmLeave(() => runAbility(kind, at));
-  const from = { ...state.leo };
-  state.log = [];
-  targeting = null;
-  if (!useAbility(level, state, kind, at)) {
+  const from = { ...game.state.leo };
+  game.state.log = [];
+  game.targeting = null;
+  if (!useAbility(game.level, game.state, kind, at)) {
     updateHud();
     return say('Leo can’t do that right now.');
   }
-  selected = null;
-  version++;
+  game.selected = null;
+  game.version++;
   sfx(kind === 'bottle-cap' ? 'clink' : kind === 'pounce' ? 'pounce' : kind === 'smoke' ? 'whoosh' : 'beep');
   if (kind === 'pounce')
     return play(
@@ -951,8 +1025,8 @@ function runAbility(kind: Ability, at?: Point): void {
         {
           who: 'leo',
           from,
-          to: { ...state.leo },
-          facing: faceToward(from, state.leo),
+          to: { ...game.state.leo },
+          facing: faceToward(from, game.state.leo),
           t: 0,
           dur: anim(0.35),
           leap: true,
@@ -961,24 +1035,21 @@ function runAbility(kind: Ability, at?: Point): void {
       afterLeoActs,
     );
   afterLeoActs();
-  if (at) leo.facing = faceToward(state.leo, at);
+  if (at) leo.facing = faceToward(game.state.leo, at);
 }
 
-// --- who noticed what: shown on the map for a few seconds --------------------------------------------
-
-let alerts: { n: Notice; until: number }[] = [];
 function liveAlerts(): Notice[] {
   const now = performance.now();
-  alerts = alerts.filter((a) => a.until > now);
-  return alerts.map((a) => a.n);
+  game.alerts = game.alerts.filter((a) => a.until > now);
+  return game.alerts.map((a) => a.n);
 }
 
 /** Puts this step's notices on the map: a label over the spot, a ring and a line back to the guard or camera. */
 function showNotices(): void {
-  const list = state.notices ?? [];
-  state.notices = [];
+  const list = game.state.notices ?? [];
+  game.state.notices = [];
   if (!list.length) return;
-  for (const n of list) alerts.push({ n, until: performance.now() + (n.kind === 'caught' ? 60000 : 6000) });
+  for (const n of list) game.alerts.push({ n, until: performance.now() + (n.kind === 'caught' ? 60000 : 6000) });
   // The labels go up once the camera has moved (below), so they sit over the spot, not where it used to be.
   window.setTimeout(
     () => list.forEach((n) => floatText(n.at, n.label, n.kind === 'spotted' ? 'warn' : 'red')),
@@ -999,7 +1070,7 @@ function showNotices(): void {
     sp.y > window.innerHeight - margin
   ) {
     const a = project(view.proj, spot.x + 0.5, spot.y + 0.5);
-    const b = project(view.proj, state.leo.x + 0.5, state.leo.y + 0.5);
+    const b = project(view.proj, game.state.leo.x + 0.5, game.state.leo.y + 0.5);
     pan.x = a.x - b.x;
     pan.y = a.y - b.y;
   }
@@ -1009,35 +1080,35 @@ function afterLeoActs(): void {
   spawnRipples();
   syncActors();
   updateHud();
-  if (state.log.length) say(state.log.join(' '));
+  if (game.state.log.length) say(game.state.log.join(' '));
   showNotices();
-  sfx(...soundsInLog(state.log));
+  sfx(...soundsInLog(game.state.log));
   tutorialUpdate();
-  if (state.status === 'caught') return caught();
-  if (state.status === 'escaped') return escaped();
-  if (state.ap <= 0)
-    setTimeout(() => !busy && state.status === 'playing' && state.ap <= 0 && doEndTurn(), anim(450) + 50);
+  if (game.state.status === 'caught') return caught();
+  if (game.state.status === 'escaped') return escaped();
+  if (game.state.ap <= 0)
+    setTimeout(() => !game.busy && game.state.status === 'playing' && game.state.ap <= 0 && doEndTurn(), anim(450) + 50);
 }
 
 function doEndTurn(): void {
   closeLootMenu();
-  if (busy || state.status !== 'playing') return;
-  selected = null;
+  if (game.busy || game.state.status !== 'playing') return;
+  game.selected = null;
   banner('Guards’ turn');
-  const before = state.guards.map((g) => ({ x: g.x, y: g.y }));
-  const alarmBefore = state.alarm !== null;
-  const steps: GuardStep[] = endTurn(level, state);
-  noisesSeen = 0;
-  version++;
+  const before = game.state.guards.map((g) => ({ x: g.x, y: g.y }));
+  const alarmBefore = game.state.alarm !== null;
+  const steps: GuardStep[] = endTurn(game.level, game.state);
+  game.noisesSeen = 0;
+  game.version++;
   const last = before.map((p) => ({ ...p }));
   let rivalAt = { x: rival.x - 0.5, y: rival.y - 0.5 };
   const segs: Segment[] = steps.map((s) => {
     if (s.guard === -1) {
       // The rival's first step is their arrival: they appear there, rather than walking in from nowhere.
-      const from = rivalWasIn ? rivalAt : { x: s.to.x, y: s.to.y };
-      if (!rivalWasIn && state.rival)
-        window.setTimeout(() => banner(`${state.rival?.name ?? 'A rival'} is in the building!`), 300);
-      rivalWasIn = true;
+      const from = game.rivalWasIn ? rivalAt : { x: s.to.x, y: s.to.y };
+      if (!game.rivalWasIn && game.state.rival)
+        window.setTimeout(() => banner(`${game.state.rival?.name ?? 'A rival'} is in the building!`), 300);
+      game.rivalWasIn = true;
       rivalAt = { x: s.to.x, y: s.to.y };
       return {
         who: -1,
@@ -1051,7 +1122,7 @@ function doEndTurn(): void {
     }
     const from = last[s.guard];
     last[s.guard] = { x: s.to.x, y: s.to.y };
-    const hurry = state.guards[s.guard]?.mode === 'searching';
+    const hurry = game.state.guards[s.guard]?.mode === 'searching';
     return {
       who: s.guard,
       from,
@@ -1062,26 +1133,26 @@ function doEndTurn(): void {
       gait: hurry ? 'run' : 'walk',
     };
   });
-  busy = segs.length > 0;
+  game.busy = segs.length > 0;
   updateHud();
-  sfx(...soundsInLog(state.log));
-  const rivalAlarm = state.alarm !== null && !state.alarmByLeo && !alarmBefore;
-  if (rivalAlarm) window.setTimeout(() => banner(`${state.alarmBy ?? 'A rival'} set off the alarm!`), 500);
+  sfx(...soundsInLog(game.state.log));
+  const rivalAlarm = game.state.alarm !== null && !game.state.alarmByLeo && !alarmBefore;
+  if (rivalAlarm) window.setTimeout(() => banner(`${game.state.alarmBy ?? 'A rival'} set off the alarm!`), 500);
   play(segs, () => {
     syncActors();
     updateHud();
-    if (state.log.length) say(state.log.join(' '));
+    if (game.state.log.length) say(game.state.log.join(' '));
     showNotices();
     tutorialUpdate();
-    if (state.status === 'caught') return caught();
+    if (game.state.status === 'caught') return caught();
     updateHud();
     // Still asleep after a Cat Nap: the guards go again.
-    if (state.ap <= 0) {
+    if (game.state.ap <= 0) {
       banner('Zzz…');
-      setTimeout(() => !busy && state.status === 'playing' && state.ap <= 0 && doEndTurn(), anim(700) + 50);
+      setTimeout(() => !game.busy && game.state.status === 'playing' && game.state.ap <= 0 && doEndTurn(), anim(700) + 50);
       return;
     }
-    banner(state.alarm !== null ? `Alarm! ${state.alarm} turns` : 'Your turn');
+    banner(game.state.alarm !== null ? `Alarm! ${game.state.alarm} turns` : 'Your turn');
   });
 }
 
@@ -1089,40 +1160,37 @@ function doEndTurn(): void {
 function rivalPlanFor(def: LevelDef): RivalPlan | null {
   if (def.id === CORNER_GALLERY.id) return null;
   const district = DISTRICTS.findIndex((d) => d.levels.includes(def));
-  const plan = rivalFor(profile, def, Math.max(0, district));
+  const plan = rivalFor(game.profile, def, Math.max(0, district));
   persist();
   return plan;
 }
 
-let rivalPlan: RivalPlan | null = null;
-let rivalWasIn = false;
+
 
 /** The heist report, with its own music. */
 function showReport(r: ReturnType<typeof completeHeist>): void {
   sound.setScene('report');
-  screens.heistReport(r, profile, goOn);
+  screens.heistReport(r, game.profile, goOn);
 }
 
-/** The game's art, loading in the background from the moment it starts. */
-let artReady: Promise<void> = Promise.resolve();
-let artLoaded = false;
+
 
 function startHeist(def: LevelDef): void {
   // The art loads while the title is up; on the off chance it hasn't finished, the heist waits for it.
-  if (!artLoaded)
-    return void artReady.then(() => {
-      artLoaded = true;
+  if (!game.artLoaded)
+    return void game.artReady.then(() => {
+      game.artLoaded = true;
       startHeist(def);
     });
   sound.setFinale(def.id.startsWith('nc-'));
-  rivalPlan = rivalPlanFor(def);
-  level = parseLevel(def);
+  game.rivalPlan = rivalPlanFor(def);
+  game.level = parseLevel(def);
   loadLootIcons(def.loot).catch((e) => console.error('Loot pictures failed', e));
-  view.proj.cx = level.w / 2;
-  view.proj.cy = level.h / 2;
-  $('level-name').textContent = level.def.name;
-  tutorial =
-    def.id === CORNER_GALLERY.id && !profile.tutorialDone
+  view.proj.cx = game.level.w / 2;
+  view.proj.cy = game.level.h / 2;
+  $('level-name').textContent = game.level.def.name;
+  game.tutorial =
+    def.id === CORNER_GALLERY.id && !game.profile.tutorialDone
       ? {
           step: 0,
           ev: { moved: false, dashed: false, rotated: false, onMarble: false },
@@ -1130,7 +1198,7 @@ function startHeist(def: LevelDef): void {
         }
       : null;
   screens.hideScreens();
-  inHeist = true;
+  game.inHeist = true;
   document.body.classList.remove('meta');
   restart();
   cameraBehindLeo();
@@ -1141,12 +1209,12 @@ function leaveHeist(): void {
   $('leave-confirm').classList.add('hidden');
   toggleBag(false);
   closeLootMenu();
-  inHeist = false;
-  queue = [];
-  busy = false;
+  game.inHeist = false;
+  game.queue = [];
+  game.busy = false;
   hide('caught');
   hide('help');
-  targeting = null;
+  game.targeting = null;
   $('narrator').classList.add('hidden');
   document.body.classList.add('meta');
   sound.setScene('lair');
@@ -1156,9 +1224,9 @@ function leaveHeist(): void {
 
 function goOn(): void {
   leaveHeist();
-  if (!profile.tutorialDone) return startHeist(CORNER_GALLERY);
-  if (!profile.narratorPaid) return narratorPays();
-  if (!profile.lairOwned) return cityMap();
+  if (!game.profile.tutorialDone) return startHeist(CORNER_GALLERY);
+  if (!game.profile.narratorPaid) return narratorPays();
+  if (!game.profile.lairOwned) return cityMap();
   showLair();
 }
 
@@ -1193,7 +1261,7 @@ function narratorPays(): void {
     ],
     'Show me',
     () => {
-      narratorBuysTutorialLoot(profile, CORNER_GALLERY.id);
+      narratorBuysTutorialLoot(game.profile, CORNER_GALLERY.id);
       persist();
       cityMap();
     },
@@ -1202,8 +1270,8 @@ function narratorPays(): void {
 
 function cityMap(): void {
   leaveHeist();
-  screens.cityMap(profile, () => {
-    if (!buyLair(profile)) return;
+  screens.cityMap(game.profile, () => {
+    if (!buyLair(game.profile)) return;
     persist();
     screens.narratorScene(
       [
@@ -1226,7 +1294,7 @@ function levelPhoto(def: LevelDef): Promise<string> {
   const shot = (async () => {
     await Promise.all([loadProps(), loadCharacters(), loadSurfaces(), loadFlats(), loadLootIcons(def.loot)]);
     const lv = parseLevel(def);
-    const st = newHeist(lv, perksFor(profile), null);
+    const st = newHeist(lv, perksFor(game.profile), null);
     const v = new HeistView();
     let best = 0;
     for (let k = 0; k < 4; k++)
@@ -1280,20 +1348,20 @@ function showLair(tab: screens.LairTab = 'heists'): void {
   sound.setScene(tab === 'market' ? 'market' : 'lair');
   leaveHeist();
   // NightClaw's letters wait at the door until they've been read.
-  deliverLetters(profile);
+  deliverLetters(game.profile);
   award();
-  const unread = profile.letters.find((l) => !l.read);
+  const unread = game.profile.letters.find((l) => !l.read);
   if (unread) {
     persist();
     sfx('chime');
-    return screens.letter(unread, profile, () => {
+    return screens.letter(unread, game.profile, () => {
       unread.read = true;
       persist();
       showLair(tab);
     });
   }
   screens.lair(
-    profile,
+    game.profile,
     {
       jobs: JOBS,
       districts: DISTRICTS,
@@ -1301,7 +1369,7 @@ function showLair(tab: screens.LairTab = 'heists'): void {
         sound.setScene('planning'),
         screens.briefing(
           def,
-          profile,
+          game.profile,
           rivalPlanFor(def),
           () => startHeist(def),
           () => showLair(),
@@ -1309,34 +1377,34 @@ function showLair(tab: screens.LairTab = 'heists'): void {
         )
       ),
       onSell: (id) => {
-        sell(profile, id);
+        sell(game.profile, id);
         persist();
         showLair('market');
       },
       onSellAll: () => {
-        for (const s of [...profile.stash]) sell(profile, s.id);
+        for (const s of [...game.profile.stash]) sell(game.profile, s.id);
         persist();
         showLair('market');
       },
       onPaper: (i) =>
-        screens.newspaper(profile.papers[i], false, () => showLair('papers'), 'Back to the lair'),
+        screens.newspaper(game.profile.papers[i], false, () => showLair('papers'), 'Back to the lair'),
       onRaise: (id) => {
-        raise(profile, id);
+        raise(game.profile, id);
         persist();
         showLair('leo');
       },
       onLearn: (id) => {
-        learn(profile, id);
+        learn(game.profile, id);
         persist();
         showLair('leo');
       },
       onUpgrade: (id) => {
-        upgrade(profile, id);
+        upgrade(game.profile, id);
         persist();
         showLair('lair');
       },
       onLetter: (i) =>
-        screens.letter(profile.letters[i], profile, () => showLair('lair'), 'Back to the lair'),
+        screens.letter(game.profile.letters[i], game.profile, () => showLair('lair'), 'Back to the lair'),
       onSettings: () => screens.settingsScreen(settings, changeSettings, () => showLair(tab)),
       onQuit: showTitle,
     },
@@ -1345,7 +1413,7 @@ function showLair(tab: screens.LairTab = 'heists'): void {
 }
 
 function quit(): void {
-  if (!profile.lairOwned) return showTitle();
+  if (!game.profile.lairOwned) return showTitle();
   showLair();
 }
 
@@ -1357,13 +1425,13 @@ function showTitle(): void {
     onPlay: (i) => {
       const p = loadSlot(storage(), i);
       if (!p) return showTitle();
-      slot = i;
-      profile = p;
+      game.slot = i;
+      game.profile = p;
       goOn();
     },
     onNew: (i) => {
-      slot = i;
-      profile = newProfile();
+      game.slot = i;
+      game.profile = newProfile();
       persist();
       startHeist(CORNER_GALLERY);
     },
@@ -1376,20 +1444,16 @@ function showTitle(): void {
   });
 }
 
-/**
- * Restarting throws the heist away, so mid-heist it takes a second press (of R or the button) within a few
- * seconds: one stray key next to E (the camera) can't send Leo back to the start.
- */
-let restartArmed = 0;
+/** Restart takes two presses mid-heist, so a stray key can't throw the heist away. */
 function askRestart(): void {
-  if (state.status !== 'playing' || performance.now() < restartArmed) return restart();
-  restartArmed = performance.now() + 3000;
+  if (game.state.status !== 'playing' || performance.now() < game.restartArmed) return restart();
+  game.restartArmed = performance.now() + 3000;
   const b = $('restart');
   b.textContent = 'Really restart?';
   b.classList.add('armed');
   say('Press R (or Restart) again to start the heist over.');
   window.setTimeout(() => {
-    if (performance.now() >= restartArmed) {
+    if (performance.now() >= game.restartArmed) {
       b.textContent = 'Restart';
       b.classList.remove('armed');
     }
@@ -1397,29 +1461,29 @@ function askRestart(): void {
 }
 
 function restart(): void {
-  restartArmed = 0;
+  game.restartArmed = 0;
   $('restart').textContent = 'Restart';
   $('restart').classList.remove('armed');
-  lastHaul = 0;
+  game.lastHaul = 0;
   closeLootMenu();
-  state = newHeist(level, perksFor(profile), rivalPlan);
-  alerts = [];
+  game.state = newHeist(game.level, perksFor(game.profile), game.rivalPlan);
+  game.alerts = [];
   $('leave-confirm').classList.add('hidden');
-  rivalWasIn = false;
-  targeting = null;
-  queue = [];
-  busy = false;
-  afterAnim = null;
-  selected = null;
-  ripples = [];
-  noisesSeen = 0;
-  version++;
+  game.rivalWasIn = false;
+  game.targeting = null;
+  game.queue = [];
+  game.busy = false;
+  game.afterAnim = null;
+  game.selected = null;
+  game.ripples = [];
+  game.noisesSeen = 0;
+  game.version++;
   syncActors();
   hide('caught');
   updateHud();
   banner('Your turn');
-  say(level.def.objective);
-  if (tutorial) tutorial.ev = { moved: false, dashed: false, rotated: tutorial.ev.rotated, onMarble: false };
+  say(game.level.def.objective);
+  if (game.tutorial) game.tutorial.ev = { moved: false, dashed: false, rotated: game.tutorial.ev.rotated, onMarble: false };
   tutorialUpdate();
 }
 
@@ -1429,13 +1493,12 @@ function say(text: string): void {
   $('message').textContent = text;
 }
 
-let bannerTimer = 0;
 function banner(text: string): void {
   const b = $('banner');
   b.textContent = text;
   b.classList.add('show');
-  clearTimeout(bannerTimer);
-  bannerTimer = window.setTimeout(() => b.classList.remove('show'), 1100);
+  clearTimeout(game.bannerTimer);
+  game.bannerTimer = window.setTimeout(() => b.classList.remove('show'), 1100);
 }
 
 function show(id: string): void {
@@ -1448,92 +1511,92 @@ function hide(id: string): void {
 const LIGHT_NAMES = ['In shadow', 'Dim light', 'In the light'];
 
 function updateHud(): void {
-  $('turn').textContent = String(state.turn);
+  $('turn').textContent = String(game.state.turn);
   $('ap').innerHTML = Array.from(
     { length: AP_PER_TURN },
-    (_, i) => `<span class="pip ${i < state.ap ? 'on' : ''}"></span>`,
+    (_, i) => `<span class="pip ${i < game.state.ap ? 'on' : ''}"></span>`,
   ).join('');
-  const extras = [state.card === 'leo' ? 'keycard' : '', state.combination ? 'the combination' : '']
+  const extras = [game.state.card === 'leo' ? 'keycard' : '', game.state.combination ? 'the combination' : '']
     .filter(Boolean)
     .join(', ');
-  const haulNow = inventoryValue(level, state);
+  const haulNow = inventoryValue(game.level, game.state);
   $('inventory').innerHTML =
-    `Inventory <b>${inventoryUsed(level, state)}/${state.perks.spaces}</b> · <span class="haul-now${haulNow > lastHaul ? ' bump' : ''}">${money(haulNow)}</span>${extras ? ` · ${extras}` : ''}`;
-  lastHaul = haulNow;
+    `Inventory <b>${inventoryUsed(game.level, game.state)}/${game.state.perks.spaces}</b> · <span class="haul-now${haulNow > game.lastHaul ? ' bump' : ''}">${money(haulNow)}</span>${extras ? ` · ${extras}` : ''}`;
+  game.lastHaul = haulNow;
   renderBag();
   // The race, if there is one. Before they arrive, only a good Planning Table says when.
-  const r = state.rival;
+  const r = game.state.rival;
   const rl = $('rival');
   const prize =
-    level.def.loot.find((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y)
+    game.level.def.loot.find((l) => game.level.plinth && l.at.x === game.level.plinth.x && l.at.y === game.level.plinth.y)
       ?.name ?? 'prize';
   const rivalText = !r
     ? ''
     : r.phase === 'waiting'
-      ? profile.rooms.planning >= 2
+      ? game.profile.rooms.planning >= 2
         ? `${r.name} arrives on turn ${r.arrive}`
-        : profile.rooms.planning >= 1
+        : game.profile.rooms.planning >= 1
           ? `${r.name} is coming tonight`
           : ''
       : r.phase === 'in'
         ? `${r.name} is after ${the(prize)}!`
         : r.phase === 'leaving'
           ? `${r.name} has ${the(prize)} and is getting away`
-          : state.rivalBeaten
+          : game.state.rivalBeaten
             ? `You beat ${r.name} to it`
-            : state.rivalLoot.length
+            : game.state.rivalLoot.length
               ? `${r.name} got away with ${the(prize)}`
               : `${r.name} has fled`;
   const lock =
-    level.def.timeLock && state.turn < level.def.timeLock
-      ? `Time lock opens on turn ${level.def.timeLock}`
+    game.level.def.timeLock && game.state.turn < game.level.def.timeLock
+      ? `Time lock opens on turn ${game.level.def.timeLock}`
       : '';
-  const tide = level.def.tide
-    ? `${flooded(level, state) ? 'High' : 'Low'} tide · it turns in ${tideTurnsLeft(level, state)} turn${tideTurnsLeft(level, state) === 1 ? '' : 's'}`
+  const tide = game.level.def.tide
+    ? `${flooded(game.level, game.state) ? 'High' : 'Low'} tide · it turns in ${tideTurnsLeft(game.level, game.state)} turn${tideTurnsLeft(game.level, game.state) === 1 ? '' : 's'}`
     : '';
   rl.textContent = [rivalText, tide, lock].filter(Boolean).join(' · ');
   rl.classList.toggle('hidden', !rivalText && !tide && !lock);
-  const hidden = hiddenAt(level, state, state.leo);
-  const l = state.layer !== 'floor' || hidden ? -1 : lightNow(level, state, state.leo.x, state.leo.y);
+  const hidden = hiddenAt(game.level, game.state, game.state.leo);
+  const l = game.state.layer !== 'floor' || hidden ? -1 : lightNow(game.level, game.state, game.state.leo.x, game.state.leo.y);
   const li = $('light');
   li.textContent = hidden
     ? 'In a crate'
     : l < 0
-      ? state.layer === 'vent'
+      ? game.state.layer === 'vent'
         ? 'In the vents'
         : 'In the rafters'
       : LIGHT_NAMES[l];
   li.className = `light l${l < 0 ? 'v' : l}`;
   const al = $('alarm');
-  if (state.lockdown && state.status === 'playing') {
-    al.textContent = `LOCKDOWN · lie low: the exits open once the guards catch ${state.rival && (state.rival.phase === 'in' || state.rival.phase === 'leaving') ? state.rival.name : 'the intruder'}`;
+  if (game.state.lockdown && game.state.status === 'playing') {
+    al.textContent = `LOCKDOWN · lie low: the exits open once the guards catch ${game.state.rival && (game.state.rival.phase === 'in' || game.state.rival.phase === 'leaving') ? game.state.rival.name : 'the intruder'}`;
     show('alarm');
-  } else if (state.alarm !== null && state.status === 'playing') {
-    al.textContent = state.alarmByLeo
-      ? `ALARM · lockdown in ${state.alarm} turn${state.alarm === 1 ? '' : 's'}${state.camerasOff ? '' : ' · shut it off at the camera panel'}`
-      : `ALARM · ${state.alarmBy ?? 'a rival'} set it off, not you · lie low and stay out of sight, and it won't be pinned on you · lockdown in ${state.alarm}`;
+  } else if (game.state.alarm !== null && game.state.status === 'playing') {
+    al.textContent = game.state.alarmByLeo
+      ? `ALARM · lockdown in ${game.state.alarm} turn${game.state.alarm === 1 ? '' : 's'}${game.state.camerasOff ? '' : ' · shut it off at the camera panel'}`
+      : `ALARM · ${game.state.alarmBy ?? 'a rival'} set it off, not you · lie low and stay out of sight, and it won't be pinned on you · lockdown in ${game.state.alarm}`;
     show('alarm');
   } else hide('alarm');
-  ($('end') as HTMLButtonElement).disabled = busy || state.status !== 'playing';
+  ($('end') as HTMLButtonElement).disabled = game.busy || game.state.status !== 'playing';
   const tension: Tension =
-    state.status !== 'playing'
+    game.state.status !== 'playing'
       ? 1
-      : state.alarm !== null
+      : game.state.alarm !== null
         ? 3
-        : state.guards.some((g) => !g.asleep && g.mode !== 'patrol')
+        : game.state.guards.some((g) => !g.asleep && g.mode !== 'patrol')
           ? 2
           : 1;
-  if (inHeist) sound.setTension(tension);
+  if (game.inHeist) sound.setTension(tension);
 
   // Gadgets and active skills, with what's left of each.
   const ab = $('abilities');
-  const list = state.status === 'playing' ? abilities(level, state) : [];
+  const list = game.state.status === 'playing' ? abilities(game.level, game.state) : [];
   ab.innerHTML = '';
   for (const a of list) {
     const b = document.createElement('button');
-    b.className = `ability${targeting === a.kind ? ' on' : ''}`;
+    b.className = `ability${game.targeting === a.kind ? ' on' : ''}`;
     b.dataset.ability = a.kind;
-    b.disabled = busy || (!!a.blocked && targeting !== a.kind);
+    b.disabled = game.busy || (!!a.blocked && game.targeting !== a.kind);
     b.title = a.blocked ?? `${a.ap} action point`;
     const icon = ABILITY_ICONS[a.kind];
     b.innerHTML = `${icon ? `<img class="ab-icon" src="${icon}" alt="">` : ''}${a.name}${a.left < 99 ? ` <span class="count">×${a.left}</span>` : ''}`;
@@ -1543,7 +1606,7 @@ function updateHud(): void {
   ab.classList.toggle('hidden', list.length === 0);
 
   const bar = $('actions');
-  const acts = busy ? [] : actionsHere(level, state);
+  const acts = game.busy ? [] : actionsHere(game.level, game.state);
   bar.innerHTML = '';
   acts.forEach((a, i) => {
     const b = document.createElement('button');
@@ -1563,32 +1626,32 @@ function updateHud(): void {
 
 function caught(): void {
   sfx('caught');
-  $('caught-who').textContent = state.caughtBy ?? 'A guard';
-  say(`Caught by ${state.caughtBy ?? 'a guard'}${state.caughtWhy ? `: ${state.caughtWhy}` : ''}.`);
-  $('caught-why').textContent = state.caughtWhy
-    ? `${state.caughtWhy[0].toUpperCase()}${state.caughtWhy.slice(1)}.`
+  $('caught-who').textContent = game.state.caughtBy ?? 'A guard';
+  say(`Caught by ${game.state.caughtBy ?? 'a guard'}${game.state.caughtWhy ? `: ${game.state.caughtWhy}` : ''}.`);
+  $('caught-why').textContent = game.state.caughtWhy
+    ? `${game.state.caughtWhy[0].toUpperCase()}${game.state.caughtWhy.slice(1)}.`
     : '';
   // A moment to see where it happened (the guard, Leo and the line between them) before the card comes up.
-  const done = state;
-  setTimeout(() => state === done && show('caught'), 1700);
+  const done = game.state;
+  setTimeout(() => game.state === done && show('caught'), 1700);
 }
 
 function escaped(): void {
-  const done = state;
+  const done = game.state;
   setTimeout(() => {
-    if (state !== done) return;
+    if (game.state !== done) return;
     leaveHeist();
     const report = () => {
-      const r = completeHeist(profile, level, done);
-      if (tutorial) profile.tutorialDone = true;
-      tutorial = null;
+      const r = completeHeist(game.profile, game.level, done);
+      if (game.tutorial) game.profile.tutorialDone = true;
+      game.tutorial = null;
       persist();
       award(r);
       sfx('whoosh');
       return r;
     };
     sfx('escape');
-    if (level.def.finale && done.tagged && !profile.legendary) return ending(report());
+    if (game.level.def.finale && done.tagged && !game.profile.legendary) return ending(report());
     screens.callingCard(() => {
       const r = report();
       screens.newspaper(r.paper, true, () => showReport(r));
@@ -1600,8 +1663,8 @@ function escaped(): void {
  * picks the grid direction that looks most like it on screen). It starts on Leo, or on the target when aiming.
  */
 function moveCursor(sx: number, sy: number): void {
-  if (busy || state.status !== 'playing') return;
-  const from = selected ?? { ...state.leo };
+  if (game.busy || game.state.status !== 'playing') return;
+  const from = game.selected ?? { ...game.state.leo };
   let best = { x: 0, y: 0 };
   let score = -Infinity;
   for (const [dx, dy] of [
@@ -1622,12 +1685,12 @@ function moveCursor(sx: number, sy: number): void {
       best = { x: dx, y: dy };
     }
   }
-  selected = {
-    x: Math.min(level.w - 1, Math.max(0, from.x + best.x)),
-    y: Math.min(level.h - 1, Math.max(0, from.y + best.y)),
+  game.selected = {
+    x: Math.min(game.level.w - 1, Math.max(0, from.x + best.x)),
+    y: Math.min(game.level.h - 1, Math.max(0, from.y + best.y)),
   };
-  const a = clickAction(selected);
-  const cost = computed().reach.cost.get(key(selected.x, selected.y));
+  const a = clickAction(game.selected);
+  const cost = computed().reach.cost.get(key(game.selected.x, game.selected.y));
   const ok = document.body.classList.contains('pad')
     ? padName(settings.pad.confirm[0])
     : keyName(settings.keys.confirm[0]);
@@ -1635,7 +1698,7 @@ function moveCursor(sx: number, sy: number): void {
     a
       ? `${a.label}: press ${ok}.`
       : cost !== undefined && cost > 0
-        ? `${ok}: move here (${moveAp(state, cost)} action point${moveAp(state, cost) === 1 ? '' : 's'}).`
+        ? `${ok}: move here (${moveAp(game.state, cost)} action point${moveAp(game.state, cost) === 1 ? '' : 's'}).`
         : 'Leo can’t get there this turn.',
   );
 }
@@ -1647,8 +1710,8 @@ function openSettingsInHeist(): void {
 
 /** The finale: a click on NightClaw himself (his body stands above his tile) counts as a click on his tile. */
 function nightClawUnder(cx: number, cy: number): Point | null {
-  if (!inHeist || !level?.def.finale) return null;
-  const nc = state.guards.find((g) => g.kind === 'nightclaw');
+  if (!game.inHeist || !game.level?.def.finale) return null;
+  const nc = game.state.guards.find((g) => g.kind === 'nightclaw');
   if (!nc) return null;
   const feet = world.toGlobal(project(view.proj, nc.x + 0.5, nc.y + 0.5));
   const head = world.toGlobal(project(view.proj, nc.x + 0.5, nc.y + 0.5, 110));
@@ -1672,8 +1735,8 @@ async function boot(): Promise<void> {
     autoDensity: true,
   });
   screens.setScreenSound((n) => sound.play(n));
-  artReady = Promise.all([loadProps(), loadCharacters(), loadSurfaces(), loadFlats()]).then(
-    () => void (artLoaded = true),
+  game.artReady = Promise.all([loadProps(), loadCharacters(), loadSurfaces(), loadFlats()]).then(
+    () => void (game.artLoaded = true),
     (e) => console.error('Sprites failed to load', e),
   );
   $('stage').appendChild(app.canvas);
@@ -1682,11 +1745,11 @@ async function boot(): Promise<void> {
 
   app.canvas.addEventListener('pointermove', (e) => {
     if (e.pointerType === 'touch') return;
-    hover = tileUnder(e.clientX, e.clientY);
+    game.hover = tileUnder(e.clientX, e.clientY);
     app.canvas.style.cursor =
-      hover && inHeist && (lootHere(hover) !== null || boxHere(hover)) ? 'pointer' : '';
+      game.hover && game.inHeist && (lootHere(game.hover) !== null || boxHere(game.hover)) ? 'pointer' : '';
   });
-  app.canvas.addEventListener('pointerleave', () => (hover = null));
+  app.canvas.addEventListener('pointerleave', () => (game.hover = null));
   app.canvas.addEventListener('pointerdown', (e) => {
     const t = nightClawUnder(e.clientX, e.clientY) ?? tileUnder(e.clientX, e.clientY);
     closeLootMenu();
@@ -1696,9 +1759,9 @@ async function boot(): Promise<void> {
       !clickAction(t) &&
       lootHere(t) === null &&
       !boxHere(t) &&
-      (!selected || selected.x !== t.x || selected.y !== t.y)
+      (!game.selected || game.selected.x !== t.x || game.selected.y !== t.y)
     ) {
-      selected = t;
+      game.selected = t;
       say('Tap the same tile again to move there.');
       return;
     }
@@ -1711,7 +1774,7 @@ async function boot(): Promise<void> {
   app.canvas.addEventListener(
     'wheel',
     (e) => {
-      if (!inHeist) return;
+      if (!game.inHeist) return;
       e.preventDefault();
       zoomBy(Math.pow(0.9985, e.deltaY));
     },
@@ -1732,13 +1795,13 @@ async function boot(): Promise<void> {
   $('quit2').addEventListener('click', quit);
   $('narrator-face').innerHTML = screens.NARRATOR_SVG;
   $('narrator-ok').addEventListener('click', () => {
-    if (!tutorial) return;
-    tutorial.step++;
+    if (!game.tutorial) return;
+    game.tutorial.step++;
     tutorialUpdate();
   });
   $('narrator-hide').addEventListener('click', () => {
-    if (!tutorial) return;
-    tutorial.hidden = !tutorial.hidden;
+    if (!game.tutorial) return;
+    game.tutorial.hidden = !game.tutorial.hidden;
     tutorialUpdate();
   });
   $('help-toggle').addEventListener('click', () => $('help').classList.toggle('hidden'));
@@ -1758,13 +1821,13 @@ async function boot(): Promise<void> {
   window.addEventListener('blur', () => panKeys.clear());
   window.addEventListener('keydown', (e) => {
     // Nothing reaches the heist while a screen (the settings, say) is open over it.
-    if (!inHeist || !$('screens').classList.contains('hidden')) return;
+    if (!game.inHeist || !$('screens').classList.contains('hidden')) return;
     if (e.target instanceof HTMLInputElement) return;
     // The leave-the-lair question has the keys (its buttons, Esc to stay) while it's up.
     if (!$('leave-confirm').classList.contains('hidden')) return;
-    if (lootMenu) {
+    if (game.lootMenu) {
       // The loot tag has the keys while it's open: its numbers, or Esc to put it away.
-      if (/^[1-9]$/.test(e.key)) lootChoices[Number(e.key) - 1]?.();
+      if (/^[1-9]$/.test(e.key)) game.lootChoices[Number(e.key) - 1]?.();
       else if (e.key === 'Escape') closeLootMenu();
       if (/^[1-9]$/.test(e.key) || e.key === 'Escape') return;
     }
@@ -1791,20 +1854,20 @@ async function boot(): Promise<void> {
     else if (a === 'zoomIn') zoomBy(1.25);
     else if (a === 'zoomOut') zoomBy(0.8);
     else if (a === 'turnRight') turnCamera(-1);
-    else if (a === 'confirm' && selected && state.status === 'playing') {
+    else if (a === 'confirm' && game.selected && game.state.status === 'playing') {
       e.preventDefault();
-      const t = selected;
+      const t = game.selected;
       act(t);
     } else if (a === 'endTurn' || a === 'confirm') {
       e.preventDefault();
-      if (state.status === 'playing') doEndTurn();
-      else if (state.status === 'caught') restart();
+      if (game.state.status === 'playing') doEndTurn();
+      else if (game.state.status === 'caught') restart();
     } else if (a === 'restart') {
-      if (state.status === 'caught') restart();
+      if (game.state.status === 'caught') restart();
       else askRestart();
     } else if (e.key === 'Escape') {
-      selected = null;
-      if (targeting) cancelTargeting();
+      game.selected = null;
+      if (game.targeting) cancelTargeting();
     } else if (/^[1-9]$/.test(e.key))
       ($('actions').children[Number(e.key) - 1] as HTMLButtonElement | undefined)?.click();
   });
@@ -1817,33 +1880,33 @@ async function boot(): Promise<void> {
     padMap: () => settings.pad,
     menuRoot: () => {
       if (visibleEl('screens')) return $('screens');
-      if (!inHeist) return document.body;
+      if (!game.inHeist) return document.body;
       if (visibleEl('caught')) return $('caught');
       if (visibleEl('leave-confirm')) return $('leave-confirm');
-      if (lootMenu) return $('loot-menu');
+      if (game.lootMenu) return $('loot-menu');
       if (bagOpen()) return $('bag');
       if (hudPad) return document.body;
       return null;
     },
     onMap: () =>
-      inHeist &&
+      game.inHeist &&
       !visibleEl('screens') &&
       !visibleEl('caught') &&
       !visibleEl('leave-confirm') &&
-      !lootMenu &&
+      !game.lootMenu &&
       !bagOpen(),
     moveCursor: (dx, dy) => moveCursor(dx, dy),
     confirm: () => {
-      if (state.status !== 'playing') return;
-      if (selected) act(selected);
+      if (game.state.status !== 'playing') return;
+      if (game.selected) act(game.selected);
       else {
-        selected = { ...state.leo };
+        game.selected = { ...game.state.leo };
         say(
           `Move the cursor with the D-pad or the left stick, then press ${padName(settings.pad.confirm[0])}.`,
         );
       }
     },
-    endTurn: () => state.status === 'playing' && doEndTurn(),
+    endTurn: () => game.state.status === 'playing' && doEndTurn(),
     bag: () => toggleBag(),
     turnCamera: (d) => turnCamera(d),
     zoomBy: (k) => zoomBy(k),
@@ -1853,7 +1916,7 @@ async function boot(): Promise<void> {
     },
     recentre: () => recentre(),
     settings: () => {
-      if (inHeist && !visibleEl('screens')) openSettingsInHeist();
+      if (game.inHeist && !visibleEl('screens')) openSettingsInHeist();
     },
     toggleHud: () => {
       hudPad = !hudPad;
@@ -1891,19 +1954,19 @@ async function boot(): Promise<void> {
   // Test hook: lets the browser tests find tiles on screen, read the state and pick a level.
   (window as unknown as { __pc: unknown }).__pc = {
     get state() {
-      return state;
+      return game.state;
     },
     get busy() {
-      return busy;
+      return game.busy;
     },
     get profile() {
-      return profile;
+      return game.profile;
     },
     get inHeist() {
-      return inHeist;
+      return game.inHeist;
     },
     get tutorialStep() {
-      return tutorial ? (TUTORIAL[tutorial.step]?.id ?? 'done') : null;
+      return game.tutorial ? (TUTORIAL[game.tutorial.step]?.id ?? 'done') : null;
     },
     startHeist: (id: string) => startHeist(JOBS.find((j) => j.id === id)!),
     levels: JOBS.map((j) => ({ id: j.id, challenge: !!j.challenge, finale: !!j.finale })),
@@ -1911,32 +1974,32 @@ async function boot(): Promise<void> {
     riskAt: (x: number, y: number) => risk.get(key(x, y)),
     /** After a test changes the state directly: work out reach and the rest again. */
     refresh: () => {
-      version++;
+      game.version++;
       syncActors();
     },
-    lootIndexAt: (x: number, y: number) => lootAt(level, x, y),
+    lootIndexAt: (x: number, y: number) => lootAt(game.level, x, y),
     /** Clicks a tile, as the mouse would (without having to find it on screen). */
     act: (x: number, y: number) => act({ x, y }),
     get music() {
       return sound.nowPlaying;
     },
     get slot() {
-      return slot;
+      return game.slot;
     },
     get targeting() {
-      return targeting;
+      return game.targeting;
     },
     screenOf: (x: number, y: number) => world.toGlobal(project(view.proj, x + 0.5, y + 0.5)),
     set slowMotion(k: number) {
-      slowMotion = k;
+      game.slowMotion = k;
     },
     /** Where Leo is drawn right now, mid-step included. */
     leoOnScreen: () => world.toGlobal(project(view.proj, leo.x, leo.y)),
     /** A tile Leo can reach this turn where he'd be caught or set off the alarm. */
     dangerTile: () => {
-      for (const [k, cost] of leoReach(level, state).cost) {
+      for (const [k, cost] of leoReach(game.level, game.state).cost) {
         const [x, y] = k.split(',').map(Number);
-        if (cost > 0 && moveAp(state, cost) <= state.ap && danger(level, state, { x, y }) === 2)
+        if (cost > 0 && moveAp(game.state, cost) <= game.state.ap && danger(game.level, game.state, { x, y }) === 2)
           return { x, y };
       }
       return null;
@@ -1950,13 +2013,13 @@ async function boot(): Promise<void> {
     // Keep animations in real time on slow machines too (but not a leap after the tab was hidden).
     const dt = Math.min(0.2, tk.deltaMS / 1000);
     view.time += dt;
-    view.proj.angle += (targetAngle - view.proj.angle) * (1 - Math.exp(-dt * 10));
-    if (queue.length) {
-      const seg = queue[0];
+    view.proj.angle += (game.targetAngle - view.proj.angle) * (1 - Math.exp(-dt * 10));
+    if (game.queue.length) {
+      const seg = game.queue[0];
       if (seg.t === 0 && seg.sfx) sound.play(seg.sfx);
       seg.t += dt / seg.dur;
       const k = Math.min(1, seg.t);
-      const a = seg.who === 'leo' ? leo : seg.who === -1 ? rival : guards[seg.who];
+      const a = seg.who === 'leo' ? leo : seg.who === -1 ? rival : game.guards[seg.who];
       const x = seg.from.x + 0.5 + (seg.to.x - seg.from.x) * k;
       const y = seg.from.y + 0.5 + (seg.to.y - seg.from.y) * k;
       // The stride follows the distance covered (two frames a tile), so feet don't slide.
@@ -1969,26 +2032,26 @@ async function boot(): Promise<void> {
       a.bob = seg.leap ? Math.sin(k * Math.PI) * 34 : 0;
       if (seg.t >= 1) {
         a.bob = 0;
-        queue.shift();
+        game.queue.shift();
         // Between two steps of the same walk, keep the gait, so there's no flash of standing still.
-        if (queue[0]?.who !== seg.who) a.gait = undefined;
-        if (!queue.length) {
-          busy = false;
-          const done = afterAnim;
-          afterAnim = null;
+        if (game.queue[0]?.who !== seg.who) a.gait = undefined;
+        if (!game.queue.length) {
+          game.busy = false;
+          const done = game.afterAnim;
+          game.afterAnim = null;
           done?.();
         }
       }
     } else leo.bob = Math.sin(view.time * 3) * 0.8 + 0.8;
-    for (const r of ripples) r.t += dt / 0.9;
-    ripples = ripples.filter((r) => r.t < 1);
-    if (!inHeist) return;
+    for (const r of game.ripples) r.t += dt / 0.9;
+    game.ripples = game.ripples.filter((r) => r.t < 1);
+    if (!game.inHeist) return;
     fit(dt);
     placeRivalArrow();
     workOnRisk();
     placeLootMenu();
     placeRiskNote();
-    view.draw(level, state, overlay(), leo, guards, ripples, rival);
+    view.draw(game.level, game.state, overlay(), leo, game.guards, game.ripples, rival);
   });
 }
 
@@ -2012,9 +2075,9 @@ function fit(dt = 0): void {
     y1 = -Infinity;
   for (const [x, y] of [
     [0, 0],
-    [level.w, 0],
-    [level.w, level.h],
-    [0, level.h],
+    [game.level.w, 0],
+    [game.level.w, game.level.h],
+    [0, game.level.h],
   ]) {
     for (const z of [0, 90]) {
       const s = project(view.proj, x, y, z);
@@ -2025,16 +2088,16 @@ function fit(dt = 0): void {
     }
   }
   const whole = Math.min((w - 24) / (x1 - x0), (h - top - bottom) / (y1 - y0), 1.5);
-  zoomNow += (zoom - zoomNow) * (dt ? 1 - Math.exp(-dt * 8) : 1);
-  const scale = Math.min(whole * zoomNow, 2.2);
+  game.zoomNow += (game.zoom - game.zoomNow) * (dt ? 1 - Math.exp(-dt * 8) : 1);
+  const scale = Math.min(whole * game.zoomNow, 2.2);
   // Follow Leo, easing; the more zoomed in, the more the view centres on him rather than the map.
   const leoAt = project(view.proj, leo.x, leo.y, 30);
   const want = { x: Math.max(x0, Math.min(x1, leoAt.x)), y: Math.max(y0, Math.min(y1, leoAt.y)) };
-  if (!focus || !dt) focus = { ...want };
+  if (!game.focus || !dt) game.focus = { ...want };
   else {
     const k = 1 - Math.exp(-dt * 5);
-    focus.x += (want.x - focus.x) * k;
-    focus.y += (want.y - focus.y) * k;
+    game.focus.x += (want.x - game.focus.x) * k;
+    game.focus.y += (want.y - game.focus.y) * k;
   }
   const t = Math.min(1, (scale / whole - 1) / 0.5);
   // WASD pans the view across the screen at a steady speed, however far zoomed in.
@@ -2045,16 +2108,16 @@ function fit(dt = 0): void {
     if (panKeys.has('panUp')) pan.y -= speed;
     if (panKeys.has('panDown')) pan.y += speed;
   }
-  let cx = (x0 + x1) / 2 + (focus.x - (x0 + x1) / 2) * t + pan.x;
-  let cy = (y0 + y1) / 2 + (focus.y - (y0 + y1) / 2) * t + pan.y;
+  let cx = (x0 + x1) / 2 + (game.focus.x - (x0 + x1) / 2) * t + pan.x;
+  let cy = (y0 + y1) / 2 + (game.focus.y - (y0 + y1) / 2) * t + pan.y;
   // Don't show more empty space past the map's edge than the view needs.
   const halfW = (w - 24) / 2 / scale;
   const halfH = (h - top - bottom) / 2 / scale;
   cx = (x1 - x0) / 2 > halfW ? Math.max(x0 + halfW, Math.min(x1 - halfW, cx)) : (x0 + x1) / 2;
   cy = (y1 - y0) / 2 > halfH ? Math.max(y0 + halfH, Math.min(y1 - halfH, cy)) : (y0 + y1) / 2;
   // Keep the pan to what the edges allowed, so holding a key against the edge doesn't wind up.
-  pan.x = cx - ((x0 + x1) / 2 + (focus.x - (x0 + x1) / 2) * t);
-  pan.y = cy - ((y0 + y1) / 2 + (focus.y - (y0 + y1) / 2) * t);
+  pan.x = cx - ((x0 + x1) / 2 + (game.focus.x - (x0 + x1) / 2) * t);
+  pan.y = cy - ((y0 + y1) / 2 + (game.focus.y - (y0 + y1) / 2) * t);
   world.scale.set(scale);
   view.setDetail(scale * app.renderer.resolution);
   world.position.set(w / 2 - cx * scale, top + (h - top - bottom) / 2 - cy * scale);
