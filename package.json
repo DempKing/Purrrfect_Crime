@@ -11,9 +11,13 @@
     "typecheck": "tsc --noEmit",
     "test": "node scripts/test.mjs",
     "solve": "esbuild tools/solve.ts --bundle --platform=node --outfile=.solve/solve.cjs --log-level=warning && node --max-old-space-size=8000 .solve/solve.cjs",
-    "balance": "esbuild tools/balance.ts --bundle --platform=node --outfile=.solve/balance.cjs --log-level=warning && node .solve/balance.cjs"
+    "balance": "esbuild tools/balance.ts --bundle --platform=node --outfile=.solve/balance.cjs --log-level=warning && node .solve/balance.cjs",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "@eslint/js": "9.14.0",
     "@fontsource/homemade-apple": "5.3.0",
     "@fontsource/luckiest-guy": "5.3.0",
     "@fontsource/nunito": "5.3.0",
@@ -22,8 +26,12 @@
     "@types/node": "22.15.0",
     "@types/three": "0.170.0",
     "esbuild": "0.24.2",
+    "eslint": "9.14.0",
+    "globals": "15.12.0",
     "pixi.js": "8.21.0",
+    "prettier": "3.3.3",
     "three": "0.170.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.13.0"
   }
 }

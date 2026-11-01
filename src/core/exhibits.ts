@@ -12,14 +12,66 @@ export interface Exhibit {
   loot?: { names: string[]; category: LootCategory; value: number; space: number };
 }
 
-const BUST: Exhibit = { model: 'marble_bust_01', pedestal: true, loot: { names: ['Marble Bust of a Distinguished Cat', 'Marble Bust of the Founder', 'Bust of a Forgotten Poet'], category: 'artefact', value: 1400, space: 2 } };
-const HORSE: Exhibit = { model: 'horse_statue_01', pedestal: true, loot: { names: ['Bronze Racehorse', 'Little Bronze Stallion'], category: 'artefact', value: 1800, space: 2 } };
-const MANTEL: Exhibit = { model: 'mantel_clock_01', pedestal: true, loot: { names: ['Gilt Mantel Clock', 'Carriage Clock'], category: 'artefact', value: 1200, space: 2 } };
-const CAT_IDOL: Exhibit = { model: 'concrete_cat_statue', pedestal: true, loot: { names: ['Stone Cat Idol', 'Temple Cat Figure'], category: 'artefact', value: 1600, space: 2 } };
-const CONCH: Exhibit = { model: 'lambis_shell', pedestal: true, loot: { names: ['Spider Conch Shell', 'Giant Pink Conch'], category: 'curiosity', value: 700, space: 1 } };
-const LANTERN: Exhibit = { model: 'Lantern_01', pedestal: true, loot: { names: ['Old Ship’s Lantern', 'Lighthouse Keeper’s Lantern'], category: 'curiosity', value: 600, space: 1 } };
-const CHEST: Exhibit = { model: 'treasure_chest', pedestal: false, loot: { names: ['Sea Chest of Trinkets', 'Pirate’s Strongbox'], category: 'curiosity', value: 1500, space: 3 } };
-const CAT_STATUE: Exhibit = { flat: 'spr_statue', pedestal: false, loot: { names: ['Alabaster Cat on a Plinth'], category: 'artefact', value: 2000, space: 2 } };
+const BUST: Exhibit = {
+  model: 'marble_bust_01',
+  pedestal: true,
+  loot: {
+    names: ['Marble Bust of a Distinguished Cat', 'Marble Bust of the Founder', 'Bust of a Forgotten Poet'],
+    category: 'artefact',
+    value: 1400,
+    space: 2,
+  },
+};
+const HORSE: Exhibit = {
+  model: 'horse_statue_01',
+  pedestal: true,
+  loot: {
+    names: ['Bronze Racehorse', 'Little Bronze Stallion'],
+    category: 'artefact',
+    value: 1800,
+    space: 2,
+  },
+};
+const MANTEL: Exhibit = {
+  model: 'mantel_clock_01',
+  pedestal: true,
+  loot: { names: ['Gilt Mantel Clock', 'Carriage Clock'], category: 'artefact', value: 1200, space: 2 },
+};
+const CAT_IDOL: Exhibit = {
+  model: 'concrete_cat_statue',
+  pedestal: true,
+  loot: { names: ['Stone Cat Idol', 'Temple Cat Figure'], category: 'artefact', value: 1600, space: 2 },
+};
+const CONCH: Exhibit = {
+  model: 'lambis_shell',
+  pedestal: true,
+  loot: { names: ['Spider Conch Shell', 'Giant Pink Conch'], category: 'curiosity', value: 700, space: 1 },
+};
+const LANTERN: Exhibit = {
+  model: 'Lantern_01',
+  pedestal: true,
+  loot: {
+    names: ['Old Ship’s Lantern', 'Lighthouse Keeper’s Lantern'],
+    category: 'curiosity',
+    value: 600,
+    space: 1,
+  },
+};
+const CHEST: Exhibit = {
+  model: 'treasure_chest',
+  pedestal: false,
+  loot: {
+    names: ['Sea Chest of Trinkets', 'Pirate’s Strongbox'],
+    category: 'curiosity',
+    value: 1500,
+    space: 3,
+  },
+};
+const CAT_STATUE: Exhibit = {
+  flat: 'spr_statue',
+  pedestal: false,
+  loot: { names: ['Alabaster Cat on a Plinth'], category: 'artefact', value: 2000, space: 2 },
+};
 const STATUE: Exhibit = { model: 'gothic_statue', pedestal: false };
 const PLANT: Exhibit = { model: 'potted_plant_01', pedestal: false };
 const PLANT2: Exhibit = { model: 'potted_plant_02', pedestal: false };
@@ -73,7 +125,10 @@ export function exhibitLoot(def: LevelDef): LootDef[] {
     let name = names[Math.floor(tileHash(at.x, at.y, 13) * names.length)];
     // Two of the same in one building: the second gets another of its names, or a number.
     const taken = (n: string) => out.some((l) => l.name === n) || def.loot.some((l) => l.name === n);
-    if (taken(name)) name = names.find((n) => !taken(n)) ?? `${name} (No. ${out.filter((l) => l.name.startsWith(name)).length + 1})`;
+    if (taken(name))
+      name =
+        names.find((n) => !taken(n)) ??
+        `${name} (No. ${out.filter((l) => l.name.startsWith(name)).length + 1})`;
     out.push({ at, name, category: e.loot.category, value: e.loot.value, space: e.loot.space });
   }
   return out;
@@ -86,5 +141,7 @@ export function allLoot(def: LevelDef): LootDef[] {
 
 /** Which picture each exhibit's loot uses: the model's (or flat picture's) own name. */
 export const EXHIBIT_PICTURES: Record<string, string> = Object.fromEntries(
-  [BUST, HORSE, MANTEL, CAT_IDOL, CONCH, LANTERN, CHEST, CAT_STATUE].flatMap((e) => e.loot!.names.map((n) => [n, e.model ?? e.flat!])),
+  [BUST, HORSE, MANTEL, CAT_IDOL, CONCH, LANTERN, CHEST, CAT_STATUE].flatMap((e) =>
+    e.loot!.names.map((n) => [n, e.model ?? e.flat!]),
+  ),
 );

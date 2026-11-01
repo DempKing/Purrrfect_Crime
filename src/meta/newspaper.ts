@@ -67,7 +67,9 @@ export function writePaper(f: HeistFacts): Paper {
   if (f.rival?.caught) {
     // Two thieves in, one hauled off by the guards.
     const NAME = f.rival.name.toUpperCase();
-    headline = centre ? `${NAME} NABBED AS TUXEDO CAT ESCAPES WITH THE ${CENTRE}` : pick([`${NAME} NABBED AT ${PLACE}`, `GUARDS COLLAR ${NAME} AT ${PLACE}`], seed);
+    headline = centre
+      ? `${NAME} NABBED AS TUXEDO CAT ESCAPES WITH THE ${CENTRE}`
+      : pick([`${NAME} NABBED AT ${PLACE}`, `GUARDS COLLAR ${NAME} AT ${PLACE}`], seed);
     subhead = `${f.rival.caughtBy ?? 'A guard'} caught ${f.rival.name} red-pawed at ${f.place} last night${centre ? `, but the tuxedo cat slipped away with ${the(centre.name)} in the confusion` : '; the other thief, in a bow tie, was never found'}.`;
   } else if (f.rival && !f.rival.won) {
     headline = `${f.rival.name.toUpperCase()} BEATS TUXEDO CAT TO THE ${f.rival.prize.toUpperCase()}`;
@@ -79,13 +81,33 @@ export function writePaper(f: HeistFacts): Paper {
     headline = `NEW CAT IN TOWN: TUXEDO THIEF HITS ${PLACE}`;
     subhead = `A calling card with a red bow tie was all the burglar left behind${centre ? `, on the plinth where ${the(centre.name)} used to sit` : ''}.`;
   } else if (!f.seen && !f.alarm && centre) {
-    headline = pick([`GHOST IN A TUXEDO: ${CENTRE} VANISHES FROM ${PLACE}`, `NOBODY SAW A THING: ${CENTRE} GONE`, `NOT A WHISKER OUT OF PLACE AT ${PLACE}`], seed);
+    headline = pick(
+      [
+        `GHOST IN A TUXEDO: ${CENTRE} VANISHES FROM ${PLACE}`,
+        `NOBODY SAW A THING: ${CENTRE} GONE`,
+        `NOT A WHISKER OUT OF PLACE AT ${PLACE}`,
+      ],
+      seed,
+    );
     subhead = `No alarm, no sighting, no clue, apart from the calling card where ${the(centre.name)} should be.`;
   } else if (f.alarm) {
-    headline = pick([`ALARMS BLARE AS TUXEDO CAT STRIKES ${PLACE}`, `SIRENS, SPOTLIGHTS AND STILL NO CAT AT ${PLACE}`, `LOCKDOWN TOO LATE AT ${PLACE}`], seed);
+    headline = pick(
+      [
+        `ALARMS BLARE AS TUXEDO CAT STRIKES ${PLACE}`,
+        `SIRENS, SPOTLIGHTS AND STILL NO CAT AT ${PLACE}`,
+        `LOCKDOWN TOO LATE AT ${PLACE}`,
+      ],
+      seed,
+    );
     subhead = `Police arrived to find the alarm ringing, the displays empty and a calling card by the door.`;
   } else if (f.seen) {
-    headline = pick([`GUARD SWEARS HE SAW "A SHADOW IN A BOW TIE"`, `${guard.toUpperCase()}: "IT WAS RIGHT THERE, THEN IT WASN'T"`], seed);
+    headline = pick(
+      [
+        `GUARD SWEARS HE SAW "A SHADOW IN A BOW TIE"`,
+        `${guard.toUpperCase()}: "IT WAS RIGHT THERE, THEN IT WASN'T"`,
+      ],
+      seed,
+    );
     subhead = `${guard} glimpsed something at ${f.place} last night. By the time he looked again, the loot was gone.`;
   } else if (f.centrepieceName && !centre) {
     headline = `${f.centrepieceName.toUpperCase()} SAFE, BUT ${f.items.length === 1 ? 'A TREASURE' : `${f.items.length} TREASURES`} TAKEN AT ${PLACE}`;
@@ -100,7 +122,16 @@ export function writePaper(f: HeistFacts): Paper {
     name: i.name,
     value: i.value,
     centrepiece: i.centrepiece,
-    caption: i.centrepiece ? `${the(i.name).replace(/^t/, 'T')}'s plinth, with only a calling card left on it.` : pick([`The empty case where ${the(i.name)} stood.`, `Where ${the(i.name)} used to be.`, `Gone: ${the(i.name)}.`], hash(i.name) + seed),
+    caption: i.centrepiece
+      ? `${the(i.name).replace(/^t/, 'T')}'s plinth, with only a calling card left on it.`
+      : pick(
+          [
+            `The empty case where ${the(i.name)} stood.`,
+            `Where ${the(i.name)} used to be.`,
+            `Gone: ${the(i.name)}.`,
+          ],
+          hash(i.name) + seed,
+        ),
   }));
   const total = f.items.reduce((n, i) => n + i.value, 0);
 
@@ -150,13 +181,23 @@ export function finalePaper(day: number): Paper {
     levelId: 'nc-lair',
     place: 'the old bell tower',
     headline: 'NIGHTCLAW’S SUCCESSOR?',
-    subhead: 'A note pinned to the door of the old bell tower on Moon Street says the legendary NightClaw has retired. It is signed with a claw mark, and it names a successor: a young cat in a tuxedo.',
+    subhead:
+      'A note pinned to the door of the old bell tower on Moon Street says the legendary NightClaw has retired. It is signed with a claw mark, and it names a successor: a young cat in a tuxedo.',
     photos: [],
     total: 0,
     stories: [
-      { title: 'The end of an era', body: 'For forty years NightClaw was the thief this city told its kittens about. Detectives who spent their careers chasing him say they will miss him. One cried.' },
-      { title: 'Who is the Tuxedo Cat?', body: 'Every museum in the city has had a visit, and every centrepiece has gone, with not one guard who could swear they saw him. Curators are advised to check under their plinths.' },
-      { title: 'Bell tower empty', body: 'Police who searched the tower found only an empty armchair, a cooling cup of milk and, on a velvet cushion, the dent where something small and precious used to lie.' },
+      {
+        title: 'The end of an era',
+        body: 'For forty years NightClaw was the thief this city told its kittens about. Detectives who spent their careers chasing him say they will miss him. One cried.',
+      },
+      {
+        title: 'Who is the Tuxedo Cat?',
+        body: 'Every museum in the city has had a visit, and every centrepiece has gone, with not one guard who could swear they saw him. Curators are advised to check under their plinths.',
+      },
+      {
+        title: 'Bell tower empty',
+        body: 'Police who searched the tower found only an empty armchair, a cooling cup of milk and, on a velvet cushion, the dent where something small and precious used to lie.',
+      },
     ],
   };
 }

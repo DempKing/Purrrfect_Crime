@@ -4,7 +4,7 @@ import { moveAp, canSteal, endTurn, leoReach, moveLeo, newHeist, steal, type Sta
 import type { Level, Point } from './level';
 
 function stateKey(s: State): string {
-  return `${s.leo.x},${s.leo.y}|${s.inventory.join(",")}|${s.guards.map((g) => `${g.x},${g.y},${g.facing},${g.target}`).join(';')}`;
+  return `${s.leo.x},${s.leo.y}|${s.inventory.join(',')}|${s.guards.map((g) => `${g.x},${g.y},${g.facing},${g.target}`).join(';')}`;
 }
 
 export interface Solution {
@@ -67,4 +67,3 @@ function turnOptions(level: Level, s: State): { after: State; what: string }[] {
   }
   return out;
 }
-

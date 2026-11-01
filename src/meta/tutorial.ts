@@ -36,7 +36,7 @@ export const TUTORIAL: TutorialStep[] = [
   },
   {
     id: 'camera',
-    text: "Turn the view with Q and E, or the arrow buttons. Walls in your way drop down so you can always see yourself.",
+    text: 'Turn the view with Q and E, or the arrow buttons. Walls in your way drop down so you can always see yourself.',
     done: (_, ev) => ev.rotated,
   },
   {
@@ -46,8 +46,9 @@ export const TUTORIAL: TutorialStep[] = [
   },
   {
     id: 'noise',
-    text: "Marble floors squeak. The rings show how far the sound carries. If Gus hears you he gets a yellow question mark and comes to look. Stand still in the dark until he gives up.",
-    done: (s, ev) => (ev.onMarble && s.guards.every((g) => g.mode === 'patrol')) || pastCorridor(s) || inGallery(s),
+    text: 'Marble floors squeak. The rings show how far the sound carries. If Gus hears you he gets a yellow question mark and comes to look. Stand still in the dark until he gives up.',
+    done: (s, ev) =>
+      (ev.onMarble && s.guards.every((g) => g.mode === 'patrol')) || pastCorridor(s) || inGallery(s),
   },
   {
     id: 'cameras',
@@ -56,7 +57,7 @@ export const TUTORIAL: TutorialStep[] = [
   },
   {
     id: 'vents',
-    text: "West of here is a hallway full of lasers. Go under it. Stand on the grate, climb in with the button at the bottom, crawl along the duct and climb out in the gallery. Nobody can see you in a vent, but crawling is slow.",
+    text: 'West of here is a hallway full of lasers. Go under it. Stand on the grate, climb in with the button at the bottom, crawl along the duct and climb out in the gallery. Nobody can see you in a vent, but crawling is slow.',
     done: (s) => inGallery(s) && s.layer === 'floor',
   },
   {

@@ -24,16 +24,31 @@ export interface Settings {
 export const SETTINGS_KEY = 'purrrfect-crime-settings';
 
 export function defaultSettings(reduceMotion = false): Settings {
-  return { master: 0.8, music: 0.6, sfx: 0.8, speed: reduceMotion ? 'fast' : 'normal', reduceMotion, largeText: false, palette: 'standard', hints: true, keys: defaultKeys(), pad: defaultPad() };
+  return {
+    master: 0.8,
+    music: 0.6,
+    sfx: 0.8,
+    speed: reduceMotion ? 'fast' : 'normal',
+    reduceMotion,
+    largeText: false,
+    palette: 'standard',
+    hints: true,
+    keys: defaultKeys(),
+    pad: defaultPad(),
+  };
 }
 
 /** How long animations take, as a share of normal. */
 export const SPEED_FACTOR: Record<Speed, number> = { normal: 1, fast: 0.5, instant: 0.02 };
 
-const clamp01 = (n: unknown, d: number) => (typeof n === 'number' && Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : d);
+const clamp01 = (n: unknown, d: number) =>
+  typeof n === 'number' && Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : d;
 
 /** Reads the settings, filling in anything missing or broken with the defaults. */
-export function loadSettings(storage: Pick<Storage, 'getItem'> | null, prefersReducedMotion = false): Settings {
+export function loadSettings(
+  storage: Pick<Storage, 'getItem'> | null,
+  prefersReducedMotion = false,
+): Settings {
   const d = defaultSettings(prefersReducedMotion);
   try {
     const raw = storage?.getItem(SETTINGS_KEY);

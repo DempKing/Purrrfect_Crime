@@ -66,12 +66,12 @@ tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 
 ## Documents
 
-| Document | What's in it |
-| --- | --- |
-| [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md) | The full design: turns and camera, stealth, security, rivals, loot and the black market, progression, the lair, story and NightClaw's letters, tutorial, 25 levels, art and sprite spec, tech plan, milestones, decisions |
-| [docs/BALANCE.md](docs/BALANCE.md) | The balance report: each level's flawless route, par, XP and loot |
-| [docs/ORIGINAL_BRIEF.md](docs/ORIGINAL_BRIEF.md) | The original pitch and decisions, word for word |
-| [art/README.md](art/README.md) | Where generated sprites go and how to upload them |
+| Document                                         | What's in it                                                                                                                                                                                                              |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md)       | The full design: turns and camera, stealth, security, rivals, loot and the black market, progression, the lair, story and NightClaw's letters, tutorial, 25 levels, art and sprite spec, tech plan, milestones, decisions |
+| [docs/BALANCE.md](docs/BALANCE.md)               | The balance report: each level's flawless route, par, XP and loot                                                                                                                                                         |
+| [docs/ORIGINAL_BRIEF.md](docs/ORIGINAL_BRIEF.md) | The original pitch and decisions, word for word                                                                                                                                                                           |
+| [art/README.md](art/README.md)                   | Where generated sprites go and how to upload them                                                                                                                                                                         |
 
 ## Fonts and music
 
@@ -86,12 +86,12 @@ credit is listed in `art/music/credits.json` and shown in the end credits.
 
 ## Milestones
 
-| # | Milestone |
-| --- | --- |
-| M0 ✓ | Grey-box prototype: one map, camera rotation, action-point movement, one guard, caught = restart |
-| M1 ✓ | Stealth sandbox: light, noise, alert states, cameras, lasers, vents, lockpicking, loot, escape |
-| M2 ✓ (art pending) | Vertical slice: the tutorial level with real art, narrator, calling card and newspaper, black market, lair |
-| M3 ✓ | Progression: attributes, skill trees, lair upgrades, saves |
-| M4 ✓ | Content: levels 1–25, rivals, all guard types, NightClaw's first letters, the challenge museum |
-| M5 ✓ (art pending) | Endgame: the NightClaw Challenge, NightClaw's Lair, ending |
-| M6 (settings ✓, sound ✓, accessibility ✓, achievements ✓, balance ✓, menu revamp ✓) | Ship: Steam, settings, accessibility, balance and polish |
+| #                                                                                   | Milestone                                                                                                  |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| M0 ✓                                                                                | Grey-box prototype: one map, camera rotation, action-point movement, one guard, caught = restart           |
+| M1 ✓                                                                                | Stealth sandbox: light, noise, alert states, cameras, lasers, vents, lockpicking, loot, escape             |
+| M2 ✓ (art pending)                                                                  | Vertical slice: the tutorial level with real art, narrator, calling card and newspaper, black market, lair |
+| M3 ✓                                                                                | Progression: attributes, skill trees, lair upgrades, saves                                                 |
+| M4 ✓                                                                                | Content: levels 1–25, rivals, all guard types, NightClaw's first letters, the challenge museum             |
+| M5 ✓ (art pending)                                                                  | Endgame: the NightClaw Challenge, NightClaw's Lair, ending                                                 |
+| M6 (settings ✓, sound ✓, accessibility ✓, achievements ✓, balance ✓, menu revamp ✓) | Ship: Steam, settings, accessibility, balance and polish                                                   |

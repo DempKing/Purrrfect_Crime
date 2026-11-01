@@ -229,12 +229,15 @@ export function parseLevel(def: LevelDef): Level {
       row.push(t);
       const v = def.vents?.[y]?.[x] ?? ' ';
       drow.push(v === '=' || v === 'V');
-      if (v === 'V' && t !== 'grate') throw new Error(`${def.id}: vent grate at ${x},${y} has no V on the map`);
+      if (v === 'V' && t !== 'grate')
+        throw new Error(`${def.id}: vent grate at ${x},${y} has no V on the map`);
       if (t === 'grate' && v !== 'V') throw new Error(`${def.id}: grate at ${x},${y} is not on the duct map`);
       const r = def.rafters?.[y]?.[x] ?? ' ';
       rrow.push(r === '=' || r === 'H');
-      if (r === 'H' && t !== 'ladder') throw new Error(`${def.id}: ladder top at ${x},${y} has no H on the map`);
-      if (t === 'ladder' && r !== 'H') throw new Error(`${def.id}: ladder at ${x},${y} doesn't reach the rafters`);
+      if (r === 'H' && t !== 'ladder')
+        throw new Error(`${def.id}: ladder top at ${x},${y} has no H on the map`);
+      if (t === 'ladder' && r !== 'H')
+        throw new Error(`${def.id}: ladder at ${x},${y} doesn't reach the rafters`);
     }
     tiles.push(row);
     ducts.push(drow);
@@ -242,15 +245,20 @@ export function parseLevel(def: LevelDef): Level {
   }
   if (!start || !exit) throw new Error(`${def.id}: map needs @ and E`);
   if (def.map.join('').split('k').length > 2) throw new Error(`${def.id}: one keycard per level`);
-  if (def.map.join('').includes('Q') && !def.map.join('').includes('N')) throw new Error(`${def.id}: a vault door needs a desk with the combination`);
+  if (def.map.join('').includes('Q') && !def.map.join('').includes('N'))
+    throw new Error(`${def.id}: a vault door needs a desk with the combination`);
   if (def.map.join('').includes('t') && !def.tide) throw new Error(`${def.id}: tidal sand needs a tide`);
   for (const sw of def.switches ?? []) {
-    if (def.map[sw.at.y]?.[sw.at.x] !== 'W') throw new Error(`${def.id}: switch at ${sw.at.x},${sw.at.y} has no W on the map`);
-    for (const i of sw.lamps) if (!def.lamps?.[i]) throw new Error(`${def.id}: switch at ${sw.at.x},${sw.at.y} works a lamp that isn't there`);
+    if (def.map[sw.at.y]?.[sw.at.x] !== 'W')
+      throw new Error(`${def.id}: switch at ${sw.at.x},${sw.at.y} has no W on the map`);
+    for (const i of sw.lamps)
+      if (!def.lamps?.[i])
+        throw new Error(`${def.id}: switch at ${sw.at.x},${sw.at.y} works a lamp that isn't there`);
   }
   for (const l of def.loot) {
     const t = tiles[l.at.y]?.[l.at.x];
-    if (t !== 'case' && t !== 'plinth' && t !== 'safe') throw new Error(`${def.id}: loot "${l.name}" is not in a case, a safe or on the plinth`);
+    if (t !== 'case' && t !== 'plinth' && t !== 'safe')
+      throw new Error(`${def.id}: loot "${l.name}" is not in a case, a safe or on the plinth`);
   }
   const level: Level = {
     // The exhibits under the lights join the loot (see exhibits.ts).
@@ -260,7 +268,11 @@ export function parseLevel(def: LevelDef): Level {
     tiles,
     ducts,
     rafters,
-    motion: tiles.map((row, y) => row.map((_, x) => (def.motion ?? []).some((m) => x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h))),
+    motion: tiles.map((row, y) =>
+      row.map((_, x) =>
+        (def.motion ?? []).some((m) => x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h),
+      ),
+    ),
     spotlights: def.spotlights ?? [],
     start,
     exit,
@@ -270,8 +282,13 @@ export function parseLevel(def: LevelDef): Level {
     lamps: def.lamps ?? [],
     moonlight: def.moonlight ?? [],
   };
-  for (const e of def.rivalEntrances ?? []) if (blocksMove(tiles[e.y]?.[e.x] ?? 'wall')) throw new Error(`${def.id}: rival entrance ${e.x},${e.y} is in a wall`);
-  for (const g of level.guards) for (const p of [g.start, ...g.route]) if (blocksMove(tiles[p.y]?.[p.x] ?? 'wall')) throw new Error(`${def.id}: guard ${g.name} stands in a wall at ${p.x},${p.y}`);
+  for (const e of def.rivalEntrances ?? [])
+    if (blocksMove(tiles[e.y]?.[e.x] ?? 'wall'))
+      throw new Error(`${def.id}: rival entrance ${e.x},${e.y} is in a wall`);
+  for (const g of level.guards)
+    for (const p of [g.start, ...g.route])
+      if (blocksMove(tiles[p.y]?.[p.x] ?? 'wall'))
+        throw new Error(`${def.id}: guard ${g.name} stands in a wall at ${p.x},${p.y}`);
   return level;
 }
 
@@ -317,18 +334,54 @@ export function laserAxis(level: Level, x: number, y: number): 'x' | 'y' {
 /** Whether a tile blocks walking, given which doors are open and which cases are emptied. */
 export function blocksMove(t: Tile): boolean {
   return (
-    t === 'wall' || t === 'pillar' || t === 'stack' || t === 'case' || t === 'plinth' || t === 'lamp' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'safe' || t === 'seat' ||
-    t === 'keydoor' || t === 'gap' || t === 'wire' || t === 'glass' || t === 'kennel' || t === 'vault' || t === 'desk' ||
-    t === 'crate' || t === 'switch'
+    t === 'wall' ||
+    t === 'pillar' ||
+    t === 'stack' ||
+    t === 'case' ||
+    t === 'plinth' ||
+    t === 'lamp' ||
+    t === 'door' ||
+    t === 'panel' ||
+    t === 'fuse' ||
+    t === 'safe' ||
+    t === 'seat' ||
+    t === 'keydoor' ||
+    t === 'gap' ||
+    t === 'wire' ||
+    t === 'glass' ||
+    t === 'kennel' ||
+    t === 'vault' ||
+    t === 'desk' ||
+    t === 'crate' ||
+    t === 'switch'
   );
 }
 
 /** Display cases, the plinth and lamps are low: guards see over them, and through glass. Closed doors block sight. */
 export function blocksSight(t: Tile): boolean {
-  return t === 'wall' || t === 'pillar' || t === 'stack' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'keydoor' || t === 'vault' || t === 'switch';
+  return (
+    t === 'wall' ||
+    t === 'pillar' ||
+    t === 'stack' ||
+    t === 'door' ||
+    t === 'panel' ||
+    t === 'fuse' ||
+    t === 'keydoor' ||
+    t === 'vault' ||
+    t === 'switch'
+  );
 }
 
 /** Walls, closed doors and glass stop sound (it carries round pillars). */
 export function blocksSound(t: Tile): boolean {
-  return t === 'wall' || t === 'door' || t === 'panel' || t === 'fuse' || t === 'keydoor' || t === 'vault' || t === 'glass' || t === 'switch';
+  return (
+    t === 'wall' ||
+    t === 'door' ||
+    t === 'panel' ||
+    t === 'fuse' ||
+    t === 'keydoor' ||
+    t === 'vault' ||
+    t === 'glass' ||
+    t === 'switch'
+  );
 }

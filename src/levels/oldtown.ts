@@ -10,10 +10,14 @@ import type { LevelDef } from '../core/level';
  */
 export const COIN_MUSEUM: LevelDef = {
   id: 'l1-coin-museum',
-  rivalEntrances: [{ x: 24, y: 1 }, { x: 15, y: 1 }], // the office skylight, a hall window
+  rivalEntrances: [
+    { x: 24, y: 1 },
+    { x: 15, y: 1 },
+  ], // the office skylight, a hall window
   tip: 'Barnaby is a sleepy guard: he sees nothing while he dozes, but noise wakes him. The brown floorboards creak loudly. The safe is slow to crack (three goes) but silent.',
   name: 'The Cobblestone Coin Museum',
-  objective: 'Lift the Double Doubloon from the vault and get back out through the street door. The curator keeps something in his safe, too.',
+  objective:
+    'Lift the Double Doubloon from the vault and get back out through the street door. The curator keeps something in his safe, too.',
   ambient: 'dark',
   xp: 120,
   par: 22,
@@ -68,10 +72,44 @@ export const COIN_MUSEUM: LevelDef = {
   ],
   guards: [
     { name: 'Barnaby', kind: 'sleepy', start: { x: 4, y: 12 }, route: [{ x: 3, y: 12 }] },
-    { name: 'Rex', start: { x: 2, y: 2 }, route: [{ x: 15, y: 2 }, { x: 15, y: 7 }, { x: 2, y: 7 }, { x: 2, y: 2 }] },
-    { name: 'Duke', start: { x: 18, y: 13 }, route: [{ x: 23, y: 13 }, { x: 23, y: 9 }, { x: 18, y: 9 }, { x: 18, y: 13 }] },
-    { name: 'Mack', start: { x: 2, y: 6 }, route: [{ x: 13, y: 6 }, { x: 2, y: 6 }] },
-    { name: 'Spike', start: { x: 1, y: 11 }, route: [{ x: 6, y: 11 }, { x: 6, y: 14 }, { x: 1, y: 14 }, { x: 1, y: 11 }] },
+    {
+      name: 'Rex',
+      start: { x: 2, y: 2 },
+      route: [
+        { x: 15, y: 2 },
+        { x: 15, y: 7 },
+        { x: 2, y: 7 },
+        { x: 2, y: 2 },
+      ],
+    },
+    {
+      name: 'Duke',
+      start: { x: 18, y: 13 },
+      route: [
+        { x: 23, y: 13 },
+        { x: 23, y: 9 },
+        { x: 18, y: 9 },
+        { x: 18, y: 13 },
+      ],
+    },
+    {
+      name: 'Mack',
+      start: { x: 2, y: 6 },
+      route: [
+        { x: 13, y: 6 },
+        { x: 2, y: 6 },
+      ],
+    },
+    {
+      name: 'Spike',
+      start: { x: 1, y: 11 },
+      route: [
+        { x: 6, y: 11 },
+        { x: 6, y: 14 },
+        { x: 1, y: 14 },
+        { x: 1, y: 11 },
+      ],
+    },
   ],
   loot: [
     { at: { x: 21, y: 11 }, name: 'Double Doubloon', value: 5200, space: 2, category: 'curiosity' },
@@ -93,7 +131,10 @@ export const COIN_MUSEUM: LevelDef = {
  */
 export const CLOCKTOWER: LevelDef = {
   id: 'l2-clocktower',
-  rivalEntrances: [{ x: 26, y: 15 }, { x: 7, y: 3 }], // the back corridor, the hall's high window
+  rivalEntrances: [
+    { x: 26, y: 15 },
+    { x: 7, y: 3 },
+  ], // the back corridor, the hall's high window
   tip: 'Big Ben is a captain: he sees further, and when he gets suspicious he whistles nearby guards over to help. With Ceiling Climb (Acrobat), the ladders lead up to the rafters.',
   name: 'The Clocktower Archive',
   objective: 'Take the Brass Astrolabe from the clock chamber and leave by the back door.',
@@ -150,15 +191,48 @@ export const CLOCKTOWER: LevelDef = {
     { at: { x: 7, y: 9 }, sweep: [0, 7, 0, 1], range: 6 },
   ],
   guards: [
-    { name: 'Big Ben', kind: 'captain', start: { x: 8, y: 4 }, route: [{ x: 20, y: 4 }, { x: 20, y: 14 }, { x: 8, y: 14 }, { x: 8, y: 4 }] },
-    { name: 'Tick', start: { x: 14, y: 5 }, route: [{ x: 14, y: 12 }, { x: 14, y: 5 }] },
+    {
+      name: 'Big Ben',
+      kind: 'captain',
+      start: { x: 8, y: 4 },
+      route: [
+        { x: 20, y: 4 },
+        { x: 20, y: 14 },
+        { x: 8, y: 14 },
+        { x: 8, y: 4 },
+      ],
+    },
+    {
+      name: 'Tick',
+      start: { x: 14, y: 5 },
+      route: [
+        { x: 14, y: 12 },
+        { x: 14, y: 5 },
+      ],
+    },
     { name: 'Tock', kind: 'sleepy', start: { x: 25, y: 6 }, route: [{ x: 24, y: 6 }] },
-    { name: 'Chime', start: { x: 23, y: 2 }, route: [{ x: 26, y: 2 }, { x: 26, y: 9 }, { x: 23, y: 9 }, { x: 23, y: 2 }] },
-    { name: 'Gong', start: { x: 22, y: 15 }, route: [{ x: 26, y: 15 }, { x: 26, y: 12 }, { x: 22, y: 12 }, { x: 22, y: 15 }] },
+    {
+      name: 'Chime',
+      start: { x: 23, y: 2 },
+      route: [
+        { x: 26, y: 2 },
+        { x: 26, y: 9 },
+        { x: 23, y: 9 },
+        { x: 23, y: 2 },
+      ],
+    },
+    {
+      name: 'Gong',
+      start: { x: 22, y: 15 },
+      route: [
+        { x: 26, y: 15 },
+        { x: 26, y: 12 },
+        { x: 22, y: 12 },
+        { x: 22, y: 15 },
+      ],
+    },
   ],
-  loot: [
-    { at: { x: 24, y: 4 }, name: 'Brass Astrolabe', value: 6400, space: 2, category: 'artefact' },
-  ],
+  loot: [{ at: { x: 24, y: 4 }, name: 'Brass Astrolabe', value: 6400, space: 2, category: 'artefact' }],
 };
 
 /**
@@ -169,10 +243,14 @@ export const CLOCKTOWER: LevelDef = {
  */
 export const PAWNBROKER: LevelDef = {
   id: 'l3-pawnbroker',
-  rivalEntrances: [{ x: 24, y: 3 }, { x: 1, y: 14 }], // the far end of the top hall, a shop window
+  rivalEntrances: [
+    { x: 24, y: 3 },
+    { x: 1, y: 14 },
+  ], // the far end of the top hall, a shop window
   tip: 'Biscuit is a sniffer: short-sighted, but he smells Leo through walls from two tiles away. The lasers in the top hall pulse: off every other turn.',
   name: 'The Pawnbroker Penthouse',
-  objective: 'Get the Pawned Tiara out of the owner’s vault, and out by the fire escape. The safes are worth a look.',
+  objective:
+    'Get the Pawned Tiara out of the owner’s vault, and out by the fire escape. The safes are worth a look.',
   ambient: 'dark',
   pulsingLasers: true,
   xp: 180,
@@ -208,10 +286,44 @@ export const PAWNBROKER: LevelDef = {
     { at: { x: 1, y: 5 }, sweep: [1, 0, 1, 2], range: 6 },
   ],
   guards: [
-    { name: 'Lou', start: { x: 2, y: 8 }, route: [{ x: 13, y: 8 }, { x: 13, y: 13 }, { x: 2, y: 13 }, { x: 2, y: 8 }] },
-    { name: 'Biscuit', kind: 'sniffer', start: { x: 17, y: 6 }, route: [{ x: 23, y: 6 }, { x: 17, y: 6 }] },
-    { name: 'Mo', start: { x: 14, y: 1 }, route: [{ x: 23, y: 1 }, { x: 23, y: 3 }, { x: 14, y: 3 }, { x: 14, y: 1 }] },
-    { name: 'Rufus', kind: 'sniffer', start: { x: 5, y: 12 }, route: [{ x: 11, y: 12 }, { x: 5, y: 12 }] },
+    {
+      name: 'Lou',
+      start: { x: 2, y: 8 },
+      route: [
+        { x: 13, y: 8 },
+        { x: 13, y: 13 },
+        { x: 2, y: 13 },
+        { x: 2, y: 8 },
+      ],
+    },
+    {
+      name: 'Biscuit',
+      kind: 'sniffer',
+      start: { x: 17, y: 6 },
+      route: [
+        { x: 23, y: 6 },
+        { x: 17, y: 6 },
+      ],
+    },
+    {
+      name: 'Mo',
+      start: { x: 14, y: 1 },
+      route: [
+        { x: 23, y: 1 },
+        { x: 23, y: 3 },
+        { x: 14, y: 3 },
+        { x: 14, y: 1 },
+      ],
+    },
+    {
+      name: 'Rufus',
+      kind: 'sniffer',
+      start: { x: 5, y: 12 },
+      route: [
+        { x: 11, y: 12 },
+        { x: 5, y: 12 },
+      ],
+    },
   ],
   loot: [
     { at: { x: 21, y: 13 }, name: 'Pawned Tiara', value: 7800, space: 2, category: 'jewel' },
@@ -235,7 +347,10 @@ export const PAWNBROKER: LevelDef = {
  */
 export const OPERA_HOUSE: LevelDef = {
   id: 'l4-opera-house',
-  rivalEntrances: [{ x: 18, y: 1 }, { x: 26, y: 16 }], // the stage's fly door, the lobby's side door
+  rivalEntrances: [
+    { x: 18, y: 1 },
+    { x: 26, y: 16 },
+  ], // the stage's fly door, the lobby's side door
   tip: 'Two spotlights are sweeping: anything in their circle is in bright light. Watch where they’ll be next turn.',
   name: 'The Opera House Costume Vault',
   objective: 'Steal the Phantom’s Mask from the costume vault and walk out the front doors.',
@@ -274,8 +389,26 @@ export const OPERA_HOUSE: LevelDef = {
     '                        H',
   ],
   spotlights: [
-    { path: [{ x: 8, y: 4 }, { x: 11, y: 4 }, { x: 14, y: 4 }, { x: 17, y: 4 }, { x: 14, y: 4 }, { x: 11, y: 4 }], radius: 2 },
-    { path: [{ x: 12, y: 15 }, { x: 12, y: 11 }, { x: 16, y: 9 }, { x: 16, y: 13 }], radius: 2 },
+    {
+      path: [
+        { x: 8, y: 4 },
+        { x: 11, y: 4 },
+        { x: 14, y: 4 },
+        { x: 17, y: 4 },
+        { x: 14, y: 4 },
+        { x: 11, y: 4 },
+      ],
+      radius: 2,
+    },
+    {
+      path: [
+        { x: 12, y: 15 },
+        { x: 12, y: 11 },
+        { x: 16, y: 9 },
+        { x: 16, y: 13 },
+      ],
+      radius: 2,
+    },
   ],
   lamps: [
     { at: { x: 26, y: 1 }, radius: 2 },
@@ -291,14 +424,55 @@ export const OPERA_HOUSE: LevelDef = {
     { at: { x: 5, y: 12 }, sweep: [5, 6, 7, 6], range: 6 },
   ],
   guards: [
-    { name: 'Maestro', kind: 'captain', start: { x: 7, y: 9 }, route: [{ x: 18, y: 9 }, { x: 18, y: 16 }, { x: 15, y: 16 }, { x: 15, y: 9 }, { x: 10, y: 9 }, { x: 10, y: 16 }, { x: 7, y: 16 }, { x: 7, y: 9 }] },
-    { name: 'Usher', start: { x: 26, y: 15 }, route: [{ x: 20, y: 15 }, { x: 19, y: 14 }, { x: 16, y: 15 }, { x: 19, y: 14 }, { x: 20, y: 13 }, { x: 26, y: 13 }, { x: 26, y: 15 }] },
+    {
+      name: 'Maestro',
+      kind: 'captain',
+      start: { x: 7, y: 9 },
+      route: [
+        { x: 18, y: 9 },
+        { x: 18, y: 16 },
+        { x: 15, y: 16 },
+        { x: 15, y: 9 },
+        { x: 10, y: 9 },
+        { x: 10, y: 16 },
+        { x: 7, y: 16 },
+        { x: 7, y: 9 },
+      ],
+    },
+    {
+      name: 'Usher',
+      start: { x: 26, y: 15 },
+      route: [
+        { x: 20, y: 15 },
+        { x: 19, y: 14 },
+        { x: 16, y: 15 },
+        { x: 19, y: 14 },
+        { x: 20, y: 13 },
+        { x: 26, y: 13 },
+        { x: 26, y: 15 },
+      ],
+    },
     { name: 'Diva', kind: 'sleepy', start: { x: 26, y: 5 }, route: [{ x: 25, y: 5 }] },
-    { name: 'Stagehand', start: { x: 8, y: 2 }, route: [{ x: 17, y: 2 }, { x: 17, y: 6 }, { x: 8, y: 6 }, { x: 8, y: 2 }] },
+    {
+      name: 'Stagehand',
+      start: { x: 8, y: 2 },
+      route: [
+        { x: 17, y: 2 },
+        { x: 17, y: 6 },
+        { x: 8, y: 6 },
+        { x: 8, y: 2 },
+      ],
+    },
     // The guard dog sniffs up and down the far end of the vault, by the way out to the lobby, not the stage door.
-    { name: 'Tenor', kind: 'sniffer', start: { x: 20, y: 8 }, route: [{ x: 22, y: 8 }, { x: 20, y: 8 }] },
+    {
+      name: 'Tenor',
+      kind: 'sniffer',
+      start: { x: 20, y: 8 },
+      route: [
+        { x: 22, y: 8 },
+        { x: 20, y: 8 },
+      ],
+    },
   ],
-  loot: [
-    { at: { x: 23, y: 4 }, name: 'Phantom’s Mask', value: 9500, space: 1, category: 'artefact' },
-  ],
+  loot: [{ at: { x: 23, y: 4 }, name: 'Phantom’s Mask', value: 9500, space: 1, category: 'artefact' }],
 };

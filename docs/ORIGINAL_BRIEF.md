@@ -64,14 +64,14 @@ these into systems; if the two ever disagree, check back here.
 
 Answers to the open questions from the first draft of the design doc:
 
-| # | Question | Answer |
-| --- | --- | --- |
-| 1 | Art pipeline | "I will have sprites generated." |
-| 2 | Difficulty | "Difficulty is chosen once for the whole game." |
-| 3 | Checkpoints | "One checkpoint per easier level." (Read as: one checkpoint per level on the two easier difficulties.) |
-| 4 | Rivals | "Rivals shouldn't always be on each level, only if they plan to steal the same centerpiece item as the player." |
-| 5 | Replays for loot | "Yes." |
-| 6 | Platforms | "Both" (web and Steam). |
-| 7 | Length, 15–20 hours | "Yes." |
+| #   | Question            | Answer                                                                                                          |
+| --- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 1   | Art pipeline        | "I will have sprites generated."                                                                                |
+| 2   | Difficulty          | "Difficulty is chosen once for the whole game."                                                                 |
+| 3   | Checkpoints         | "One checkpoint per easier level." (Read as: one checkpoint per level on the two easier difficulties.)          |
+| 4   | Rivals              | "Rivals shouldn't always be on each level, only if they plan to steal the same centerpiece item as the player." |
+| 5   | Replays for loot    | "Yes."                                                                                                          |
+| 6   | Platforms           | "Both" (web and Steam).                                                                                         |
+| 7   | Length, 15–20 hours | "Yes."                                                                                                          |
 
 The game is being built from scratch from this plan; no code from earlier prototypes carries over.

@@ -54,7 +54,9 @@ function play(level: Level, route: RouteStep[][]): State {
   const s = newHeist(level);
   for (const turn of route) {
     for (const st of turn) {
-      const ok = Array.isArray(st) ? moveLeo(level, s, { x: st[0], y: st[1] }).ok : doAction(level, s, st.a as never, { x: st.x, y: st.y });
+      const ok = Array.isArray(st)
+        ? moveLeo(level, s, { x: st[0], y: st[1] }).ok
+        : doAction(level, s, st.a as never, { x: st.x, y: st.y });
       assert.ok(ok, `step ${JSON.stringify(st)} failed on turn ${s.turn}`);
       if (s.status !== 'playing') break;
     }
@@ -71,7 +73,14 @@ test('the Night Gallery, with all its guards, can still be beaten', () => {
 });
 
 test('levels reject guards walking through walls', () => {
-  assert.throws(() => parseLevel({ ...CORNER_GALLERY, guards: [{ name: 'X', start: { x: 0, y: 0 }, route: [{ x: 1, y: 1 }] }] }), /in a wall/);
+  assert.throws(
+    () =>
+      parseLevel({
+        ...CORNER_GALLERY,
+        guards: [{ name: 'X', start: { x: 0, y: 0 }, route: [{ x: 1, y: 1 }] }],
+      }),
+    /in a wall/,
+  );
 });
 
 // --- attributes, as perks ---------------------------------------------------------------------------
@@ -91,14 +100,21 @@ test('Stealth shortens how far guards make Leo out; Blend makes dim light count 
   assert.equal(guardSees(night, quiet(night), g, 15, 12), true, '4 tiles in moonlight');
   assert.equal(guardSees(night, quiet(night, { sight: 0.7 }), g, 15, 12), false);
   assert.equal(guardSees(night, quiet(night, { blend: true }), g, 13, 12), false);
-  assert.equal(guardSees(night, quiet(night, { blend: true }), g, 13, 12, true), true, 'an empty case is still an empty case');
+  assert.equal(
+    guardSees(night, quiet(night, { blend: true }), g, 13, 12, true),
+    true,
+    'an empty case is still an empty case',
+  );
 });
 
 test('Quiet Paws: Leo’s noises are smaller; a thrown bottle cap isn’t', () => {
   const s = quiet(night, { noise: 0.4 });
   makeNoise(night, s, { x: 10, y: 12 }, 6);
   makeNoise(night, s, { x: 10, y: 12 }, 4, false);
-  assert.deepEqual(s.noises.map((n) => n.r), [2, 4]);
+  assert.deepEqual(
+    s.noises.map((n) => n.r),
+    [2, 4],
+  );
 });
 
 test('Dexterity: cases in one go, doors in one go, silent picks', () => {
@@ -317,7 +333,17 @@ test('skills and the Workshop become charges for the heist', () => {
   upgrade(p, 'workshop');
   upgrade(p, 'workshop');
   const c = perksFor(p).charges;
-  assert.deepEqual(c, { 'bottle-cap': 3, 'decoy-card': 2, smoke: 2, 'camera-loop': 2, 'fuse-kit': 2, emp: 2, pounce: 99, 'cat-nap': 2, 'second-wind': 2 });
+  assert.deepEqual(c, {
+    'bottle-cap': 3,
+    'decoy-card': 2,
+    smoke: 2,
+    'camera-loop': 2,
+    'fuse-kit': 2,
+    emp: 2,
+    pounce: 99,
+    'cat-nap': 2,
+    'second-wind': 2,
+  });
 });
 
 test('lair rooms: three tiers, each costs more; the Mailbox has one', () => {
@@ -332,7 +358,16 @@ test('lair rooms: three tiers, each costs more; the Mailbox has one', () => {
 
 test('the Fence’s Office pays more, and a collector pays half again for one item', () => {
   const p = newProfile();
-  p.stash = [1, 2, 3].map((id) => ({ id, name: `Thing ${id}`, category: 'artefact' as const, value: 1000, levelId: 'x', levelName: 'X', centrepiece: false, hot: false }));
+  p.stash = [1, 2, 3].map((id) => ({
+    id,
+    name: `Thing ${id}`,
+    category: 'artefact' as const,
+    value: 1000,
+    levelId: 'x',
+    levelName: 'X',
+    centrepiece: false,
+    hot: false,
+  }));
   assert.equal(priceOf(p, p.stash[0]), 57);
   p.rooms.fence = 1;
   assert.equal(collectorWants(p), null);

@@ -1,0 +1,7 @@
+dist
+node_modules
+.solve
+.test-build
+art
+package-lock.json
+src/levels/solutions.ts

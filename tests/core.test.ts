@@ -68,7 +68,11 @@ test('guards see in a cone, and walls and pillars block their view', () => {
   assert.equal(guardSees(grey, s, g, 6, 3), false, 'behind');
   assert.equal(guardSees(grey, s, g, 9, 9), false, 'outside the cone');
   assert.equal(guardSees(grey, s, g, 16, 3), false, 'out of range');
-  assert.equal(guardSees(grey, s, { x: 9, y: 4, facing: 0 }, 12, 4), false, 'the pillar at 11,4 blocks the view');
+  assert.equal(
+    guardSees(grey, s, { x: 9, y: 4, facing: 0 }, 12, 4),
+    false,
+    'the pillar at 11,4 blocks the view',
+  );
 });
 
 test('in a lit room, walking into a guard’s view is an instant catch', () => {
@@ -280,7 +284,9 @@ test('the Night Gallery can be beaten: the known route escapes with the Night Op
   const s = newHeist(night);
   for (const turn of NIGHT_GALLERY_ROUTE) {
     for (const step of turn) {
-      const ok = Array.isArray(step) ? moveLeo(night, s, { x: step[0], y: step[1] }).ok : doAction(night, s, step.a as never, { x: step.x, y: step.y });
+      const ok = Array.isArray(step)
+        ? moveLeo(night, s, { x: step[0], y: step[1] }).ok
+        : doAction(night, s, step.a as never, { x: step.x, y: step.y });
       assert.ok(ok, `step ${JSON.stringify(step)} failed on turn ${s.turn}`);
       if (s.status !== 'playing') break;
     }

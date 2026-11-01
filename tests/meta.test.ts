@@ -33,7 +33,9 @@ function play(level: Level, route: RouteStep[][], each?: (s: State) => void): St
   const s = newHeist(level);
   for (const turn of route) {
     for (const step of turn) {
-      const ok = Array.isArray(step) ? moveLeo(level, s, { x: step[0], y: step[1] }).ok : doAction(level, s, step.a as never, { x: step.x, y: step.y });
+      const ok = Array.isArray(step)
+        ? moveLeo(level, s, { x: step[0], y: step[1] }).ok
+        : doAction(level, s, step.a as never, { x: step.x, y: step.y });
       assert.ok(ok, `step ${JSON.stringify(step)} failed on turn ${s.turn}`);
       each?.(s);
       if (s.status !== 'playing') break;
@@ -193,7 +195,12 @@ test('the same day and heist always print the same paper', () => {
 
 function memoryStore() {
   const store = new Map<string, string>();
-  return { store, getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) };
+  return {
+    store,
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => void store.set(k, v),
+    removeItem: (k: string) => void store.delete(k),
+  };
 }
 
 test('three save slots: save, load, and a broken or missing slot loads as nothing', () => {
@@ -206,7 +213,15 @@ test('three save slots: save, load, and a broken or missing slot loads as nothin
   m.store.set('purrrfect-crime-slot-3', '{not json');
   assert.equal(loadSlot(m, 2), null);
   assert.equal(loadSlot(null, 0), null);
-  saveSlot({ setItem: () => { throw new Error('full'); } }, 0, p);
+  saveSlot(
+    {
+      setItem: () => {
+        throw new Error('full');
+      },
+    },
+    0,
+    p,
+  );
 });
 
 test('an M2 save moves into the first empty slot, with no attributes, skills or rooms', () => {
@@ -214,7 +229,24 @@ test('an M2 save moves into the first empty slot, with no attributes, skills or 
   const first = newProfile();
   first.catnip = 5;
   saveSlot(m, 0, first);
-  m.store.set('purrrfect-crime-save-v1', JSON.stringify({ version: 1, day: 5, catnip: 777, xp: 900, tutorialDone: true, narratorPaid: true, lairOwned: true, stash: [], nextId: 9, heists: 4, soldTotal: 300, records: {}, papers: [] }));
+  m.store.set(
+    'purrrfect-crime-save-v1',
+    JSON.stringify({
+      version: 1,
+      day: 5,
+      catnip: 777,
+      xp: 900,
+      tutorialDone: true,
+      narratorPaid: true,
+      lairOwned: true,
+      stash: [],
+      nextId: 9,
+      heists: 4,
+      soldTotal: 300,
+      records: {},
+      papers: [],
+    }),
+  );
   const slots = loadSlots(m);
   assert.equal(slots[0]?.catnip, 5);
   assert.equal(slots[1]?.catnip, 777);
@@ -226,7 +258,11 @@ test('an M2 save moves into the first empty slot, with no attributes, skills or 
 
 test('an M3 save loses its difficulty, and Nine Lives becomes Second Wind', async () => {
   const { upgradeProfile } = await import('../src/meta/profile');
-  const p = upgradeProfile({ ...newProfile(), difficulty: 'casual', skills: ['pounce', 'cat-nap', 'nine-lives'] });
+  const p = upgradeProfile({
+    ...newProfile(),
+    difficulty: 'casual',
+    skills: ['pounce', 'cat-nap', 'nine-lives'],
+  });
   assert.ok(p);
   assert.equal('difficulty' in p, false);
   assert.deepEqual(p.skills, ['pounce', 'cat-nap', 'second-wind']);
@@ -237,8 +273,26 @@ test('every paper has text in every story, whatever the day', async () => {
   for (let day = 1; day <= 200; day++)
     for (const seen of [false, true])
       for (const alarm of [false, true]) {
-        const paper = writePaper({ day, levelId: `l${day % 7}`, place: 'Somewhere', items: [{ name: 'Thing', value: 100, centrepiece: day % 2 === 0 }], centrepieceName: 'Thing', guards: ['Gus'], seen, alarm, turns: day % 30, first: day === 1, replay: day % 5 === 0 });
-        for (const t of [paper.headline, paper.subhead, ...paper.stories.flatMap((s) => [s.title, s.body]), ...paper.photos.map((p) => p.caption)]) assert.equal(typeof t, 'string');
+        const paper = writePaper({
+          day,
+          levelId: `l${day % 7}`,
+          place: 'Somewhere',
+          items: [{ name: 'Thing', value: 100, centrepiece: day % 2 === 0 }],
+          centrepieceName: 'Thing',
+          guards: ['Gus'],
+          seen,
+          alarm,
+          turns: day % 30,
+          first: day === 1,
+          replay: day % 5 === 0,
+        });
+        for (const t of [
+          paper.headline,
+          paper.subhead,
+          ...paper.stories.flatMap((s) => [s.title, s.body]),
+          ...paper.photos.map((p) => p.caption),
+        ])
+          assert.equal(typeof t, 'string');
       }
 });
 
@@ -271,14 +325,31 @@ test('rivals: none for the first three heists, then a roll that sticks until the
     assert.ok(r.entrance < NATURAL_HISTORY.rivalEntrances!.length);
   }
   assert.ok(found > 60 && found < 140, `${found} rivals in 400 rolls`);
-  assert.equal(rivalFor({ ...newProfile(), heists: 10, tutorialDone: true }, CORNER_GALLERY, 0), null, 'not in the tutorial (no way in)');
+  assert.equal(
+    rivalFor({ ...newProfile(), heists: 10, tutorialDone: true }, CORNER_GALLERY, 0),
+    null,
+    'not in the tutorial (no way in)',
+  );
 });
 
 test('a rival who wins: the level remembers, the record counts it, the paper says so', () => {
   const p = newProfile();
   const s = play(corner, CORNER_GALLERY_ROUTE);
   // Pretend Luna was in tonight and got the pearl first, leaving Leo the small pieces.
-  s.rival = { id: 'luna', name: 'Luna Luck', x: 0, y: 0, facing: 0, arrive: 3, entrance: { x: 0, y: 0 }, phase: 'gone', prize: true, alarmed: false, caught: false, caughtBy: null };
+  s.rival = {
+    id: 'luna',
+    name: 'Luna Luck',
+    x: 0,
+    y: 0,
+    facing: 0,
+    arrive: 3,
+    entrance: { x: 0, y: 0 },
+    phase: 'gone',
+    prize: true,
+    alarmed: false,
+    caught: false,
+    caughtBy: null,
+  };
   s.inventory = s.inventory.filter((i) => i !== 0);
   s.rivalLoot = [0];
   p.rivals[CORNER_GALLERY.id] = { id: 'luna', arrive: 3, entrance: 0 };
@@ -294,7 +365,20 @@ test('a rival who wins: the level remembers, the record counts it, the paper say
 test('beating a rival to it pays a bonus and makes the headline', () => {
   const p = newProfile();
   const s = play(corner, CORNER_GALLERY_ROUTE);
-  s.rival = { id: 'paws', name: 'Professor Paws', x: 0, y: 0, facing: 0, arrive: 3, entrance: { x: 0, y: 0 }, phase: 'gone', prize: false, alarmed: false, caught: false, caughtBy: null };
+  s.rival = {
+    id: 'paws',
+    name: 'Professor Paws',
+    x: 0,
+    y: 0,
+    facing: 0,
+    arrive: 3,
+    entrance: { x: 0, y: 0 },
+    phase: 'gone',
+    prize: false,
+    alarmed: false,
+    caught: false,
+    caughtBy: null,
+  };
   s.rivalBeaten = true;
   const r = completeHeist(p, corner, s);
   assert.ok(r.xp.some((l) => l.label === 'Beat Professor Paws to it'));
@@ -333,7 +417,10 @@ test('Letter 3 is inside the challenge centrepiece, and only there', () => {
   assert.equal(p.letters.length, 0);
   const challenge = parseLevel({ ...CORNER_GALLERY, challenge: true });
   completeHeist(p, challenge, play(challenge, CORNER_GALLERY_ROUTE));
-  assert.deepEqual(p.letters.map((l) => l.id), [3]);
+  assert.deepEqual(
+    p.letters.map((l) => l.id),
+    [3],
+  );
   completeHeist(p, challenge, play(challenge, CORNER_GALLERY_ROUTE));
   assert.equal(p.letters.length, 1, 'once');
 });
@@ -348,10 +435,13 @@ test('older saves start with no letters', async () => {
 // --- The endgame ---------------------------------------------------------------------------------------
 
 test('Letter 4 comes once every centrepiece in the city has been taken flawlessly, after Letter 3', async () => {
-  const { CHALLENGE_LEVELS, challengeProgress, deliverLetters, hasLetter, openMusicBox } = await import('../src/meta/letters');
+  const { CHALLENGE_LEVELS, challengeProgress, deliverLetters, hasLetter, openMusicBox } = await import(
+    '../src/meta/letters'
+  );
   const p = newProfile();
   assert.equal(CHALLENGE_LEVELS.length, 25, 'the tutorial and all five districts');
-  for (const l of CHALLENGE_LEVELS) p.records[l.id] = { clears: 1, bestTurns: 10, centrepiece: true, flawless: true };
+  for (const l of CHALLENGE_LEVELS)
+    p.records[l.id] = { clears: 1, bestTurns: 10, centrepiece: true, flawless: true };
   deliverLetters(p);
   assert.ok(!hasLetter(p, 4), 'not before Letter 3');
   openMusicBox(p);
@@ -375,7 +465,10 @@ test('the finale: tapping NightClaw makes Leo Legendary; the collar isn’t for 
   const r = completeHeist(p, lair, s);
   assert.ok(r.finale && p.legendary);
   assert.equal(r.paper.headline, 'NIGHTCLAW’S SUCCESSOR?');
-  assert.ok(!p.stash.some((i) => i.levelId === NIGHTCLAW_LAIR.id && i.centrepiece), 'the collar stays on the shelf');
+  assert.ok(
+    !p.stash.some((i) => i.levelId === NIGHTCLAW_LAIR.id && i.centrepiece),
+    'the collar stays on the shelf',
+  );
   assert.ok(p.records[NIGHTCLAW_LAIR.id].centrepiece);
   const again = completeHeist(p, lair, play(lair, SOLUTIONS[NIGHTCLAW_LAIR.id]));
   assert.ok(!again.finale, 'the ending plays once');

@@ -1,119 +1,212 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Purrrfect Crime — Prototype</title>
-  <!-- STYLES -->
-</head>
-<body class="meta">
-  <div id="stage"></div>
-  <div id="floaters"></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <title>Purrrfect Crime — Prototype</title>
+    <!-- STYLES -->
+  </head>
+  <body class="meta">
+    <div id="stage"></div>
+    <div id="floaters"></div>
 
-  <header class="hud">
-    <div class="card status">
-      <div class="title">Purrrfect Crime</div>
-      <div class="small" id="level-name"></div>
-      <div class="row">
-        <span>Turn <b id="turn">1</b></span>
-        <span class="ap-label">AP <span id="ap"></span></span>
-        <span id="light" class="light l0">In shadow</span>
+    <header class="hud">
+      <div class="card status">
+        <div class="title">Purrrfect Crime</div>
+        <div class="small" id="level-name"></div>
+        <div class="row">
+          <span>Turn <b id="turn">1</b></span>
+          <span class="ap-label">AP <span id="ap"></span></span>
+          <span id="light" class="light l0">In shadow</span>
+        </div>
+        <div class="small" id="inventory"></div>
+        <div class="small rival-line hidden" id="rival"></div>
       </div>
-      <div class="small" id="inventory"></div>
-      <div class="small rival-line hidden" id="rival"></div>
-    </div>
-    <div class="buttons">
-      <button id="rotate-left" title="Turn the camera (Q)">⟲ Q</button>
-      <button id="rotate-right" title="Turn the camera (E)">E ⟳</button>
-      <button id="zoom-out" title="Zoom out (−, or the mouse wheel)">−</button>
-      <button id="zoom-in" title="Zoom in (+, or the mouse wheel)">+</button>
-      <button id="bag-btn" title="What Leo is carrying (I)">Bag</button>
-      <button id="end" class="primary" title="End your turn (Space)">End turn</button>
-      <button id="restart" title="Restart the level (R, twice)">Restart</button>
-      <button id="quit" title="Leave the heist">Quit</button>
-      <button id="settings-btn" title="Settings: sound, speed, accessibility" aria-label="Settings">⚙</button>
-      <button id="help-toggle" title="How to play" aria-label="How to play">?</button>
-    </div>
-  </header>
+      <div class="buttons">
+        <button id="rotate-left" title="Turn the camera (Q)">⟲ Q</button>
+        <button id="rotate-right" title="Turn the camera (E)">E ⟳</button>
+        <button id="zoom-out" title="Zoom out (−, or the mouse wheel)">−</button>
+        <button id="zoom-in" title="Zoom in (+, or the mouse wheel)">+</button>
+        <button id="bag-btn" title="What Leo is carrying (I)">Bag</button>
+        <button id="end" class="primary" title="End your turn (Space)">End turn</button>
+        <button id="restart" title="Restart the level (R, twice)">Restart</button>
+        <button id="quit" title="Leave the heist">Quit</button>
+        <button id="settings-btn" title="Settings: sound, speed, accessibility" aria-label="Settings">
+          ⚙
+        </button>
+        <button id="help-toggle" title="How to play" aria-label="How to play">?</button>
+      </div>
+    </header>
 
-  <div id="alarm" class="alarm hidden" role="alert"></div>
-  <div id="banner" aria-live="polite"></div>
-  <div id="toasts" aria-live="polite"></div>
-  <footer class="bottom">
-    <div id="narrator" class="narrator card hidden">
-      <div class="narrator-face" id="narrator-face"></div>
-      <div class="narrator-body">
-        <div class="narrator-top"><span class="speaker-name">The narrator</span><span class="small" id="narrator-count"></span></div>
-        <p id="narrator-text"></p>
-        <div class="row-buttons"><button id="narrator-ok" class="primary">Got it</button><button id="narrator-hide">Hide tips</button></div>
+    <div id="alarm" class="alarm hidden" role="alert"></div>
+    <div id="banner" aria-live="polite"></div>
+    <div id="toasts" aria-live="polite"></div>
+    <footer class="bottom">
+      <div id="narrator" class="narrator card hidden">
+        <div class="narrator-face" id="narrator-face"></div>
+        <div class="narrator-body">
+          <div class="narrator-top">
+            <span class="speaker-name">The narrator</span><span class="small" id="narrator-count"></span>
+          </div>
+          <p id="narrator-text"></p>
+          <div class="row-buttons">
+            <button id="narrator-ok" class="primary">Got it</button
+            ><button id="narrator-hide">Hide tips</button>
+          </div>
+        </div>
+      </div>
+      <div id="abilities" class="abilities hidden"></div>
+      <div id="actions" class="actions hidden"></div>
+      <div class="message" id="message" role="status" aria-live="polite"></div>
+    </footer>
+
+    <aside id="help" class="card help hidden">
+      <b>How to play</b>
+      <ul>
+        <li>
+          <b>Keyboard:</b> the arrow keys move a cursor, Enter moves Leo there or does what's there, Space
+          ends the turn, I opens the bag, R twice restarts, Q and E turn the camera, WASD pans it (C brings it
+          back to Leo), + and − (or the mouse wheel) zoom. The ⚙ button has sound, speed and accessibility
+          settings.
+        </li>
+        <li>
+          <b>Controller:</b> the D-pad or left stick moves the cursor, A goes there or does what's there, X
+          ends the turn, Y opens the bag, LB and RB turn the camera, LT and RT zoom, the right stick pans
+          (click a stick to come back to Leo). View/Select reaches the buttons (actions, gadgets, Restart…),
+          Menu/Start opens the settings, and B cancels. In menus, the D-pad moves between buttons and A
+          presses.
+        </li>
+        <li>
+          <b>Your own controls:</b> ⚙ Settings → Controls lets you change any key or controller button.
+        </li>
+        <li>
+          <b>Move:</b> click a tile. Blue costs 1 action point, yellow costs both (a loud dash). On a phone,
+          tap once to preview and again to move.
+        </li>
+        <li>
+          <b>Path colours:</b> white is safe, yellow means a guard will notice something and come to look, red
+          means caught or alarm.
+        </li>
+        <li>
+          <b>A rival's alarm</b> isn't yours: lie low and stay out of sight until it blows over (or shut it
+          off at the camera panel), and your run stays flawless. If it reaches lockdown, the exits stay sealed
+          until the guards catch the rival.
+        </li>
+        <li>
+          <b>When the guards move:</b> a red cross on a tile means Leo would be caught, or a camera would turn
+          onto him, if he ended his turn there; an orange ring means he'd be spotted. Pointing at it says
+          which.
+        </li>
+        <li>
+          <b>Shadows hide you.</b> Guards see 6 tiles into lamplight, 4 into moonlight and barely past their
+          nose in the dark. Being right next to one, or standing in lamplight in front of one, gets you
+          caught.
+        </li>
+        <li>
+          <b>Red</b> is what the guards see, <b>purple</b> is what the cameras see. Orange dots are where the
+          guards walk next.
+        </li>
+        <li>
+          <b>Guard types:</b> sleepy guards (Zzz) see nothing until a noise wakes them; captains (gold braid)
+          see further and call others over; sniffers (big nose) smell you through walls from two tiles away.
+        </li>
+        <li>
+          <b>Pressure plates</b> (raised metal squares) set off the alarm. <b>Motion sensors</b> (the red
+          grid) allow one tile per move inside them; the fuse box turns them off.
+        </li>
+        <li>
+          <b>Keycard doors</b> (steel, with a card reader) open only with the level's keycard: walk over it to
+          pick it up. <b>Vault doors</b> need the combination, hidden in a desk. <b>Glass walls</b> stop Leo
+          and sound, but not eyes. <b>Guard dogs</b> bark at Leo within 2 tiles of their kennel.
+          <b>Wires</b> cross rooftop gaps, with the Tightrope skill; Pounce can leap a one-tile gap.
+        </li>
+        <li>
+          <b>Harbour:</b> climb into an open <b>crate</b> and nobody sees or smells you. The
+          <b>lighthouse beam</b> turns an eighth a turn. <b>Tidal sand</b> is under water at high tide (the
+          HUD counts down). On the <b>fish market</b> floor (green shimmer) sniffers can't smell a cat.
+          <b>Light switches</b> put lamps out, but a guard soon comes to put them back on.
+        </li>
+        <li>
+          <b>Downtown:</b> <b>Robo-Guards</b> never sleep and ignore noises, decoys and empty cases, but their
+          heat scanners see Leo 4 tiles off in any light; cutting the fuse box powers them down.
+          <b>Slot machines</b> drown out any noise Leo makes among them. <b>Conveyor belts</b> carry Leo a
+          tile at the end of each turn. <b>Wet paint</b> leaves paw prints guards will follow. A
+          <b>time lock</b> holds the vault shut until a set turn.
+        </li>
+        <li>
+          <b>Rival thieves</b> sometimes want the same centrepiece. Their purple footprints show where they're
+          heading. Take it first and they give up; if they take it, it's gone for tonight.
+        </li>
+        <li>
+          <b>Creaky floorboards</b> (brown planks) are loud. <b>Safes</b> take three quiet goes.
+          <b>Spotlights</b> move every turn. <b>Ladders</b> lead up to the rafters: stand on one and climb.
+          Nobody looks up, but dropping down makes a thump (unless Leo has Ceiling Climb).
+        </li>
+        <li>
+          <b>Noise:</b> marble floors, dashing, picking locks and (loudest) smashing glass. Guards who hear it
+          come to check.
+        </li>
+        <li>
+          <b>Steal:</b> next to a case, pick its lock (quiet, two goes) or smash it (one go, very loud). Use
+          the buttons at the bottom, keys 1–9, or click the case.
+        </li>
+        <li>
+          <b>Security:</b> the camera panel shuts off the cameras and the alarm; the fuse box shuts off the
+          lasers. A camera sighting, a broken laser or a guard finding an empty case starts a 5-turn lockdown
+          countdown.
+        </li>
+        <li>
+          <b>Vents:</b> step onto a grate and climb in. Nobody sees you in the ducts, but crawling is slow.
+        </li>
+        <li><b>Inventory:</b> 6 spaces. Bigger pieces take up more of them.</li>
+        <li>
+          <b>Gadgets and skills</b> (the teal row above the actions): bottle caps from the Workshop, and
+          skills like Pounce, Camera Loop and Smoke Pellet. Click one, then click a highlighted tile. Esc
+          cancels.
+        </li>
+        <li>
+          <b>Loot:</b> click a case, plinth, safe or an exhibit on a pedestal for what Leo can do: steal it,
+          pick the lock (quiet, sometimes more than one go) or smash the glass (quick, but loud). If he isn't
+          beside it, he walks over first.
+        </li>
+        <li><b>Escape:</b> walk onto the green exit with something in your inventory.</li>
+      </ul>
+    </aside>
+
+    <div id="loot-menu" class="loot-menu hidden" role="menu"></div>
+    <div id="bag" class="bag hidden" role="dialog" aria-label="Leo’s bag"></div>
+    <div id="rival-arrow" class="rival-arrow hidden"><i></i><span></span></div>
+    <div id="risk-note" class="risk-note hidden" aria-live="polite"></div>
+
+    <div id="caught" class="overlay hidden">
+      <div class="sheet caught">
+        <span class="stamp big-stamp">Busted</span>
+        <h1><span id="caught-who">Brutus</span> got Leo.</h1>
+        <p id="caught-why"></p>
+        <p class="small">The guard grins. Leo sighs. Back to the start.</p>
+        <div class="row-buttons">
+          <button id="again" class="primary">Try again (R)</button>
+          <button id="quit2" class="quiet">Quit</button>
+        </div>
       </div>
     </div>
-    <div id="abilities" class="abilities hidden"></div>
-    <div id="actions" class="actions hidden"></div>
-    <div class="message" id="message" role="status" aria-live="polite"></div>
-  </footer>
 
-  <aside id="help" class="card help hidden">
-    <b>How to play</b>
-    <ul>
-      <li><b>Keyboard:</b> the arrow keys move a cursor, Enter moves Leo there or does what's there, Space ends the turn, I opens the bag, R twice restarts, Q and E turn the camera, WASD pans it (C brings it back to Leo), + and − (or the mouse wheel) zoom. The ⚙ button has sound, speed and accessibility settings.</li>
-      <li><b>Controller:</b> the D-pad or left stick moves the cursor, A goes there or does what's there, X ends the turn, Y opens the bag, LB and RB turn the camera, LT and RT zoom, the right stick pans (click a stick to come back to Leo). View/Select reaches the buttons (actions, gadgets, Restart…), Menu/Start opens the settings, and B cancels. In menus, the D-pad moves between buttons and A presses.</li>
-      <li><b>Your own controls:</b> ⚙ Settings → Controls lets you change any key or controller button.</li>
-      <li><b>Move:</b> click a tile. Blue costs 1 action point, yellow costs both (a loud dash). On a phone, tap once to preview and again to move.</li>
-      <li><b>Path colours:</b> white is safe, yellow means a guard will notice something and come to look, red means caught or alarm.</li>
-      <li><b>A rival's alarm</b> isn't yours: lie low and stay out of sight until it blows over (or shut it off at the camera panel), and your run stays flawless. If it reaches lockdown, the exits stay sealed until the guards catch the rival.</li>
-      <li><b>When the guards move:</b> a red cross on a tile means Leo would be caught, or a camera would turn onto him, if he ended his turn there; an orange ring means he'd be spotted. Pointing at it says which.</li>
-      <li><b>Shadows hide you.</b> Guards see 6 tiles into lamplight, 4 into moonlight and barely past their nose in the dark. Being right next to one, or standing in lamplight in front of one, gets you caught.</li>
-      <li><b>Red</b> is what the guards see, <b>purple</b> is what the cameras see. Orange dots are where the guards walk next.</li>
-      <li><b>Guard types:</b> sleepy guards (Zzz) see nothing until a noise wakes them; captains (gold braid) see further and call others over; sniffers (big nose) smell you through walls from two tiles away.</li>
-      <li><b>Pressure plates</b> (raised metal squares) set off the alarm. <b>Motion sensors</b> (the red grid) allow one tile per move inside them; the fuse box turns them off.</li>
-      <li><b>Keycard doors</b> (steel, with a card reader) open only with the level's keycard: walk over it to pick it up. <b>Vault doors</b> need the combination, hidden in a desk. <b>Glass walls</b> stop Leo and sound, but not eyes. <b>Guard dogs</b> bark at Leo within 2 tiles of their kennel. <b>Wires</b> cross rooftop gaps, with the Tightrope skill; Pounce can leap a one-tile gap.</li>
-      <li><b>Harbour:</b> climb into an open <b>crate</b> and nobody sees or smells you. The <b>lighthouse beam</b> turns an eighth a turn. <b>Tidal sand</b> is under water at high tide (the HUD counts down). On the <b>fish market</b> floor (green shimmer) sniffers can't smell a cat. <b>Light switches</b> put lamps out, but a guard soon comes to put them back on.</li>
-      <li><b>Downtown:</b> <b>Robo-Guards</b> never sleep and ignore noises, decoys and empty cases, but their heat scanners see Leo 4 tiles off in any light; cutting the fuse box powers them down. <b>Slot machines</b> drown out any noise Leo makes among them. <b>Conveyor belts</b> carry Leo a tile at the end of each turn. <b>Wet paint</b> leaves paw prints guards will follow. A <b>time lock</b> holds the vault shut until a set turn.</li>
-      <li><b>Rival thieves</b> sometimes want the same centrepiece. Their purple footprints show where they're heading. Take it first and they give up; if they take it, it's gone for tonight.</li>
-      <li><b>Creaky floorboards</b> (brown planks) are loud. <b>Safes</b> take three quiet goes. <b>Spotlights</b> move every turn. <b>Ladders</b> lead up to the rafters: stand on one and climb. Nobody looks up, but dropping down makes a thump (unless Leo has Ceiling Climb).</li>
-      <li><b>Noise:</b> marble floors, dashing, picking locks and (loudest) smashing glass. Guards who hear it come to check.</li>
-      <li><b>Steal:</b> next to a case, pick its lock (quiet, two goes) or smash it (one go, very loud). Use the buttons at the bottom, keys 1–9, or click the case.</li>
-      <li><b>Security:</b> the camera panel shuts off the cameras and the alarm; the fuse box shuts off the lasers. A camera sighting, a broken laser or a guard finding an empty case starts a 5-turn lockdown countdown.</li>
-      <li><b>Vents:</b> step onto a grate and climb in. Nobody sees you in the ducts, but crawling is slow.</li>
-      <li><b>Inventory:</b> 6 spaces. Bigger pieces take up more of them.</li>
-      <li><b>Gadgets and skills</b> (the teal row above the actions): bottle caps from the Workshop, and skills like Pounce, Camera Loop and Smoke Pellet. Click one, then click a highlighted tile. Esc cancels.</li>
-      <li><b>Loot:</b> click a case, plinth, safe or an exhibit on a pedestal for what Leo can do: steal it, pick the lock (quiet, sometimes more than one go) or smash the glass (quick, but loud). If he isn't beside it, he walks over first.</li>
-      <li><b>Escape:</b> walk onto the green exit with something in your inventory.</li>
-    </ul>
-  </aside>
-
-
-  <div id="loot-menu" class="loot-menu hidden" role="menu"></div>
-  <div id="bag" class="bag hidden" role="dialog" aria-label="Leo’s bag"></div>
-  <div id="rival-arrow" class="rival-arrow hidden"><i></i><span></span></div>
-  <div id="risk-note" class="risk-note hidden" aria-live="polite"></div>
-
-  <div id="caught" class="overlay hidden">
-    <div class="sheet caught">
-      <span class="stamp big-stamp">Busted</span>
-      <h1><span id="caught-who">Brutus</span> got Leo.</h1>
-      <p id="caught-why"></p>
-      <p class="small">The guard grins. Leo sighs. Back to the start.</p>
-      <div class="row-buttons">
-        <button id="again" class="primary">Try again (R)</button>
-        <button id="quit2" class="quiet">Quit</button>
+    <div id="leave-confirm" class="overlay hidden" role="dialog" aria-labelledby="leave-title">
+      <div class="sheet caught">
+        <h1 id="leave-title">Leave without tapping NightClaw?</h1>
+        <p>
+          The night isn’t over until Leo sneaks up on NightClaw and taps him on the shoulder, with the prized
+          possession in his paws, while NightClaw doesn’t know he’s there. Walk out now and that chance is
+          gone for tonight.
+        </p>
+        <div class="row-buttons">
+          <button id="leave-stay" class="primary">Stay and find him</button>
+          <button id="leave-go" class="quiet">Leave anyway</button>
+        </div>
       </div>
     </div>
-  </div>
+    <div id="screens" class="hidden"></div>
 
-  <div id="leave-confirm" class="overlay hidden" role="dialog" aria-labelledby="leave-title">
-    <div class="sheet caught">
-      <h1 id="leave-title">Leave without tapping NightClaw?</h1>
-      <p>The night isn’t over until Leo sneaks up on NightClaw and taps him on the shoulder, with the prized possession in his paws, while NightClaw doesn’t know he’s there. Walk out now and that chance is gone for tonight.</p>
-      <div class="row-buttons">
-        <button id="leave-stay" class="primary">Stay and find him</button>
-        <button id="leave-go" class="quiet">Leave anyway</button>
-      </div>
-    </div>
-  </div>
-  <div id="screens" class="hidden"></div>
-
-  <!-- SCRIPT -->
-</body>
+    <!-- SCRIPT -->
+  </body>
 </html>

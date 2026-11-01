@@ -16,7 +16,10 @@ export const CORNER_GALLERY_ROUTE: RouteStep[][] = [
   [[11, 11]],
   [[7, 11]],
   [{ a: 'exit-vent', x: 7, y: 11 }, [6, 8]],
-  [{ a: 'pick-case', x: 6, y: 7 }, { a: 'pick-case', x: 6, y: 7 }],
+  [
+    { a: 'pick-case', x: 6, y: 7 },
+    { a: 'pick-case', x: 6, y: 7 },
+  ],
   [[3, 8], { a: 'smash-case', x: 2, y: 7 }],
   [{ a: 'take', x: 4, y: 9 }, [1, 10]],
   [[0, 11]],
@@ -42,7 +45,10 @@ export const NIGHT_GALLERY_ROUTE: RouteStep[][] = [
   [[22, 10]],
   [[22, 8], { a: 'exit-vent', x: 22, y: 8 }],
   [[20, 3]],
-  [{ a: 'smash-case', x: 19, y: 2 }, { a: 'smash-case', x: 21, y: 2 }],
+  [
+    { a: 'smash-case', x: 19, y: 2 },
+    { a: 'smash-case', x: 21, y: 2 },
+  ],
   [[18, 5], { a: 'pick-door', x: 17, y: 5 }],
   [{ a: 'pick-door', x: 17, y: 5 }],
   [],

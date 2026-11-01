@@ -49,7 +49,10 @@ export interface PadHooks {
   pressed(): void;
 }
 
-const UP = 12, DOWN = 13, LEFT = 14, RIGHT = 15;
+const UP = 12,
+  DOWN = 13,
+  LEFT = 14,
+  RIGHT = 15;
 const DEAD = 0.45;
 const FIRST_REPEAT = 320;
 const REPEAT = 130;
@@ -65,10 +68,16 @@ function visible(el: HTMLElement): boolean {
 }
 
 /** The nearest button in a direction on screen, by centre; the first one (a primary, if any) when nothing is focused. */
-export function nextFocus(root: HTMLElement, from: Element | null, dx: number, dy: number): HTMLElement | null {
+export function nextFocus(
+  root: HTMLElement,
+  from: Element | null,
+  dx: number,
+  dy: number,
+): HTMLElement | null {
   const all = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(visible);
   if (!all.length) return null;
-  if (!from || !all.includes(from as HTMLElement)) return all.find((e) => e.classList.contains('primary')) ?? all[0];
+  if (!from || !all.includes(from as HTMLElement))
+    return all.find((e) => e.classList.contains('primary')) ?? all[0];
   const a = from.getBoundingClientRect();
   const ax = a.left + a.width / 2;
   const ay = a.top + a.height / 2;
@@ -122,8 +131,7 @@ export function startGamepad(h: PadHooks): void {
         if (f && root.contains(f) && f !== document.body) {
           f.click();
           h.pressed();
-        }
-        else nextFocus(root, null, 0, 0)?.focus();
+        } else nextFocus(root, null, 0, 0)?.focus();
       } else if (act === 'cancel') h.cancel();
       else if (act === 'hud') h.toggleHud();
       return;

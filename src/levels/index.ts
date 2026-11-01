@@ -15,9 +15,21 @@ export interface District {
 }
 
 export const DISTRICTS: District[] = [
-  { id: 'old-town', name: 'Old Town', levels: [CORNER_GALLERY, COIN_MUSEUM, CLOCKTOWER, PAWNBROKER, OPERA_HOUSE] },
-  { id: 'museum-mile', name: 'Museum Mile', levels: [NATURAL_HISTORY, EGYPTIAN_WING, MODERN_ART, GEM_HALL, PLANETARIUM] },
-  { id: 'the-heights', name: 'The Heights', levels: [MANSION, SKY_GARDEN, GLASS_TOWER, YACHT_CLUB, OBSERVATORY] },
+  {
+    id: 'old-town',
+    name: 'Old Town',
+    levels: [CORNER_GALLERY, COIN_MUSEUM, CLOCKTOWER, PAWNBROKER, OPERA_HOUSE],
+  },
+  {
+    id: 'museum-mile',
+    name: 'Museum Mile',
+    levels: [NATURAL_HISTORY, EGYPTIAN_WING, MODERN_ART, GEM_HALL, PLANETARIUM],
+  },
+  {
+    id: 'the-heights',
+    name: 'The Heights',
+    levels: [MANSION, SKY_GARDEN, GLASS_TOWER, YACHT_CLUB, OBSERVATORY],
+  },
   { id: 'harbour', name: 'Harbour', levels: [CUSTOMS_WAREHOUSE, LIGHTHOUSE, SHIPWRECK, FISH_BANK, AQUARIUM] },
   { id: 'downtown', name: 'Downtown', levels: [GRAND_BANK, CASINO, MINT, MISCHIEF, TREASURY] },
   // NightClaw's challenge (opened by his second letter) and his lair (by his fourth), not by clearing the heist before.

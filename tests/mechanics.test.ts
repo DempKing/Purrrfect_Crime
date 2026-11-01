@@ -3,7 +3,34 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseLevel, type GuardDef, type LevelDef } from '../src/core/level';
-import { BASE_PERKS, actionsHere, aftermath, triggerAlarm, dropLoot, lootGone, roboOff, beaconTiles, danger, doAction, endTurn, flooded, guardSees, guardView, key, leoReach, lightNow, makeNoise, motionTrip, moveLeo, newHeist, planRival, useAbility, type Perks, type RivalPlan, type State } from '../src/core/game';
+import {
+  BASE_PERKS,
+  actionsHere,
+  aftermath,
+  triggerAlarm,
+  dropLoot,
+  lootGone,
+  roboOff,
+  beaconTiles,
+  danger,
+  doAction,
+  endTurn,
+  flooded,
+  guardSees,
+  guardView,
+  key,
+  leoReach,
+  lightNow,
+  makeNoise,
+  motionTrip,
+  moveLeo,
+  newHeist,
+  planRival,
+  useAbility,
+  type Perks,
+  type RivalPlan,
+  type State,
+} from '../src/core/game';
 import { ALL_LEVELS } from '../src/levels';
 import { exhibitLoot } from '../src/core/exhibits';
 
@@ -33,7 +60,10 @@ function sandbox(guards: GuardDef[], extra: Partial<LevelDef> = {}): LevelDef {
   };
 }
 
-function heist(def: LevelDef, perks: Partial<Perks> = {}): { level: ReturnType<typeof parseLevel>; s: State } {
+function heist(
+  def: LevelDef,
+  perks: Partial<Perks> = {},
+): { level: ReturnType<typeof parseLevel>; s: State } {
   const level = parseLevel(def);
   return { level, s: newHeist(level, { ...BASE_PERKS, ...perks }) };
 }
@@ -41,7 +71,9 @@ function heist(def: LevelDef, perks: Partial<Perks> = {}): { level: ReturnType<t
 // --- guards -----------------------------------------------------------------------------------------
 
 test('a sleepy guard dozes at his post: he sees nothing and doesn’t move', () => {
-  const { level, s } = heist(sandbox([{ name: 'Dozy', kind: 'sleepy', start: { x: 8, y: 2 }, route: [{ x: 9, y: 2 }] }]));
+  const { level, s } = heist(
+    sandbox([{ name: 'Dozy', kind: 'sleepy', start: { x: 8, y: 2 }, route: [{ x: 9, y: 2 }] }]),
+  );
   const g = s.guards[0];
   assert.equal(g.asleep, true);
   assert.equal(guardSees(level, s, g, 9, 2), false);
@@ -53,7 +85,9 @@ test('a sleepy guard dozes at his post: he sees nothing and doesn’t move', () 
 });
 
 test('noise wakes a sleepy guard; he looks, then goes back to his chair and nods off', () => {
-  const { level, s } = heist(sandbox([{ name: 'Dozy', kind: 'sleepy', start: { x: 8, y: 2 }, route: [{ x: 9, y: 2 }] }]));
+  const { level, s } = heist(
+    sandbox([{ name: 'Dozy', kind: 'sleepy', start: { x: 8, y: 2 }, route: [{ x: 9, y: 2 }] }]),
+  );
   const g = s.guards[0];
   s.leo = { x: 7, y: 4 };
   moveLeo(level, s, { x: 8, y: 3 }); // onto the squeaky board, right under his chair (he faces east)
@@ -86,7 +120,11 @@ test('a captain sees further, and calls nearby guards when he gets suspicious', 
 });
 
 test('a sniffer is short-sighted but smells Leo through a wall', () => {
-  const { level, s } = heist(sandbox([{ name: 'Snuffles', kind: 'sniffer', start: { x: 7, y: 4 }, route: [{ x: 7, y: 3 }] }], { ambient: 'lit' }));
+  const { level, s } = heist(
+    sandbox([{ name: 'Snuffles', kind: 'sniffer', start: { x: 7, y: 4 }, route: [{ x: 7, y: 3 }] }], {
+      ambient: 'lit',
+    }),
+  );
   const g = s.guards[0];
   g.facing = 0; // east
   assert.ok(guardSees(level, s, g, 10, 4), '3 tiles in the light');
@@ -131,9 +169,15 @@ test('a safe takes three quiet goes, two with Dexterity', () => {
 test('the rafters: anyone can climb a ladder, unseen up there, down by the ladder or with a thump', () => {
   const plain = heist(sandbox([]));
   plain.s.leo = { x: 5, y: 6 };
-  assert.equal(actionsHere(plain.level, plain.s).find((a) => a.kind === 'climb-up')!.blocked, undefined, 'no skill needed');
+  assert.equal(
+    actionsHere(plain.level, plain.s).find((a) => a.kind === 'climb-up')!.blocked,
+    undefined,
+    'no skill needed',
+  );
 
-  const { level, s } = heist(sandbox([{ name: 'Joe', start: { x: 10, y: 7 }, route: [{ x: 3, y: 7 }] }], { ambient: 'lit' }));
+  const { level, s } = heist(
+    sandbox([{ name: 'Joe', start: { x: 10, y: 7 }, route: [{ x: 3, y: 7 }] }], { ambient: 'lit' }),
+  );
   s.leo = { x: 5, y: 6 };
   assert.ok(doAction(level, s, 'climb-up', { x: 5, y: 6 }));
   assert.equal(s.layer, 'rafter');
@@ -158,7 +202,19 @@ test('the rafters: anyone can climb a ladder, unseen up there, down by the ladde
 });
 
 test('a spotlight lights its circle, and moves one step a turn', () => {
-  const { level, s } = heist(sandbox([], { spotlights: [{ path: [{ x: 3, y: 2 }, { x: 10, y: 2 }], radius: 1 }] }));
+  const { level, s } = heist(
+    sandbox([], {
+      spotlights: [
+        {
+          path: [
+            { x: 3, y: 2 },
+            { x: 10, y: 2 },
+          ],
+          radius: 1,
+        },
+      ],
+    }),
+  );
   assert.equal(lightNow(level, s, 3, 2), 2);
   assert.equal(lightNow(level, s, 4, 3), 0, 'just outside the circle');
   assert.equal(lightNow(level, s, 10, 2), 0);
@@ -169,7 +225,13 @@ test('a spotlight lights its circle, and moves one step a turn', () => {
 
 test('maps reject a ladder without rafters above it, and loot outside cases, safes and plinths', () => {
   assert.throws(() => parseLevel(sandbox([], { rafters: [] })), /ladder/);
-  assert.throws(() => parseLevel(sandbox([], { loot: [{ at: { x: 2, y: 2 }, name: 'X', value: 1, space: 1, category: 'jewel' }] })), /loot/);
+  assert.throws(
+    () =>
+      parseLevel(
+        sandbox([], { loot: [{ at: { x: 2, y: 2 }, name: 'X', value: 1, space: 1, category: 'jewel' }] }),
+      ),
+    /loot/,
+  );
 });
 
 // --- Museum Mile: pressure plates, motion sensors, rivals ------------------------------------------------
@@ -220,7 +282,14 @@ test('motion sensors: one tile at a time inside the zone, or the alarm; the fuse
   assert.equal(s.alarm, null, 'and one more, next move');
   moveLeo(level, s, { x: 13, y: 4 });
   assert.notEqual(s.alarm, null, 'two in one move trips it');
-  assert.equal(motionTrip(level, newHeist(level), [{ x: 9, y: 4 }, { x: 10, y: 4 }, { x: 11, y: 4 }]), 2);
+  assert.equal(
+    motionTrip(level, newHeist(level), [
+      { x: 9, y: 4 },
+      { x: 10, y: 4 },
+      { x: 11, y: 4 },
+    ]),
+    2,
+  );
   const off = newHeist(level);
   off.lasersOff = true;
   off.leo = { x: 9, y: 4 };
@@ -274,7 +343,11 @@ test('a guard who spots a rival collars them and goes searching, but it isn’t 
   endTurn(level, luna);
   assert.equal(luna.rival!.caught, true, 'right under his nose');
   // Further off, the same guard looking straight at her doesn't make her out.
-  const far = parseLevel({ ...HALL, ambient: 'lit', guards: [{ name: 'Rex', start: { x: 15, y: 5 }, route: [{ x: 15, y: 5 }] }] });
+  const far = parseLevel({
+    ...HALL,
+    ambient: 'lit',
+    guards: [{ name: 'Rex', start: { x: 15, y: 5 }, route: [{ x: 15, y: 5 }] }],
+  });
   const lucky = newHeist(far, BASE_PERKS, plan('luna', 1));
   lucky.guards[0].facing = 6;
   endTurn(far, lucky);
@@ -347,13 +420,19 @@ test('wires cross a gap only with Tightrope; guards see across gaps and through 
   assert.ok(guardSees(level, s, across, 8, 3), 'across the gap');
   const behindGlass = { x: 14, y: 2, facing: 4 };
   assert.ok(guardSees(level, s, behindGlass, 10, 2), 'through the glass');
-  const g = newHeist(parseLevel({ ...ROOFTOPS, guards: [{ name: 'Rex', start: { x: 14, y: 2 }, route: [{ x: 14, y: 3 }] }] }));
+  const g = newHeist(
+    parseLevel({ ...ROOFTOPS, guards: [{ name: 'Rex', start: { x: 14, y: 2 }, route: [{ x: 14, y: 3 }] }] }),
+  );
   makeNoise(parseLevel(ROOFTOPS), g, { x: 11, y: 2 }, 6, false);
   assert.equal(g.guards[0].mode, 'patrol', 'he didn’t hear it through the glass');
 });
 
 test('a guard dog barks at Leo within 2 tiles, and the guards come to look', () => {
-  const def: LevelDef = { ...ROOFTOPS, ambient: 'dark', guards: [{ name: 'Rex', start: { x: 13, y: 5 }, route: [{ x: 13, y: 4 }] }] };
+  const def: LevelDef = {
+    ...ROOFTOPS,
+    ambient: 'dark',
+    guards: [{ name: 'Rex', start: { x: 13, y: 5 }, route: [{ x: 13, y: 4 }] }],
+  };
   const level = parseLevel(def);
   const s = newHeist(level);
   s.leo = { x: 14, y: 1 };
@@ -376,12 +455,19 @@ test('a vault door needs the combination from the desk, then two turns of the di
   endTurn(level, s);
   assert.ok(doAction(level, s, 'turn-dials', { x: 4, y: 5 }));
   assert.ok(moveLeo(level, s, { x: 2, y: 5 }).ok);
-  assert.throws(() => parseLevel({ ...ROOFTOPS, map: ROOFTOPS.map.map((r) => r.replace('N', '.')) }), /combination/);
+  assert.throws(
+    () => parseLevel({ ...ROOFTOPS, map: ROOFTOPS.map.map((r) => r.replace('N', '.')) }),
+    /combination/,
+  );
 });
 
 test('Sammy pockets a keycard lying near his path', () => {
   // A gap in the glass, so he can get to the prize.
-  const lv = parseLevel({ ...ROOFTOPS, rivalEntrances: [{ x: 2, y: 3 }], map: ROOFTOPS.map.map((r, y) => (y === 2 ? r.slice(0, 12) + '.' + r.slice(13) : r)) });
+  const lv = parseLevel({
+    ...ROOFTOPS,
+    rivalEntrances: [{ x: 2, y: 3 }],
+    map: ROOFTOPS.map.map((r, y) => (y === 2 ? r.slice(0, 12) + '.' + r.slice(13) : r)),
+  });
   const s = newHeist(lv, BASE_PERKS, { id: 'sammy', arrive: 1, entrance: 0 });
   endTurn(lv, s);
   endTurn(lv, s);
@@ -466,7 +552,9 @@ test('tidal sand is dry, then under water, every few turns', () => {
 });
 
 test('sniffers can’t smell Leo on the fish market floor', () => {
-  const guards: GuardDef[] = [{ name: 'Rex', kind: 'sniffer', start: { x: 10, y: 3 }, route: [{ x: 10, y: 4 }] }];
+  const guards: GuardDef[] = [
+    { name: 'Rex', kind: 'sniffer', start: { x: 10, y: 3 }, route: [{ x: 10, y: 4 }] },
+  ];
   const plain = parseLevel({ ...DOCKS, guards });
   const fishy = parseLevel({ ...DOCKS, guards, fishy: [{ x: 9, y: 1, w: 3, h: 4 }] });
   const leo = { x: 10, y: 1 };
@@ -510,7 +598,9 @@ const DOWNTOWN: LevelDef = {
 };
 
 test('a Robo-Guard sees Leo’s heat 4 tiles off in the dark, hears nothing, and powers down at the fuse box', () => {
-  const guards: GuardDef[] = [{ name: 'RX-9', kind: 'robo', start: { x: 14, y: 2 }, route: [{ x: 14, y: 2 }] }];
+  const guards: GuardDef[] = [
+    { name: 'RX-9', kind: 'robo', start: { x: 14, y: 2 }, route: [{ x: 14, y: 2 }] },
+  ];
   const level = parseLevel({ ...DOWNTOWN, guards });
   const s = newHeist(level);
   s.guards[0].facing = 4;
@@ -592,12 +682,23 @@ test('a time lock holds the vault dials until its turn', () => {
 // --- The finale: NightClaw ---------------------------------------------------------------------------------
 
 test('NightClaw sees through the dark, catches Leo on sight, and can be tapped on the shoulder from behind', () => {
-  const guards: GuardDef[] = [{ name: 'NightClaw', kind: 'nightclaw', start: { x: 10, y: 3 }, route: [{ x: 10, y: 3 }] }];
+  const guards: GuardDef[] = [
+    { name: 'NightClaw', kind: 'nightclaw', start: { x: 10, y: 3 }, route: [{ x: 10, y: 3 }] },
+  ];
   const level = parseLevel({ ...DOWNTOWN, finale: true, guards });
   const s = newHeist(level);
   s.guards[0].facing = 4;
   assert.ok(guardSees(level, s, s.guards[0], 7, 3), 'three tiles off, in the dark');
-  assert.ok(!guardSees(level, { ...s, guards: [{ ...s.guards[0], kind: 'watch' }] }, { ...s.guards[0], kind: 'watch' }, 7, 3), 'a guard wouldn’t');
+  assert.ok(
+    !guardSees(
+      level,
+      { ...s, guards: [{ ...s.guards[0], kind: 'watch' }] },
+      { ...s.guards[0], kind: 'watch' },
+      7,
+      3,
+    ),
+    'a guard wouldn’t',
+  );
   s.leo = { x: 11, y: 3 }; // right behind him
   const tap = () => actionsHere(level, s).find((a) => a.kind === 'tap')!;
   assert.match(tap().blocked!, /prized possession/);
@@ -633,7 +734,9 @@ test('what stands on a pedestal under a light can be stolen', () => {
 
 test('the look-ahead: a tile that looks safe now, but a guard walks into view of it on his turn', () => {
   // Joe walks left along row 7 towards Leo; standing in his way is fine now and fatal once he moves.
-  const { level, s } = heist(sandbox([{ name: 'Joe', start: { x: 12, y: 7 }, route: [{ x: 3, y: 7 }] }], { ambient: 'lit' }));
+  const { level, s } = heist(
+    sandbox([{ name: 'Joe', start: { x: 12, y: 7 }, route: [{ x: 3, y: 7 }] }], { ambient: 'lit' }),
+  );
   s.leo = { x: 4, y: 7 };
   s.guards[0].facing = 4;
   assert.equal(aftermath(level, s, s.leo) !== null, true, 'he walks right up to Leo');
@@ -659,11 +762,14 @@ test('a guard who walks into a rival collars them, looking or not', () => {
 });
 
 test('somebody else’s alarm: silenced in time, the run stays flawless; left to ring, the building locks down until the rival is caught', () => {
-  const level = parseLevel({ ...HALL, guards: [{ name: 'Rex', start: { x: 4, y: 5 }, route: [{ x: 4, y: 5 }] }] });
+  const level = parseLevel({
+    ...HALL,
+    guards: [{ name: 'Rex', start: { x: 4, y: 5 }, route: [{ x: 4, y: 5 }] }],
+  });
   const s = newHeist(level, BASE_PERKS, plan('paws', 99));
   triggerAlarm(s, { x: 9, y: 3 }, 'A camera caught Professor Paws on film', false);
   assert.equal(s.alarmByLeo, false);
-  assert.equal(s.alarmRaised, false, 'not Leo\'s, so a flawless run is still on');
+  assert.equal(s.alarmRaised, false, "not Leo's, so a flawless run is still on");
   // Left to ring: a lockdown, but Leo plays on; the exit is sealed.
   s.rival!.phase = 'in';
   s.rival!.x = 16;
@@ -719,7 +825,9 @@ test('putting loot down to make room, and picking it back up', () => {
 });
 
 test('the player is told who noticed what, and where: missing loot by name, and who caught Leo', () => {
-  const { level, s } = heist(sandbox([{ name: 'Rex', start: { x: 9, y: 4 }, route: [{ x: 12, y: 4 }] }], { ambient: 'lit' }));
+  const { level, s } = heist(
+    sandbox([{ name: 'Rex', start: { x: 9, y: 4 }, route: [{ x: 12, y: 4 }] }], { ambient: 'lit' }),
+  );
   s.inventory = [0];
   s.leo = { x: 1, y: 1 };
   for (let i = 0; i < 3 && !s.alarmRaised; i++) endTurn(level, s);
@@ -730,9 +838,14 @@ test('the player is told who noticed what, and where: missing loot by name, and 
   assert.deepEqual(n.at, { x: 13, y: 5 });
   assert.ok(n.from);
   assert.match(n.label, /Gold Coin/);
-  assert.ok(s.log.some((l) => l.includes('Gold Coin')), s.log.join(' | '));
+  assert.ok(
+    s.log.some((l) => l.includes('Gold Coin')),
+    s.log.join(' | '),
+  );
   // Caught: by whom, from where, and on which tile.
-  const t = heist(sandbox([{ name: 'Rex', start: { x: 4, y: 2 }, route: [{ x: 4, y: 2 }] }], { ambient: 'lit' }));
+  const t = heist(
+    sandbox([{ name: 'Rex', start: { x: 4, y: 2 }, route: [{ x: 4, y: 2 }] }], { ambient: 'lit' }),
+  );
   t.s.guards[0].facing = 4;
   moveLeo(t.level, t.s, { x: 3, y: 2 });
   assert.equal(t.s.status, 'caught');

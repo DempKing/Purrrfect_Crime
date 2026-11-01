@@ -15,7 +15,9 @@ for (const def of ALL_LEVELS) {
     const s = newHeist(level);
     for (const turn of route) {
       for (const st of turn) {
-        const ok = Array.isArray(st) ? moveLeo(level, s, { x: st[0], y: st[1] }).ok : doAction(level, s, st.a as never, { x: st.x, y: st.y });
+        const ok = Array.isArray(st)
+          ? moveLeo(level, s, { x: st[0], y: st[1] }).ok
+          : doAction(level, s, st.a as never, { x: st.x, y: st.y });
         assert.ok(ok, `step ${JSON.stringify(st)} failed on turn ${s.turn}`);
         if (s.status !== 'playing') break;
       }
@@ -25,7 +27,12 @@ for (const def of ALL_LEVELS) {
     assert.equal(s.status, 'escaped', `ended ${s.status} (${s.caughtBy}: ${s.caughtWhy})`);
     assert.equal(s.seen, false, 'seen');
     assert.equal(s.alarmRaised, false, 'alarm');
-    assert.ok(s.inventory.some((i) => level.plinth && def.loot[i].at.x === level.plinth.x && def.loot[i].at.y === level.plinth.y), 'without the centrepiece');
+    assert.ok(
+      s.inventory.some(
+        (i) => level.plinth && def.loot[i].at.x === level.plinth.x && def.loot[i].at.y === level.plinth.y,
+      ),
+      'without the centrepiece',
+    );
   });
 }
 
@@ -34,17 +41,28 @@ test('every level has a centrepiece, a reachable exit, and loot that fits a fres
     const level = parseLevel(def);
     assert.ok(level.plinth, `${def.id}: no plinth`);
     for (const l of def.loot) assert.ok(l.space <= 6, `${def.id}: ${l.name} is too big`);
-    const beside = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !blocksMove(level.tiles[level.exit.y + dy]?.[level.exit.x + dx] ?? 'wall'));
+    const beside = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ].some(([dx, dy]) => !blocksMove(level.tiles[level.exit.y + dy]?.[level.exit.x + dx] ?? 'wall'));
     assert.ok(beside, `${def.id}: nothing to walk onto the exit from`);
   }
 });
 
 test('NightClaw’s challenge museum is the only challenge level, and has no rival thieves', () => {
   const challenges = ALL_LEVELS.filter((l) => l.challenge);
-  assert.deepEqual(challenges.map((l) => l.id), ['nc-midnight-museum']);
+  assert.deepEqual(
+    challenges.map((l) => l.id),
+    ['nc-midnight-museum'],
+  );
   assert.ok(!challenges[0].rivalEntrances?.length);
   const finales = ALL_LEVELS.filter((l) => l.finale);
-  assert.deepEqual(finales.map((l) => l.id), ['nc-lair']);
+  assert.deepEqual(
+    finales.map((l) => l.id),
+    ['nc-lair'],
+  );
   assert.ok(!finales[0].rivalEntrances?.length, 'no rivals in NightClaw’s lair');
   assert.ok(finales[0].guards.some((g) => g.kind === 'nightclaw'));
 });

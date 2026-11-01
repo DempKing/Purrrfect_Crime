@@ -23,7 +23,10 @@ export const NATURAL_HISTORY: LevelDef = {
   ],
   xp: 260,
   par: 17,
-  rivalEntrances: [{ x: 28, y: 1 }, { x: 1, y: 13 }],
+  rivalEntrances: [
+    { x: 28, y: 1 },
+    { x: 1, y: 13 },
+  ],
   map: [
     '##############################',
     '#.....###.L..^^^....V###.....#',
@@ -74,11 +77,44 @@ export const NATURAL_HISTORY: LevelDef = {
     { x: 24, y: 6, w: 5, h: 3 },
   ],
   guards: [
-    { name: 'Rexford', kind: 'captain', start: { x: 9, y: 6 }, route: [{ x: 20, y: 6 }, { x: 20, y: 13 }, { x: 9, y: 13 }, { x: 9, y: 6 }] },
-    { name: 'Bones', start: { x: 3, y: 1 }, route: [{ x: 3, y: 11 }, { x: 3, y: 1 }] },
-    { name: 'Raptor', start: { x: 8, y: 5 }, route: [{ x: 22, y: 5 }, { x: 8, y: 5 }] },
+    {
+      name: 'Rexford',
+      kind: 'captain',
+      start: { x: 9, y: 6 },
+      route: [
+        { x: 20, y: 6 },
+        { x: 20, y: 13 },
+        { x: 9, y: 13 },
+        { x: 9, y: 6 },
+      ],
+    },
+    {
+      name: 'Bones',
+      start: { x: 3, y: 1 },
+      route: [
+        { x: 3, y: 11 },
+        { x: 3, y: 1 },
+      ],
+    },
+    {
+      name: 'Raptor',
+      start: { x: 8, y: 5 },
+      route: [
+        { x: 22, y: 5 },
+        { x: 8, y: 5 },
+      ],
+    },
     { name: 'Doc', kind: 'sleepy', start: { x: 11, y: 3 }, route: [{ x: 12, y: 2 }] },
-    { name: 'Moose', start: { x: 24, y: 2 }, route: [{ x: 28, y: 2 }, { x: 28, y: 15 }, { x: 24, y: 15 }, { x: 24, y: 2 }] },
+    {
+      name: 'Moose',
+      start: { x: 24, y: 2 },
+      route: [
+        { x: 28, y: 2 },
+        { x: 28, y: 15 },
+        { x: 24, y: 15 },
+        { x: 24, y: 2 },
+      ],
+    },
   ],
   loot: [
     { at: { x: 14, y: 2 }, name: 'Golden Raptor Egg', value: 11000, space: 2, category: 'artefact' },
@@ -114,7 +150,10 @@ export const EGYPTIAN_WING: LevelDef = {
   ],
   xp: 280,
   par: 19,
-  rivalEntrances: [{ x: 26, y: 14 }, { x: 22, y: 3 }],
+  rivalEntrances: [
+    { x: 26, y: 14 },
+    { x: 22, y: 3 },
+  ],
   map: [
     '############################',
     '########....L.....L....#####',
@@ -133,18 +172,7 @@ export const EGYPTIAN_WING: LevelDef = {
     '#......#...................#',
     '############################',
   ],
-  vents: [
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '      =====================',
-    '      V                   V',
-  ],
+  vents: ['', '', '', '', '', '', '', '', '      =====================', '      V                   V'],
   motion: [{ x: 13, y: 4, w: 4, h: 5 }],
   lamps: [
     { at: { x: 12, y: 1 }, radius: 2 },
@@ -152,8 +180,25 @@ export const EGYPTIAN_WING: LevelDef = {
   ],
   cameras: [{ at: { x: 22, y: 1 }, sweep: [4, 3], range: 6 }],
   guards: [
-    { name: 'Ramses', start: { x: 12, y: 11 }, route: [{ x: 26, y: 11 }, { x: 26, y: 12 }, { x: 12, y: 12 }, { x: 12, y: 11 }] },
-    { name: 'Anubis', kind: 'sniffer', start: { x: 25, y: 9 }, route: [{ x: 9, y: 9 }, { x: 25, y: 9 }] },
+    {
+      name: 'Ramses',
+      start: { x: 12, y: 11 },
+      route: [
+        { x: 26, y: 11 },
+        { x: 26, y: 12 },
+        { x: 12, y: 12 },
+        { x: 12, y: 11 },
+      ],
+    },
+    {
+      name: 'Anubis',
+      kind: 'sniffer',
+      start: { x: 25, y: 9 },
+      route: [
+        { x: 9, y: 9 },
+        { x: 25, y: 9 },
+      ],
+    },
     { name: 'Khufu', kind: 'sleepy', start: { x: 20, y: 3 }, route: [{ x: 19, y: 3 }] },
   ],
   loot: [
@@ -184,7 +229,10 @@ export const MODERN_ART: LevelDef = {
   ],
   xp: 300,
   par: 17,
-  rivalEntrances: [{ x: 19, y: 1 }, { x: 26, y: 16 }],
+  rivalEntrances: [
+    { x: 19, y: 1 },
+    { x: 26, y: 16 },
+  ],
   map: [
     '############################',
     '#....###.L..^^^...L.###....#',
@@ -214,16 +262,54 @@ export const MODERN_ART: LevelDef = {
     '    =                  =',
     '    ====================',
   ],
-  spotlights: [{ path: [{ x: 8, y: 9 }, { x: 11, y: 6 }, { x: 16, y: 6 }, { x: 19, y: 9 }, { x: 16, y: 13 }, { x: 11, y: 13 }], radius: 2 }],
+  spotlights: [
+    {
+      path: [
+        { x: 8, y: 9 },
+        { x: 11, y: 6 },
+        { x: 16, y: 6 },
+        { x: 19, y: 9 },
+        { x: 16, y: 13 },
+        { x: 11, y: 13 },
+      ],
+      radius: 2,
+    },
+  ],
   lamps: [
     { at: { x: 9, y: 1 }, radius: 2 },
     { at: { x: 18, y: 1 }, radius: 2 },
   ],
   cameras: [{ at: { x: 19, y: 3 }, sweep: [4, 5], range: 6 }],
   guards: [
-    { name: 'Curator', kind: 'captain', start: { x: 7, y: 6 }, route: [{ x: 20, y: 6 }, { x: 20, y: 13 }, { x: 7, y: 13 }, { x: 7, y: 6 }] },
-    { name: 'Monet', start: { x: 3, y: 1 }, route: [{ x: 3, y: 10 }, { x: 3, y: 1 }] },
-    { name: 'Dali', start: { x: 24, y: 16 }, route: [{ x: 24, y: 7 }, { x: 25, y: 7 }, { x: 25, y: 16 }, { x: 24, y: 16 }] },
+    {
+      name: 'Curator',
+      kind: 'captain',
+      start: { x: 7, y: 6 },
+      route: [
+        { x: 20, y: 6 },
+        { x: 20, y: 13 },
+        { x: 7, y: 13 },
+        { x: 7, y: 6 },
+      ],
+    },
+    {
+      name: 'Monet',
+      start: { x: 3, y: 1 },
+      route: [
+        { x: 3, y: 10 },
+        { x: 3, y: 1 },
+      ],
+    },
+    {
+      name: 'Dali',
+      start: { x: 24, y: 16 },
+      route: [
+        { x: 24, y: 7 },
+        { x: 25, y: 7 },
+        { x: 25, y: 16 },
+        { x: 24, y: 16 },
+      ],
+    },
   ],
   loot: [
     { at: { x: 13, y: 2 }, name: 'The Blue Period Cat', value: 14000, space: 2, category: 'painting' },
@@ -260,7 +346,10 @@ export const GEM_HALL: LevelDef = {
   ],
   xp: 320,
   par: 36,
-  rivalEntrances: [{ x: 26, y: 7 }, { x: 1, y: 7 }],
+  rivalEntrances: [
+    { x: 26, y: 7 },
+    { x: 1, y: 7 },
+  ],
   map: [
     '################F###C#######',
     '########S......#.....#.....#',
@@ -288,10 +377,35 @@ export const GEM_HALL: LevelDef = {
   ],
   cameras: [{ at: { x: 26, y: 8 }, sweep: [4, 3, 4, 5], range: 6 }],
   guards: [
-    { name: 'Topaz', kind: 'captain', start: { x: 2, y: 9 }, route: [{ x: 25, y: 9 }, { x: 2, y: 9 }] },
-    { name: 'Quartz', kind: 'sniffer', start: { x: 8, y: 7 }, route: [{ x: 15, y: 7 }, { x: 8, y: 7 }] },
+    {
+      name: 'Topaz',
+      kind: 'captain',
+      start: { x: 2, y: 9 },
+      route: [
+        { x: 25, y: 9 },
+        { x: 2, y: 9 },
+      ],
+    },
+    {
+      name: 'Quartz',
+      kind: 'sniffer',
+      start: { x: 8, y: 7 },
+      route: [
+        { x: 15, y: 7 },
+        { x: 8, y: 7 },
+      ],
+    },
     { name: 'Night Owl', kind: 'sleepy', start: { x: 19, y: 1 }, route: [{ x: 19, y: 2 }] },
-    { name: 'Flint', start: { x: 2, y: 13 }, route: [{ x: 8, y: 13 }, { x: 8, y: 15 }, { x: 2, y: 15 }, { x: 2, y: 13 }] },
+    {
+      name: 'Flint',
+      start: { x: 2, y: 13 },
+      route: [
+        { x: 8, y: 13 },
+        { x: 8, y: 15 },
+        { x: 2, y: 15 },
+        { x: 2, y: 13 },
+      ],
+    },
   ],
   loot: [
     { at: { x: 11, y: 2 }, name: 'Star of Siam', value: 16000, space: 1, category: 'jewel' },
@@ -331,7 +445,10 @@ export const PLANETARIUM: LevelDef = {
   ],
   xp: 340,
   par: 17,
-  rivalEntrances: [{ x: 26, y: 13 }, { x: 8, y: 3 }],
+  rivalEntrances: [
+    { x: 26, y: 13 },
+    { x: 8, y: 3 },
+  ],
   map: [
     '############################',
     '########.L...G...H..########',
@@ -363,8 +480,32 @@ export const PLANETARIUM: LevelDef = {
     '   H',
   ],
   spotlights: [
-    { path: [{ x: 9, y: 6 }, { x: 13, y: 6 }, { x: 18, y: 6 }, { x: 20, y: 10 }, { x: 18, y: 14 }, { x: 13, y: 14 }, { x: 9, y: 14 }, { x: 7, y: 10 }], radius: 2 },
-    { path: [{ x: 18, y: 14 }, { x: 13, y: 14 }, { x: 9, y: 14 }, { x: 7, y: 10 }, { x: 9, y: 6 }, { x: 13, y: 6 }, { x: 18, y: 6 }, { x: 20, y: 10 }].reverse(), radius: 2 },
+    {
+      path: [
+        { x: 9, y: 6 },
+        { x: 13, y: 6 },
+        { x: 18, y: 6 },
+        { x: 20, y: 10 },
+        { x: 18, y: 14 },
+        { x: 13, y: 14 },
+        { x: 9, y: 14 },
+        { x: 7, y: 10 },
+      ],
+      radius: 2,
+    },
+    {
+      path: [
+        { x: 18, y: 14 },
+        { x: 13, y: 14 },
+        { x: 9, y: 14 },
+        { x: 7, y: 10 },
+        { x: 9, y: 6 },
+        { x: 13, y: 6 },
+        { x: 18, y: 6 },
+        { x: 20, y: 10 },
+      ].reverse(),
+      radius: 2,
+    },
   ],
   lamps: [
     { at: { x: 9, y: 1 }, radius: 2 },
@@ -373,15 +514,51 @@ export const PLANETARIUM: LevelDef = {
     { at: { x: 25, y: 13 }, radius: 2 },
   ],
   guards: [
-    { name: 'Galileo', kind: 'captain', start: { x: 7, y: 6 }, route: [{ x: 20, y: 6 }, { x: 20, y: 14 }, { x: 7, y: 14 }, { x: 7, y: 6 }] },
-    { name: 'Comet', kind: 'sniffer', start: { x: 1, y: 7 }, route: [{ x: 4, y: 7 }, { x: 4, y: 8 }, { x: 1, y: 8 }, { x: 1, y: 7 }] },
+    {
+      name: 'Galileo',
+      kind: 'captain',
+      start: { x: 7, y: 6 },
+      route: [
+        { x: 20, y: 6 },
+        { x: 20, y: 14 },
+        { x: 7, y: 14 },
+        { x: 7, y: 6 },
+      ],
+    },
+    {
+      name: 'Comet',
+      kind: 'sniffer',
+      start: { x: 1, y: 7 },
+      route: [
+        { x: 4, y: 7 },
+        { x: 4, y: 8 },
+        { x: 1, y: 8 },
+        { x: 1, y: 7 },
+      ],
+    },
     { name: 'Hubble', kind: 'sleepy', start: { x: 11, y: 2 }, route: [{ x: 12, y: 2 }] },
-    { name: 'Kepler', start: { x: 23, y: 7 }, route: [{ x: 26, y: 7 }, { x: 26, y: 12 }, { x: 23, y: 12 }, { x: 23, y: 7 }] },
+    {
+      name: 'Kepler',
+      start: { x: 23, y: 7 },
+      route: [
+        { x: 26, y: 7 },
+        { x: 26, y: 12 },
+        { x: 23, y: 12 },
+        { x: 23, y: 7 },
+      ],
+    },
     // Halley circles the dome the other way round from Galileo.
-    { name: 'Halley', start: { x: 20, y: 14 }, route: [{ x: 20, y: 6 }, { x: 7, y: 6 }, { x: 7, y: 14 }, { x: 20, y: 14 }] },
+    {
+      name: 'Halley',
+      start: { x: 20, y: 14 },
+      route: [
+        { x: 20, y: 6 },
+        { x: 7, y: 6 },
+        { x: 7, y: 14 },
+        { x: 20, y: 14 },
+      ],
+    },
   ],
   cameras: [{ at: { x: 19, y: 2 }, sweep: [4, 3], range: 6 }],
-  loot: [
-    { at: { x: 13, y: 1 }, name: 'Midnight Meteorite', value: 18000, space: 2, category: 'curiosity' },
-  ],
+  loot: [{ at: { x: 13, y: 1 }, name: 'Midnight Meteorite', value: 18000, space: 2, category: 'curiosity' }],
 };

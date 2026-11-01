@@ -17,7 +17,10 @@ export const MANSION: LevelDef = {
   ambient: 'dark',
   xp: 300,
   par: 24,
-  rivalEntrances: [{ x: 26, y: 16 }, { x: 1, y: 8 }],
+  rivalEntrances: [
+    { x: 26, y: 16 },
+    { x: 1, y: 8 },
+  ],
   map: [
     '############################',
     '#.......L#,L,,,,,,L,#.D...D#',
@@ -67,9 +70,36 @@ export const MANSION: LevelDef = {
   cameras: [{ at: { x: 21, y: 1 }, sweep: [1, 2], range: 6 }],
   guards: [
     { name: 'Jeeves', kind: 'sleepy', start: { x: 4, y: 3 }, route: [{ x: 4, y: 4 }] },
-    { name: 'Sterling', kind: 'captain', start: { x: 11, y: 2 }, route: [{ x: 18, y: 2 }, { x: 18, y: 5 }, { x: 11, y: 5 }, { x: 11, y: 2 }] },
-    { name: 'Bruno', start: { x: 2, y: 9 }, route: [{ x: 25, y: 9 }, { x: 2, y: 9 }] },
-    { name: 'Duchess', kind: 'sniffer', start: { x: 15, y: 12 }, route: [{ x: 25, y: 12 }, { x: 25, y: 16 }, { x: 15, y: 16 }, { x: 15, y: 12 }] },
+    {
+      name: 'Sterling',
+      kind: 'captain',
+      start: { x: 11, y: 2 },
+      route: [
+        { x: 18, y: 2 },
+        { x: 18, y: 5 },
+        { x: 11, y: 5 },
+        { x: 11, y: 2 },
+      ],
+    },
+    {
+      name: 'Bruno',
+      start: { x: 2, y: 9 },
+      route: [
+        { x: 25, y: 9 },
+        { x: 2, y: 9 },
+      ],
+    },
+    {
+      name: 'Duchess',
+      kind: 'sniffer',
+      start: { x: 15, y: 12 },
+      route: [
+        { x: 25, y: 12 },
+        { x: 25, y: 16 },
+        { x: 15, y: 16 },
+        { x: 15, y: 12 },
+      ],
+    },
   ],
   loot: [
     { at: { x: 24, y: 3 }, name: 'Fabergé Fish', value: 15000, space: 1, category: 'jewel' },
@@ -91,7 +121,8 @@ export const SKY_GARDEN: LevelDef = {
   id: 'l11-sky-garden',
   name: 'The Sky Garden Hotel',
   tip: 'Rooftops: nobody can cross the gaps, but everyone can see across them. Wires join some of the roofs: with the Tightrope skill (Acrobat), Leo can walk them where no guard can follow. The hotel’s searchlight circles the garden.',
-  objective: 'Cross to the roof garden, take the Sapphire Swan from the penthouse, and get down the fire escape on the east roof.',
+  objective:
+    'Cross to the roof garden, take the Sapphire Swan from the penthouse, and get down the fire escape on the east roof.',
   ambient: 'dim',
   gaps: 'sky',
   shadows: [
@@ -103,7 +134,10 @@ export const SKY_GARDEN: LevelDef = {
   ],
   xp: 320,
   par: 19,
-  rivalEntrances: [{ x: 26, y: 4 }, { x: 9, y: 1 }],
+  rivalEntrances: [
+    { x: 26, y: 4 },
+    { x: 9, y: 1 },
+  ],
   map: [
     '############################',
     '#________..........________#',
@@ -131,13 +165,62 @@ export const SKY_GARDEN: LevelDef = {
   ],
   cameras: [{ at: { x: 15, y: 6 }, sweep: [3, 2], range: 5 }],
   // The hotel's searchlight circles the roof garden.
-  spotlights: [{ path: [{ x: 10, y: 3 }, { x: 13, y: 2 }, { x: 17, y: 3 }, { x: 18, y: 8 }, { x: 17, y: 13 }, { x: 13, y: 15 }, { x: 10, y: 13 }, { x: 9, y: 8 }], radius: 2 }],
+  spotlights: [
+    {
+      path: [
+        { x: 10, y: 3 },
+        { x: 13, y: 2 },
+        { x: 17, y: 3 },
+        { x: 18, y: 8 },
+        { x: 17, y: 13 },
+        { x: 13, y: 15 },
+        { x: 10, y: 13 },
+        { x: 9, y: 8 },
+      ],
+      radius: 2,
+    },
+  ],
   guards: [
-    { name: 'Basil', start: { x: 5, y: 4 }, route: [{ x: 5, y: 13 }, { x: 5, y: 4 }] },
-    { name: 'Ivy', kind: 'sniffer', start: { x: 10, y: 4 }, route: [{ x: 17, y: 4 }, { x: 17, y: 13 }, { x: 10, y: 13 }, { x: 10, y: 4 }] },
+    {
+      name: 'Basil',
+      start: { x: 5, y: 4 },
+      route: [
+        { x: 5, y: 13 },
+        { x: 5, y: 4 },
+      ],
+    },
+    {
+      name: 'Ivy',
+      kind: 'sniffer',
+      start: { x: 10, y: 4 },
+      route: [
+        { x: 17, y: 4 },
+        { x: 17, y: 13 },
+        { x: 10, y: 13 },
+        { x: 10, y: 4 },
+      ],
+    },
     // Rosa walks the garden the other way round from Ivy.
-    { name: 'Rosa', start: { x: 17, y: 13 }, route: [{ x: 17, y: 4 }, { x: 10, y: 4 }, { x: 10, y: 13 }, { x: 17, y: 13 }] },
-    { name: 'Monty', kind: 'captain', start: { x: 22, y: 9 }, route: [{ x: 22, y: 4 }, { x: 22, y: 13 }, { x: 22, y: 9 }] },
+    {
+      name: 'Rosa',
+      start: { x: 17, y: 13 },
+      route: [
+        { x: 17, y: 4 },
+        { x: 10, y: 4 },
+        { x: 10, y: 13 },
+        { x: 17, y: 13 },
+      ],
+    },
+    {
+      name: 'Monty',
+      kind: 'captain',
+      start: { x: 22, y: 9 },
+      route: [
+        { x: 22, y: 4 },
+        { x: 22, y: 13 },
+        { x: 22, y: 9 },
+      ],
+    },
   ],
   loot: [
     { at: { x: 14, y: 8 }, name: 'Sapphire Swan', value: 16000, space: 2, category: 'jewel' },
@@ -158,7 +241,8 @@ export const GLASS_TOWER: LevelDef = {
   id: 'l12-glass-tower',
   name: 'The Glass Tower Auction',
   tip: 'Glass walls: guards see straight through them, but sound doesn’t carry through glass. A noise inside a glass room stays inside it.',
-  objective: 'Take the Crown of the Cat King from the vitrine in the middle of the auction floor, and leave by the service stairs.',
+  objective:
+    'Take the Crown of the Cat King from the vitrine in the middle of the auction floor, and leave by the service stairs.',
   ambient: 'dim',
   shadows: [
     { x: 2, y: 8, w: 7, h: 1 },
@@ -171,7 +255,10 @@ export const GLASS_TOWER: LevelDef = {
   ],
   xp: 340,
   par: 19,
-  rivalEntrances: [{ x: 26, y: 1 }, { x: 1, y: 1 }],
+  rivalEntrances: [
+    { x: 26, y: 1 },
+    { x: 1, y: 1 },
+  ],
   map: [
     '############################',
     '#.D....D.#.D....D.#.D....D.#',
@@ -223,19 +310,65 @@ export const GLASS_TOWER: LevelDef = {
     { at: { x: 15, y: 7 }, sweep: [2, 3], range: 4 },
   ],
   guards: [
-    { name: 'Sotheby', kind: 'captain', start: { x: 10, y: 5 }, route: [{ x: 17, y: 5 }, { x: 17, y: 11 }, { x: 10, y: 11 }, { x: 10, y: 5 }] },
-    { name: 'Phillips', start: { x: 1, y: 6 }, route: [{ x: 9, y: 6 }, { x: 9, y: 10 }, { x: 1, y: 10 }, { x: 1, y: 6 }] },
-    { name: 'Christie', start: { x: 18, y: 8 }, route: [{ x: 24, y: 8 }, { x: 18, y: 8 }] },
-    { name: 'Bonham', kind: 'sniffer', start: { x: 10, y: 14 }, route: [{ x: 17, y: 14 }, { x: 10, y: 14 }] },
+    {
+      name: 'Sotheby',
+      kind: 'captain',
+      start: { x: 10, y: 5 },
+      route: [
+        { x: 17, y: 5 },
+        { x: 17, y: 11 },
+        { x: 10, y: 11 },
+        { x: 10, y: 5 },
+      ],
+    },
+    {
+      name: 'Phillips',
+      start: { x: 1, y: 6 },
+      route: [
+        { x: 9, y: 6 },
+        { x: 9, y: 10 },
+        { x: 1, y: 10 },
+        { x: 1, y: 6 },
+      ],
+    },
+    {
+      name: 'Christie',
+      start: { x: 18, y: 8 },
+      route: [
+        { x: 24, y: 8 },
+        { x: 18, y: 8 },
+      ],
+    },
+    {
+      name: 'Bonham',
+      kind: 'sniffer',
+      start: { x: 10, y: 14 },
+      route: [
+        { x: 17, y: 14 },
+        { x: 10, y: 14 },
+      ],
+    },
   ],
   loot: [
     { at: { x: 13, y: 8 }, name: 'Crown of the Cat King', value: 19000, space: 2, category: 'jewel' },
     { at: { x: 2, y: 1 }, name: 'Lot 7: A Very Old Mouse', value: 1600, space: 1, category: 'curiosity' },
     { at: { x: 7, y: 1 }, name: 'Lot 12: Pearl Collar', value: 3500, space: 1, category: 'jewel' },
-    { at: { x: 11, y: 1 }, name: 'Lot 19: Cat with a Pearl Earring', value: 6200, space: 3, category: 'painting' },
+    {
+      at: { x: 11, y: 1 },
+      name: 'Lot 19: Cat with a Pearl Earring',
+      value: 6200,
+      space: 3,
+      category: 'painting',
+    },
     { at: { x: 16, y: 1 }, name: 'Lot 23: Jade Fishbone', value: 2700, space: 1, category: 'artefact' },
     { at: { x: 20, y: 1 }, name: 'Lot 31: Ruby Bell', value: 2900, space: 1, category: 'jewel' },
-    { at: { x: 25, y: 1 }, name: 'Lot 40: Gilded Scratching Post', value: 1900, space: 3, category: 'curiosity' },
+    {
+      at: { x: 25, y: 1 },
+      name: 'Lot 40: Gilded Scratching Post',
+      value: 1900,
+      space: 3,
+      category: 'curiosity',
+    },
   ],
 };
 
@@ -257,7 +390,10 @@ export const YACHT_CLUB: LevelDef = {
   gaps: 'water',
   xp: 360,
   par: 36,
-  rivalEntrances: [{ x: 26, y: 7 }, { x: 12, y: 16 }],
+  rivalEntrances: [
+    { x: 26, y: 7 },
+    { x: 12, y: 16 },
+  ],
   map: [
     '############################',
     '#........#.D..D..D#.S......#',
@@ -285,15 +421,46 @@ export const YACHT_CLUB: LevelDef = {
   // Moonlight on the water lights the decks and piers dimly.
   moonlight: [{ x: 1, y: 9, w: 26, h: 8 }],
   guards: [
-    { name: 'Bosun', start: { x: 1, y: 8 }, route: [{ x: 26, y: 8 }, { x: 1, y: 8 }] },
-    { name: 'Skipper', kind: 'captain', start: { x: 15, y: 10 }, route: [{ x: 20, y: 10 }, { x: 15, y: 10 }] },
-    { name: 'Barnacle', kind: 'sniffer', start: { x: 5, y: 11 }, route: [{ x: 9, y: 11 }, { x: 9, y: 14 }, { x: 5, y: 14 }, { x: 5, y: 11 }] },
+    {
+      name: 'Bosun',
+      start: { x: 1, y: 8 },
+      route: [
+        { x: 26, y: 8 },
+        { x: 1, y: 8 },
+      ],
+    },
+    {
+      name: 'Skipper',
+      kind: 'captain',
+      start: { x: 15, y: 10 },
+      route: [
+        { x: 20, y: 10 },
+        { x: 15, y: 10 },
+      ],
+    },
+    {
+      name: 'Barnacle',
+      kind: 'sniffer',
+      start: { x: 5, y: 11 },
+      route: [
+        { x: 9, y: 11 },
+        { x: 9, y: 14 },
+        { x: 5, y: 14 },
+        { x: 5, y: 11 },
+      ],
+    },
     { name: 'Old Salt', kind: 'sleepy', start: { x: 3, y: 10 }, route: [{ x: 3, y: 11 }] },
   ],
   loot: [
     { at: { x: 17, y: 13 }, name: 'Golden Compass', value: 20000, space: 1, category: 'artefact' },
     { at: { x: 11, y: 1 }, name: 'Regatta Cup', value: 3600, space: 2, category: 'artefact' },
-    { at: { x: 14, y: 1 }, name: 'Ship in a Bottle (with a Cat)', value: 2100, space: 2, category: 'curiosity' },
+    {
+      at: { x: 14, y: 1 },
+      name: 'Ship in a Bottle (with a Cat)',
+      value: 2100,
+      space: 2,
+      category: 'curiosity',
+    },
     { at: { x: 17, y: 1 }, name: 'Admiral’s Medal', value: 2800, space: 1, category: 'jewel' },
     { at: { x: 20, y: 1 }, name: 'The Club’s Cash Box', value: 4500, space: 2, category: 'curiosity' },
     { at: { x: 7, y: 12 }, name: 'Brass Telescope', value: 1700, space: 2, category: 'artefact' },
@@ -312,11 +479,15 @@ export const OBSERVATORY: LevelDef = {
   id: 'l14-observatory',
   name: 'The Observatory Estate',
   tip: 'The vault door can’t be picked: find the combination (it’s in a desk somewhere in the house), then turn the dials twice, quietly.',
-  objective: 'Find the combination, open the vault and take the Comet Diamond, then get out over the east wall.',
+  objective:
+    'Find the combination, open the vault and take the Comet Diamond, then get out over the east wall.',
   ambient: 'dark',
   xp: 380,
   par: 32,
-  rivalEntrances: [{ x: 26, y: 13 }, { x: 26, y: 1 }],
+  rivalEntrances: [
+    { x: 26, y: 13 },
+    { x: 26, y: 1 },
+  ],
   map: [
     '############################',
     '#.D...D.#..........#.D...D.#',
@@ -369,8 +540,25 @@ export const OBSERVATORY: LevelDef = {
   ],
   cameras: [{ at: { x: 21, y: 11 }, sweep: [5, 4], range: 4 }],
   guards: [
-    { name: 'Hubert', kind: 'captain', start: { x: 1, y: 6 }, route: [{ x: 26, y: 6 }, { x: 1, y: 6 }] },
-    { name: 'Rufus', start: { x: 14, y: 13 }, route: [{ x: 26, y: 13 }, { x: 26, y: 16 }, { x: 14, y: 16 }, { x: 14, y: 13 }] },
+    {
+      name: 'Hubert',
+      kind: 'captain',
+      start: { x: 1, y: 6 },
+      route: [
+        { x: 26, y: 6 },
+        { x: 1, y: 6 },
+      ],
+    },
+    {
+      name: 'Rufus',
+      start: { x: 14, y: 13 },
+      route: [
+        { x: 26, y: 13 },
+        { x: 26, y: 16 },
+        { x: 14, y: 16 },
+        { x: 14, y: 13 },
+      ],
+    },
     { name: 'Astra', kind: 'sleepy', start: { x: 12, y: 1 }, route: [{ x: 12, y: 2 }] },
   ],
   loot: [

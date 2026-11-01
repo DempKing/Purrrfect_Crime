@@ -40,7 +40,8 @@ export const GREY_GALLERY: LevelDef = {
 export const NIGHT_GALLERY: LevelDef = {
   id: 'm1-night-gallery',
   name: 'The Night Gallery',
-  objective: 'Steal what fits in your inventory, ideally the Night Opal, and get out the exit before anyone raises the alarm.',
+  objective:
+    'Steal what fits in your inventory, ideally the Night Opal, and get out the exit before anyone raises the alarm.',
   ambient: 'dark',
   xp: 150,
   par: 30,
@@ -119,8 +120,26 @@ export const NIGHT_GALLERY: LevelDef = {
         { x: 8, y: 13 },
       ],
     },
-    { name: 'Biff', start: { x: 2, y: 9 }, route: [{ x: 4, y: 9 }, { x: 4, y: 10 }, { x: 2, y: 10 }, { x: 2, y: 9 }] },
-    { name: 'Rocco', start: { x: 12, y: 6 }, route: [{ x: 12, y: 9 }, { x: 14, y: 9 }, { x: 14, y: 6 }, { x: 12, y: 6 }] },
+    {
+      name: 'Biff',
+      start: { x: 2, y: 9 },
+      route: [
+        { x: 4, y: 9 },
+        { x: 4, y: 10 },
+        { x: 2, y: 10 },
+        { x: 2, y: 9 },
+      ],
+    },
+    {
+      name: 'Rocco',
+      start: { x: 12, y: 6 },
+      route: [
+        { x: 12, y: 9 },
+        { x: 14, y: 9 },
+        { x: 14, y: 6 },
+        { x: 12, y: 6 },
+      ],
+    },
   ],
   loot: [
     { at: { x: 11, y: 2 }, name: 'Night Opal', value: 12000, space: 3, category: 'jewel' },
@@ -132,4 +151,3 @@ export const NIGHT_GALLERY: LevelDef = {
     { at: { x: 20, y: 6 }, name: 'Jade Fish', value: 3500, space: 2, category: 'artefact' },
   ],
 };
-

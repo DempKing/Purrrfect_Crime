@@ -9,11 +9,32 @@ import type { Paper } from '../meta/newspaper';
 import { LETTERS, challengeProgress, delivery, hasLetter, type Letter } from '../meta/letters';
 import { ACHIEVEMENTS, type Achievement } from '../meta/achievements';
 import type { Settings } from '../settings';
-import { KEY_ACTIONS, PAD_ACTIONS, actionForButton, actionForKey, defaultKeys, defaultPad, keyName, padName, rebind, reservedButton, reservedKey, type KeyAction, type PadAction } from '../controls';
+import {
+  KEY_ACTIONS,
+  PAD_ACTIONS,
+  actionForButton,
+  actionForKey,
+  defaultKeys,
+  defaultPad,
+  keyName,
+  padName,
+  rebind,
+  reservedButton,
+  reservedKey,
+  type KeyAction,
+  type PadAction,
+} from '../controls';
 import { capturePadButton } from './gamepad';
 import { MASTHEAD } from '../meta/newspaper';
 import { charImageUrl, lootPictureUrl } from '../render/characters';
-import { KEY_ART, LEGEND_PICTURE, NIGHTCLAW_PICTURE, portrait, rivalRooftop, rooftopPicture } from './pictures';
+import {
+  KEY_ART,
+  LEGEND_PICTURE,
+  NIGHTCLAW_PICTURE,
+  portrait,
+  rivalRooftop,
+  rooftopPicture,
+} from './pictures';
 import {
   LAIR_PRICE,
   DEMAND_BONUS,
@@ -54,7 +75,12 @@ const tilt = (seed: string, max = 1.6) => {
   return (((h >>> 0) % 1000) / 1000 - 0.5) * 2 * max;
 };
 
-const CATEGORY_NAMES: Record<LootCategory, string> = { jewel: 'Jewels', painting: 'Paintings', artefact: 'Artefacts', curiosity: 'Curiosities' };
+const CATEGORY_NAMES: Record<LootCategory, string> = {
+  jewel: 'Jewels',
+  painting: 'Paintings',
+  artefact: 'Artefacts',
+  curiosity: 'Curiosities',
+};
 
 /** The narrator: an old grey cat in a trilby, placeholder until the generated portrait arrives. */
 export const NARRATOR_SVG = `<svg class="portrait" viewBox="0 0 64 64" aria-hidden="true">
@@ -135,7 +161,11 @@ export interface TitleCallbacks {
 }
 
 function slotSummary(p: Profile): string {
-  const where = !p.tutorialDone ? 'In the tutorial' : !p.lairOwned ? 'Looking for a lair' : `Day ${p.day} · ${p.heists} heist${p.heists === 1 ? '' : 's'}`;
+  const where = !p.tutorialDone
+    ? 'In the tutorial'
+    : !p.lairOwned
+      ? 'Looking for a lair'
+      : `Day ${p.day} · ${p.heists} heist${p.heists === 1 ? '' : 's'}`;
   return `Level ${playerLevel(p.xp)} · ${where}<br>${p.catnip.toLocaleString('en-US')} Catnip${p.legendary ? ' · <b>Legendary</b>' : ''}`;
 }
 
@@ -222,7 +252,10 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
     `<label class="setting"><span>${label}</span><input type="range" min="0" max="100" step="5" data-range="${id}" value="${Math.round((st[id] as number) * 100)}" aria-label="${label}"><output>${Math.round((st[id] as number) * 100)}%</output></label>`;
   const choice = (id: keyof Settings, label: string, options: [string, string][]) =>
     `<div class="setting"><span id="lbl-${id}">${label}</span><div class="seg" role="radiogroup" aria-labelledby="lbl-${id}">${options
-      .map(([v, l]) => `<button role="radio" aria-checked="${st[id] === v}" class="${st[id] === v ? 'on' : ''}" data-choice="${id}" data-value="${v}">${l}</button>`)
+      .map(
+        ([v, l]) =>
+          `<button role="radio" aria-checked="${st[id] === v}" class="${st[id] === v ? 'on' : ''}" data-choice="${id}" data-value="${v}">${l}</button>`,
+      )
       .join('')}</div></div>`;
   const toggle = (id: keyof Settings, label: string, hint: string) =>
     `<label class="setting"><span>${label}<br><span class="small">${hint}</span></span><input type="checkbox" data-toggle="${id}" ${st[id] ? 'checked' : ''}></label>`;
@@ -232,12 +265,19 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
       <h2 class="section">Sound</h2>
       ${slider('master', 'Volume')}${slider('music', 'Music')}${slider('sfx', 'Sound effects')}
       <h2 class="section">Play</h2>
-      ${choice('speed', 'Animation speed', [['normal', 'Normal'], ['fast', 'Fast'], ['instant', 'Instant']])}
+      ${choice('speed', 'Animation speed', [
+        ['normal', 'Normal'],
+        ['fast', 'Fast'],
+        ['instant', 'Instant'],
+      ])}
       ${toggle('hints', 'Tutorial tips', 'The narrator’s tips during the first heist.')}
       <h2 class="section">Accessibility</h2>
       ${toggle('largeText', 'Larger text', 'Bigger text in the HUD and on every screen.')}
       ${toggle('reduceMotion', 'Reduce motion', 'No spinning newspapers or rolling credits; quicker animations.')}
-      ${choice('palette', 'Colours', [['standard', 'Standard'], ['colourblind', 'Colour-blind friendly']])}
+      ${choice('palette', 'Colours', [
+        ['standard', 'Standard'],
+        ['colourblind', 'Colour-blind friendly'],
+      ])}
       <h2 class="section">Controls</h2>
       <div class="controls"></div>
       <div class="row-buttons"><button id="settings-ok" class="primary">Done</button></div>
@@ -254,7 +294,9 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
       change({ [i.dataset.range!]: Number(i.value) / 100 } as Partial<Settings>);
     }),
   );
-  el.querySelectorAll<HTMLInputElement>('[data-toggle]').forEach((i) => i.addEventListener('change', () => change({ [i.dataset.toggle!]: i.checked } as Partial<Settings>)));
+  el.querySelectorAll<HTMLInputElement>('[data-toggle]').forEach((i) =>
+    i.addEventListener('change', () => change({ [i.dataset.toggle!]: i.checked } as Partial<Settings>)),
+  );
   on(el, '[data-choice]', (e) => {
     const b = e.currentTarget as HTMLElement;
     change({ [b.dataset.choice!]: b.dataset.value } as Partial<Settings>);
@@ -284,15 +326,28 @@ const MOUSE_CONTROLS: [string, string][] = [
 
 /** The controls, one tab each for the keyboard, the mouse (or touch) and a controller; keys and buttons can be changed. */
 function controlsHtml(st: Settings, tab: ControlsTab, waiting: string | null, note: string): string {
-  const tabs: [ControlsTab, string][] = [['keys', 'Keyboard'], ['mouse', 'Mouse & touch'], ['pad', 'Controller']];
-  const fixed = (k: string, v: string) => `<tr class="fixed"><th><kbd>${esc(k)}</kbd></th><td>${esc(v)}</td></tr>`;
+  const tabs: [ControlsTab, string][] = [
+    ['keys', 'Keyboard'],
+    ['mouse', 'Mouse & touch'],
+    ['pad', 'Controller'],
+  ];
+  const fixed = (k: string, v: string) =>
+    `<tr class="fixed"><th><kbd>${esc(k)}</kbd></th><td>${esc(v)}</td></tr>`;
   const bind = (id: string, label: string, names: string[]) => {
     const wait = waiting === id;
     return `<tr><th><button class="bind${wait ? ' waiting' : ''}" data-bind="${id}" aria-label="Change: ${esc(label)}">${wait ? (tab === 'pad' ? 'Press a button…' : 'Press a key…') : names.map((n) => `<kbd>${esc(n)}</kbd>`).join(' ')}</button></th><td>${esc(label)}</td></tr>`;
   };
   let rows = '';
-  if (tab === 'keys') rows = KEY_ACTIONS.map(([a, l]) => bind(`keys:${a}`, l, st.keys[a].map(keyName))).join('') + fixed('1–9', 'Pick an action from the bar') + fixed('Esc', 'Cancel, close');
-  else if (tab === 'pad') rows = PAD_ACTIONS.map(([a, l]) => bind(`pad:${a}`, l, st.pad[a].map(padName))).join('') + fixed('D-pad / left stick', 'Move the cursor (in menus: between buttons)') + fixed('Right stick', 'Pan the camera');
+  if (tab === 'keys')
+    rows =
+      KEY_ACTIONS.map(([a, l]) => bind(`keys:${a}`, l, st.keys[a].map(keyName))).join('') +
+      fixed('1–9', 'Pick an action from the bar') +
+      fixed('Esc', 'Cancel, close');
+  else if (tab === 'pad')
+    rows =
+      PAD_ACTIONS.map(([a, l]) => bind(`pad:${a}`, l, st.pad[a].map(padName))).join('') +
+      fixed('D-pad / left stick', 'Move the cursor (in menus: between buttons)') +
+      fixed('Right stick', 'Pan the camera');
   else rows = MOUSE_CONTROLS.map(([k, v]) => fixed(k, v)).join('');
   return `<div class="seg controls-tabs" role="tablist">${tabs.map(([id, l]) => `<button role="tab" data-ctab="${id}" aria-selected="${id === tab}" class="${id === tab ? 'on' : ''}">${l}</button>`).join('')}</div>
     ${tab !== 'mouse' ? `<p class="small controls-hint">${note ? esc(note) : `Click a ${tab === 'pad' ? 'button' : 'key'} on the left to change it${tab === 'pad' ? ', then press the new button on the controller' : ', then press the new key'}. Esc cancels.`}</p>` : ''}
@@ -335,7 +390,12 @@ function controlsSection(box: HTMLElement, st: Settings, change: (p: Partial<Set
     const [, a] = id.split(':') as [string, KeyAction];
     const before = actionForKey(st.keys, k);
     change({ keys: rebind(st.keys, a, k) });
-    done(id, before && before !== a ? `${keyName(k)} now does this; ${KEY_ACTIONS.find(([x]) => x === before)![1].toLowerCase()} took its old key.` : `Set to ${keyName(k)}.`);
+    done(
+      id,
+      before && before !== a
+        ? `${keyName(k)} now does this; ${KEY_ACTIONS.find(([x]) => x === before)![1].toLowerCase()} took its old key.`
+        : `Set to ${keyName(k)}.`,
+    );
   };
   const onButton = (b: number) => {
     if (!waiting) return;
@@ -348,7 +408,12 @@ function controlsSection(box: HTMLElement, st: Settings, change: (p: Partial<Set
     const [, a] = id.split(':') as [string, PadAction];
     const before = actionForButton(st.pad, b);
     change({ pad: rebind(st.pad, a, b) });
-    done(id, before && before !== a ? `${padName(b)} now does this; ${PAD_ACTIONS.find(([x]) => x === before)![1].toLowerCase()} took its old button.` : `Set to ${padName(b)}.`);
+    done(
+      id,
+      before && before !== a
+        ? `${padName(b)} now does this; ${PAD_ACTIONS.find(([x]) => x === before)![1].toLowerCase()} took its old button.`
+        : `Set to ${padName(b)}.`,
+    );
   };
   box.addEventListener('click', (e) => {
     const t = (e.target as HTMLElement).closest<HTMLElement>('button');
@@ -403,7 +468,12 @@ export function toast(a: Achievement): void {
 // --- The narrator, between heists --------------------------------------------------------------
 
 /** A sequence of lines (the narrator's, unless someone else is speaking) with a Next button; the last button runs `done`. */
-export function narratorScene(lines: string[], last: string, done: () => void, speaker = { name: 'The narrator', portrait: NARRATOR_SVG }): void {
+export function narratorScene(
+  lines: string[],
+  last: string,
+  done: () => void,
+  speaker = { name: 'The narrator', portrait: NARRATOR_SVG },
+): void {
   let i = 0;
   const el = show(
     `<div class="scene caption-box"><div class="speaker"><div class="portrait-frame">${speaker.portrait}</div><div><span class="speaker-name">${esc(speaker.name)}</span><p id="line"></p></div></div><div class="row-buttons"><button id="next" class="primary"></button></div></div>`,
@@ -450,7 +520,10 @@ export const CREDITS: [string, string][] = [
 
 /** The music's credits, from art/music/credits.json (the build puts them on the page). */
 function musicCredits(): { track: string; artist: string; license: string }[] {
-  return (window as unknown as { MUSIC_CREDITS?: { track: string; artist: string; license: string }[] }).MUSIC_CREDITS ?? [];
+  return (
+    (window as unknown as { MUSIC_CREDITS?: { track: string; artist: string; license: string }[] })
+      .MUSIC_CREDITS ?? []
+  );
 }
 
 /** The end titles. From the title menu (`fromMenu`), with a Back button and Esc; at the end of the story, on to the paper. */
@@ -458,10 +531,12 @@ export function credits(done: () => void, fromMenu = false): void {
   const el = show(
     `<div class="credits${fromMenu ? ' rolling' : ''}"><div class="roll">
       <h1>Purrrfect Crime</h1>
-      ${[...new Set(musicCredits().map((m) => m.artist))].map((artist) => {
-        const mine = musicCredits().filter((m) => m.artist === artist);
-        return `<p><span class="credit-what">Music</span><b>${esc(artist)}</b><span>${mine.map((m) => `“${esc(m.track)}”`).join(' · ')}</span><span class="small">${esc(mine[0].license)}</span></p>`;
-      }).join('')}
+      ${[...new Set(musicCredits().map((m) => m.artist))]
+        .map((artist) => {
+          const mine = musicCredits().filter((m) => m.artist === artist);
+          return `<p><span class="credit-what">Music</span><b>${esc(artist)}</b><span>${mine.map((m) => `“${esc(m.track)}”`).join(' · ')}</span><span class="small">${esc(mine[0].license)}</span></p>`;
+        })
+        .join('')}
       ${CREDITS.map(([who, what]) => `<p><span class="credit-what">${esc(what)}</span><b>${esc(who)}</b></p>`).join('')}
       ${fromMenu ? '' : '<p class="small">Free play continues: every heist is still there to replay, and the fences are still buying.</p>'}
       ${fromMenu ? '<p class="credit-end">Thanks for playing.</p>' : '<div class="row-buttons"><button id="credits-ok" class="primary">Read the morning paper</button></div>'}
@@ -479,7 +554,10 @@ export function credits(done: () => void, fromMenu = false): void {
 // --- The calling card and the paper ------------------------------------------------------------------
 
 export function callingCard(done: () => void): void {
-  show(`<div class="card-beat"><div class="calling-card">${CARD_SVG}</div><p>Leo leaves his calling card</p></div>`, 'overlay dark');
+  show(
+    `<div class="card-beat"><div class="calling-card">${CARD_SVG}</div><p>Leo leaves his calling card</p></div>`,
+    'overlay dark',
+  );
   setTimeout(done, 1900);
 }
 
@@ -491,7 +569,10 @@ function photoSvg(centrepiece: boolean): string {
 
 export function newspaper(paper: Paper, spin: boolean, done: () => void, button = 'Continue'): void {
   const photos = paper.photos
-    .map((p) => `<figure>${photoSvg(p.centrepiece)}<figcaption><b>${esc(p.name)}</b> · est. ${money(p.value)}<br>${esc(p.caption)}</figcaption></figure>`)
+    .map(
+      (p) =>
+        `<figure>${photoSvg(p.centrepiece)}<figcaption><b>${esc(p.name)}</b> · est. ${money(p.value)}<br>${esc(p.caption)}</figcaption></figure>`,
+    )
     .join('');
   const el = show(
     `<div class="paper ${spin ? 'spin' : ''}">
@@ -517,7 +598,8 @@ function lootPic(name: string, category?: LootCategory): string {
 /** The night's snapshot: Leo on the rooftop with the prize, or the rival who beat him to it. */
 function reportPhoto(r: HeistReport): string {
   const prize = r.items.find((i) => i.centrepiece);
-  if (r.rival && !r.rival.won) return `<figure class="report-photo"><img src="${rivalRooftop(r.rival.id)}" alt=""><figcaption>${esc(RIVALS[r.rival.id].name)}, with the prize. Next time.</figcaption></figure>`;
+  if (r.rival && !r.rival.won)
+    return `<figure class="report-photo"><img src="${rivalRooftop(r.rival.id)}" alt=""><figcaption>${esc(RIVALS[r.rival.id].name)}, with the prize. Next time.</figcaption></figure>`;
   if (!prize) return '';
   return `<figure class="report-photo"><img src="${rooftopPicture(prize.name)}" alt=""><figcaption>Leo and ${the(esc(prize.name))}, on the rooftop</figcaption></figure>`;
 }
@@ -554,8 +636,12 @@ export function heistReport(r: HeistReport, p: Profile, done: () => void): void 
       ${r.rival ? `<p class="rival-line">${r.rival.caught ? `The guards caught ${esc(RIVALS[r.rival.id].name)}. One less thief in town.` : r.rival.won ? `You beat ${esc(RIVALS[r.rival.id].name)} to the prize.` : `${esc(RIVALS[r.rival.id].name)} got the centrepiece this time. Replay to take it yourself.`}</p>` : ''}
       ${r.ncWaiting ? '<p class="rival-line">You got out, but NightClaw is still waiting for you to find him. Creep up and tap him on the shoulder to finish it.</p>' : ''}
       ${r.finale ? '<p class="levelup-note">NightClaw’s collar has the top shelf of the Trophy Room to itself. It is not for sale.</p>' : ''}
-      ${r.items.length ? `<div class="haul"><div class="haul-head">The haul <b>$<span id="haul">0</span></b></div><div class="evidence">${r.items.map((i) => `<figure class="loot-drop">${lootPic(i.name, i.category)}<figcaption>${esc(i.name)}<br><b>$${i.value.toLocaleString('en-US')}</b></figcaption></figure>`).join('')}</div>
-        <p class="small">${r.items.length} piece${r.items.length === 1 ? '' : 's'} went to the stash${r.replay ? ', but this is a replay, so the fences call it hot and pay half' : ''}.</p></div>` : '<p>Nothing to sell this time.</p>'}
+      ${
+        r.items.length
+          ? `<div class="haul"><div class="haul-head">The haul <b>$<span id="haul">0</span></b></div><div class="evidence">${r.items.map((i) => `<figure class="loot-drop">${lootPic(i.name, i.category)}<figcaption>${esc(i.name)}<br><b>$${i.value.toLocaleString('en-US')}</b></figcaption></figure>`).join('')}</div>
+        <p class="small">${r.items.length} piece${r.items.length === 1 ? '' : 's'} went to the stash${r.replay ? ', but this is a replay, so the fences call it hot and pay half' : ''}.</p></div>`
+          : '<p>Nothing to sell this time.</p>'
+      }
       <div class="row-buttons"><button id="report-ok" class="primary">Skip</button></div>
     </div>`,
     'overlay',
@@ -591,7 +677,11 @@ export function heistReport(r: HeistReport, p: Profile, done: () => void): void 
     lvlNum.parentElement!.classList.add('bump');
     const burst = document.createElement('div');
     burst.className = 'levelup-burst';
-    const confetti = Array.from({ length: 28 }, (_, i) => `<i style="--a:${(i / 28) * 360}deg;--d:${60 + (i % 5) * 18}px;--c:${['#ffd23f', '#ff4d5e', '#1fc8b4', '#7b3fe4', '#3a6ff0'][i % 5]}"></i>`).join('');
+    const confetti = Array.from(
+      { length: 28 },
+      (_, i) =>
+        `<i style="--a:${(i / 28) * 360}deg;--d:${60 + (i % 5) * 18}px;--c:${['#ffd23f', '#ff4d5e', '#1fc8b4', '#7b3fe4', '#3a6ff0'][i % 5]}"></i>`,
+    ).join('');
     burst.innerHTML = `<div class="confetti">${confetti}</div><b>Level up!</b><span>Level ${l} · the fences pay ${Math.round(fenceRate(l) * 100)}% now</span>`;
     q<HTMLElement>('#levelups').appendChild(burst);
   };
@@ -642,7 +732,11 @@ export function heistReport(r: HeistReport, p: Profile, done: () => void): void 
       sfx('coin');
       const upTo = r.items.slice(0, i + 1).reduce((n, it) => n + it.value, 0);
       const from = r.items.slice(0, i).reduce((n, it) => n + it.value, 0);
-      if (haulEl) tween(260, (k) => (haulEl.textContent = Math.round(from + (upTo - from) * k).toLocaleString('en-US')));
+      if (haulEl)
+        tween(
+          260,
+          (k) => (haulEl.textContent = Math.round(from + (upTo - from) * k).toLocaleString('en-US')),
+        );
     });
   });
   t += drops.length * 280 + 200;
@@ -666,7 +760,11 @@ export function heistReport(r: HeistReport, p: Profile, done: () => void): void 
   el.addEventListener('pointerdown', (e) => {
     if (!finished && e.target !== ok) finish();
   });
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('reduce-motion')) finish();
+  if (
+    matchMedia('(prefers-reduced-motion: reduce)').matches ||
+    document.body.classList.contains('reduce-motion')
+  )
+    finish();
 }
 
 // --- NightClaw's letters -------------------------------------------------------------------------------
@@ -702,7 +800,8 @@ export function cityMap(p: Profile, onBuy: () => void): void {
       const x = 24 + c * 94;
       const y = 30 + r * 92;
       // The landmarks, the park and the lair are drawn on their own.
-      if ((c === 1 && r === 0) || (c === 2 && r === 1) || (c === 4 && r === 1) || (c === 0 && r === 2)) continue;
+      if ((c === 1 && r === 0) || (c === 2 && r === 1) || (c === 4 && r === 1) || (c === 0 && r === 2))
+        continue;
       blocks.push(`<rect x="${x}" y="${y}" width="78" height="74" class="block"/>`);
     }
   const el = show(
@@ -759,7 +858,8 @@ export interface LairCallbacks {
 
 export type LairTab = 'heists' | 'leo' | 'market' | 'lair' | 'papers';
 
-const pips = (n: number, of: number) => `<span class="pips">${Array.from({ length: of }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
+const pips = (n: number, of: number) =>
+  `<span class="pips">${Array.from({ length: of }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
 
 export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): void {
   const lvl = playerLevel(p.xp);
@@ -770,7 +870,11 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   // A heist opens once the one before it is cleared; anything already cleared stays open. NightClaw's
   // challenge opens with his second letter.
   const unlocked = (i: number) =>
-    cb.jobs[i].finale ? hasLetter(p, 4) : cb.jobs[i].challenge ? hasLetter(p, 2) : i === 0 || !!p.records[cb.jobs[i].id] || !!p.records[cb.jobs[i - 1].id];
+    cb.jobs[i].finale
+      ? hasLetter(p, 4)
+      : cb.jobs[i].challenge
+        ? hasLetter(p, 2)
+        : i === 0 || !!p.records[cb.jobs[i].id] || !!p.records[cb.jobs[i - 1].id];
   const job = (def: LevelDef) => {
     const i = cb.jobs.indexOf(def);
     const rec = p.records[def.id];
@@ -807,7 +911,10 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     challenge +
     cb.districts
       .filter((d) => d.levels.some((l) => unlocked(cb.jobs.indexOf(l))))
-      .map((d) => `<section class="district-board"><h2 class="section district" style="--tilt:${tilt(d.id, 2)}deg">${esc(d.name)}</h2><div class="cards">${d.levels.map(job).join('')}</div></section>`)
+      .map(
+        (d) =>
+          `<section class="district-board"><h2 class="section district" style="--tilt:${tilt(d.id, 2)}deg">${esc(d.name)}</h2><div class="cards">${d.levels.map(job).join('')}</div></section>`,
+      )
       .join('');
 
   const attributes = ATTRIBUTES.map((a) => {
@@ -831,7 +938,10 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
         .join('')}</div>`,
   ).join('');
   const rivalry = (Object.entries(p.rivalRecord) as [keyof typeof RIVALS, { won: number; lost: number }][])
-    .map(([id, r]) => `<li>${esc(RIVALS[id].name)}: beaten ${r.won} time${r.won === 1 ? '' : 's'}, lost ${r.lost}</li>`)
+    .map(
+      ([id, r]) =>
+        `<li>${esc(RIVALS[id].name)}: beaten ${r.won} time${r.won === 1 ? '' : 's'}, lost ${r.lost}</li>`,
+    )
     .join('');
   const leo = `
     <div class="dossier-head">
@@ -859,7 +969,14 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   const total = p.stash.reduce((n, s) => n + priceOf(p, s), 0);
   const goods = p.stash
     .map((s, i) => {
-      const deal = s.category === wanted ? `+${Math.round(DEMAND_BONUS * 100)}% this week` : s.id === collector ? 'collector ×1.5' : s.hot ? 'hot: half price' : '';
+      const deal =
+        s.category === wanted
+          ? `+${Math.round(DEMAND_BONUS * 100)}% this week`
+          : s.id === collector
+            ? 'collector ×1.5'
+            : s.hot
+              ? 'hot: half price'
+              : '';
       return `<div class="ware${s.centrepiece ? ' prize-ware' : ''}" style="--tilt:${tilt(`ware${s.id}`, 4)}deg;--i:${i}" data-ware="${s.id}">
         <img src="${lootPictureUrl(s.name, s.category)}" alt="">
         <div class="price-tag"><b>${priceOf(p, s).toLocaleString('en-US')}</b><span class="nip"></span>${deal ? `<small>${deal}</small>` : ''}</div>
@@ -905,7 +1022,9 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     .map(([id]) => {
       const def = cb.jobs.find((j) => j.id === id);
       const c = def?.loot.find((l) => def.map[l.at.y][l.at.x] === 'G');
-      return c ? `<li>${esc(c.revealed ? 'NightClaw’s old collar' : c.name)} <span class="small">· ${esc(def!.name)}${p.records[id].flawless ? ' · flawless' : ''}</span></li>` : '';
+      return c
+        ? `<li>${esc(c.revealed ? 'NightClaw’s old collar' : c.name)} <span class="small">· ${esc(def!.name)}${p.records[id].flawless ? ' · flawless' : ''}</span></li>`
+        : '';
     })
     .join('');
   const letters = p.letters.length
@@ -992,7 +1111,10 @@ function lairSvg(condition: number, mailbox: boolean): string {
   const c = condition;
   const wall = c > 0.5 ? '#5b5170' : '#4a3f4f';
   const window = (x: number, lit: boolean, boarded: boolean) =>
-    `<rect x="${x}" y="38" width="16" height="14" fill="${lit ? '#f2c46b' : '#2a2230'}" opacity="${lit ? 0.9 : 1}"/>` + (boarded ? `<path d="M${x - 1} 40 L${x + 17} 50 M${x - 1} 48 L${x + 17} 42" stroke="#8a6a45" stroke-width="3"/>` : '');
+    `<rect x="${x}" y="38" width="16" height="14" fill="${lit ? '#f2c46b' : '#2a2230'}" opacity="${lit ? 0.9 : 1}"/>` +
+    (boarded
+      ? `<path d="M${x - 1} 40 L${x + 17} 50 M${x - 1} 48 L${x + 17} 42" stroke="#8a6a45" stroke-width="3"/>`
+      : '');
   return `<svg viewBox="0 0 120 90">
   <rect x="0" y="0" width="120" height="90" fill="#141a2e"/><circle cx="100" cy="16" r="8" fill="#e9e3c9"/>
   <rect x="18" y="26" width="84" height="60" fill="${wall}" stroke="#2a2230"/><path d="M14 28 L60 8 L106 28Z" fill="${c > 0.3 ? '#4a3a52' : '#3a2f3f'}"/>
@@ -1019,7 +1141,14 @@ const GUARD_NOTES: Record<string, string> = {
  * The planning board before a heist: a photo of the place (the game draws it), the prize, the floor plan, a card
  * for every guard, sticky notes, and red string between the clues. What's on it grows with the Planning Table.
  */
-export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onStart: () => void, onBack: () => void, photo?: Promise<string>): void {
+export function briefing(
+  def: LevelDef,
+  p: Profile,
+  rival: RivalPlan | null,
+  onStart: () => void,
+  onBack: () => void,
+  photo?: Promise<string>,
+): void {
   const tier = p.rooms.planning;
   const level = parseLevel(def);
   const rec = p.records[def.id];
@@ -1033,17 +1162,47 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
         const fill =
           t === 'wall' || t === 'panel' || t === 'fuse' || t === 'switch'
             ? '#dce9f5'
-            : ({ pillar: '#a9c2db', stack: '#a9c2db', exit: '#f0e442', door: '#e9c46a', marble: '#2d5f92', keydoor: '#e9c46a', vault: '#e9c46a', glass: '#7fb0d8', kennel: '#c9772f', desk: '#a9c2db', keycard: '#f0e442', crate: '#c9a66b', tidal: '#3f6f8e', 'belt-e': '#16385c', 'belt-w': '#16385c', paint: '#e0314b', gap: '#0f2a44', wire: '#0f2a44' } as Record<string, string>)[t] ?? '#24538a';
+            : ((
+                {
+                  pillar: '#a9c2db',
+                  stack: '#a9c2db',
+                  exit: '#f0e442',
+                  door: '#e9c46a',
+                  marble: '#2d5f92',
+                  keydoor: '#e9c46a',
+                  vault: '#e9c46a',
+                  glass: '#7fb0d8',
+                  kennel: '#c9772f',
+                  desk: '#a9c2db',
+                  keycard: '#f0e442',
+                  crate: '#c9a66b',
+                  tidal: '#3f6f8e',
+                  'belt-e': '#16385c',
+                  'belt-w': '#16385c',
+                  paint: '#e0314b',
+                  gap: '#0f2a44',
+                  wire: '#0f2a44',
+                } as Record<string, string>
+              )[t] ?? '#24538a');
         cells.push(`<rect x="${x * S}" y="${y * S}" width="${S}" height="${S}" fill="${fill}"/>`);
-        if (level.ducts[y][x]) cells.push(`<rect x="${x * S + 5}" y="${y * S + 5}" width="6" height="6" fill="none" stroke="#dce9f5" stroke-dasharray="2 1" opacity="0.8"/>`);
-        if (t === 'wire') cells.push(`<line x1="${x * S}" y1="${y * S + 8}" x2="${x * S + S}" y2="${y * S + 8}" stroke="#c8ccd8" stroke-width="1.5"/>`);
+        if (level.ducts[y][x])
+          cells.push(
+            `<rect x="${x * S + 5}" y="${y * S + 5}" width="6" height="6" fill="none" stroke="#dce9f5" stroke-dasharray="2 1" opacity="0.8"/>`,
+          );
+        if (t === 'wire')
+          cells.push(
+            `<line x1="${x * S}" y1="${y * S + 8}" x2="${x * S + S}" y2="${y * S + 8}" stroke="#c8ccd8" stroke-width="1.5"/>`,
+          );
         if (t === 'laser')
           cells.push(
             laserAxis(level, x, y) === 'x'
               ? `<line x1="${x * S}" y1="${y * S + 8}" x2="${x * S + S}" y2="${y * S + 8}" stroke="#ff2a2a" stroke-width="2"/>`
               : `<line x1="${x * S + 8}" y1="${y * S}" x2="${x * S + 8}" y2="${y * S + S}" stroke="#ff2a2a" stroke-width="2"/>`,
           );
-        if (t === 'panel' || t === 'fuse') cells.push(`<rect x="${x * S + 4}" y="${y * S + 4}" width="8" height="8" fill="${t === 'panel' ? '#55d6c2' : '#f2c94c'}"/>`);
+        if (t === 'panel' || t === 'fuse')
+          cells.push(
+            `<rect x="${x * S + 4}" y="${y * S + 4}" width="8" height="8" fill="${t === 'panel' ? '#55d6c2' : '#f2c94c'}"/>`,
+          );
       }
   const marks: string[] = [];
   if (tier >= 1) {
@@ -1053,20 +1212,36 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
           ? `<circle cx="${l.at.x * S + 8}" cy="${l.at.y * S + 8}" r="11" fill="none" stroke="#e0314b" stroke-width="2.5"/><circle cx="${l.at.x * S + 8}" cy="${l.at.y * S + 8}" r="4" fill="#f0e442"/>`
           : `<circle cx="${l.at.x * S + 8}" cy="${l.at.y * S + 8}" r="3.5" fill="#f7f1e0"/>`,
       );
-    marks.push(`<text x="${level.start.x * S + 8}" y="${level.start.y * S + 13}" text-anchor="middle" font-size="13" font-weight="700" fill="#f0e442">L</text>`);
+    marks.push(
+      `<text x="${level.start.x * S + 8}" y="${level.start.y * S + 13}" text-anchor="middle" font-size="13" font-weight="700" fill="#f0e442">L</text>`,
+    );
   }
   if (tier >= 2) {
-    for (const lamp of level.lamps) marks.push(`<circle cx="${lamp.at.x * S + 8}" cy="${lamp.at.y * S + 8}" r="${lamp.radius * S}" fill="#ffd27a" opacity="0.12"/><circle cx="${lamp.at.x * S + 8}" cy="${lamp.at.y * S + 8}" r="3" fill="#ffd27a"/>`);
-    for (const c of level.cameras) marks.push(`<rect x="${c.at.x * S + 3}" y="${c.at.y * S + 3}" width="10" height="10" rx="2" fill="#c77dff"/>`);
+    for (const lamp of level.lamps)
+      marks.push(
+        `<circle cx="${lamp.at.x * S + 8}" cy="${lamp.at.y * S + 8}" r="${lamp.radius * S}" fill="#ffd27a" opacity="0.12"/><circle cx="${lamp.at.x * S + 8}" cy="${lamp.at.y * S + 8}" r="3" fill="#ffd27a"/>`,
+      );
+    for (const c of level.cameras)
+      marks.push(
+        `<rect x="${c.at.x * S + 3}" y="${c.at.y * S + 3}" width="10" height="10" rx="2" fill="#c77dff"/>`,
+      );
   }
   if (tier >= 3)
     for (const g of level.guards) {
       const pts = [g.start, ...g.route].map((q) => `${q.x * S + 8},${q.y * S + 8}`).join(' ');
-      marks.push(`<polyline points="${pts}" fill="none" stroke="#ff8a5a" stroke-width="2" stroke-dasharray="4 3"/><circle cx="${g.start.x * S + 8}" cy="${g.start.y * S + 8}" r="4" fill="#ff8a5a"/>`);
+      marks.push(
+        `<polyline points="${pts}" fill="none" stroke="#ff8a5a" stroke-width="2" stroke-dasharray="4 3"/><circle cx="${g.start.x * S + 8}" cy="${g.start.y * S + 8}" r="4" fill="#ff8a5a"/>`,
+      );
     }
-  const centre = def.loot.find((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y)?.name ?? 'prize';
-  const entrance = rival && def.rivalEntrances ? def.rivalEntrances[rival.entrance % def.rivalEntrances.length] : null;
-  if (rival && entrance && tier >= 2) marks.push(`<text x="${entrance.x * S + 8}" y="${entrance.y * S + 12}" text-anchor="middle" font-size="12" fill="#b05cff">R</text>`);
+  const centre =
+    def.loot.find((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y)?.name ??
+    'prize';
+  const entrance =
+    rival && def.rivalEntrances ? def.rivalEntrances[rival.entrance % def.rivalEntrances.length] : null;
+  if (rival && entrance && tier >= 2)
+    marks.push(
+      `<text x="${entrance.x * S + 8}" y="${entrance.y * S + 12}" text-anchor="middle" font-size="12" fill="#b05cff">R</text>`,
+    );
   const rumour =
     tier < 1
       ? ''
@@ -1084,8 +1259,12 @@ export function briefing(def: LevelDef, p: Profile, rival: RivalPlan | null, onS
   const guardCards = level.guards
     .map((g, i) => {
       const kind = g.kind ?? 'watch';
-      const art = kind === 'sniffer' ? 'dog' : kind === 'robo' ? 'robot' : kind === 'nightclaw' ? 'nightclaw' : 'guard';
-      const route = tier >= 3 ? `Walks a beat of ${g.route.length} stop${g.route.length === 1 ? '' : 's'}.` : 'Beat unknown: a better Planning Table would show it.';
+      const art =
+        kind === 'sniffer' ? 'dog' : kind === 'robo' ? 'robot' : kind === 'nightclaw' ? 'nightclaw' : 'guard';
+      const route =
+        tier >= 3
+          ? `Walks a beat of ${g.route.length} stop${g.route.length === 1 ? '' : 's'}.`
+          : 'Beat unknown: a better Planning Table would show it.';
       return `<figure class="mug-card" style="${tilt(i + 3)}"><span class="pin"></span><img src="${charImageUrl(art)}" alt=""><figcaption><b>${esc(g.name)}</b><span>${GUARD_NOTES[kind]}</span><span class="route">${route}</span></figcaption></figure>`;
     })
     .join('');

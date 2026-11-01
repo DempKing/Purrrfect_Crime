@@ -9,14 +9,31 @@ import { CHALLENGE_LEVELS } from '../src/meta/letters';
 
 function memory(): Storage {
   const m = new Map<string, string>();
-  return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => void m.set(k, v), removeItem: (k) => void m.delete(k), clear: () => m.clear(), key: () => null, length: 0 };
+  return {
+    getItem: (k) => m.get(k) ?? null,
+    setItem: (k, v) => void m.set(k, v),
+    removeItem: (k) => void m.delete(k),
+    clear: () => m.clear(),
+    key: () => null,
+    length: 0,
+  };
 }
 
 test('settings save, load, and fall back to the defaults when missing or broken', () => {
   const st = memory();
   assert.deepEqual(loadSettings(st), defaultSettings());
-  assert.equal(loadSettings(st, true).reduceMotion, true, 'follows the system’s reduced-motion setting at first');
-  const s = { ...defaultSettings(), music: 0.2, palette: 'colourblind' as const, largeText: true, speed: 'instant' as const };
+  assert.equal(
+    loadSettings(st, true).reduceMotion,
+    true,
+    'follows the system’s reduced-motion setting at first',
+  );
+  const s = {
+    ...defaultSettings(),
+    music: 0.2,
+    palette: 'colourblind' as const,
+    largeText: true,
+    speed: 'instant' as const,
+  };
   saveSettings(st, s);
   assert.deepEqual(loadSettings(st), s);
   st.setItem(SETTINGS_KEY, '{"music": 7, "speed": "warp", "palette": 3}');
@@ -36,25 +53,44 @@ test('achievements: each awarded once, from the save or the heist just finished;
   assert.deepEqual(checkAchievements(p), []);
   p.tutorialDone = true;
   p.lairOwned = true;
-  assert.deepEqual(checkAchievements(p).map((a) => a.id), ['first-night', 'home']);
+  assert.deepEqual(
+    checkAchievements(p).map((a) => a.id),
+    ['first-night', 'home'],
+  );
   assert.deepEqual(checkAchievements(p), [], 'only once');
   const report = { spacesUsed: 6, spaces: 6, par: 30, turns: 14, items: [{}] } as unknown as HeistReport;
-  assert.deepEqual(checkAchievements(p, report).map((a) => a.id), ['full-pockets', 'quick']);
-  for (const l of CHALLENGE_LEVELS) p.records[l.id] = { clears: 1, bestTurns: 9, centrepiece: true, flawless: true };
+  assert.deepEqual(
+    checkAchievements(p, report).map((a) => a.id),
+    ['full-pockets', 'quick'],
+  );
+  for (const l of CHALLENGE_LEVELS)
+    p.records[l.id] = { clears: 1, bestTurns: 9, centrepiece: true, flawless: true };
   p.legendary = true;
   const ids = checkAchievements(p).map((a) => a.id);
-  for (const id of ['ghost', 'district-old-town', 'district-downtown', 'trophies', 'challenge', 'legendary']) assert.ok(ids.includes(id), id);
-  assert.deepEqual(upgradeProfile({ ...newProfile(), achievements: undefined })!.achievements, [], 'older saves start with none');
+  for (const id of ['ghost', 'district-old-town', 'district-downtown', 'trophies', 'challenge', 'legendary'])
+    assert.ok(ids.includes(id), id);
+  assert.deepEqual(
+    upgradeProfile({ ...newProfile(), achievements: undefined })!.achievements,
+    [],
+    'older saves start with none',
+  );
 });
 
 test('the log’s events become sounds', () => {
-  assert.deepEqual(soundsInLog(['Woof! WOOF! The guard dog has smelled cat.', 'Alarm! A camera caught Leo on film. Lockdown in 5 turns.']), ['bark', 'alarm']);
+  assert.deepEqual(
+    soundsInLog([
+      'Woof! WOOF! The guard dog has smelled cat.',
+      'Alarm! A camera caught Leo on film. Lockdown in 5 turns.',
+    ]),
+    ['bark', 'alarm'],
+  );
   assert.deepEqual(soundsInLog(['Creeeak!', 'CRASH! The glass breaks.']), ['creak', 'smash']);
   assert.deepEqual(soundsInLog(['Leo pockets the keycard.']), []);
 });
 
 test('controls can be remapped: a key taken from another action swaps, and saved bindings are checked', async () => {
-  const { defaultKeys, defaultPad, rebind, actionForKey, actionForButton, cleanKeys, cleanPad } = await import('../src/controls');
+  const { defaultKeys, defaultPad, rebind, actionForKey, actionForButton, cleanKeys, cleanPad } =
+    await import('../src/controls');
   // End turn moves to E; turning the camera right (which had E) takes Space.
   const k = rebind(defaultKeys(), 'endTurn', 'e');
   assert.equal(actionForKey(k, 'e'), 'endTurn');

@@ -61,7 +61,10 @@ export const LETTERS: Record<LetterId, { title: string; body: string[] }> = {
 export const CHALLENGE_LEVELS: LevelDef[] = ALL_LEVELS.filter((l) => !l.challenge && !l.finale);
 
 export function challengeProgress(p: Profile): { done: number; of: number } {
-  return { done: CHALLENGE_LEVELS.filter((l) => p.records[l.id]?.flawless).length, of: CHALLENGE_LEVELS.length };
+  return {
+    done: CHALLENGE_LEVELS.filter((l) => p.records[l.id]?.flawless).length,
+    of: CHALLENGE_LEVELS.length,
+  };
 }
 
 export function challengeDone(p: Profile): boolean {
@@ -100,5 +103,7 @@ export function openMusicBox(p: Profile): boolean {
 
 /** How the letter turned up at the lair. */
 export function delivery(p: Profile): string {
-  return p.rooms.mailbox ? 'In the mailbox, on heavy black paper:' : 'Pinned to the lair door with a single claw, since there’s no mailbox:';
+  return p.rooms.mailbox
+    ? 'In the mailbox, on heavy black paper:'
+    : 'Pinned to the lair door with a single claw, since there’s no mailbox:';
 }

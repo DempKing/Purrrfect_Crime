@@ -16,7 +16,22 @@ import spr_tank from '../../art/sprites/pics/spr_tank.webp';
 import spr_tanktall from '../../art/sprites/pics/spr_tanktall.webp';
 import spr_statue from '../../art/sprites/pics/spr_statue.webp';
 
-const FILES = { wd_manor, wd_museum, wd_opera, wd_rail, wd_toy, wd_aquarium, wd_fish, wd_lair, wd_warehouse, wd_lab, spr_window, spr_tank, spr_tanktall, spr_statue };
+const FILES = {
+  wd_manor,
+  wd_museum,
+  wd_opera,
+  wd_rail,
+  wd_toy,
+  wd_aquarium,
+  wd_fish,
+  wd_lair,
+  wd_warehouse,
+  wd_lab,
+  spr_window,
+  spr_tank,
+  spr_tanktall,
+  spr_statue,
+};
 export type FlatName = keyof typeof FILES;
 
 /** A wall piece: how wide it is (in tiles) and where its middle sits (px up the wall); lit ones get a picture light. */
@@ -36,7 +51,11 @@ export const WALL_FLATS: Partial<Record<FlatName, { width: number; z: number; li
 };
 
 /** Upright pieces, by their height in game pixels. */
-export const STANDING_FLATS: Partial<Record<FlatName, number>> = { spr_tank: 84, spr_tanktall: 116, spr_statue: 96 };
+export const STANDING_FLATS: Partial<Record<FlatName, number>> = {
+  spr_tank: 84,
+  spr_tanktall: 116,
+  spr_statue: 96,
+};
 
 const textures = new Map<FlatName, Texture>();
 

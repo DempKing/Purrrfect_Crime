@@ -26,20 +26,35 @@ import g_treat from '../../art/sprites/pics/g_treat.webp';
 /** Leo on the rooftop with the night's prize: which picture, by what the prize is. */
 export function rooftopPicture(prize: string): string {
   const p = prize.toLowerCase();
-  if (/clock|watch|astrolabe|music box|sextant|compass|telescope|automaton|clockwork/.test(p)) return win_leo_clock;
+  if (/clock|watch|astrolabe|music box|sextant|compass|telescope|automaton|clockwork/.test(p))
+    return win_leo_clock;
   if (/moon|meteorite|comet|star|night|planet/.test(p)) return win_leo_moon;
   if (/pearl|egg|bell/.test(p)) return win_leo_pearl;
-  if (/diamond|sapphire|emerald|ruby|opal|topaz|quartz|jade|crown|tiara|gem|siam|crystal|fabergé|swan/.test(p)) return win_leo_prism;
+  if (
+    /diamond|sapphire|emerald|ruby|opal|topaz|quartz|jade|crown|tiara|gem|siam|crystal|fabergé|swan/.test(p)
+  )
+    return win_leo_prism;
   return win_leo_seed;
 }
 
-const RIVAL_ROOFTOP: Record<RivalId, string> = { luna: win_luna_moon, mittens: win_mittens_moon, sammy: win_sammy_moon, paws: win_prof_moon };
+const RIVAL_ROOFTOP: Record<RivalId, string> = {
+  luna: win_luna_moon,
+  mittens: win_mittens_moon,
+  sammy: win_sammy_moon,
+  paws: win_prof_moon,
+};
 /** A rival on the rooftop with the prize Leo didn't get. */
 export function rivalRooftop(id: RivalId): string {
   return RIVAL_ROOFTOP[id];
 }
 
-const PORTRAITS: Record<RivalId | 'leo', string> = { leo: cat_leo, luna: cat_luna, mittens: cat_mittens, sammy: cat_sammy, paws: cat_prof };
+const PORTRAITS: Record<RivalId | 'leo', string> = {
+  leo: cat_leo,
+  luna: cat_luna,
+  mittens: cat_mittens,
+  sammy: cat_sammy,
+  paws: cat_prof,
+};
 export function portrait(who: RivalId | 'leo'): string {
   return PORTRAITS[who];
 }
@@ -49,4 +64,10 @@ export const KEY_ART = keyart;
 export const NIGHTCLAW_PICTURE = boss_nightclaw;
 
 /** Icons for the gadgets and skills that have one. */
-export const ABILITY_ICONS: Partial<Record<Ability, string>> = { 'decoy-card': g_decoy, smoke: g_smoke, emp: g_emp, 'cat-nap': g_sardine, 'second-wind': g_treat };
+export const ABILITY_ICONS: Partial<Record<Ability, string>> = {
+  'decoy-card': g_decoy,
+  smoke: g_smoke,
+  emp: g_emp,
+  'cat-nap': g_sardine,
+  'second-wind': g_treat,
+};

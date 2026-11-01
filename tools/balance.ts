@@ -22,10 +22,13 @@ for (const def of ALL_LEVELS) {
   const loot = def.loot.reduce((n, l) => n + l.value, 0);
   const centre = def.loot.find((l) => def.map[l.at.y][l.at.x] === 'G');
   // One flawless first clear with the centrepiece and the rest of the loot, at par minus a third.
-  const heistXp = (def.xp ?? 100) + 50 + 50 + 100 + Math.floor(loot / 200) + Math.max(0, Math.round(par / 3)) * 5;
+  const heistXp =
+    (def.xp ?? 100) + 50 + 50 + 100 + Math.floor(loot / 200) + Math.max(0, Math.round(par / 3)) * 5;
   xp += heistXp;
   catnip += Math.round((loot / DOLLARS_PER_CATNIP) * fenceRate(playerLevel(xp)));
-  rows.push(`| ${def.name} | ${turns} | ${def.par ?? '–'} | ${par} | ${def.xp ?? 100} | $${loot.toLocaleString('en-US')} | ${centre ? `$${centre.value.toLocaleString('en-US')}` : '–'} | ${playerLevel(xp)} |`);
+  rows.push(
+    `| ${def.name} | ${turns} | ${def.par ?? '–'} | ${par} | ${def.xp ?? 100} | $${loot.toLocaleString('en-US')} | ${centre ? `$${centre.value.toLocaleString('en-US')}` : '–'} | ${playerLevel(xp)} |`,
+  );
 }
 
 const skills = SKILLS.reduce((n, s) => n + s.cost, 0);
@@ -64,7 +67,16 @@ console.log(report);
 writeFileSync('docs/BALANCE.md', report);
 
 if (process.argv.includes('--apply')) {
-  const files = ['tutorial', 'oldtown', 'museummile', 'heights', 'harbour', 'downtown', 'midnight', 'prototype'].map((f) => `src/levels/${f}.ts`);
+  const files = [
+    'tutorial',
+    'oldtown',
+    'museummile',
+    'heights',
+    'harbour',
+    'downtown',
+    'midnight',
+    'prototype',
+  ].map((f) => `src/levels/${f}.ts`);
   for (const f of files) {
     let text = readFileSync(f, 'utf8');
     for (const def of ALL_LEVELS) {
@@ -74,7 +86,9 @@ if (process.argv.includes('--apply')) {
       const end = next < 0 ? text.length : next;
       const block = text.slice(at, end);
       const par = parFor(SOLUTIONS[def.id].length);
-      const updated = /\n  par: \d+,/.test(block) ? block.replace(/\n  par: \d+,/, `\n  par: ${par},`) : block.replace(/\n  xp: (\d+),/, `\n  xp: $1,\n  par: ${par},`);
+      const updated = /\n {2}par: \d+,/.test(block)
+        ? block.replace(/\n {2}par: \d+,/, `\n  par: ${par},`)
+        : block.replace(/\n {2}xp: (\d+),/, `\n  xp: $1,\n  par: ${par},`);
       text = text.slice(0, at) + updated + text.slice(end);
     }
     writeFileSync(f, text);

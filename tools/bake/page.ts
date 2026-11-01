@@ -71,7 +71,11 @@ async function bake(url: string, o: BakeOptions): Promise<Baked> {
   box = new THREE.Box3().setFromObject(model);
   const c = box.getCenter(new THREE.Vector3());
   // Floor props stand centred on the origin; wall props hang with their back on the plane z = 0 (grid y = 0).
-  model.position.set(-c.x, o.mount === 'wall' ? -c.y + o.height / ZPX : -box.min.y, o.mount === 'wall' ? -box.min.z : -c.z);
+  model.position.set(
+    -c.x,
+    o.mount === 'wall' ? -c.y + o.height / ZPX : -box.min.y,
+    o.mount === 'wall' ? -box.min.z : -c.z,
+  );
   const pivot = new THREE.Group();
   pivot.add(model);
   scene.add(pivot);
@@ -88,20 +92,36 @@ async function bake(url: string, o: BakeOptions): Promise<Baked> {
   const up = new THREE.Vector3().crossVectors(right, cam.position.clone().normalize()).negate();
   const pts: THREE.Vector3[] = [];
   const corners = new THREE.Box3().setFromObject(pivot);
-  for (const x of [corners.min.x, corners.max.x]) for (const y of [corners.min.y, corners.max.y]) for (const z of [corners.min.z, corners.max.z]) pts.push(new THREE.Vector3(x, y, z));
-  let l = 0, r = 0, t = 0, b = 0;
+  for (const x of [corners.min.x, corners.max.x])
+    for (const y of [corners.min.y, corners.max.y])
+      for (const z of [corners.min.z, corners.max.z]) pts.push(new THREE.Vector3(x, y, z));
+  let l = 0,
+    r = 0,
+    t = 0,
+    b = 0;
   for (let i = 0; i < 8; i++) {
     const m = new THREE.Matrix4().makeRotationY(-(i * Math.PI) / 4);
     for (const p of pts) {
       const q = p.clone().applyMatrix4(m);
-      const sx = q.dot(right), sy = q.dot(up);
-      l = Math.min(l, sx); r = Math.max(r, sx); b = Math.min(b, sy); t = Math.max(t, sy);
+      const sx = q.dot(right),
+        sy = q.dot(up);
+      l = Math.min(l, sx);
+      r = Math.max(r, sx);
+      b = Math.min(b, sy);
+      t = Math.max(t, sy);
     }
   }
   const pad = (o.outline + 2) / PPU;
-  l -= pad; r += pad; t += pad; b -= pad;
-  const w = Math.ceil((r - l) * ppu), h = Math.ceil((t - b) * ppu);
-  cam.left = l; cam.right = l + w / ppu; cam.top = t; cam.bottom = t - h / ppu;
+  l -= pad;
+  r += pad;
+  t += pad;
+  b -= pad;
+  const w = Math.ceil((r - l) * ppu),
+    h = Math.ceil((t - b) * ppu);
+  cam.left = l;
+  cam.right = l + w / ppu;
+  cam.top = t;
+  cam.bottom = t - h / ppu;
   cam.updateProjectionMatrix();
   renderer.setSize(w, h, false);
 
@@ -129,10 +149,18 @@ async function bake(url: string, o: BakeOptions): Promise<Baked> {
     ictx.fillStyle = '#15121c';
     ictx.fillRect(0, 0, w, h);
     ctx.clearRect(0, 0, w, h);
-    for (let a = 0; a < 16; a++) ctx.drawImage(ink, Math.cos((a * Math.PI) / 8) * ow, Math.sin((a * Math.PI) / 8) * ow);
+    for (let a = 0; a < 16; a++)
+      ctx.drawImage(ink, Math.cos((a * Math.PI) / 8) * ow, Math.sin((a * Math.PI) / 8) * ow);
     ctx.drawImage(renderer.domElement, 0, 0);
     sctx.drawImage(out, i * w, 0);
   }
   scene.remove(pivot);
-  return { strip: strip.toDataURL('image/webp', 0.82), w, h, ax: -l * ppu, ay: t * ppu, tiles: { w: s.x, d: s.z, h: s.y * ZPX } };
+  return {
+    strip: strip.toDataURL('image/webp', 0.82),
+    w,
+    h,
+    ax: -l * ppu,
+    ay: t * ppu,
+    tiles: { w: s.x, d: s.z, h: s.y * ZPX },
+  };
 }

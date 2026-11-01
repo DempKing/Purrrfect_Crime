@@ -27,20 +27,7 @@ export const CORNER_GALLERY: LevelDef = {
     '#........#####.......#',
     '######################',
   ],
-  vents: [
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '       V=======V',
-  ],
+  vents: ['', '', '', '', '', '', '', '', '', '', '', '       V=======V'],
   lamps: [{ at: { x: 8, y: 1 }, radius: 2 }],
   moonlight: [
     { x: 11, y: 1, w: 5, h: 2 }, // skylight over the middle of the hall; the far wall stays dark

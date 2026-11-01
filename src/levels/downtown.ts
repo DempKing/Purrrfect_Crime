@@ -13,7 +13,8 @@ export const GRAND_BANK: LevelDef = {
   id: 'l20-grand-bank',
   name: 'The Grand Bank',
   tip: 'Robo-Guards never sleep and ignore noises, decoys and empty cases, but their heat scanners see Leo 4 tiles off in any light. They run on the same power as the lasers: cut the fuse box and they stop dead.',
-  objective: 'Get past the Robo-Guards to the vault, take the Gold Bullion Mouse, and leave through the lobby.',
+  objective:
+    'Get past the Robo-Guards to the vault, take the Gold Bullion Mouse, and leave through the lobby.',
   ambient: 'dim',
   shadows: [
     { x: 1, y: 1, w: 6, h: 3 }, // the maintenance room
@@ -23,7 +24,10 @@ export const GRAND_BANK: LevelDef = {
   ],
   xp: 500,
   par: 24,
-  rivalEntrances: [{ x: 26, y: 13 }, { x: 26, y: 3 }],
+  rivalEntrances: [
+    { x: 26, y: 13 },
+    { x: 26, y: 3 },
+  ],
   map: [
     '############################',
     '#......###.S.G..S.##..D..D.#',
@@ -70,9 +74,37 @@ export const GRAND_BANK: LevelDef = {
     { at: { x: 24, y: 2 }, radius: 2 },
   ],
   guards: [
-    { name: 'RX-1', kind: 'robo', start: { x: 2, y: 5 }, route: [{ x: 25, y: 5 }, { x: 25, y: 11 }, { x: 2, y: 11 }, { x: 2, y: 5 }] },
-    { name: 'RX-2', kind: 'robo', start: { x: 25, y: 14 }, route: [{ x: 6, y: 14 }, { x: 25, y: 14 }] },
-    { name: 'Banks', kind: 'captain', start: { x: 2, y: 7 }, route: [{ x: 25, y: 7 }, { x: 25, y: 9 }, { x: 2, y: 9 }, { x: 2, y: 7 }] },
+    {
+      name: 'RX-1',
+      kind: 'robo',
+      start: { x: 2, y: 5 },
+      route: [
+        { x: 25, y: 5 },
+        { x: 25, y: 11 },
+        { x: 2, y: 11 },
+        { x: 2, y: 5 },
+      ],
+    },
+    {
+      name: 'RX-2',
+      kind: 'robo',
+      start: { x: 25, y: 14 },
+      route: [
+        { x: 6, y: 14 },
+        { x: 25, y: 14 },
+      ],
+    },
+    {
+      name: 'Banks',
+      kind: 'captain',
+      start: { x: 2, y: 7 },
+      route: [
+        { x: 25, y: 7 },
+        { x: 25, y: 9 },
+        { x: 2, y: 9 },
+        { x: 2, y: 7 },
+      ],
+    },
     { name: 'The Manager', kind: 'sleepy', start: { x: 21, y: 2 }, route: [{ x: 21, y: 3 }] },
   ],
   loot: [
@@ -81,7 +113,13 @@ export const GRAND_BANK: LevelDef = {
     { at: { x: 16, y: 1 }, name: 'Deposit Box of Emeralds', value: 6900, space: 1, category: 'jewel' },
     { at: { x: 11, y: 3 }, name: 'Bearer Bonds', value: 5500, space: 1, category: 'curiosity' },
     { at: { x: 16, y: 3 }, name: 'The Founder’s Gold Watch', value: 3100, space: 1, category: 'artefact' },
-    { at: { x: 22, y: 1 }, name: 'Portrait of the Chairman’s Cat', value: 4200, space: 3, category: 'painting' },
+    {
+      at: { x: 22, y: 1 },
+      name: 'Portrait of the Chairman’s Cat',
+      value: 4200,
+      space: 3,
+      category: 'painting',
+    },
     { at: { x: 25, y: 1 }, name: 'Silver Fountain Pen', value: 900, space: 1, category: 'artefact' },
   ],
 };
@@ -108,7 +146,10 @@ export const CASINO: LevelDef = {
   ],
   xp: 520,
   par: 30,
-  rivalEntrances: [{ x: 26, y: 15 }, { x: 26, y: 1 }],
+  rivalEntrances: [
+    { x: 26, y: 15 },
+    { x: 26, y: 1 },
+  ],
   map: [
     '############################',
     '#,L,,,,,,,,,L##.D........D.#',
@@ -140,9 +181,34 @@ export const CASINO: LevelDef = {
     { at: { x: 26, y: 15 }, sweep: [4, 5], range: 6 },
   ],
   guards: [
-    { name: 'Ace', kind: 'captain', start: { x: 2, y: 7 }, route: [{ x: 25, y: 7 }, { x: 25, y: 14 }, { x: 2, y: 14 }, { x: 2, y: 7 }] },
-    { name: 'Deuce', start: { x: 14, y: 8 }, route: [{ x: 14, y: 14 }, { x: 14, y: 8 }] },
-    { name: 'Chip', kind: 'robo', start: { x: 17, y: 3 }, route: [{ x: 24, y: 3 }, { x: 17, y: 3 }] },
+    {
+      name: 'Ace',
+      kind: 'captain',
+      start: { x: 2, y: 7 },
+      route: [
+        { x: 25, y: 7 },
+        { x: 25, y: 14 },
+        { x: 2, y: 14 },
+        { x: 2, y: 7 },
+      ],
+    },
+    {
+      name: 'Deuce',
+      start: { x: 14, y: 8 },
+      route: [
+        { x: 14, y: 14 },
+        { x: 14, y: 8 },
+      ],
+    },
+    {
+      name: 'Chip',
+      kind: 'robo',
+      start: { x: 17, y: 3 },
+      route: [
+        { x: 24, y: 3 },
+        { x: 17, y: 3 },
+      ],
+    },
     { name: 'The Croupier', kind: 'sleepy', start: { x: 7, y: 2 }, route: [{ x: 7, y: 3 }] },
   ],
   loot: [
@@ -178,7 +244,10 @@ export const MINT: LevelDef = {
   ],
   xp: 540,
   par: 19,
-  rivalEntrances: [{ x: 26, y: 1 }, { x: 1, y: 1 }],
+  rivalEntrances: [
+    { x: 26, y: 1 },
+    { x: 1, y: 1 },
+  ],
   map: [
     '############################',
     '#.D.....##.D....D.##.D...D.#',
@@ -207,23 +276,85 @@ export const MINT: LevelDef = {
     { at: { x: 26, y: 14 }, radius: 2 },
   ],
   guards: [
-    { name: 'Penny', kind: 'robo', start: { x: 2, y: 5 }, route: [{ x: 25, y: 5 }, { x: 2, y: 5 }] },
-    { name: 'Nickel', kind: 'robo', start: { x: 25, y: 14 }, route: [{ x: 2, y: 14 }, { x: 25, y: 14 }] },
-    { name: 'Quarter', kind: 'captain', start: { x: 1, y: 8 }, route: [{ x: 26, y: 8 }, { x: 1, y: 8 }] },
-    { name: 'Shilling', start: { x: 26, y: 11 }, route: [{ x: 1, y: 11 }, { x: 26, y: 11 }] },
+    {
+      name: 'Penny',
+      kind: 'robo',
+      start: { x: 2, y: 5 },
+      route: [
+        { x: 25, y: 5 },
+        { x: 2, y: 5 },
+      ],
+    },
+    {
+      name: 'Nickel',
+      kind: 'robo',
+      start: { x: 25, y: 14 },
+      route: [
+        { x: 2, y: 14 },
+        { x: 25, y: 14 },
+      ],
+    },
+    {
+      name: 'Quarter',
+      kind: 'captain',
+      start: { x: 1, y: 8 },
+      route: [
+        { x: 26, y: 8 },
+        { x: 1, y: 8 },
+      ],
+    },
+    {
+      name: 'Shilling',
+      start: { x: 26, y: 11 },
+      route: [
+        { x: 1, y: 11 },
+        { x: 26, y: 11 },
+      ],
+    },
     // Florin walks up and down across the belts.
-    { name: 'Florin', start: { x: 9, y: 5 }, route: [{ x: 9, y: 14 }, { x: 9, y: 5 }] },
+    {
+      name: 'Florin',
+      start: { x: 9, y: 5 },
+      route: [
+        { x: 9, y: 14 },
+        { x: 9, y: 5 },
+      ],
+    },
     { name: 'The Assayer', kind: 'sleepy', start: { x: 4, y: 2 }, route: [{ x: 4, y: 3 }] },
   ],
   loot: [
     { at: { x: 13, y: 2 }, name: 'Golden Coin Die', value: 34000, space: 1, category: 'artefact' },
-    { at: { x: 11, y: 1 }, name: 'Proof Set of the Year of the Cat', value: 5600, space: 1, category: 'curiosity' },
-    { at: { x: 16, y: 1 }, name: 'The Misprinted Mouse Dollar', value: 7200, space: 1, category: 'curiosity' },
+    {
+      at: { x: 11, y: 1 },
+      name: 'Proof Set of the Year of the Cat',
+      value: 5600,
+      space: 1,
+      category: 'curiosity',
+    },
+    {
+      at: { x: 16, y: 1 },
+      name: 'The Misprinted Mouse Dollar',
+      value: 7200,
+      space: 1,
+      category: 'curiosity',
+    },
     { at: { x: 11, y: 3 }, name: 'Gold Planchets', value: 4300, space: 2, category: 'jewel' },
     { at: { x: 16, y: 3 }, name: 'Engraver’s Original Drawing', value: 3800, space: 2, category: 'painting' },
     { at: { x: 2, y: 1 }, name: 'Assay Scales', value: 1300, space: 2, category: 'artefact' },
-    { at: { x: 21, y: 1 }, name: 'Bag of Freshly Minted Coins', value: 2500, space: 2, category: 'curiosity' },
-    { at: { x: 25, y: 1 }, name: 'Coin Counting Machine Handle', value: 400, space: 1, category: 'curiosity' },
+    {
+      at: { x: 21, y: 1 },
+      name: 'Bag of Freshly Minted Coins',
+      value: 2500,
+      space: 2,
+      category: 'curiosity',
+    },
+    {
+      at: { x: 25, y: 1 },
+      name: 'Coin Counting Machine Handle',
+      value: 400,
+      space: 1,
+      category: 'curiosity',
+    },
   ],
 };
 
@@ -250,7 +381,10 @@ export const MISCHIEF: LevelDef = {
   ],
   xp: 560,
   par: 18,
-  rivalEntrances: [{ x: 26, y: 13 }, { x: 1, y: 1 }],
+  rivalEntrances: [
+    { x: 26, y: 13 },
+    { x: 1, y: 1 },
+  ],
   map: [
     '############################',
     '#.D..D.#,D,,,,,,,,D,#.D..D.#',
@@ -278,10 +412,43 @@ export const MISCHIEF: LevelDef = {
     { at: { x: 26, y: 16 }, radius: 2 },
   ],
   guards: [
-    { name: 'Warhol', kind: 'robo', start: { x: 8, y: 3 }, route: [{ x: 15, y: 3 }, { x: 8, y: 3 }] },
-    { name: 'Pollock', kind: 'captain', start: { x: 1, y: 6 }, route: [{ x: 26, y: 6 }, { x: 26, y: 9 }, { x: 1, y: 9 }, { x: 1, y: 6 }] },
-    { name: 'Banksy', start: { x: 14, y: 6 }, route: [{ x: 14, y: 9 }, { x: 14, y: 6 }] },
-    { name: 'Frida', kind: 'sniffer', start: { x: 25, y: 15 }, route: [{ x: 5, y: 15 }, { x: 25, y: 15 }] },
+    {
+      name: 'Warhol',
+      kind: 'robo',
+      start: { x: 8, y: 3 },
+      route: [
+        { x: 15, y: 3 },
+        { x: 8, y: 3 },
+      ],
+    },
+    {
+      name: 'Pollock',
+      kind: 'captain',
+      start: { x: 1, y: 6 },
+      route: [
+        { x: 26, y: 6 },
+        { x: 26, y: 9 },
+        { x: 1, y: 9 },
+        { x: 1, y: 6 },
+      ],
+    },
+    {
+      name: 'Banksy',
+      start: { x: 14, y: 6 },
+      route: [
+        { x: 14, y: 9 },
+        { x: 14, y: 6 },
+      ],
+    },
+    {
+      name: 'Frida',
+      kind: 'sniffer',
+      start: { x: 25, y: 15 },
+      route: [
+        { x: 5, y: 15 },
+        { x: 25, y: 15 },
+      ],
+    },
     { name: 'Basquiat', kind: 'sleepy', start: { x: 24, y: 3 }, route: [{ x: 24, y: 2 }] },
   ],
   loot: [
@@ -292,7 +459,13 @@ export const MISCHIEF: LevelDef = {
     { at: { x: 18, y: 4 }, name: 'Glass Whoopee Cushion', value: 2800, space: 1, category: 'curiosity' },
     { at: { x: 2, y: 1 }, name: 'Balloon Mouse (Gold)', value: 4700, space: 2, category: 'artefact' },
     { at: { x: 5, y: 1 }, name: 'Soup Can, Signed', value: 1900, space: 1, category: 'curiosity' },
-    { at: { x: 22, y: 1 }, name: 'Tape of a Cat Watching Television', value: 1200, space: 1, category: 'curiosity' },
+    {
+      at: { x: 22, y: 1 },
+      name: 'Tape of a Cat Watching Television',
+      value: 1200,
+      space: 1,
+      category: 'curiosity',
+    },
     { at: { x: 25, y: 1 }, name: 'Neon Sign: MEOW', value: 2600, space: 2, category: 'artefact' },
   ],
 };
@@ -323,7 +496,10 @@ export const TREASURY: LevelDef = {
   ],
   xp: 600,
   par: 34,
-  rivalEntrances: [{ x: 26, y: 13 }, { x: 1, y: 1 }],
+  rivalEntrances: [
+    { x: 26, y: 13 },
+    { x: 1, y: 1 },
+  ],
   map: [
     '############################',
     '#.....D.#.S....S.##.D....D.#',
@@ -353,19 +529,70 @@ export const TREASURY: LevelDef = {
     { at: { x: 14, y: 16 }, radius: 2 },
   ],
   guards: [
-    { name: 'Alderman', kind: 'captain', start: { x: 2, y: 7 }, route: [{ x: 25, y: 7 }, { x: 25, y: 10 }, { x: 2, y: 10 }, { x: 2, y: 7 }] },
-    { name: 'Bylaw', kind: 'robo', start: { x: 19, y: 6 }, route: [{ x: 25, y: 6 }, { x: 19, y: 6 }] },
-    { name: 'The Clerk', kind: 'sniffer', start: { x: 10, y: 3 }, route: [{ x: 16, y: 3 }, { x: 10, y: 3 }] },
+    {
+      name: 'Alderman',
+      kind: 'captain',
+      start: { x: 2, y: 7 },
+      route: [
+        { x: 25, y: 7 },
+        { x: 25, y: 10 },
+        { x: 2, y: 10 },
+        { x: 2, y: 7 },
+      ],
+    },
+    {
+      name: 'Bylaw',
+      kind: 'robo',
+      start: { x: 19, y: 6 },
+      route: [
+        { x: 25, y: 6 },
+        { x: 19, y: 6 },
+      ],
+    },
+    {
+      name: 'The Clerk',
+      kind: 'sniffer',
+      start: { x: 10, y: 3 },
+      route: [
+        { x: 16, y: 3 },
+        { x: 10, y: 3 },
+      ],
+    },
     { name: 'The Secretary', kind: 'sleepy', start: { x: 5, y: 3 }, route: [{ x: 5, y: 2 }] },
-    { name: 'The Usher', start: { x: 15, y: 13 }, route: [{ x: 25, y: 13 }, { x: 15, y: 13 }] },
+    {
+      name: 'The Usher',
+      start: { x: 15, y: 13 },
+      route: [
+        { x: 25, y: 13 },
+        { x: 15, y: 13 },
+      ],
+    },
   ],
   loot: [
     { at: { x: 22, y: 2 }, name: 'Key to the City', value: 40000, space: 1, category: 'artefact' },
-    { at: { x: 20, y: 1 }, name: 'The City’s Gold Reserve (One Bar)', value: 8000, space: 2, category: 'jewel' },
+    {
+      at: { x: 20, y: 1 },
+      name: 'The City’s Gold Reserve (One Bar)',
+      value: 8000,
+      space: 2,
+      category: 'jewel',
+    },
     { at: { x: 25, y: 1 }, name: 'The Founding Charter', value: 6500, space: 2, category: 'painting' },
     { at: { x: 20, y: 4 }, name: 'Ceremonial Mayoral Chain', value: 5400, space: 1, category: 'jewel' },
-    { at: { x: 25, y: 4 }, name: 'Time Capsule (Never Opened)', value: 3000, space: 3, category: 'curiosity' },
-    { at: { x: 10, y: 1 }, name: 'Sealed Records: The Fish Scandal', value: 3500, space: 1, category: 'curiosity' },
+    {
+      at: { x: 25, y: 4 },
+      name: 'Time Capsule (Never Opened)',
+      value: 3000,
+      space: 3,
+      category: 'curiosity',
+    },
+    {
+      at: { x: 10, y: 1 },
+      name: 'Sealed Records: The Fish Scandal',
+      value: 3500,
+      space: 1,
+      category: 'curiosity',
+    },
     { at: { x: 15, y: 1 }, name: 'Parking Fines Petty Cash', value: 1800, space: 1, category: 'curiosity' },
     { at: { x: 6, y: 1 }, name: 'The Mayor’s Lucky Fish', value: 1200, space: 1, category: 'artefact' },
   ],

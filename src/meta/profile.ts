@@ -116,7 +116,11 @@ export function rivalFor(p: Profile, def: LevelDef, district: number): RivalPlan
   const h = hash(`${def.id}|${p.day}|${p.heists}`);
   if (entrances && (h % 1000) / 1000 < rivalChance(p, district)) {
     const choices = RIVAL_IDS.filter((r) => r !== p.lastRival);
-    plan = { id: choices[(h >>> 10) % choices.length], arrive: 3 + ((h >>> 14) % 5), entrance: (h >>> 18) % entrances };
+    plan = {
+      id: choices[(h >>> 10) % choices.length],
+      arrive: 3 + ((h >>> 14) % 5),
+      entrance: (h >>> 18) % entrances,
+    };
   }
   p.rivals[def.id] = plan;
   return plan;
@@ -145,7 +149,14 @@ export function priceOf(p: Profile, item: StashItem): number {
   const bonus = demand(p.day) === item.category ? 1 + DEMAND_BONUS : 1;
   const office = 1 + 0.05 * p.rooms.fence;
   const collector = collectorWants(p) === item.id ? 1.5 : 1;
-  return Math.round((item.value / DOLLARS_PER_CATNIP) * fenceRate(playerLevel(p.xp)) * bonus * office * collector * (item.hot ? 0.5 : 1));
+  return Math.round(
+    (item.value / DOLLARS_PER_CATNIP) *
+      fenceRate(playerLevel(p.xp)) *
+      bonus *
+      office *
+      collector *
+      (item.hot ? 0.5 : 1),
+  );
 }
 
 export function sell(p: Profile, id: number): number {
@@ -212,20 +223,33 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
   const def = level.def;
   const prev = p.records[def.id];
   const replay = !!prev;
-  const isCentre = (i: number) => !!level.plinth && def.loot[i].at.x === level.plinth.x && def.loot[i].at.y === level.plinth.y;
+  const isCentre = (i: number) =>
+    !!level.plinth && def.loot[i].at.x === level.plinth.x && def.loot[i].at.y === level.plinth.y;
   // NightClaw's collar isn't for selling: it goes on the Trophy Room's top shelf.
   const items: StashItem[] = s.inventory
     .filter((i) => !(def.finale && isCentre(i)))
     .map((i) => {
       const l = def.loot[i];
-      return { id: p.nextId++, name: l.name, category: l.category, value: l.value, levelId: def.id, levelName: def.name, centrepiece: isCentre(i), hot: replay };
+      return {
+        id: p.nextId++,
+        name: l.name,
+        category: l.category,
+        value: l.value,
+        levelId: def.id,
+        levelName: def.name,
+        centrepiece: isCentre(i),
+        hot: replay,
+      };
     });
   const total = items.reduce((n, i) => n + i.value, 0);
   const centrepiece = s.inventory.some(isCentre);
   const flawless = !s.seen && !s.alarmRaised;
   // The race: did a rival come, and who got the centrepiece?
   // A rival the guards caught lost the race too.
-  const rival = s.rival && (s.rival.phase !== 'waiting' || s.rivalBeaten) ? { id: s.rival.id, won: s.rivalBeaten || s.rival.caught, caught: s.rival.caught } : null;
+  const rival =
+    s.rival && (s.rival.phase !== 'waiting' || s.rivalBeaten)
+      ? { id: s.rival.id, won: s.rivalBeaten || s.rival.caught, caught: s.rival.caught }
+      : null;
 
   const xp: XpLine[] = [{ label: 'Heist complete', amount: def.xp ?? 100 }];
   if (!s.seen) xp.push({ label: 'Never seen', amount: 50 });
@@ -233,11 +257,19 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
   if (centrepiece) xp.push({ label: 'The centrepiece', amount: 100 });
   if (total > 0) xp.push({ label: 'Loot value', amount: Math.floor(total / 200) });
   if (def.par && s.turn < def.par) xp.push({ label: 'Quick work', amount: (def.par - s.turn) * 5 });
-  if (rival?.won) xp.push({ label: rival.caught && !s.rivalBeaten ? `${RIVALS[rival.id].name} nabbed by the guards` : `Beat ${RIVALS[rival.id].name} to it`, amount: 75 });
+  if (rival?.won)
+    xp.push({
+      label:
+        rival.caught && !s.rivalBeaten
+          ? `${RIVALS[rival.id].name} nabbed by the guards`
+          : `Beat ${RIVALS[rival.id].name} to it`,
+      amount: 75,
+    });
   const finale = !!def.finale && s.tagged;
   if (finale) xp.push({ label: 'Crept up on NightClaw', amount: 1000 });
   const base = xp.reduce((n, l) => n + l.amount, 0);
-  if (p.rooms.trophy) xp.push({ label: 'Fame (Trophy Room)', amount: Math.round(base * 0.05 * p.rooms.trophy) });
+  if (p.rooms.trophy)
+    xp.push({ label: 'Fame (Trophy Room)', amount: Math.round(base * 0.05 * p.rooms.trophy) });
   const xpTotal = xp.reduce((n, l) => n + l.amount, 0);
 
   const levelBefore = playerLevel(p.xp);
@@ -264,19 +296,31 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
   const paper = firstFinale
     ? finalePaper(p.day)
     : writePaper({
-    day: p.day,
-    levelId: def.id,
-    place: def.name,
-    items: items.map((i) => ({ name: i.name, value: i.value, centrepiece: i.centrepiece })),
-    centrepieceName: level.plinth ? (def.loot.find((l) => l.at.x === level.plinth!.x && l.at.y === level.plinth!.y)?.name ?? null) : null,
-    guards: level.guards.map((g) => g.name),
-    seen: s.seen,
-    alarm: s.alarmRaised,
-    turns: s.turn,
-    first: p.heists === 1,
-    replay,
-    rival: rival ? { name: RIVALS[rival.id].name, won: rival.won, caught: rival.caught, caughtBy: s.rival?.caughtBy ?? null, prize: def.loot.find((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y)?.name ?? 'prize' } : null,
-  });
+        day: p.day,
+        levelId: def.id,
+        place: def.name,
+        items: items.map((i) => ({ name: i.name, value: i.value, centrepiece: i.centrepiece })),
+        centrepieceName: level.plinth
+          ? (def.loot.find((l) => l.at.x === level.plinth!.x && l.at.y === level.plinth!.y)?.name ?? null)
+          : null,
+        guards: level.guards.map((g) => g.name),
+        seen: s.seen,
+        alarm: s.alarmRaised,
+        turns: s.turn,
+        first: p.heists === 1,
+        replay,
+        rival: rival
+          ? {
+              name: RIVALS[rival.id].name,
+              won: rival.won,
+              caught: rival.caught,
+              caughtBy: s.rival?.caughtBy ?? null,
+              prize:
+                def.loot.find((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y)
+                  ?.name ?? 'prize',
+            }
+          : null,
+      });
   p.papers.unshift(paper);
   p.day++;
   return {
@@ -285,7 +329,21 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
     par: def.par,
     finale: firstFinale,
     ncWaiting: !!def.finale && !s.tagged,
-    rival, levelId: def.id, levelName: def.name, turns: s.turn, items, total, centrepiece, flawless, replay, xp, xpTotal, levelBefore, levelAfter: playerLevel(p.xp), paper };
+    rival,
+    levelId: def.id,
+    levelName: def.name,
+    turns: s.turn,
+    items,
+    total,
+    centrepiece,
+    flawless,
+    replay,
+    xp,
+    xpTotal,
+    levelBefore,
+    levelAfter: playerLevel(p.xp),
+    paper,
+  };
 }
 
 // --- Saving: three slots ---------------------------------------------------------------------

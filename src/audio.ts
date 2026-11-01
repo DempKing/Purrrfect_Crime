@@ -50,7 +50,16 @@ const BARS = [
 const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 
 /** Which music fits where. Each scene plays art/music/<scene>.mp3 if it's there (see art/music/README.md). */
-export type MusicScene = 'title' | 'lair' | 'market' | 'planning' | 'heist' | 'alert' | 'chase' | 'report' | 'finale';
+export type MusicScene =
+  | 'title'
+  | 'lair'
+  | 'market'
+  | 'planning'
+  | 'heist'
+  | 'alert'
+  | 'chase'
+  | 'report'
+  | 'finale';
 /** If a scene's track is missing, the next one along that has one. */
 const MUSIC_FALLBACK: Record<MusicScene, MusicScene[]> = {
   title: ['title', 'lair'],
@@ -88,7 +97,10 @@ export class Sound {
       if (this.ctx.state === 'suspended') void this.ctx.resume();
       return;
     }
-    const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const AC =
+      (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext })
+        .AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AC) return;
     try {
       const ctx = new AC();
@@ -169,16 +181,24 @@ export class Sound {
       el.loop = true;
       el.preload = 'auto';
       const entry = { el, ok: null as boolean | null, vol: 0 };
-      el.addEventListener('canplaythrough', () => {
-        if (entry.ok === null) {
-          entry.ok = true;
+      el.addEventListener(
+        'canplaythrough',
+        () => {
+          if (entry.ok === null) {
+            entry.ok = true;
+            this.pickTrack();
+          }
+        },
+        { once: true },
+      );
+      el.addEventListener(
+        'error',
+        () => {
+          entry.ok = false;
           this.pickTrack();
-        }
-      }, { once: true });
-      el.addEventListener('error', () => {
-        entry.ok = false;
-        this.pickTrack();
-      }, { once: true });
+        },
+        { once: true },
+      );
       el.src = `music/${scene}.mp3`;
       t = entry;
       this.tracks.set(scene, t);
@@ -227,7 +247,16 @@ export class Sound {
 
   // --- building blocks ----------------------------------------------------------------------------
 
-  private tone(bus: GainNode, type: OscillatorType, freq: number, at: number, dur: number, vol: number, slideTo?: number, attack = 0.005): void {
+  private tone(
+    bus: GainNode,
+    type: OscillatorType,
+    freq: number,
+    at: number,
+    dur: number,
+    vol: number,
+    slideTo?: number,
+    attack = 0.005,
+  ): void {
     const ctx = this.ctx!;
     const o = ctx.createOscillator();
     const g = ctx.createGain();
@@ -242,7 +271,16 @@ export class Sound {
     o.stop(at + dur + 0.02);
   }
 
-  private hiss(bus: GainNode, at: number, dur: number, vol: number, filter: BiquadFilterType, freq: number, sweepTo?: number, q = 1): void {
+  private hiss(
+    bus: GainNode,
+    at: number,
+    dur: number,
+    vol: number,
+    filter: BiquadFilterType,
+    freq: number,
+    sweepTo?: number,
+    q = 1,
+  ): void {
     const ctx = this.ctx!;
     const src = ctx.createBufferSource();
     src.buffer = this.noise;
@@ -262,8 +300,26 @@ export class Sound {
   }
 
   /** Struck metal: a few inharmonic partials that ring and die away (locks, latches, bottle caps, ducts). */
-  private metal(bus: GainNode, at: number, freq: number, dur: number, vol: number, ratios = [1, 2.76, 5.4, 8.93]): void {
-    ratios.forEach((r, i) => this.tone(bus, 'sine', freq * r * (1 + (Math.random() - 0.5) * 0.01), at, dur / (1 + i * 0.6), vol / (1 + i * 0.9), undefined, 0.001));
+  private metal(
+    bus: GainNode,
+    at: number,
+    freq: number,
+    dur: number,
+    vol: number,
+    ratios = [1, 2.76, 5.4, 8.93],
+  ): void {
+    ratios.forEach((r, i) =>
+      this.tone(
+        bus,
+        'sine',
+        freq * r * (1 + (Math.random() - 0.5) * 0.01),
+        at,
+        dur / (1 + i * 0.6),
+        vol / (1 + i * 0.9),
+        undefined,
+        0.001,
+      ),
+    );
   }
 
   /** A soft, low knock: a falling sine and a puff of low noise. */
@@ -285,7 +341,8 @@ export class Sound {
     if (!ctx || !this.musicBus) return;
     while (this.nextAt < ctx.currentTime + 0.12) {
       // The synthesised band plays in heists that have no music file.
-      if (this.tension > 0 && !this.playing && this.scene && HEIST_SCENES.includes(this.scene)) this.playEighth(this.nextAt, this.beat);
+      if (this.tension > 0 && !this.playing && this.scene && HEIST_SCENES.includes(this.scene))
+        this.playEighth(this.nextAt, this.beat);
       const chase = this.tension === 3;
       const eighth = 60 / (chase ? BPM.chase : BPM.calm) / 2;
       // Swing: long-short eighths.
@@ -301,11 +358,14 @@ export class Sound {
     const onBeat = beat % 2 === 0;
     const chase = this.tension === 3;
     // Walking bass on every quarter note.
-    if (onBeat) this.tone(bus, 'triangle', midi(bar.bass[quarter]), at, chase ? 0.18 : 0.32, 0.5, undefined, 0.01);
+    if (onBeat)
+      this.tone(bus, 'triangle', midi(bar.bass[quarter]), at, chase ? 0.18 : 0.32, 0.5, undefined, 0.01);
     // The ride cymbal: ding, ding-a ding.
-    if (onBeat || quarter % 2 === 1) this.hiss(bus, at, onBeat ? 0.12 : 0.06, onBeat ? 0.05 : 0.035, 'highpass', 7000);
+    if (onBeat || quarter % 2 === 1)
+      this.hiss(bus, at, onBeat ? 0.12 : 0.06, onBeat ? 0.05 : 0.035, 'highpass', 7000);
     // Brushes on 2 and 4.
-    if (onBeat && quarter % 2 === 1) this.hiss(bus, at, 0.18, chase ? 0.14 : 0.08, 'bandpass', 2500, 1200, 0.7);
+    if (onBeat && quarter % 2 === 1)
+      this.hiss(bus, at, 0.18, chase ? 0.14 : 0.08, 'bandpass', 2500, 1200, 0.7);
     if (this.tension >= 2 && onBeat && quarter === 0) {
       // Vibraphone: a soft chord at the top of each bar.
       for (const n of bar.chord) this.tone(bus, 'sine', midi(n), at, 1.1, 0.06, undefined, 0.01);
@@ -313,7 +373,8 @@ export class Sound {
     if (chase) {
       // Big-band stabs and a kick on every beat.
       if (onBeat) this.tone(bus, 'sine', 90, at, 0.12, 0.6, 45);
-      if (beat % 8 === 0 || beat % 8 === 5) for (const n of bar.chord) this.tone(bus, 'sawtooth', midi(n), at, 0.16, 0.05);
+      if (beat % 8 === 0 || beat % 8 === 5)
+        for (const n of bar.chord) this.tone(bus, 'sawtooth', midi(n), at, 0.16, 0.05);
     }
   }
 
@@ -336,7 +397,17 @@ export class Sound {
         return this.thud(b, t, 140, 0.06, 0.06);
       case 'creak':
         // An old board giving: a wobbling, grinding squeal.
-        for (let k = 0; k < 3; k++) this.tone(b, 'sawtooth', this.vary(210 - k * 30, 0.05), t + k * 0.09, 0.22, 0.05, this.vary(150 - k * 20), 0.03);
+        for (let k = 0; k < 3; k++)
+          this.tone(
+            b,
+            'sawtooth',
+            this.vary(210 - k * 30, 0.05),
+            t + k * 0.09,
+            0.22,
+            0.05,
+            this.vary(150 - k * 20),
+            0.03,
+          );
         return this.hiss(b, t, 0.4, 0.04, 'bandpass', 700, 400, 6);
       case 'pick':
         // Picks in a lock: a scrape and two tiny pins clicking.
@@ -362,7 +433,8 @@ export class Sound {
         // An impact, the pane bursting, and shards tinkling down.
         this.thud(b, t, 120, 0.5, 0.2);
         this.hiss(b, t, 0.35, 0.45, 'highpass', 1800, 7000);
-        for (let k = 0; k < 14; k++) this.metal(b, t + 0.03 + Math.random() * 0.6, 2500 + Math.random() * 4500, 0.12, 0.03, [1, 2.4]);
+        for (let k = 0; k < 14; k++)
+          this.metal(b, t + 0.03 + Math.random() * 0.6, 2500 + Math.random() * 4500, 0.12, 0.03, [1, 2.4]);
         return;
       case 'take':
         // A rustle into the sack and a bright little jingle.
@@ -407,11 +479,14 @@ export class Sound {
       case 'sell':
         // The fence's till: a drawer bell and coins counted out.
         this.metal(b, t, 1568, 0.7, 0.1, [1, 2.0, 3.0]);
-        for (let k = 0; k < 5; k++) this.metal(b, t + 0.18 + k * 0.06, this.vary(3200, 0.1), 0.1, 0.035, [1, 2.4]);
+        for (let k = 0; k < 5; k++)
+          this.metal(b, t + 0.18 + k * 0.06, this.vary(3200, 0.1), 0.1, 0.035, [1, 2.4]);
         return;
       case 'clink':
         // A bottle cap bouncing three times across the floor.
-        [0, 0.16, 0.27].forEach((d, k) => this.metal(b, t + d, this.vary(2600), 0.18 - k * 0.04, 0.09 - k * 0.025));
+        [0, 0.16, 0.27].forEach((d, k) =>
+          this.metal(b, t + d, this.vary(2600), 0.18 - k * 0.04, 0.09 - k * 0.025),
+        );
         return;
       case 'bark':
         for (const d of [0, 0.22]) {
@@ -426,7 +501,9 @@ export class Sound {
         return;
       case 'caught':
         // A sad trombone.
-        [midi(55), midi(54), midi(53)].forEach((f, i) => this.tone(b, 'sawtooth', f, t + i * 0.3, 0.3, 0.08, undefined, 0.03));
+        [midi(55), midi(54), midi(53)].forEach((f, i) =>
+          this.tone(b, 'sawtooth', f, t + i * 0.3, 0.3, 0.08, undefined, 0.03),
+        );
         return this.tone(b, 'sawtooth', midi(52), t + 0.9, 0.8, 0.08, midi(50), 0.03);
       case 'escape':
         [72, 76, 79, 84].forEach((n, i) => this.tone(b, 'triangle', midi(n), t + i * 0.09, 0.3, 0.1));
@@ -457,8 +534,12 @@ export class Sound {
         return;
       case 'levelup':
         // A rising arpeggio and a held major chord.
-        [72, 76, 79, 84, 88, 91].forEach((n, i) => this.tone(b, 'triangle', midi(n), t + i * 0.06, 0.35, 0.09));
-        [84, 88, 91, 96].forEach((n) => this.tone(b, 'sawtooth', midi(n), t + 0.4, 0.9, 0.025, undefined, 0.02));
+        [72, 76, 79, 84, 88, 91].forEach((n, i) =>
+          this.tone(b, 'triangle', midi(n), t + i * 0.06, 0.35, 0.09),
+        );
+        [84, 88, 91, 96].forEach((n) =>
+          this.tone(b, 'sawtooth', midi(n), t + 0.4, 0.9, 0.025, undefined, 0.02),
+        );
         this.hiss(b, t + 0.4, 0.6, 0.05, 'highpass', 6000);
         return;
     }

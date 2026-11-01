@@ -131,7 +131,7 @@ const LOOT_PICTURES: Record<string, string> = {
   'Mermaid Figurehead (Small)': 'gothic_statue',
   'Polo Trophy': 'horse_statue_01',
   'Smuggler’s Jade Cat': 'concrete_cat_statue',
-  'Ammonite': 'lambis_shell',
+  Ammonite: 'lambis_shell',
   'The Club’s Cash Box': 'vintage_suitcase',
   'Crate of Contraband Caviar': 'wicker_basket_02',
   'The Curator’s Pocket Watch': 'mantel_clock_01',
@@ -180,7 +180,13 @@ const icons = new Map<string, Texture>();
 export async function loadLootIcons(list: { name: string; category: LootCategory }[]): Promise<void> {
   await Promise.all(
     list
-      .filter((l) => !LOOT_PICTURES[l.name] && !EXHIBIT_PICTURES[l.name] && !NAMED_LOOT_ART[lootSlug(l.name)] && !icons.has(l.name))
+      .filter(
+        (l) =>
+          !LOOT_PICTURES[l.name] &&
+          !EXHIBIT_PICTURES[l.name] &&
+          !NAMED_LOOT_ART[lootSlug(l.name)] &&
+          !icons.has(l.name),
+      )
       .map(async (l) => {
         const img = new Image();
         img.src = lootIconUrl(l.name, l.category);
@@ -198,7 +204,9 @@ export async function loadCharacters(): Promise<void> {
     for (const [frame, src] of Object.entries(files))
       jobs.push(
         Assets.load({ src, parser: 'texture' }).then((tex: Texture) => {
-          const m = (data.chars as Record<string, Record<string, { w: number; h: number; ax: number; ay: number }>>)[name][frame];
+          const m = (
+            data.chars as Record<string, Record<string, { w: number; h: number; ax: number; ay: number }>>
+          )[name][frame];
           frames.set(`${name}_${frame}`, { tex, w: m.w / s, h: m.h / s, ax: m.ax / s, ay: m.ay / s });
         }),
       );

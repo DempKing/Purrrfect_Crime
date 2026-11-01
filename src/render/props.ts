@@ -73,17 +73,32 @@ export async function loadProps(): Promise<void> {
   if (props.size) return;
   await Promise.all(
     (Object.keys(FILES) as PropName[]).map(async (name) => {
-      const m = (manifest as Record<string, { w: number; h: number; ax: number; ay: number; scale: number; size: { h: number } }>)[name];
+      const m = (
+        manifest as Record<
+          string,
+          { w: number; h: number; ax: number; ay: number; scale: number; size: { h: number } }
+        >
+      )[name];
       const strip: Texture = await Assets.load({ src: FILES[name], parser: 'texture' });
-      const frames = Array.from({ length: 8 }, (_, i) => new Texture({ source: strip.source, frame: new Rectangle(i * m.w, 0, m.w, m.h) }));
-      props.set(name, { frames, w: m.w / m.scale, h: m.h / m.scale, ax: m.ax / m.scale, ay: m.ay / m.scale, height: m.size.h });
+      const frames = Array.from(
+        { length: 8 },
+        (_, i) => new Texture({ source: strip.source, frame: new Rectangle(i * m.w, 0, m.w, m.h) }),
+      );
+      props.set(name, {
+        frames,
+        w: m.w / m.scale,
+        h: m.h / m.scale,
+        ax: m.ax / m.scale,
+        ay: m.ay / m.scale,
+        height: m.size.h,
+      });
     }),
   );
 }
 
 /** Which of the eight frames shows a prop turned `turn` radians on the grid, with the view turned `angle`. */
 export function frameFor(turn: number, angle: number): number {
-  return (((Math.round((turn + angle) / (Math.PI / 4)) % 8) + 8) % 8);
+  return ((Math.round((turn + angle) / (Math.PI / 4)) % 8) + 8) % 8;
 }
 
 /** What hangs on the walls in each district: 3D props, and flat pieces (FlatName). */
@@ -92,8 +107,20 @@ export type ClockFace = 'pclock_roman' | 'pclock_gears' | 'pclock_odd' | 'pclock
 export type WallPiece = PropName | FlatName | ClockFace;
 
 export const WALL_DECOR: Record<string, WallPiece[]> = {
-  'old-town': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'spr_window', 'wd_manor', 'fancy_picture_frame_01'],
-  'museum-mile': ['fancy_picture_frame_01', 'fancy_picture_frame_02', 'wd_museum', 'wd_manor', 'fancy_picture_frame_02'],
+  'old-town': [
+    'fancy_picture_frame_01',
+    'fancy_picture_frame_02',
+    'spr_window',
+    'wd_manor',
+    'fancy_picture_frame_01',
+  ],
+  'museum-mile': [
+    'fancy_picture_frame_01',
+    'fancy_picture_frame_02',
+    'wd_museum',
+    'wd_manor',
+    'fancy_picture_frame_02',
+  ],
   'the-heights': ['fancy_picture_frame_02', 'wd_manor', 'spr_window', 'fancy_picture_frame_01'],
   harbour: ['lifebuoy', 'wd_fish', 'wd_aquarium', 'wd_warehouse'],
   downtown: ['wd_lab', 'spr_window', 'fancy_picture_frame_01'],
@@ -102,7 +129,18 @@ export const WALL_DECOR: Record<string, WallPiece[]> = {
 
 /** Heists whose walls differ from their district's. */
 export const LEVEL_WALL_DECOR: Record<string, WallPiece[]> = {
-  'l2-clocktower': ['pclock_roman', 'wall_clock', 'pclock_gears', 'wd_rail', 'pclock_odd', 'wd_toy', 'pclock_pendulum', 'pclock_roman', 'pclock_gears', 'spr_window'],
+  'l2-clocktower': [
+    'pclock_roman',
+    'wall_clock',
+    'pclock_gears',
+    'wd_rail',
+    'pclock_odd',
+    'wd_toy',
+    'pclock_pendulum',
+    'pclock_roman',
+    'pclock_gears',
+    'spr_window',
+  ],
   'l4-opera-house': ['wd_opera', 'wd_opera', 'wd_manor', 'fancy_picture_frame_02'],
   'l15-customs': ['wd_warehouse', 'wd_warehouse', 'lifebuoy'],
   'l17-shipwreck': ['wd_aquarium', 'wd_fish', 'lifebuoy', 'wd_aquarium'],
@@ -113,7 +151,6 @@ export const LEVEL_WALL_DECOR: Record<string, WallPiece[]> = {
 
 /** Wall pieces that get a little brass picture light above them. */
 export const LIT_ON_WALL = new Set<PropName>(['fancy_picture_frame_01', 'fancy_picture_frame_02']);
-
 
 /** How often a wall face gets something on it: mostly one in five; the Clocktower is covered in clocks. */
 export const DECOR_DENSITY: Record<string, number> = { 'l2-clocktower': 0.5 };

@@ -2,7 +2,21 @@
 // exactly. Used while designing levels; with --write the route is saved to src/levels/solutions.ts, where the
 // tests replay it. Usage: npm run solve -- <level id> [--clean] [--write] [--loot] [--max N] [--debug]
 import { blocksMove, parseLevel, type Level, type Point, type Tile } from '../src/core/level';
-import { BASE_PERKS, key, actionsHere, doAction, endTurn, leoReach, moveAp, newHeist, pathTo, walkPath, type ActionKind, type Perks, type State } from '../src/core/game';
+import {
+  BASE_PERKS,
+  key,
+  actionsHere,
+  doAction,
+  endTurn,
+  leoReach,
+  moveAp,
+  newHeist,
+  pathTo,
+  walkPath,
+  type ActionKind,
+  type Perks,
+  type State,
+} from '../src/core/game';
 import type { RouteStep } from '../src/levels/routes';
 import { ALL_LEVELS } from '../src/levels';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -17,7 +31,15 @@ function writeSolution(levelId: string, plan: RouteStep[][]): void {
   const all = JSON.parse(text.slice(a, b)) as Record<string, RouteStep[][]>;
   all[levelId] = plan;
   // One turn per line, so the routes read like the ones in routes.ts.
-  const body = '{\n' + Object.entries(all).map(([id, plan]) => `  ${JSON.stringify(id)}: [\n` + plan.map((t) => `    ${JSON.stringify(t)}`).join(',\n') + '\n  ]').join(',\n') + '\n}';
+  const body =
+    '{\n' +
+    Object.entries(all)
+      .map(
+        ([id, plan]) =>
+          `  ${JSON.stringify(id)}: [\n` + plan.map((t) => `    ${JSON.stringify(t)}`).join(',\n') + '\n  ]',
+      )
+      .join(',\n') +
+    '\n}';
   writeFileSync(SOLUTIONS_FILE, text.slice(0, a) + ' ' + body + ' ' + text.slice(b));
 }
 
@@ -90,7 +112,15 @@ function distanceMap(level: Level, goals: Point[], shut: Tile | null = null): nu
     const t = level.tiles[y]?.[x];
     // Doors and vaults count as open here: the search finds the way to open them.
     if (t === undefined || t === shut) return false;
-    return t === 'door' || t === 'keydoor' || t === 'vault' || t === 'crate' || !blocksMove(t) || level.ducts[y][x] || level.rafters[y][x];
+    return (
+      t === 'door' ||
+      t === 'keydoor' ||
+      t === 'vault' ||
+      t === 'crate' ||
+      !blocksMove(t) ||
+      level.ducts[y][x] ||
+      level.rafters[y][x]
+    );
   };
   while (q.length) {
     const p = q.shift()!;
@@ -110,7 +140,11 @@ function distanceMap(level: Level, goals: Point[], shut: Tile | null = null): nu
 function levelPeriod(level: Level): number {
   const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
   let p = level.def.pulsingLasers ? 2 : 1;
-  const cycles = [...level.spotlights.map((sp) => sp.path.length), level.def.beacon ? 8 : 1, level.def.tide ? 2 * level.def.tide.period : 1];
+  const cycles = [
+    ...level.spotlights.map((sp) => sp.path.length),
+    level.def.beacon ? 8 : 1,
+    level.def.tide ? 2 * level.def.tide.period : 1,
+  ];
   for (const c of cycles) p = (p * c) / gcd(p, c);
   return p;
 }
@@ -121,32 +155,93 @@ let timeLock = 0;
 
 function stateKey(s: State): string {
   return JSON.stringify([
-    s.leo.x, s.leo.y, s.layer, s.ap, s.turn % period, [...s.inventory].sort(), s.picks, s.openDoors, s.camerasOff, s.lasersOff, s.alarm, s.card, s.combination, s.lampsOff, s.wetPaws, s.prints.map((p) => key(p.x, p.y)), Math.min(s.turn, timeLock),
-    s.guards.map((g) => [g.x, g.y, g.facing, g.mode, g.target, g.point?.x, g.point?.y, g.look, g.meter, g.asleep]),
+    s.leo.x,
+    s.leo.y,
+    s.layer,
+    s.ap,
+    s.turn % period,
+    [...s.inventory].sort(),
+    s.picks,
+    s.openDoors,
+    s.camerasOff,
+    s.lasersOff,
+    s.alarm,
+    s.card,
+    s.combination,
+    s.lampsOff,
+    s.wetPaws,
+    s.prints.map((p) => key(p.x, p.y)),
+    Math.min(s.turn, timeLock),
+    s.guards.map((g) => [
+      g.x,
+      g.y,
+      g.facing,
+      g.mode,
+      g.target,
+      g.point?.x,
+      g.point?.y,
+      g.look,
+      g.meter,
+      g.asleep,
+    ]),
     s.cameras.map((c) => c.idx),
   ]);
 }
 
-const USEFUL: ActionKind[] = ['pick-door', 'swipe-card', 'read-notes', 'turn-dials', 'lights', 'tap', 'panel', 'fuse', 'enter-vent', 'exit-vent', 'climb-up', 'climb-down', 'drop'];
+const USEFUL: ActionKind[] = [
+  'pick-door',
+  'swipe-card',
+  'read-notes',
+  'turn-dials',
+  'lights',
+  'tap',
+  'panel',
+  'fuse',
+  'enter-vent',
+  'exit-vent',
+  'climb-up',
+  'climb-down',
+  'drop',
+];
 
-export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?: number; clean?: boolean; weight?: number; turns?: number; start?: State } = {}): { plan: RouteStep[][]; s: State; expanded: number } | null {
-  const centre = level.def.loot.findIndex((l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y);
+export function solve(
+  level: Level,
+  opts: {
+    perks?: Perks;
+    loot?: boolean;
+    max?: number;
+    clean?: boolean;
+    weight?: number;
+    turns?: number;
+    start?: State;
+  } = {},
+): { plan: RouteStep[][]; s: State; expanded: number } | null {
+  const centre = level.def.loot.findIndex(
+    (l) => level.plinth && l.at.x === level.plinth.x && l.at.y === level.plinth.y,
+  );
   if (centre < 0) throw new Error('no centrepiece');
   const c = level.def.loot[centre].at;
   const around: Point[] = [];
-  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) around.push({ x: c.x + dx, y: c.y + dy });
+  for (let dy = -1; dy <= 1; dy++)
+    for (let dx = -1; dx <= 1; dx++) if (dx || dy) around.push({ x: c.x + dx, y: c.y + dy });
   const toCentre = distanceMap(level, around);
   const toExit = distanceMap(level, [level.exit]);
   const centreToExit = Math.min(...around.map((p) => toExit[p.y]?.[p.x] ?? Infinity));
   // Errands: what Leo has to fetch first when a card door or a vault stands between him and the centrepiece.
-  const tilesOf = (t: Tile) => level.tiles.flatMap((row, y) => row.flatMap((tt, x) => (tt === t ? [{ x, y }] : [])));
-  const beside = (ps: Point[]) => ps.flatMap((p) => [-1, 0, 1].flatMap((dy) => [-1, 0, 1].map((dx) => ({ x: p.x + dx, y: p.y + dy })))).filter((p) => !blocksMove(level.tiles[p.y]?.[p.x] ?? 'wall'));
+  const tilesOf = (t: Tile) =>
+    level.tiles.flatMap((row, y) => row.flatMap((tt, x) => (tt === t ? [{ x, y }] : [])));
+  const beside = (ps: Point[]) =>
+    ps
+      .flatMap((p) => [-1, 0, 1].flatMap((dy) => [-1, 0, 1].map((dx) => ({ x: p.x + dx, y: p.y + dy }))))
+      .filter((p) => !blocksMove(level.tiles[p.y]?.[p.x] ?? 'wall'));
   const errands = [
     { door: 'keydoor' as Tile, goals: tilesOf('keycard'), done: (s: State) => s.card === 'leo' },
     { door: 'vault' as Tile, goals: beside(tilesOf('desk')), done: (s: State) => s.combination },
     { door: 'laser' as Tile, goals: beside(tilesOf('fuse')), done: (s: State) => s.lasersOff },
   ]
-    .filter((e) => e.goals.length && distanceMap(level, around, e.door)[level.start.y][level.start.x] === Infinity)
+    .filter(
+      (e) => e.goals.length && distanceMap(level, around, e.door)[level.start.y][level.start.x] === Infinity,
+    )
     .map((e) => {
       const to = distanceMap(level, e.goals);
       return { ...e, to, onward: Math.min(...e.goals.map((g) => toCentre[g.y][g.x])) };
@@ -164,7 +259,8 @@ export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?:
     const has = s.inventory.includes(centre);
     const todo = has ? [] : errands.filter((e) => !e.done(s));
     let here = has ? afterCentre(s) : toCentre[s.leo.y][s.leo.x] + centreToExit;
-    if (todo.length) here = todo[0].to[s.leo.y][s.leo.x] + todo[0].onward + centreToExit + (todo.length > 1 ? 10 : 0);
+    if (todo.length)
+      here = todo[0].to[s.leo.y][s.leo.x] + todo[0].onward + centreToExit + (todo.length > 1 ? 10 : 0);
     return here / 5 + (has ? 0 : 1) + todo.length;
   };
   period = levelPeriod(level);
@@ -214,11 +310,16 @@ export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?:
       const reach = leoReach(level, n.s);
       // Every one-point move, but only the dashes that make the most progress.
       const dist = (x: number, y: number) => (n.s.inventory.includes(centre) ? toExit : toCentre)[y][x];
-      const ends = [...reach.cost].filter(([, cost]) => cost > 0 && moveAp(n.s, cost) <= n.s.ap).map(([kk, cost]) => {
-        const [x, y] = kk.split(',').map(Number);
-        return { kk, cost, x, y, ap: moveAp(n.s, cost) };
-      });
-      const dashes = ends.filter((e) => e.ap === 2).sort((a, b) => dist(a.x, a.y) - dist(b.x, b.y)).slice(0, 12);
+      const ends = [...reach.cost]
+        .filter(([, cost]) => cost > 0 && moveAp(n.s, cost) <= n.s.ap)
+        .map(([kk, cost]) => {
+          const [x, y] = kk.split(',').map(Number);
+          return { kk, cost, x, y, ap: moveAp(n.s, cost) };
+        });
+      const dashes = ends
+        .filter((e) => e.ap === 2)
+        .sort((a, b) => dist(a.x, a.y) - dist(b.x, b.y))
+        .slice(0, 12);
       for (const { cost, x, y } of [...ends.filter((e) => e.ap === 1), ...dashes]) {
         const ap = moveAp(n.s, cost);
         const path = pathTo(reach, { x, y })!;
@@ -233,14 +334,21 @@ export function solve(level: Level, opts: { perks?: Perks; loot?: boolean; max?:
     push(s, null);
   }
   if (best && process.argv.includes('--debug')) {
-    console.log(`closest: turn ${best.s.turn}, leo ${best.s.leo.x},${best.s.leo.y} ${best.s.layer}, inventory ${best.s.inventory}, h ${h(best.s).toFixed(1)}, open ${open.size}`);
+    console.log(
+      `closest: turn ${best.s.turn}, leo ${best.s.leo.x},${best.s.leo.y} ${best.s.layer}, inventory ${best.s.inventory}, h ${h(best.s).toFixed(1)}, open ${open.size}`,
+    );
     console.log(formatRoute(planOf(best)));
   }
   return null;
 }
 
 export function formatRoute(plan: RouteStep[][]): string {
-  return plan.map((t) => `  [${t.map((st) => (Array.isArray(st) ? `[${st[0]}, ${st[1]}]` : `{ a: '${st.a}', x: ${st.x}, y: ${st.y} }`)).join(', ')}],`).join('\n');
+  return plan
+    .map(
+      (t) =>
+        `  [${t.map((st) => (Array.isArray(st) ? `[${st[0]}, ${st[1]}]` : `{ a: '${st.a}', x: ${st.x}, y: ${st.y} }`)).join(', ')}],`,
+    )
+    .join('\n');
 }
 
 // --- command line -------------------------------------------------------------------------------------
@@ -252,10 +360,18 @@ if (args.length && !process.env.SOLVE_LIB) {
   const max = args.includes('--max') ? Number(args[args.indexOf('--max') + 1]) : undefined;
   const t0 = Date.now();
   const num = (flag: string) => (args.includes(flag) ? Number(args[args.indexOf(flag) + 1]) : undefined);
-  const r = solve(parseLevel(def), { loot: args.includes('--loot'), max, clean: args.includes('--clean'), weight: num('--weight'), turns: num('--turns') });
+  const r = solve(parseLevel(def), {
+    loot: args.includes('--loot'),
+    max,
+    clean: args.includes('--clean'),
+    weight: num('--weight'),
+    turns: num('--turns'),
+  });
   if (!r) console.log(`${def.id}: NO ROUTE FOUND (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
   else {
-    console.log(`${def.id}: escaped on turn ${r.s.turn}, seen ${r.s.seen}, alarm ${r.s.alarmRaised}, ${r.expanded} states, ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+    console.log(
+      `${def.id}: escaped on turn ${r.s.turn}, seen ${r.s.seen}, alarm ${r.s.alarmRaised}, ${r.expanded} states, ${((Date.now() - t0) / 1000).toFixed(1)}s`,
+    );
     console.log(formatRoute(r.plan));
     if (args.includes('--write')) writeSolution(def.id, r.plan);
   }
