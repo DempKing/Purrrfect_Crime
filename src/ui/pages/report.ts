@@ -16,11 +16,13 @@ export function callingCard(done: () => void): void {
   );
   setTimeout(done, 1900);
 }
+/** The rooftop photo for the newspaper. */
 function photoSvg(centrepiece: boolean): string {
   return centrepiece
     ? `<svg viewBox="0 0 80 56"><rect width="80" height="56" fill="#cfc8b8"/><rect x="28" y="22" width="24" height="30" fill="#efe9da" stroke="#555"/><rect x="24" y="18" width="32" height="6" fill="#e2dccb" stroke="#555"/><rect x="33" y="11" width="14" height="8" fill="#fff" stroke="#222"/><circle cx="40" cy="15" r="2" fill="#a81b22"/></svg>`
     : `<svg viewBox="0 0 80 56"><rect width="80" height="56" fill="#cfc8b8"/><rect x="20" y="30" width="40" height="22" fill="#8a7a66" stroke="#444"/><path d="M22 30 L22 12 L58 12 L58 30" fill="none" stroke="#666" stroke-dasharray="3 2"/><path d="M30 46 l4 -3 l2 4 M48 48 l3 -4 l3 3" stroke="#bcd" fill="none"/></svg>`;
 }
+/** The morning paper after a heist. */
 export function newspaper(paper: Paper, spin: boolean, done: () => void, button = 'Continue'): void {
   const photos = paper.photos
     .map(
@@ -47,7 +49,7 @@ export function newspaper(paper: Paper, spin: boolean, done: () => void, button 
 function lootPic(name: string, category?: LootCategory): string {
   return `<img class="loot-pic" src="${lootPictureUrl(name, category)}" alt="">`;
 }
-/** The night's snapshot: Leo on the rooftop with the prize, or the rival who beat him to it. */
+/** The report photo: Leo with the prize, or the rival who beat him. */
 function reportPhoto(r: HeistReport): string {
   const prize = r.items.find((i) => i.centrepiece);
   if (r.rival && !r.rival.won)
@@ -57,11 +59,7 @@ function reportPhoto(r: HeistReport): string {
 }
 /** Sounds for the screens; main.ts plugs the game's sound in. */
 
-/**
- * The heist report, as a score screen that plays out: the result pops up, each XP line slides in and counts up
- * into the total, the level bar fills from where Leo was (a burst and a fanfare for every level he crosses),
- * then the haul drops in piece by piece with its value rolling up. A click or a key skips to the end.
- */
+/** The heist report: result, XP lines counting up, level bar, then the haul. A click or key skips to the end. */
 export function heistReport(r: HeistReport, p: Profile, done: () => void): void {
   const xpAfter = p.xp;
   const xpBefore = Math.max(0, xpAfter - r.xpTotal);

@@ -10,24 +10,25 @@ import { caught, escaped, say, updateHud } from './hud';
 import { anim, sfx, tutorialUpdate } from './common';
 import { doEndTurn } from './turn';
 
+/** Notices still showing on the map. */
 export function liveAlerts(): Notice[] {
   const now = performance.now();
   game.alerts = game.alerts.filter((a) => a.until > now);
   return game.alerts.map((a) => a.n);
 }
-/** Puts this step's notices on the map: a label over the spot, a ring and a line back to the guard or camera. */
+/** Shows this step's notices: a label, a ring on the spot and a line back to whoever noticed. */
 export function showNotices(): void {
   const list = game.state.notices ?? [];
   game.state.notices = [];
   if (!list.length) return;
   for (const n of list)
     game.alerts.push({ n, until: performance.now() + (n.kind === 'caught' ? 60000 : 6000) });
-  // The labels go up once the camera has moved (below), so they sit over the spot, not where it used to be.
+  // Add the labels after the camera moves (below), so they line up.
   window.setTimeout(
     () => list.forEach((n) => floatText(n.at, n.label, n.kind === 'spotted' ? 'warn' : 'red')),
     80,
   );
-  // If it happened off screen, the camera goes to look (on Leo's next move it comes back to him).
+  // Off screen? Pan to it (the camera returns to Leo when he moves).
   const worst = list.find((n) => n.kind === 'caught') ?? list.find((n) => n.kind !== 'spotted') ?? list[0];
   const spot =
     worst.from && worst.kind === 'caught'
@@ -47,6 +48,7 @@ export function showNotices(): void {
     pan.y = a.y - b.y;
   }
 }
+/** After each move or action: update the screen, then check for caught/escaped/end of turn. */
 export function afterLeoActs(): void {
   spawnRipples();
   syncActors();

@@ -1,5 +1,4 @@
-// The screens between heists (title, settings, lair, paper, report...), gathered so the game can import from
-// 'ui/screens'. Each screen lives in its own file under ui/pages/.
+// The screens between heists (title, settings, lair, paper, report...), re-exported from ui/pages/.
 
 export * from './pages/common';
 export * from './pages/title';

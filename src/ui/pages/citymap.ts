@@ -5,7 +5,7 @@ import { catnip, NARRATOR_SVG, on, show } from './common';
 // The city map: buying the lair
 
 export function cityMap(p: Profile, onBuy: () => void): void {
-  // A printed street map: blocks between the streets, the river along the bottom, district names.
+  // The street map: blocks, river and district names.
   const blocks: string[] = [];
   for (let r = 0; r < 3; r++)
     for (let c = 0; c < 6; c++) {

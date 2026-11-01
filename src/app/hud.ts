@@ -34,6 +34,7 @@ import { computed } from './preview';
 export function say(text: string): void {
   $('message').textContent = text;
 }
+/** A big message across the screen for a moment. */
 export function banner(text: string): void {
   const b = $('banner');
   b.textContent = text;
@@ -41,14 +42,18 @@ export function banner(text: string): void {
   clearTimeout(game.bannerTimer);
   game.bannerTimer = window.setTimeout(() => b.classList.remove('show'), 1100);
 }
+/** Shows an element by id. */
 function show(id: string): void {
   $(id).classList.remove('hidden');
 }
+/** Hides an element by id. */
 export function hide(id: string): void {
   $(id).classList.add('hidden');
 }
 const LIGHT_NAMES = ['In shadow', 'Dim light', 'In the light'];
+/** Refreshes the HUD: turn, AP, light, bag, rival, alarm, and the action and gadget buttons. */
 export function updateHud(): void {
+  // Turn, action points and the bag.
   $('turn').textContent = String(game.state.turn);
   $('ap').innerHTML = Array.from(
     { length: AP_PER_TURN },
@@ -62,7 +67,7 @@ export function updateHud(): void {
     `Inventory <b>${inventoryUsed(game.level, game.state)}/${game.state.perks.spaces}</b> · <span class="haul-now${haulNow > game.lastHaul ? ' bump' : ''}">${money(haulNow)}</span>${extras ? ` · ${extras}` : ''}`;
   game.lastHaul = haulNow;
   renderBag();
-  // The race, if there is one. Before they arrive, only a good Planning Table says when.
+  // The rival line (arrival only shown early with a good Planning Table), plus tide and lockdown.
   const r = game.state.rival;
   const rl = $('rival');
   const prize =
@@ -95,6 +100,7 @@ export function updateHud(): void {
     : '';
   rl.textContent = [rivalText, tide, lock].filter(Boolean).join(' · ');
   rl.classList.toggle('hidden', !rivalText && !tide && !lock);
+  // How lit Leo's tile is.
   const hidden = hiddenAt(game.level, game.state, game.state.leo);
   const l =
     game.state.layer !== 'floor' || hidden
@@ -109,6 +115,7 @@ export function updateHud(): void {
         : 'In the rafters'
       : LIGHT_NAMES[l];
   li.className = `light l${l < 0 ? 'v' : l}`;
+  // Alarm / lockdown banner, and the music's tension.
   const al = $('alarm');
   if (game.state.lockdown && game.state.status === 'playing') {
     al.textContent = `LOCKDOWN · lie low: the exits open once the guards catch ${game.state.rival && (game.state.rival.phase === 'in' || game.state.rival.phase === 'leaving') ? game.state.rival.name : 'the intruder'}`;
@@ -147,6 +154,7 @@ export function updateHud(): void {
   }
   ab.classList.toggle('hidden', list.length === 0);
 
+  // The action buttons for what Leo can do here.
   const bar = $('actions');
   const acts = game.busy ? [] : actionsHere(game.level, game.state);
   bar.innerHTML = '';
@@ -165,6 +173,7 @@ export function updateHud(): void {
   });
   bar.classList.toggle('hidden', acts.length === 0);
 }
+/** Leo was caught: shows who did it and the Busted card. */
 export function caught(): void {
   sfx('caught');
   $('caught-who').textContent = game.state.caughtBy ?? 'A guard';
@@ -174,10 +183,11 @@ export function caught(): void {
   $('caught-why').textContent = game.state.caughtWhy
     ? `${game.state.caughtWhy[0].toUpperCase()}${game.state.caughtWhy.slice(1)}.`
     : '';
-  // A moment to see where it happened (the guard, Leo and the line between them) before the card comes up.
+  // Wait a moment so the player sees where it happened.
   const done = game.state;
   setTimeout(() => game.state === done && show('caught'), 1700);
 }
+/** Leo got out: the report, then whatever comes next. */
 export function escaped(): void {
   const done = game.state;
   setTimeout(() => {
@@ -200,10 +210,7 @@ export function escaped(): void {
     });
   }, 500);
 }
-/**
- * The keyboard cursor: the arrow keys move it across the screen, whichever way the camera faces (each key
- * picks the grid direction that looks most like it on screen). It starts on Leo, or on the target when aiming.
- */
+/** Moves the keyboard/controller cursor in a screen direction (picks the grid step that looks closest). */
 export function moveCursor(sx: number, sy: number): void {
   if (game.busy || game.state.status !== 'playing') return;
   const from = game.selected ?? { ...game.state.leo };
@@ -248,7 +255,7 @@ export function moveCursor(sx: number, sy: number): void {
 export function openSettingsInHeist(): void {
   screens.settingsScreen(settings, changeSettings, () => screens.hideScreens());
 }
-/** The finale: a click on NightClaw himself (his body stands above his tile) counts as a click on his tile. */
+/** Finale: a click on NightClaw's body counts as a click on his tile. */
 export function nightClawUnder(cx: number, cy: number): Point | null {
   if (!game.inHeist || !game.level?.def.finale) return null;
   const nc = game.state.guards.find((g) => g.kind === 'nightclaw');

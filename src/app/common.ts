@@ -17,6 +17,7 @@ export function storage(): Storage | null {
     return null;
   }
 }
+/** Saves the profile to its slot. */
 export const persist = () => saveSlot(storage(), game.slot, game.profile);
 // Settings and sound
 
@@ -24,7 +25,9 @@ export const sound = new Sound();
 const prefersReducedMotion =
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 export const settings: Settings = loadSettings(storage(), prefersReducedMotion);
+/** An animation length adjusted for the speed setting. */
 export const anim = (seconds: number) => seconds * SPEED_FACTOR[settings.speed] * game.slowMotion;
+/** Applies the current settings (text size, motion, sound, colours). */
 export function applySettings(): void {
   document.body.classList.toggle('large-text', settings.largeText);
   document.body.classList.toggle('reduce-motion', settings.reduceMotion);
@@ -32,11 +35,13 @@ export function applySettings(): void {
   setPalette(settings.palette);
   game.version++;
 }
+/** Saves and applies new settings. */
 export function changeSettings(s: Settings): void {
   Object.assign(settings, s);
   saveSettings(storage(), settings);
   applySettings();
 }
+/** Plays sounds, one after another. */
 export function sfx(...names: Sfx[]): void {
   names.forEach((n, i) => sound.play(n, i * 0.12));
 }
@@ -52,6 +57,7 @@ export function award(r: Parameters<typeof checkAchievements>[1] = null): void {
     }, i * 900),
   );
 }
+/** Moves the tutorial on and shows its current tip. */
 export function tutorialUpdate(): void {
   const box = $('narrator');
   if (!game.tutorial || !game.inHeist) return box.classList.add('hidden');
@@ -64,5 +70,7 @@ export function tutorialUpdate(): void {
   $('narrator-count').textContent = `Tip ${game.tutorial.step + 1} of ${TUTORIAL.length}`;
   $('narrator-ok').classList.toggle('hidden', !step.optional);
 }
+/** Shorthand for getElementById. */
 export const $ = (id: string) => document.getElementById(id)!;
+/** Formats a number as dollars. */
 export const money = (n: number) => `$${n.toLocaleString('en-US')}`;

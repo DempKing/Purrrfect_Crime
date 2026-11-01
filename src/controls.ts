@@ -1,7 +1,6 @@
-// The controls the player can remap in the settings: which keys and which controller buttons do what.
-// Keys are kept as `KeyboardEvent.key` lower-cased (' ' for Space); controller buttons by their standard-mapping index.
-// A few stay fixed so the game can always be got out of: Esc cancels and closes, 1-9 pick from the action bar,
-// and the controller's D-pad and sticks move.
+// Remappable controls: which keys and controller buttons do what.
+// Keys are stored as lower-case KeyboardEvent.key (' ' is Space); buttons by standard gamepad index.
+// Fixed (can't be remapped): Esc, 1-9, and the controller's D-pad and sticks.
 
 export type KeyAction =
   | 'up'
@@ -38,6 +37,7 @@ export type PadAction =
 export type KeyMap = Record<KeyAction, string[]>;
 export type PadMap = Record<PadAction, number[]>;
 
+/** Keyboard actions and their labels in Settings. */
 export const KEY_ACTIONS: [KeyAction, string][] = [
   ['up', 'Cursor up'],
   ['down', 'Cursor down'],
@@ -58,6 +58,7 @@ export const KEY_ACTIONS: [KeyAction, string][] = [
   ['restart', 'Restart the heist (press twice)'],
 ];
 
+/** Controller actions and their labels in Settings. */
 export const PAD_ACTIONS: [PadAction, string][] = [
   ['confirm', 'Move Leo there, or do what’s there (and press buttons)'],
   ['cancel', 'Cancel, close, back'],
@@ -72,6 +73,7 @@ export const PAD_ACTIONS: [PadAction, string][] = [
   ['settings', 'Settings'],
 ];
 
+/** Default keyboard bindings. */
 export function defaultKeys(): KeyMap {
   return {
     up: ['arrowup'],
@@ -94,6 +96,7 @@ export function defaultKeys(): KeyMap {
   };
 }
 
+/** Default controller bindings. */
 export function defaultPad(): PadMap {
   return {
     confirm: [0],
@@ -118,10 +121,12 @@ export function reservedKey(k: string): string | null {
     return 'Pick another key.';
   return null;
 }
+/** Why a button can't be bound (or null if it can). */
 export function reservedButton(b: number): string | null {
   return b >= 12 && b <= 15 ? 'The D-pad always moves.' : b > 17 ? 'Pick another button.' : null;
 }
 
+/** Names of the standard gamepad buttons, by index. */
 export const PAD_NAMES = [
   'A',
   'B',
@@ -143,6 +148,7 @@ export const PAD_NAMES = [
   'Share',
 ];
 
+/** Display names for special keys. */
 const KEY_NAMES: Record<string, string> = {
   ' ': 'Space',
   arrowup: '↑',
@@ -158,26 +164,27 @@ const KEY_NAMES: Record<string, string> = {
   pagedown: 'Page Down',
   insert: 'Insert',
 };
+/** How a key is shown in the UI. */
 export function keyName(k: string): string {
   return KEY_NAMES[k] ?? (k.length === 1 ? k.toUpperCase() : k[0].toUpperCase() + k.slice(1));
 }
+/** How a controller button is shown in the UI. */
 export function padName(b: number): string {
   return PAD_NAMES[b] ?? `Button ${b}`;
 }
 
+/** Which action a key is bound to. */
 export function actionForKey(map: KeyMap, k: string): KeyAction | null {
   for (const [a] of KEY_ACTIONS) if (map[a].includes(k)) return a;
   return null;
 }
+/** Which action a controller button is bound to. */
 export function actionForButton(map: PadMap, b: number): PadAction | null {
   for (const [a] of PAD_ACTIONS) if (map[a].includes(b)) return a;
   return null;
 }
 
-/**
- * Gives `input` to `action` in place of what it had. If another action had it, that one takes the replaced input
- * instead (a swap), so nothing is ever left without a key.
- */
+/** Binds `input` to `action`. If another action had it, the two swap, so nothing is left unbound. */
 export function rebind<M extends Record<string, unknown[]>>(
   map: M,
   action: keyof M & string,
@@ -206,6 +213,7 @@ export function cleanKeys(raw: unknown): KeyMap {
   }
   return d;
 }
+/** Checked controller bindings (bad ones fall back to defaults). */
 export function cleanPad(raw: unknown): PadMap {
   const d = defaultPad();
   if (!raw || typeof raw !== 'object') return d;

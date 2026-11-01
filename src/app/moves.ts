@@ -34,6 +34,7 @@ export function leavingWithoutTap(tile: Point): boolean {
   if (tile.x !== game.level.exit.x || tile.y !== game.level.exit.y) return false;
   return true;
 }
+/** Shows the "leave without tapping NightClaw?" prompt; `go` runs if the player leaves anyway. */
 export function confirmLeave(go: () => void): void {
   const box = $('leave-confirm');
   box.classList.remove('hidden');
@@ -82,7 +83,7 @@ export function walkTo(tile: Point, then?: () => void): void {
   const segs: Segment[] = [];
   const crawl = game.state.layer === 'vent' ? 1.4 : 1; // beams are walked at the usual pace
   const layer = game.state.layer;
-  // Leo crawls in the vents, runs when he dashes, and creeps when he's heading into the dark.
+  // Gait: crawl in vents, run on a dash, sneak into the dark.
   const dark = lightMap(game.level, game.state.lampsOff);
   const dash = apBefore - game.state.ap >= 2;
   for (let i = 1; i < res.path.length; i++) {
@@ -128,6 +129,7 @@ export function floatText(at: Point, text: string, cls = ''): void {
   $('floaters').appendChild(el);
   window.setTimeout(() => el.remove(), 1900);
 }
+/** Shakes the screen. */
 export function shake(): void {
   const st = $('stage');
   st.classList.remove('shake');

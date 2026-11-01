@@ -13,7 +13,7 @@ import { tileUnder } from './preview';
 import { askRestart, restart } from './restart';
 import { doEndTurn } from './turn';
 
-/** Mouse and touch on the map: hover shows the way, a click (or a second tap on touch) acts. */
+/** Mouse and touch: hover previews, click acts (touch: tap twice). */
 export function bindPointer(): void {
   app.canvas.addEventListener('pointermove', (e) => {
     if (e.pointerType === 'touch') return;

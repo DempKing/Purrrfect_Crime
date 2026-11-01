@@ -39,7 +39,7 @@ export function goOn(): void {
   if (!game.profile.lairOwned) return cityMap();
   showLair();
 }
-/** The end of the story: NightClaw's farewell, the title, the credits, and the morning paper. */
+/** The ending: NightClaw's farewell, credits, then the morning paper. */
 export function ending(r: ReturnType<typeof completeHeist>): void {
   const nc = { name: 'NightClaw', portrait: screens.NIGHTCLAW_SVG };
   screens.narratorScene(
@@ -58,6 +58,7 @@ export function ending(r: ReturnType<typeof completeHeist>): void {
     nc,
   );
 }
+/** Tutorial: the narrator buys the first loot. */
 function narratorPays(): void {
   leaveHeist();
   screens.narratorScene(
@@ -75,6 +76,7 @@ function narratorPays(): void {
     },
   );
 }
+/** The city map, where the lair is bought. */
 function cityMap(): void {
   leaveHeist();
   screens.cityMap(game.profile, () => {
@@ -92,7 +94,7 @@ function cityMap(): void {
   });
 }
 const photos = new Map<string, Promise<string>>();
-/** A photo of a heist's building for the planning board: the game draws the level, from behind Leo, off screen. */
+/** A snapshot of a level for the planning board (rendered off screen). */
 function levelPhoto(def: LevelDef): Promise<string> {
   const cached = photos.get(def.id);
   if (cached) return cached;
@@ -148,6 +150,7 @@ function levelPhoto(def: LevelDef): Promise<string> {
   shot.catch(() => photos.delete(def.id));
   return shot;
 }
+/** The lair screen, with all its buttons wired up. */
 function showLair(tab: screens.LairTab = 'heists'): void {
   sound.setScene(tab === 'market' ? 'market' : 'lair');
   leaveHeist();
@@ -215,10 +218,12 @@ function showLair(tab: screens.LairTab = 'heists'): void {
     tab,
   );
 }
+/** Leaves the heist for the lair. */
 export function quit(): void {
   if (!game.profile.lairOwned) return showTitle();
   showLair();
 }
+/** The title screen. */
 export function showTitle(): void {
   leaveHeist();
   sound.setScene('title');

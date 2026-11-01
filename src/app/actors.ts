@@ -1,4 +1,4 @@
-// Where characters are drawn (smoothly, lagging the rules while moves animate) and the animation queue.
+// Where characters are drawn (lagging the rules while moves animate), and the animation queue.
 import type { Actor, Gait } from '../render/view';
 import type { Sfx } from '../audio';
 import type { Point } from '../core/level';
@@ -8,6 +8,7 @@ import { game } from './game';
 
 export const leo: Actor = { x: 0, y: 0, facing: 0, bob: 0 };
 export const rival: Actor = { x: 0, y: 0, facing: 0, bob: 0 };
+/** Snaps every drawn character to its real position (no animation). */
 export function syncActors(): void {
   leo.x = game.state.leo.x + 0.5;
   leo.y = game.state.leo.y + 0.5;
@@ -29,12 +30,14 @@ export interface Segment {
   leap?: boolean; // a Pounce: a high arc instead of a walk
   gait?: Gait;
 }
+/** Queues moves to animate; `then` runs when they finish. */
 export function play(segments: Segment[], then: () => void): void {
   game.queue = segments;
   game.busy = segments.length > 0;
   game.afterAnim = then;
   if (!game.busy) then();
 }
+/** Turns this step's noises into ripples on the floor. */
 export function spawnRipples(): void {
   for (const n of game.state.noises.slice(game.noisesSeen))
     game.ripples.push({ x: n.x, y: n.y, r: n.r, t: 0 });

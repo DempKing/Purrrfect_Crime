@@ -1,5 +1,5 @@
-// Purrrfect Crime: the entry point. Starts the graphics, wires up input and runs the frame loop.
-// The game itself is spread over src/app/ (the UI and turn flow), src/core/ (the rules) and src/render/.
+// Entry point: starts the graphics, wires up input and runs the frame loop.
+// src/core = game rules, src/app = UI and turn flow, src/render = drawing, src/ui = screens.
 import 'pixi.js/unsafe-eval';
 import { showTitle } from './app/between';
 import { app, view, world } from './app/camera';
@@ -44,7 +44,7 @@ async function boot(): Promise<void> {
   applySettings();
   showTitle();
 
-  // Keep animations in real time on slow machines (but don't leap ahead after the tab was hidden).
+  // Real-time animation, capped so returning to the tab doesn't jump ahead.
   app.ticker.add((tk) => tick(Math.min(0.2, tk.deltaMS / 1000)));
 }
 

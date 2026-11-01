@@ -1,4 +1,4 @@
-// A test hook on window.__pc that lets the browser tests read the state, find tiles on screen and pick a level.
+// window.__pc: lets the browser tests read the state, find tiles on screen and start levels.
 import { danger, key, leoReach, lootAt, moveAp } from '../core/game';
 import { TUTORIAL } from '../meta/tutorial';
 import { project } from '../render/iso';
@@ -10,6 +10,7 @@ import { game, JOBS } from './game';
 import { risk } from './preview';
 import { startHeist } from './turn';
 
+/** Puts the test hook on window.__pc. */
 export function installTestHook(): void {
   (window as unknown as { __pc: unknown }).__pc = {
     get state() {

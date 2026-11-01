@@ -29,7 +29,7 @@ export function tick(dt: number): void {
     if (seg.t >= 1) {
       a.bob = 0;
       game.queue.shift();
-      // Between two steps of the same walk, keep the gait, so there's no flash of standing still.
+      // Keep the gait between steps of one walk (no flicker of standing).
       if (game.queue[0]?.who !== seg.who) a.gait = undefined;
       if (!game.queue.length) {
         game.busy = false;

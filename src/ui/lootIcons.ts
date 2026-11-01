@@ -1,6 +1,5 @@
-// A drawn picture for every piece of loot that has no painted one: picked from its name (coins, gems, a
-// framed painting, a pocket watch, a scroll, a figurine...) and coloured by what it's made of. Plain SVG, so
-// the menus can show it as it is and the heists can turn it into a texture.
+// Drawn SVG pictures for loot that has no painted picture, chosen by keywords in its name
+// (coins, gems, paintings, watches...) and coloured by material.
 import type { LootCategory } from '../core/level';
 
 const INK = '#22190f';
@@ -23,6 +22,7 @@ const MATERIALS: [RegExp, [string, string, string]][] = [
 ];
 const GOLD: [string, string, string] = ['#fff1b0', '#e2b13c', '#8a6418'];
 
+/** Colours for what the loot is made of (gold, silver, jade...). */
 function material(name: string): [string, string, string] {
   return MATERIALS.find(([r]) => r.test(name))?.[1] ?? GOLD;
 }
@@ -45,10 +45,12 @@ function hash(s: string): number {
   return (h >>> 0) / 4294967296;
 }
 
+/** An SVG gradient definition. */
 const grad = (id: string, [a, b, c]: [string, string, string]) =>
   `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="0.5" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></linearGradient>`;
 const stroke = `stroke="${INK}" stroke-width="2" stroke-linejoin="round"`;
 
+// One drawing per kind of loot.
 function painting(name: string): string {
   const h = hash(name);
   const sky = [
@@ -263,7 +265,7 @@ function shell(): string {
   return `<path d="M32 52 Q10 50 10 30 Q10 12 30 10 Q48 10 50 26 Q50 38 38 40 Q28 40 28 30 Q28 22 36 24" fill="none" stroke="${INK}" stroke-width="2"/><path d="M32 52 Q10 50 10 30 Q10 12 30 10 Q48 10 50 26 Q50 38 38 40Z" fill="#e8c8a0" opacity="0.9"/><path d="M32 52 Q10 50 10 30 Q10 12 30 10 Q48 10 50 26 Q50 38 38 40 Q28 40 28 30 Q28 22 36 24" fill="none" stroke="${INK}" stroke-width="2"/>`;
 }
 
-/** A small figure on a base: a cat, a mouse, a fish, a swan, a hippo, a beetle, a whale, a mermaid... */
+/** A small figurine on a base (the animal depends on the name). */
 function figurine(name: string): string {
   const m = material(name);
   let shape: string;
@@ -310,6 +312,7 @@ function cushion(name: string): string {
   return `<path d="M10 30 Q10 16 32 16 Q54 16 54 30 Q54 46 32 46 Q10 46 10 30Z" fill="${glass ? '#d8f0ff' : '#c8506a'}" opacity="${glass ? 0.8 : 1}" ${stroke}/><path d="M54 30 L60 34 L58 28Z" fill="${glass ? '#d8f0ff' : '#c8506a'}" ${stroke}/>`;
 }
 
+/** Other objects, matched by keywords in the name (null if nothing matches). */
 function misc(name: string): string | null {
   if (/key/i.test(name))
     return `<defs>${grad('m', GOLD)}</defs><circle cx="20" cy="20" r="10" fill="none" stroke="url(#m)" stroke-width="6"/><circle cx="20" cy="20" r="10" fill="none" ${stroke}/><path d="M27 27 L50 50 M42 42 L48 36 M46 46 L52 40" stroke="#e2b13c" stroke-width="5" stroke-linecap="round"/>`;
@@ -415,6 +418,7 @@ export function lootIconSvg(name: string, category?: LootCategory): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="128" height="128">${body}</svg>`;
 }
 
+/** A data URL with the drawn picture for a piece of loot. */
 export function lootIconUrl(name: string, category?: LootCategory): string {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(lootIconSvg(name, category))}`;
 }

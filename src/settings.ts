@@ -1,5 +1,5 @@
-// Settings: sound, speed, motion, text size, colours and hints. They belong to the browser, not to a save
-// slot, so they're kept under their own key.
+// Settings: sound, speed, motion, text size, colours, hints and controls.
+// Saved per browser (not per save slot), under their own key.
 
 import { cleanKeys, cleanPad, defaultKeys, defaultPad, type KeyMap, type PadMap } from './controls';
 
@@ -23,6 +23,7 @@ export interface Settings {
 
 export const SETTINGS_KEY = 'purrrfect-crime-settings';
 
+/** Default settings. */
 export function defaultSettings(reduceMotion = false): Settings {
   return {
     master: 0.8,
@@ -41,6 +42,7 @@ export function defaultSettings(reduceMotion = false): Settings {
 /** How long animations take, as a share of normal. */
 export const SPEED_FACTOR: Record<Speed, number> = { normal: 1, fast: 0.5, instant: 0.02 };
 
+/** A number limited to 0..1, or the default if it isn't one. */
 const clamp01 = (n: unknown, d: number) =>
   typeof n === 'number' && Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : d;
 
@@ -71,6 +73,7 @@ export function loadSettings(
   }
 }
 
+/** Saves settings (quietly does nothing if storage is unavailable). */
 export function saveSettings(storage: Pick<Storage, 'setItem'> | null, s: Settings): void {
   try {
     storage?.setItem(SETTINGS_KEY, JSON.stringify(s));

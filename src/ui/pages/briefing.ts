@@ -18,10 +18,7 @@ const GUARD_NOTES: Record<string, string> = {
   robo: 'A Robo-Guard. Ignores thrown things and sees heat in the dark. Cut the power to stop it.',
   nightclaw: 'The legend himself. Don’t let him see you coming.',
 };
-/**
- * The planning board before a heist: a photo of the place (the game draws it), the prize, the floor plan, a card
- * for every guard, sticky notes, and red string between the clues. What's on it grows with the Planning Table.
- */
+/** The planning board before a heist: photo, prize, floor plan, guard cards. Shows more with a better Planning Table. */
 export function briefing(
   def: LevelDef,
   p: Profile,

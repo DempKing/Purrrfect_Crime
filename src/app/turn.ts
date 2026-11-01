@@ -17,21 +17,24 @@ import { goOn } from './between';
 import { cameraBehindLeo, view } from './camera';
 import { restart } from './restart';
 
+/** Ends Leo's turn: runs the guards and rival, then animates their moves. */
 export function doEndTurn(): void {
   closeLootMenu();
   if (game.busy || game.state.status !== 'playing') return;
   game.selected = null;
   banner('Guards’ turn');
+  // Run the rules for the guards' and rival's turn.
   const before = game.state.guards.map((g) => ({ x: g.x, y: g.y }));
   const alarmBefore = game.state.alarm !== null;
   const steps: GuardStep[] = endTurn(game.level, game.state);
   game.noisesSeen = 0;
   game.version++;
+  // Turn their steps into animation segments.
   const last = before.map((p) => ({ ...p }));
   let rivalAt = { x: rival.x - 0.5, y: rival.y - 0.5 };
   const segs: Segment[] = steps.map((s) => {
     if (s.guard === -1) {
-      // The rival's first step is their arrival: they appear there, rather than walking in from nowhere.
+      // The rival's first step is their arrival: they appear rather than walk in.
       const from = game.rivalWasIn ? rivalAt : { x: s.to.x, y: s.to.y };
       if (!game.rivalWasIn && game.state.rival)
         window.setTimeout(() => banner(`${game.state.rival?.name ?? 'A rival'} is in the building!`), 300);
@@ -66,6 +69,7 @@ export function doEndTurn(): void {
   const rivalAlarm = game.state.alarm !== null && !game.state.alarmByLeo && !alarmBefore;
   if (rivalAlarm)
     window.setTimeout(() => banner(`${game.state.alarmBy ?? 'A rival'} set off the alarm!`), 500);
+  // After the animation: show what happened, then it's Leo's turn (or caught).
   play(segs, () => {
     syncActors();
     updateHud();
@@ -86,7 +90,7 @@ export function doEndTurn(): void {
     banner(game.state.alarm !== null ? `Alarm! ${game.state.alarm} turns` : 'Your turn');
   });
 }
-/** Tonight's rival for a heist: never in the tutorial; otherwise rolled once and kept until it's played. */
+/** Tonight's rival for a heist (none in the tutorial; rolled once and kept until played). */
 export function rivalPlanFor(def: LevelDef): RivalPlan | null {
   if (def.id === CORNER_GALLERY.id) return null;
   const district = DISTRICTS.findIndex((d) => d.levels.includes(def));
@@ -99,8 +103,9 @@ export function showReport(r: ReturnType<typeof completeHeist>): void {
   sound.setScene('report');
   screens.heistReport(r, game.profile, goOn);
 }
+/** Starts a heist: loads the level, rolls the rival, sets up the camera. */
 export function startHeist(def: LevelDef): void {
-  // The art loads while the title is up; on the off chance it hasn't finished, the heist waits for it.
+  // Wait for the art if it hasn't finished loading.
   if (!game.artLoaded)
     return void game.artReady.then(() => {
       game.artLoaded = true;

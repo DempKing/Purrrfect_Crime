@@ -52,16 +52,18 @@ export interface LairCallbacks {
   onQuit: () => void;
 }
 export type LairTab = 'heists' | 'leo' | 'market' | 'lair' | 'papers';
+/** Filled and empty dots, e.g. for room tiers. */
 const pips = (n: number, of: number) =>
   `<span class="pips">${Array.from({ length: of }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
+/** The lair screen: tabs for heists, Leo, the market, rooms and papers. */
 export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): void {
+  // Leo's level and XP bar.
   const lvl = playerLevel(p.xp);
   const into = p.xp - xpForLevel(lvl);
   const need = xpForLevel(lvl + 1) - xpForLevel(lvl);
   const wanted = demand(p.day);
 
-  // A heist opens once the one before it is cleared; anything already cleared stays open. NightClaw's
-  // challenge opens with his second letter.
+  // Heists tab: the job cards. A heist unlocks when the one before is cleared (the challenge: after Letter 2).
   const unlocked = (i: number) =>
     cb.jobs[i].finale
       ? hasLetter(p, 4)
@@ -110,6 +112,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
       )
       .join('');
 
+  // Leo tab: attributes, skill trees and the rivalry record.
   const attributes = ATTRIBUTES.map((a) => {
     const rank = p.attributes[a.id];
     const why = canRaise(p, a.id);
@@ -157,6 +160,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
       return `<div class="achievement ${got ? 'got' : ''}"><span class="medal" aria-hidden="true">${shown ? esc(a.name.replace(/^(The|A|An) /, '').slice(0, 1)) : '?'}</span><div><b>${shown ? esc(a.name) : 'A secret'}</b><br><span class="small">${shown ? esc(a.text) : 'Keep going.'}</span></div></div>`;
     }).join('')}</div>`;
 
+  // Market tab: the fence and Leo's stash.
   const collector = collectorWants(p);
   const office = p.rooms.fence ? ` My office takes ${p.rooms.fence * 5}% less off you.` : '';
   const total = p.stash.reduce((n, s) => n + priceOf(p, s), 0);
@@ -200,6 +204,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
       </div>
     </div>`;
 
+  // Lair tab: rooms, trophies and letters.
   const rooms = ROOMS.map((r) => {
     const tier = p.rooms[r.id];
     const cost = upgradeCost(p, r.id);
@@ -229,10 +234,12 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
     ${letters}
     ${p.rooms.trophy ? `<h2 class="section">Trophy Room</h2>${trophies ? `<ul class="trophies">${trophies}</ul>` : '<p class="small">Empty shelves, waiting for centrepieces.</p>'}` : ''}`;
 
+  // Papers tab: old front pages.
   const papers = p.papers.length
     ? `<div class="clippings">${p.papers.map((pp, i) => `<button class="paper-link clipping" data-paper="${i}" style="--tilt:${tilt(`paper${pp.day}`, 2.5)}deg"><span class="clip-mast">${MASTHEAD}</span><span class="small">Day ${pp.day} · ${esc(pp.place)}</span><b>${esc(pp.headline)}</b></button>`).join('')}</div>`
     : '<p class="hand">No front pages yet.</p>';
 
+  // Show the chosen tab and wire up its buttons.
   const body = { heists, leo, market, lair: lairTab, papers }[tab];
   const names: Record<LairTab, string> = {
     heists: 'Heists',
@@ -265,7 +272,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   );
   on(el, '[data-tab]', (e) => lair(p, cb, (e.currentTarget as HTMLElement).dataset.tab as LairTab));
   on(el, '[data-job]', (e) => cb.onHeist(cb.jobs[Number((e.currentTarget as HTMLElement).dataset.job)]));
-  // Selling: the piece slides over to the fence, the till rings, Catnip pops up, then the books update.
+  // Selling animation: item slides to the fence, till rings, then the totals update.
   const sellOne = (ware: HTMLElement | null, then: () => void, delay = 0) => {
     window.setTimeout(() => {
       if (ware) {
@@ -298,7 +305,7 @@ export function lair(p: Profile, cb: LairCallbacks, tab: LairTab = 'heists'): vo
   on(el, '#lair-quit', cb.onQuit);
   on(el, '#lair-settings', cb.onSettings);
 }
-/** The lair, placeholder art that fixes itself up as rooms are built: boards come off, lights go on, a neon sign. */
+/** The lair picture, which looks better as rooms are built. */
 function lairSvg(condition: number, mailbox: boolean): string {
   const c = condition;
   const wall = c > 0.5 ? '#5b5170' : '#4a3f4f';

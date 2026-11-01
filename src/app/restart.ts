@@ -22,6 +22,7 @@ export function askRestart(): void {
     }
   }, 3050);
 }
+/** Starts the current heist again from the beginning. */
 export function restart(): void {
   game.restartArmed = 0;
   $('restart').textContent = 'Restart';

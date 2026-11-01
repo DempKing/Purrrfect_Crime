@@ -33,7 +33,7 @@ export function boxHere(t: Point): 'panel' | 'fuse' | null {
   if (tile === 'fuse' && !game.state.lasersOff) return 'fuse';
   return null;
 }
-/** The piece of loot on a tile, if it's still there to be had (in a case, on a plinth, in a safe, under a light). */
+/** Index of loot still on this tile, or null. */
 export function lootHere(t: Point): number | null {
   if (!game.level || !game.state || game.state.layer !== 'floor') return null;
   const tile = tileNow(game.level, game.state, t.x, t.y);
@@ -41,7 +41,7 @@ export function lootHere(t: Point): number | null {
   const li = lootAt(game.level, t.x, t.y);
   return li >= 0 && !lootGone(game.state, li) ? li : null;
 }
-/** Where Leo would stand to work on a tile this turn: where he is if he can, else the cheapest, safest spot beside it. */
+/** Where Leo would stand to work on a tile this turn (where he is, or the best spot beside it). */
 export function standFor(target: Point): { at: Point; ap: number; danger: number } | null {
   const near = (p: Point) => Math.max(Math.abs(p.x - target.x), Math.abs(p.y - target.y)) === 1;
   if (near(game.state.leo)) return { at: { ...game.state.leo }, ap: 0, danger: 0 };
@@ -55,7 +55,7 @@ export function standFor(target: Point): { at: Point; ap: number; danger: number
       const ap = moveAp(game.state, cost);
       if (ap >= game.state.ap) continue; // leave a point for the job itself
       const d = danger(game.level, game.state, p);
-      // Never a spot where he'd be caught if there's another; then the cheapest; then the least noticed.
+      // Prefer: not caught, then cheapest, then least noticed.
       if (
         !best ||
         (d < 2 && best.d === 2) ||
@@ -65,7 +65,7 @@ export function standFor(target: Point): { at: Point; ap: number; danger: number
     }
   return best && { at: best.at, ap: best.ap, danger: best.d };
 }
-/** The reachable tile nearest a target, for when it's too far to get to and work on this turn. */
+/** The reachable tile closest to a target that's too far to work on this turn. */
 function closerTo(target: Point): Point | null {
   let best: Point | null = null;
   let bd = Infinity;
@@ -84,6 +84,7 @@ function closerTo(target: Point): Point | null {
   }
   return best;
 }
+/** Shorter labels for actions on the loot tag. */
 const VERBS: Partial<Record<Action['kind'], string>> = {
   take: 'Steal it',
   'pick-case': 'Pick the lock',
@@ -126,7 +127,7 @@ export function openLootMenu(target: Point): void {
         run: () =>
           walkTo(stand.at, () => {
             doThere(target, a.kind);
-            // Not done yet (a lock that takes more than one go): the tag comes straight back for the next.
+            // Locks that take several goes: reopen the tag for the next go.
             if (
               lootHere(target) !== null &&
               game.state.status === 'playing' &&
@@ -194,6 +195,7 @@ export function placeLootMenu(): void {
   box.style.left = `${Math.max(8, x)}px`;
   box.style.top = `${Math.max(8, Math.min(window.innerHeight - h - 8, p.y - h / 2))}px`;
 }
+/** Closes the loot tag. */
 export function closeLootMenu(): void {
   game.lootMenu = null;
   game.lootChoices = [];
@@ -214,11 +216,12 @@ function putDown(li: number): void {
 export function bagOpen(): boolean {
   return !$('bag').classList.contains('hidden');
 }
+/** Opens or closes the bag panel. */
 export function toggleBag(open = !bagOpen()): void {
   $('bag').classList.toggle('hidden', !open);
   if (open) renderBag();
 }
-/** The bag's contents: each piece with its picture, worth and size, and a button to put it down. */
+/** Fills the bag panel: each item with picture, value, size and a Put down button. */
 export function renderBag(): void {
   if (!bagOpen() || !game.state) return;
   const used = inventoryUsed(game.level, game.state);

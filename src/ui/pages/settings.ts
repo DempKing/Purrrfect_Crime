@@ -6,7 +6,7 @@ import { escToClose } from './title';
 
 // Settings
 
-/** The settings panel. Every change applies at once (`onChange`); `onClose` goes back to whatever was open. */
+/** The settings panel. Changes apply immediately; `onClose` returns to the previous screen. */
 export function settingsScreen(st: Settings, onChange: (s: Settings) => void, onClose: () => void): void {
   const slider = (id: keyof Settings, label: string) =>
     `<label class="setting"><span>${label}</span><input type="range" min="0" max="100" step="5" data-range="${id}" value="${Math.round((st[id] as number) * 100)}" aria-label="${label}"><output>${Math.round((st[id] as number) * 100)}%</output></label>`;

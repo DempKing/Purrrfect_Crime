@@ -21,6 +21,7 @@ import { esc } from './common';
 // Controls: what every key, click and button does, and the player's own bindings
 
 type ControlsTab = 'keys' | 'mouse' | 'pad';
+/** Mouse and touch controls (not remappable). */
 const MOUSE_CONTROLS: [string, string][] = [
   ['Hover a tile', 'See the way there and what it would bring'],
   ['Click a tile', 'Move Leo there, or do what’s there'],
@@ -29,7 +30,7 @@ const MOUSE_CONTROLS: [string, string][] = [
   ['Tap (touch)', 'Pick a tile; tap it again to move there'],
   ['Buttons on screen', 'Camera, zoom, bag, end turn, restart'],
 ];
-/** The controls, one tab each for the keyboard, the mouse (or touch) and a controller; keys and buttons can be changed. */
+/** HTML for the Controls section: a tab each for keyboard, mouse/touch and controller. */
 function controlsHtml(st: Settings, tab: ControlsTab, waiting: string | null, note: string): string {
   const tabs: [ControlsTab, string][] = [
     ['keys', 'Keyboard'],
@@ -144,7 +145,7 @@ export function controlsSection(
       note = '';
       render(waiting);
       if (waiting.startsWith('pad:')) {
-        // The button that was pressed to get here mustn't count: wait for it to be let go of first.
+        // Wait a moment so the button that opened this isn't captured.
         window.setTimeout(() => waiting && capturePadButton(onButton), 250);
         window.addEventListener('keydown', onKey, true); // Esc still cancels
       } else window.addEventListener('keydown', onKey, true);

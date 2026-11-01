@@ -9,7 +9,7 @@ import { leo } from './actors';
 
 /** 1 shows the whole map; more is closer in, following Leo. */
 
-/** How far the player has panned the camera away from Leo (WASD), in the world's own pixels. */
+/** How far the player has panned the camera away from Leo. */
 export const pan = { x: 0, y: 0 };
 /** WASD keys held down right now. */
 export const panKeys = new Set<string>();
@@ -18,10 +18,11 @@ export function recentre(): void {
   pan.x = 0;
   pan.y = 0;
 }
+/** Zooms in (k > 1) or out (k < 1). */
 export function zoomBy(k: number): void {
   game.zoom = Math.max(1, Math.min(ZOOM_MAX, game.zoom * k));
 }
-/** Turns the camera so it looks over Leo's shoulder: he's nearest the camera, the level stretches away. */
+/** Turns the camera to look over Leo's shoulder. */
 export function cameraBehindLeo(): void {
   let best = 0;
   let bestDepth = -Infinity;
@@ -46,6 +47,7 @@ export function cameraBehindLeo(): void {
 export const app = new Application();
 export const world = new Container();
 export const view = new HeistView();
+/** Turns the camera 90 degrees (1 = left, -1 = right). */
 export function turnCamera(dir: 1 | -1): void {
   closeLootMenu();
   recentre();
@@ -56,10 +58,7 @@ export function turnCamera(dir: 1 | -1): void {
   }
 }
 
-/**
- * Frames the heist between the HUD bars. At zoom 1 the whole map fits, whatever the camera angle; zoomed in,
- * the camera follows Leo, but never wanders off the map.
- */
+/** Positions and scales the world between the HUD bars: whole map at zoom 1, following Leo when zoomed in. */
 export function fit(dt = 0): void {
   const w = app.screen.width;
   const h = app.screen.height;
@@ -91,7 +90,7 @@ export function fit(dt = 0): void {
   const whole = Math.min((w - 24) / (x1 - x0), (h - top - bottom) / (y1 - y0), 1.5);
   game.zoomNow += (game.zoom - game.zoomNow) * (dt ? 1 - Math.exp(-dt * 8) : 1);
   const scale = Math.min(whole * game.zoomNow, 2.2);
-  // Follow Leo, easing; the more zoomed in, the more the view centres on him rather than the map.
+  // Ease towards Leo; the more zoomed in, the more centred on him.
   const leoAt = project(view.proj, leo.x, leo.y, 30);
   const want = { x: Math.max(x0, Math.min(x1, leoAt.x)), y: Math.max(y0, Math.min(y1, leoAt.y)) };
   if (!game.focus || !dt) game.focus = { ...want };
@@ -116,7 +115,7 @@ export function fit(dt = 0): void {
   const halfH = (h - top - bottom) / 2 / scale;
   cx = (x1 - x0) / 2 > halfW ? Math.max(x0 + halfW, Math.min(x1 - halfW, cx)) : (x0 + x1) / 2;
   cy = (y1 - y0) / 2 > halfH ? Math.max(y0 + halfH, Math.min(y1 - halfH, cy)) : (y0 + y1) / 2;
-  // Keep the pan to what the edges allowed, so holding a key against the edge doesn't wind up.
+  // Store the clamped pan, so holding a pan key at the edge doesn't build up.
   pan.x = cx - ((x0 + x1) / 2 + (game.focus.x - (x0 + x1) / 2) * t);
   pan.y = cy - ((y0 + y1) / 2 + (game.focus.y - (y0 + y1) / 2) * t);
   world.scale.set(scale);

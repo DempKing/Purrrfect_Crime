@@ -9,6 +9,7 @@ import { banner, moveCursor, openSettingsInHeist, say } from './hud';
 import { bagOpen, toggleBag } from './loot';
 import { doEndTurn } from './turn';
 
+/** Connects controller presses to game actions. */
 export function bindGamepad(): void {
   let hudPad = false;
   const blur = () => (document.activeElement as HTMLElement | null)?.blur?.();

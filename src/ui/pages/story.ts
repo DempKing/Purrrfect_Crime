@@ -18,7 +18,7 @@ export function toast(a: Achievement): void {
 }
 // The narrator, between heists
 
-/** A sequence of lines (the narrator's, unless someone else is speaking) with a Next button; the last button runs `done`. */
+/** A scene of dialogue lines with a Next button; the last button runs `done`. */
 export function narratorScene(
   lines: string[],
   last: string,
@@ -56,6 +56,7 @@ export function legendaryCard(done: () => void): void {
   );
   on(el, '#legend-ok', done);
 }
+/** The credits. */
 export const CREDITS: [string, string][] = [
   ['Leo Tuxedo', 'as himself'],
   ['NightClaw', 'retired'],
@@ -73,7 +74,7 @@ function musicCredits(): { track: string; artist: string; license: string }[] {
       .MUSIC_CREDITS ?? []
   );
 }
-/** The end titles. From the title menu (`fromMenu`), with a Back button and Esc; at the end of the story, on to the paper. */
+/** The credits (with a Back button when opened from the title menu). */
 export function credits(done: () => void, fromMenu = false): void {
   const el = show(
     `<div class="credits${fromMenu ? ' rolling' : ''}"><div class="roll">

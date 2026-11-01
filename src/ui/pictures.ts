@@ -37,6 +37,7 @@ export function rooftopPicture(prize: string): string {
   return win_leo_seed;
 }
 
+/** Rooftop pictures of each rival with the prize. */
 const RIVAL_ROOFTOP: Record<RivalId, string> = {
   luna: win_luna_moon,
   mittens: win_mittens_moon,
@@ -48,6 +49,7 @@ export function rivalRooftop(id: RivalId): string {
   return RIVAL_ROOFTOP[id];
 }
 
+/** Portraits of Leo and the rivals. */
 const PORTRAITS: Record<RivalId | 'leo', string> = {
   leo: cat_leo,
   luna: cat_luna,
@@ -55,6 +57,7 @@ const PORTRAITS: Record<RivalId | 'leo', string> = {
   sammy: cat_sammy,
   paws: cat_prof,
 };
+/** A portrait image tag. */
 export function portrait(who: RivalId | 'leo'): string {
   return PORTRAITS[who];
 }

@@ -8,13 +8,14 @@ import { computed } from './preview';
 import { say } from './hud';
 import { doThere, walkTo } from './moves';
 
-/** What clicking a tile does when it's something to interact with: the quiet option first. */
+/** The action a click on this tile would do (quiet options first), if any. */
 export function clickAction(tile: Point): Action | null {
   const here = actionsHere(game.level, game.state).filter(
     (a) => a.at.x === tile.x && a.at.y === tile.y && a.kind !== 'smash-case',
   );
   return here.find((a) => !a.blocked) ?? here[0] ?? null;
 }
+/** Clicking a tile: aim a gadget, open a loot tag, do an action, or walk there. */
 export function act(tile: Point): void {
   if (game.busy || game.state.status !== 'playing') return;
   if (game.targeting) {
@@ -25,7 +26,7 @@ export function act(tile: Point): void {
   if (lootHere(tile) !== null) return openLootMenu(tile);
   const a = clickAction(tile);
   if (a) return runAction(a);
-  // The finale: click NightClaw from across the hall and Leo creeps up behind him, then taps him on the shoulder.
+  // Finale: clicking NightClaw walks Leo behind him and taps.
   const nc = game.level.def.finale
     ? game.state.guards.find((g) => g.kind === 'nightclaw' && g.x === tile.x && g.y === tile.y)
     : undefined;

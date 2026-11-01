@@ -14,6 +14,7 @@ export interface TitleCallbacks {
   onSettings: () => void;
   onCredits: () => void;
 }
+/** One line describing a save slot. */
 function slotSummary(p: Profile): string {
   const where = !p.tutorialDone
     ? 'In the tutorial'
@@ -22,10 +23,7 @@ function slotSummary(p: Profile): string {
       : `Day ${p.day} · ${p.heists} heist${p.heists === 1 ? '' : 's'}`;
   return `Level ${playerLevel(p.xp)} · ${where}<br>${p.catnip.toLocaleString('en-US')} Catnip${p.legendary ? ' · <b>Legendary</b>' : ''}`;
 }
-/**
- * The title: the logo over the key art, and a menu (Continue, New Game, Load), with Credits in the bottom left
- * and Settings in the bottom right. Load and "which game to replace" open as a panel over it; Esc closes it.
- */
+/** The title screen: Continue / New Game / Load, plus Credits and Settings. */
 export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void {
   const saved = slots.some(Boolean);
   const last = cb.lastSlot !== null && slots[cb.lastSlot] ? cb.lastSlot : slots.findIndex(Boolean);
@@ -84,10 +82,7 @@ export function titleScreen(slots: (Profile | null)[], cb: TitleCallbacks): void
   on(el, '#title-credits', cb.onCredits);
   escToClose(el, () => !panel.classList.contains('hidden') && (closePanel(), true));
 }
-/**
- * Esc for whatever is open on a screen: `close` returns true if it closed something. The listener goes away with
- * the screen.
- */
+/** Lets Esc close something on a screen (`close` returns true if it did). */
 export function escToClose(el: HTMLElement, close: () => boolean | void): void {
   const onKey = (e: KeyboardEvent) => {
     if (!el.isConnected) return window.removeEventListener('keydown', onKey);

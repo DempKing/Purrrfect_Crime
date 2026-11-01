@@ -2,23 +2,28 @@
 import type { LootCategory } from '../../core/level';
 import { NIGHTCLAW_PICTURE } from '../pictures';
 
+/** The container all screens are drawn in. */
 const root = () => document.getElementById('screens')!;
+/** Escapes text for HTML. */
 export const esc = (t: string) => t.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+/** Formats a number as dollars. */
 export const money = (n: number) => `$${n.toLocaleString('en-US')}`;
+/** Formats Catnip (the currency) with its icon. */
 export const catnip = (n: number) => `<span class="nip">${n.toLocaleString('en-US')}</span>`;
-/** A small tilt for things laid on a desk or pinned to a board, the same for the same thing every time. */
+/** A small random-looking tilt, always the same for the same seed. */
 export const tilt = (seed: string, max = 1.6) => {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
   return (((h >>> 0) % 1000) / 1000 - 0.5) * 2 * max;
 };
+/** Display names for loot categories. */
 export const CATEGORY_NAMES: Record<LootCategory, string> = {
   jewel: 'Jewels',
   painting: 'Paintings',
   artefact: 'Artefacts',
   curiosity: 'Curiosities',
 };
-/** The narrator: an old grey cat in a trilby, placeholder until the generated portrait arrives. */
+/** The narrator's portrait. */
 export const NARRATOR_SVG = `<svg class="portrait" viewBox="0 0 64 64" aria-hidden="true">
   <circle cx="32" cy="34" r="22" fill="#8a8f9c"/><path d="M14 22 L18 4 L28 16Z M50 22 L46 4 L36 16Z" fill="#8a8f9c"/>
   <path d="M10 18 Q32 4 54 18 L50 22 Q32 14 14 22Z" fill="#2b2d35"/><rect x="18" y="8" width="28" height="10" rx="3" fill="#2b2d35"/>
@@ -28,8 +33,7 @@ export const NARRATOR_SVG = `<svg class="portrait" viewBox="0 0 64 64" aria-hidd
   <path d="M29 40 L35 40 L32 43Z" fill="#d98a9a"/><path d="M32 43 Q28 47 24 45 M32 43 Q36 47 40 45" stroke="#2b2d35" fill="none" stroke-width="1.5"/>
   <path d="M10 40 L22 41 M10 45 L22 43 M54 40 L42 41 M54 45 L42 43" stroke="#d8dbe2" stroke-width="1"/>
 </svg>`;
-/** Slick Whiskers, the fence: a raccoon in a trench coat and a fedora, his bandit mask doing the work of shades,
- * a gold tooth, a gold chain, and his ringed tail curled up behind the counter. */
+/** Slick Whiskers, the fence (a raccoon). */
 export const FENCE_SVG = `<svg viewBox="0 0 220 230" aria-hidden="true">
   <g stroke="#1c1233" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
     <path d="M178 228 C214 196 214 132 186 104 C176 96 166 104 172 114 C190 140 186 186 160 212Z" fill="#8d8899"/>
@@ -63,21 +67,26 @@ export const CARD_SVG = `<svg viewBox="0 0 120 76" class="card-svg" aria-hidden=
   <path d="M40 30 L58 38 L40 46Z M80 30 L62 38 L80 46Z" fill="#d8262f"/><circle cx="60" cy="38" r="4" fill="#a81b22"/>
   <text x="60" y="64" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#1b1b22">— L. T. —</text>
 </svg>`;
+/** Plays a screen sound (set by the game with setScreenSound). */
 export let sfx: (name: 'tick' | 'coin' | 'levelup' | 'click' | 'take' | 'sell') => void = () => {};
+/** Gives the screens a way to play sounds. */
 export function setScreenSound(fn: typeof sfx): void {
   sfx = fn;
 }
+/** Shows a screen with this HTML, replacing any other. */
 export function show(html: string, cls = ''): HTMLElement {
   const r = root();
   r.innerHTML = `<div class="screen ${cls}">${html}</div>`;
   r.classList.remove('hidden');
   return r.firstElementChild as HTMLElement;
 }
+/** Hides all screens. */
 export function hideScreens(): void {
   const r = root();
   r.innerHTML = '';
   r.classList.add('hidden');
 }
+/** Adds a click handler to every element matching `sel`. */
 export function on(el: HTMLElement, sel: string, fn: (e: Event) => void): void {
   el.querySelectorAll<HTMLElement>(sel).forEach((b) => b.addEventListener('click', fn));
 }

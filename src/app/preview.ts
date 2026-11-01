@@ -24,6 +24,7 @@ import { $ } from './common';
 import { view, world } from './camera';
 import { rival } from './actors';
 
+/** Reach, guard sight and footprints for the current state (cached until it changes). */
 export function computed() {
   if (!game.cache || game.cache.v !== game.version) {
     const vision = new Set<string>();
@@ -44,11 +45,11 @@ export function computed() {
   }
   return game.cache;
 }
-// What happens when the guards move: worked out a few tiles a frame, for every tile Leo can reach
+// Danger marks: the look-ahead, worked out a few tiles per frame.
 
-/** For each reachable tile: what walking there would bring, and, if it uses his last action point, the guards' turn after. */
+/** Look-ahead result for each reachable tile. */
 export const risk = new Map<string, Aftermath>();
-/** Works through the reachable tiles for a few milliseconds a frame, so the game never stutters. */
+/** Checks reachable tiles for a few ms each frame, so the game never stutters. */
 export function workOnRisk(): void {
   if (!game.inHeist || game.busy || game.state.status !== 'playing' || game.targeting) return;
   if (game.riskVersion !== game.version) {
@@ -58,7 +59,7 @@ export function workOnRisk(): void {
     for (const [k, cost] of computed().reach.cost) {
       if (!cost || moveAp(game.state, cost) > game.state.ap) continue;
       const [x, y] = k.split(',').map(Number);
-      // Only a move that spends Leo's last action point ends his turn there, so only then do the guards' turn count.
+      // Only a move using Leo's last AP ends the turn, so only then does the guards' turn count.
       game.riskQueue.push({ x, y, ends: moveAp(game.state, cost) >= game.state.ap });
     }
   }
@@ -68,11 +69,13 @@ export function workOnRisk(): void {
     risk.set(key(p.x, p.y), aftermath(game.level, game.state, p, p.ends));
   }
 }
+/** Everything to highlight on the map this frame. */
 export function overlay(): Overlay {
   const c = computed();
   const reach1 = new Set<string>();
   const reach2 = new Set<string>();
   const live = game.state.status === 'playing' && !game.busy;
+  // Aiming a gadget: show where it can go instead of Leo's reach.
   if (game.targeting && live) {
     const targets = abilityTargets(game.level, game.state, game.targeting);
     const target = game.selected ?? game.hover;
@@ -91,6 +94,7 @@ export function overlay(): Overlay {
       alerts: liveAlerts(),
     };
   }
+  // Split reachable tiles into 1 AP (blue) and 2 AP (yellow).
   if (live)
     for (const [k, cost] of c.reach.cost) {
       if (cost === 0) continue;
@@ -102,7 +106,7 @@ export function overlay(): Overlay {
   let path: Point[] = [];
   const pathDanger = new Map<string, number>();
   if (target && live) {
-    // Pointing at loot: show the way to where Leo would stand to get at it.
+    // The path to the hovered tile (for loot: to where Leo would stand), with danger per step.
     const goal = lootHere(target) !== null || boxHere(target) ? (standFor(target)?.at ?? target) : target;
     path = pathTo(c.reach, goal) ?? [];
     if (path.length && moveAp(game.state, c.reach.cost.get(key(goal.x, goal.y)) ?? 99) > game.state.ap)
@@ -111,10 +115,10 @@ export function overlay(): Overlay {
       const d = danger(game.level, game.state, p);
       if (d) pathDanger.set(key(p.x, p.y), d);
     }
-    // Two steps inside a motion-sensor zone in one move trips it.
+    // Two steps inside a motion sensor zone in one move trips it.
     const trip = motionTrip(game.level, game.state, path);
     if (trip > 0) for (const p of path.slice(trip)) pathDanger.set(key(p.x, p.y), 2);
-    // And where the walk ends: what the guards' turn would bring.
+    // Plus the look-ahead result where the walk ends.
     const end = path.length ? path[path.length - 1] : null;
     const r = end ? risk.get(key(end.x, end.y)) : undefined;
     if (end && r)
@@ -131,7 +135,7 @@ export function overlay(): Overlay {
     footprints: game.state.status === 'playing' ? c.footprints : [],
     path,
     pathDanger,
-    // The tile under the pointer is always outlined (in the colour of the walk there, if there is one).
+    // Always outline the tile under the pointer.
     hover: live ? target : null,
     targets: new Set(),
     rivalPath: game.state.status === 'playing' ? c.rivalPath : [],
@@ -139,7 +143,7 @@ export function overlay(): Overlay {
     alerts: liveAlerts(),
   };
 }
-/** While a rival is in the building but off screen, an arrow at the screen's edge points to them. */
+/** Arrow at the screen edge pointing to an off-screen rival. */
 export function placeRivalArrow(): void {
   const el = $('rival-arrow');
   const r = game.state?.rival;
@@ -184,6 +188,7 @@ export function placeRiskNote(): void {
   box.style.left = `${p.x}px`;
   box.style.top = `${p.y + 18}px`;
 }
+/** The map tile under a screen point. */
 export function tileUnder(clientX: number, clientY: number): Point | null {
   const local = world.toLocal({ x: clientX, y: clientY });
   const g = unproject(view.proj, local.x, local.y);

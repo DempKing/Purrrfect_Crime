@@ -1,25 +1,25 @@
-// Controller support, through the browser's Gamepad API (standard mapping: Xbox, PlayStation, Switch Pro and most
-// others). On the map the controller drives the same cursor the arrow keys do; anywhere there are buttons to press
-// (the menus, the loot tag, the bag, the caught card, or the heist's own buttons after View/Select) the D-pad moves
-// between them and A presses one.
+// Controller support (browser Gamepad API, standard mapping).
+// On the map the controller moves the cursor; in menus and panels the D-pad moves between buttons.
 //
+// Default buttons:
 //   D-pad / left stick   move the cursor (or between buttons)
-//   A                    go there / do what's there (or press the button)
+//   A                    go there / do what's there / press the button
 //   B                    cancel, close, back
 //   X                    end the turn
 //   Y                    the bag
 //   LB / RB              turn the camera
 //   LT / RT              zoom out / in
-//   right stick          pan the camera; click either stick to bring it back to Leo
-//   View / Select        the heist's buttons: actions, gadgets, Restart, Quit...
+//   right stick          pan the camera; click a stick to recentre on Leo
+//   View / Select        the heist's on-screen buttons
 //   Menu / Start         settings
 //
-// Those are the defaults: the player can rebind every button but the D-pad in Settings -> Controls (src/controls.ts).
+// All but the D-pad can be remapped in Settings -> Controls (src/controls.ts).
 
 import { actionForButton, type PadMap } from '../controls';
 
 /** While the settings wait for a button to bind, every press goes there instead. */
 let capture: ((b: number) => void) | null = null;
+/** Settings uses this to grab the next button press for remapping. */
 export function capturePadButton(fn: ((b: number) => void) | null): void {
   capture = fn;
 }
@@ -49,6 +49,7 @@ export interface PadHooks {
   pressed(): void;
 }
 
+/** D-pad button indexes. */
 const UP = 12,
   DOWN = 13,
   LEFT = 14,
@@ -59,6 +60,7 @@ const REPEAT = 130;
 
 const FOCUSABLE = 'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
+/** Is this element on screen and usable? */
 function visible(el: HTMLElement): boolean {
   if ((el as HTMLButtonElement).disabled) return false;
   const r = el.getBoundingClientRect();
@@ -67,7 +69,7 @@ function visible(el: HTMLElement): boolean {
   return st.visibility !== 'hidden' && st.display !== 'none';
 }
 
-/** The nearest button in a direction on screen, by centre; the first one (a primary, if any) when nothing is focused. */
+/** The nearest button in a direction (or the first/primary one if nothing is focused). */
 export function nextFocus(
   root: HTMLElement,
   from: Element | null,
@@ -100,6 +102,7 @@ export function nextFocus(
   return best;
 }
 
+/** Polls the controller every frame and turns presses into actions. */
 export function startGamepad(h: PadHooks): void {
   const prev: boolean[] = [];
   let heldDir = '';
