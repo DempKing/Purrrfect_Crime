@@ -3,6 +3,7 @@ export const WALL_H = 84;
 export const STUB_H = 12;
 /** How high the rafters are. */
 export const RAFTER_Z = 92;
+/** All the colours used for drawing. */
 export const COL = {
   carpetA: 0x4a2a3c,
   carpetB: 0x44263a,
@@ -33,8 +34,7 @@ export const COL = {
   motion: 0xff6a6a,
   beam: 0xd9a066,
 };
-// The overlay colours, and the colour-blind friendly set (Okabe-Ito): blue and yellow for reach, vermilion
-// for what guards see (hatched, so it doesn't rely on colour), reddish purple for cameras.
+// Overlay colours: the standard set and a colour-blind friendly set (Okabe-Ito).
 const STANDARD = {
   reach1: COL.reach1,
   reach2: COL.reach2,
@@ -44,6 +44,7 @@ const STANDARD = {
   danger: COL.danger,
   path: COL.path,
 };
+/** Colour-blind friendly overlay colours. */
 const COLOURBLIND = {
   reach1: 0x0072b2,
   reach2: 0xf0e442,
@@ -54,6 +55,7 @@ const COLOURBLIND = {
   path: 0xffffff,
 };
 export let hatchVision = false;
+/** Switches between the standard and colour-blind overlay colours. */
 export function setPalette(palette: 'standard' | 'colourblind'): void {
   Object.assign(COL, palette === 'colourblind' ? COLOURBLIND : STANDARD);
   hatchVision = palette === 'colourblind';

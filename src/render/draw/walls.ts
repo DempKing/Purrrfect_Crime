@@ -21,7 +21,7 @@ import { corners, diamond, diamondOutline, prism, tintColor } from './shapes';
 import { sprite } from './characters';
 import { WALL_H } from './style';
 
-/** A floor tile, textured. The texture is laid on the grid, so it turns with the camera. False until loaded. */
+/** A textured floor tile (false until the texture loads). */
 export function floorTile(view: HeistView, g: Graphics, x: number, y: number, skin: FloorSkin): boolean {
   const tex = surface(skin.tex);
   if (!tex) return false;
@@ -36,7 +36,7 @@ export function floorTile(view: HeistView, g: Graphics, x: number, y: number, sk
     .stroke({ width: 1, color: 0x000000, alpha: 0.22 });
   return true;
 }
-/** Now and then, something hangs on a wall face the camera can see: pictures, clocks, lifebuoys, fuse boxes. */
+/** Decorations on some visible wall faces: pictures, clocks, windows and so on. */
 export function wallDecor(
   view: HeistView,
   level: Level,
@@ -60,7 +60,7 @@ export function wallDecor(
     const h = tileHash(x, y, i);
     if (h > density) return;
     let pick = Math.floor((h / density) * choices.length);
-    // Windows only in outside walls, where there's a night outside them; outside walls get them half the time.
+    // Windows only on outside walls (half of them).
     const outside = x === 0 || y === 0 || x === level.w - 1 || y === level.h - 1;
     if (outside && choices.includes('spr_window') && tileHash(x, y, i + 20) < 0.5)
       pick = choices.indexOf('spr_window');
@@ -101,7 +101,7 @@ export function wallDecor(
         const pic = flatSpec && flat(name as FlatName);
         const model = flatSpec ? undefined : prop(name as PropName);
         if (!pic && !model) return;
-        // How tall it is on the wall: a flat piece's picture keeps its proportions (58.8 px of height a tile).
+        // Height on the wall, keeping the picture's proportions.
         const tall =
           pic && flatSpec ? (flatSpec.width * 58.8 * pic.height) / pic.width : (model?.height ?? 0);
         const middle = flatSpec ? flatSpec.z : 50;
@@ -136,11 +136,7 @@ export function wallDecor(
     });
   });
 }
-/**
- * A clock drawn on a wall face, in the wall's own plane (so the face is foreshortened like the wall): a Roman
- * face, a skeleton of turning gears, an odd one with thirteen hours and hands going their own ways, or a
- * pendulum clock. `size` scales it; `seed` sets its hands and speed, so no two agree on the time.
- */
+/** A clock on a wall face (one of four styles). `seed` sets its time and speed so no two match. */
 export function clockFace(
   view: HeistView,
   g: Graphics,
@@ -210,7 +206,7 @@ export function clockFace(
     hand(3.2, t * 0.1, 0.9, shade(0x1a1a1a));
     hand(4.2, t * 1.1, 0.6, shade(0x1a1a1a));
   } else if (kind === 'pclock_odd') {
-    // Thirteen hours, three hands, one of them going backwards, and an eye where the pin should be.
+    // The odd clock: 13 hours, one hand going backwards.
     g.poly([0, -11, 9, -5, 10, 5, 0, 11, -10, 5, -9, -5])
       .fill({ color: shade(0x3a2a4a) })
       .stroke({ width: 1, color: shade(0xc9a24a) });
@@ -241,7 +237,7 @@ export function clockFace(
   }
   g.restore();
 }
-/** A flat picture laid on a wall face (facing n), `width` tiles across, its middle `middle` px up. */
+/** A flat picture on a wall face, `width` tiles wide, centred `middle` px up. */
 export function onWall(
   view: HeistView,
   g: Graphics,
@@ -271,6 +267,7 @@ export function onWall(
   g.texture(tex, tint, 0, 0, tex.width, tex.height);
   g.restore();
 }
+/** A vent grate in the floor. */
 export function grate(view: HeistView, g: Graphics, x: number, y: number): void {
   diamond(view, g, x, y, 0.32, 0x14161f, 1);
   for (let i = -2; i <= 2; i++) {
@@ -279,6 +276,7 @@ export function grate(view: HeistView, g: Graphics, x: number, y: number): void 
     g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1.5, color: 0x8a90a8, alpha: 0.9 });
   }
 }
+/** A door; its knob turns green once Leo has started picking it. */
 export function door(
   view: HeistView,
   g: Graphics,
@@ -292,11 +290,7 @@ export function door(
   const sp = project(view.proj, x + 0.5, y + 0.5, h * 0.45);
   g.circle(sp.x, sp.y, 4).fill({ color: picks > 0 ? 0x9ff0c8 : 0xf2c46b });
 }
-/**
- * A control box mounted on every face of the wall that looks into the room: the CCTV box (a little screen of
- * camera feeds) or the power box (a breaker lever under a lightning sign). Both pulse a little until they're
- * used; then the screen goes dark, or the lever drops and the light goes red.
- */
+/** A control box on the wall: the camera panel (screens) or the fuse box (lever). Changes look once used. */
 export function controlBox(
   view: HeistView,
   g: Graphics,
@@ -323,7 +317,7 @@ export function controlBox(
       ty = -ty;
     }
     const along = project(view.proj, bx + tx, by + ty, 46);
-    // Local units: game pixels on the wall, x along it, y down it; the box's middle 46 px up the wall.
+    // Draw in the wall face's own coordinates (x along, y down).
     const m = new Matrix((along.x - o.x) / 58.8, (along.y - o.y) / 58.8, 0, 1, o.x, o.y);
     const glow = off ? 0 : 0.35 + Math.sin(view.time * 3 + x + y) * 0.2;
     g.save();
@@ -359,7 +353,7 @@ export function controlBox(
       });
       g.rect(-2, 7, 11, 4).fill({ color: 0x1c1233 });
     } else {
-      // A lightning sign, and the breaker lever: up while the power's on, down once Leo has thrown it.
+      // Fuse box: lever up while the power is on, down once cut.
       g.poly([-1, -16, -7, -6, -2, -6, -5, 2, 5, -9, 0, -9, 3, -16])
         .fill({ color: 0xffd23f })
         .stroke({ width: 1, color: 0x1c1233 });
@@ -379,6 +373,7 @@ export function plate(view: HeistView, g: Graphics, x: number, y: number): void 
   diamondOutline(view, g, x, y, 0x2a2e38, 1.5, 0.16, 0.9);
   diamond(view, g, x, y, 0.22, 0x8a90a0, 1);
 }
+/** Squeaky floorboards. */
 export function planks(view: HeistView, g: Graphics, x: number, y: number): void {
   for (const t of [0.33, 0.66]) {
     const a = project(view.proj, x + t, y + 0.05);

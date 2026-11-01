@@ -1,6 +1,5 @@
-// Sprites baked from the 3D models in art/models/ (tools/bake.mjs): each a strip of eight frames, the model
-// seen from the game's camera turned 0°, 45°, ... 315°. The view draws them in place of the grey-box shapes,
-// and falls back to those shapes until they've loaded.
+// Sprites baked from the 3D models (tools/bake.mjs): 8 frames each, one per 45 degrees of camera turn.
+// Until they load, plain shapes are drawn instead.
 import { Assets, Rectangle, Texture } from 'pixi.js';
 import type { FlatName } from './flats';
 import manifest from '../../art/sprites/manifest.json';
@@ -26,6 +25,7 @@ import wooden_crate_01 from '../../art/sprites/wooden_crate_01.webp';
 import wooden_crate_02 from '../../art/sprites/wooden_crate_02.webp';
 import wooden_military_crate from '../../art/sprites/wooden_military_crate.webp';
 
+/** Sprite files for each 3D prop. */
 const FILES = {
   ClassicConsole_01,
   fancy_picture_frame_01,
@@ -64,6 +64,7 @@ export interface Prop {
 
 const props = new Map<PropName, Prop>();
 
+/** A prop sprite (undefined until loaded). */
 export function prop(name: PropName): Prop | undefined {
   return props.get(name);
 }
@@ -96,7 +97,7 @@ export async function loadProps(): Promise<void> {
   );
 }
 
-/** Which of the eight frames shows a prop turned `turn` radians on the grid, with the view turned `angle`. */
+/** Which of the 8 frames to show for a prop, given its turn and the camera angle. */
 export function frameFor(turn: number, angle: number): number {
   return ((Math.round((turn + angle) / (Math.PI / 4)) % 8) + 8) % 8;
 }
@@ -106,6 +107,7 @@ export function frameFor(turn: number, angle: number): number {
 export type ClockFace = 'pclock_roman' | 'pclock_gears' | 'pclock_odd' | 'pclock_pendulum';
 export type WallPiece = PropName | FlatName | ClockFace;
 
+/** Wall decorations to pick from, by district. */
 export const WALL_DECOR: Record<string, WallPiece[]> = {
   'old-town': [
     'fancy_picture_frame_01',
@@ -152,5 +154,5 @@ export const LEVEL_WALL_DECOR: Record<string, WallPiece[]> = {
 /** Wall pieces that get a little brass picture light above them. */
 export const LIT_ON_WALL = new Set<PropName>(['fancy_picture_frame_01', 'fancy_picture_frame_02']);
 
-/** How often a wall face gets something on it: mostly one in five; the Clocktower is covered in clocks. */
+/** How often a wall face gets a decoration (1 in 5; more in the Clocktower). */
 export const DECOR_DENSITY: Record<string, number> = { 'l2-clocktower': 0.5 };

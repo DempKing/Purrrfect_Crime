@@ -14,6 +14,7 @@ import { COL, LOOT_COLORS, RAFTER_Z } from './style';
 import { lootName } from './overlays';
 import { sprite } from './characters';
 
+/** A glass display case with its loot (or empty / smashed). */
 export function displayCase(
   view: HeistView,
   g: Graphics,
@@ -64,6 +65,7 @@ export function displayCase(
       22,
     );
 }
+/** The centrepiece plinth, with the prize on it until taken. */
 export function plinth(
   view: HeistView,
   g: Graphics,
@@ -101,10 +103,7 @@ export function plinth(
     g.circle(sp.x, sp.y + 3.5, 2.5).fill({ color: 0xd8262f });
   }
 }
-/**
- * What stands under a ceiling light: a statue, a bust, a plant, on a pedestal or not, picked for the district
- * and the tile. Returns false (so the old standing lamp is drawn) until the sprites load.
- */
+/** The exhibit under a ceiling light (statue, bust, plant...). False until the sprites load. */
 export function exhibitUnderLight(
   view: HeistView,
   items: Drawable[],
@@ -158,11 +157,7 @@ export function exhibitUnderLight(
   });
   return true;
 }
-/**
- * A safe: a heavy steel box facing the room, with a door on its front (a big combination dial, a three-spoke
- * handle, hinges, rivets and a brass plate), green tumbler lights for each go of cracking it, and, once it's
- * open, the door swung wide on its hinge and the empty inside showing: the same thing the guards see.
- */
+/** A safe: dial and handle on the door, a green light per crack attempt, and the door swung open once cracked. */
 export function safe(
   view: HeistView,
   g: Graphics,
@@ -198,7 +193,7 @@ export function safe(
     ty = -ty;
   }
   const faceVisible = c * n.x - sn * n.y + (sn * n.x + c * n.y) > 0.3;
-  // The front face's own coordinates: game pixels, x along the face (left to right on screen), y down it.
+  // Draw in the front face's own coordinates (x across, y down).
   const o = project(view.proj, fx, fy, H / 2);
   const along = project(view.proj, fx + tx, fy + ty, H / 2);
   const m = new Matrix((along.x - o.x) / 58.8, (along.y - o.y) / 58.8, 0, 1, o.x, o.y);
@@ -261,7 +256,7 @@ export function safe(
     g.beginPath();
   }
   if (open) {
-    // The door, swung out wide on its hinge into the room: anyone walking past sees it at once.
+    // Open: the door swung out wide.
     const hinge = { x: fx - tx * 0.34, y: fy - ty * 0.34 };
     const swing = (105 * Math.PI) / 180;
     const dx = tx * Math.cos(swing) + n.x * Math.sin(swing);
@@ -409,6 +404,7 @@ export function paint(view: HeistView, g: Graphics, x: number, y: number): void 
   g.ellipse(c.x, c.y, 22, 10).fill({ color: col, alpha: 0.85 });
   g.ellipse(c.x - 8, c.y + 2, 6, 3).fill({ color: 0xffffff, alpha: 0.25 });
 }
+/** A ladder up to the rafters. */
 export function ladder(view: HeistView, g: Graphics, x: number, y: number): void {
   for (const side of [0.3, 0.7]) {
     const a = project(view.proj, x + side, y + 0.5, 0);
@@ -421,6 +417,7 @@ export function ladder(view: HeistView, g: Graphics, x: number, y: number): void
     g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 2, color: 0xa88458 });
   }
 }
+/** A rafter beam overhead. */
 export function drawBeam(view: HeistView, g: Graphics, x: number, y: number, alpha: number): void {
   prism(view, g, x + 0.3, y + 0.3, x + 0.7, y + 0.7, 6, 0x8a6a45, 0x6b4a2a, 0x553a20, alpha, RAFTER_Z - 8);
 }

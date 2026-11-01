@@ -1,5 +1,4 @@
-// Isometric projection with a camera that can turn. The angle is continuous, so turning between
-// the four 90° views animates smoothly and everything is drawn from the same tile data.
+// Isometric projection with a camera that can turn smoothly between the 4 views.
 
 export const TILE_W = 96;
 export const TILE_H = 48;
@@ -16,6 +15,7 @@ export interface Screen {
   depth: number; // larger is nearer the camera
 }
 
+/** Grid point turned by the camera angle. */
 export function rotate(p: Projector, x: number, y: number): { rx: number; ry: number } {
   const dx = x - p.cx;
   const dy = y - p.cy;
@@ -24,6 +24,7 @@ export function rotate(p: Projector, x: number, y: number): { rx: number; ry: nu
   return { rx: c * dx - s * dy, ry: s * dx + c * dy };
 }
 
+/** Grid point (and height z) to screen position, plus a depth for sorting. */
 export function project(p: Projector, x: number, y: number, z = 0): Screen {
   const { rx, ry } = rotate(p, x, y);
   return { x: ((rx - ry) * TILE_W) / 2, y: ((rx + ry) * TILE_H) / 2 - z, depth: rx + ry };

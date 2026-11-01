@@ -16,6 +16,7 @@ import spr_tank from '../../art/sprites/pics/spr_tank.webp';
 import spr_tanktall from '../../art/sprites/pics/spr_tanktall.webp';
 import spr_statue from '../../art/sprites/pics/spr_statue.webp';
 
+/** Picture files for the flat pictures. */
 const FILES = {
   wd_manor,
   wd_museum,
@@ -34,7 +35,7 @@ const FILES = {
 };
 export type FlatName = keyof typeof FILES;
 
-/** A wall piece: how wide it is (in tiles) and where its middle sits (px up the wall); lit ones get a picture light. */
+/** A wall picture: width in tiles, height of its middle, and whether it gets a picture light. */
 export const WALL_FLATS: Partial<Record<FlatName, { width: number; z: number; lit?: boolean }>> = {
   wd_manor: { width: 0.5, z: 50, lit: true },
   wd_museum: { width: 0.8, z: 48, lit: true },
@@ -59,10 +60,12 @@ export const STANDING_FLATS: Partial<Record<FlatName, number>> = {
 
 const textures = new Map<FlatName, Texture>();
 
+/** A flat picture (undefined until loaded). */
 export function flat(name: FlatName): Texture | undefined {
   return textures.get(name);
 }
 
+/** Loads all flat pictures. */
 export async function loadFlats(): Promise<void> {
   if (textures.size) return;
   await Promise.all(

@@ -6,12 +6,12 @@ import { surface, type WallSkin } from '../surfaces';
 import type { HeistView } from '../view';
 import { WALL_H } from './style';
 
-/** Props are lit like the floor they stand on: dim in the dark, brightest under a lamp. */
+/** Tint for something standing on x,y, matching the light there. */
 export function tintColor(view: HeistView, x: number, y: number): number {
   const l = view.light[y]?.[x] ?? 1;
   return l === 0 ? 0x7d84a0 : l === 1 ? 0xdcdbe6 : 0xffffff;
 }
-/** Outer walls on the two sides facing the camera are always cut down, so the room is never hidden. */
+/** Is this an outer wall on the camera's side? (Those are always drawn low.) */
 export function nearOuterWall(view: HeistView, level: Level, x: number, y: number): boolean {
   const c = Math.cos(view.proj.angle);
   const s = Math.sin(view.proj.angle);
@@ -23,10 +23,12 @@ export function nearOuterWall(view: HeistView, level: Level, x: number, y: numbe
     (y === level.h - 1 && faces(0, 1))
   );
 }
+/** The 4 screen corners of a rectangle on the grid, at height z. */
 export function corners(view: HeistView, x0: number, y0: number, x1: number, y1: number, z: number) {
   const p = view.proj;
   return [project(p, x0, y0, z), project(p, x1, y0, z), project(p, x1, y1, z), project(p, x0, y1, z)];
 }
+/** A filled tile diamond (inset by `inset`), with an optional outline. */
 export function diamond(
   view: HeistView,
   g: Graphics,
@@ -41,6 +43,7 @@ export function diamond(
   g.poly(c.flatMap((q) => [q.x, q.y])).fill({ color, alpha });
   if (line !== undefined) g.stroke({ width: 1, color: line, alpha: 0.6 });
 }
+/** The outline of a tile diamond. */
 export function diamondOutline(
   view: HeistView,
   g: Graphics,
@@ -54,7 +57,7 @@ export function diamondOutline(
   const c = corners(view, x + inset, y + inset, x + 1 - inset, y + 1 - inset, 0);
   g.poly(c.flatMap((q) => [q.x, q.y])).stroke({ width, color, alpha });
 }
-/** A box. Only the faces turned toward the camera are drawn, shaded by which way they face. */
+/** A box (only the faces towards the camera are drawn). */
 export function prism(
   view: HeistView,
   g: Graphics,
@@ -88,7 +91,7 @@ export function prism(
     const shade = rx > ry ? sideA : sideB;
     const face = [b[f.i].x, b[f.i].y, b[f.j].x, b[f.j].y, t[f.j].x, t[f.j].y, t[f.i].x, t[f.i].y];
     if (paper) {
-      // Papered: one copy of the texture across the face, its foot on the floor, full height at WALL_H.
+      // Textured wall: one copy of the texture per face.
       let l = b[f.i];
       let r = b[f.j];
       if (r.x < l.x) [l, r] = [r, l];

@@ -44,6 +44,7 @@ export interface Ripple {
   t: number; // 0..1 through the animation
 }
 
+/** The 4 straight directions. */
 export const NEIGHBOURS = [
   { x: 1, y: 0 },
   { x: 0, y: 1 },

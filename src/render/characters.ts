@@ -1,6 +1,5 @@
-// The drawn characters and loot pictures (art/models/anim_*.webp, loot_*.webp), prepared by tools/prep-art.mjs:
-// trimmed, scaled to the game, with each frame's feet marked. Three frames a character: standing, and the two
-// halves of a stride. The view animates them (see HeistView.figure).
+// Character and loot pictures (art/models/anim_*.webp, loot_*.webp), prepared by tools/prep-art.mjs.
+// Each character has 3 frames: standing and two stride frames (animated in draw/characters.ts).
 import { Assets, Texture } from 'pixi.js';
 import type { LootCategory } from '../core/level';
 import { lootIconUrl, lootSlug } from '../ui/lootIcons';
@@ -57,6 +56,7 @@ import loot_treasure_chest from '../../art/sprites/loot/treasure_chest.webp';
 import loot_vintage_suitcase from '../../art/sprites/loot/vintage_suitcase.webp';
 import loot_wicker_basket_02 from '../../art/sprites/loot/wicker_basket_02.webp';
 
+/** Picture files for each character's frames. */
 const CHAR_FILES = {
   leo: { idle: leo_idle, a: leo_a, b: leo_b },
   luna: { idle: luna_idle, a: luna_a, b: luna_b },
@@ -68,6 +68,7 @@ const CHAR_FILES = {
   robot: { idle: robot_idle, a: robot_a, b: robot_b },
   nightclaw: { idle: nightclaw_idle, a: nightclaw_a, b: nightclaw_b },
 };
+/** Picture files for loot, by loot name. */
 const LOOT_FILES: Record<string, string> = {
   Lantern_01: loot_Lantern_01,
   bell: loot_bell,
@@ -105,7 +106,7 @@ export interface CharFrame {
   ay: number;
 }
 
-/** Which picture each piece of loot has, where there is one; the rest keep their coloured gem. */
+/** Loot picture for each loot name, where one exists (others are drawn as a coloured gem). */
 const LOOT_PICTURES: Record<string, string> = {
   'The Tsar’s Clockwork Mouse': 'clockwork',
   'Silver Mouse Automaton': 'clockwork',
@@ -151,11 +152,12 @@ export function charImageUrl(name: CharName, frame: CharFrameName = 'idle'): str
   return CHAR_FILES[name][frame];
 }
 
+/** One frame of a character (undefined until loaded). */
 export function charFrame(name: CharName, frame: CharFrameName): CharFrame | undefined {
   return frames.get(`${name}_${frame}`);
 }
 
-/** The picture for a piece of loot, by its name: texture, size in game pixels, and tint. */
+/** A loot picture by name: texture, size and tint. */
 export function lootPicture(name: string): { tex: Texture; w: number; h: number; tint: number } | undefined {
   const own = loot.get(`named:${lootSlug(name)}`);
   if (own) return { ...own, tint: 0xffffff };
@@ -176,7 +178,7 @@ export function lootPictureUrl(name: string, category?: LootCategory): string {
 
 const icons = new Map<string, Texture>();
 
-/** Turns the drawn pictures for a heist's loot into textures, for the cases and plinths. */
+/** Loads the loot pictures a heist needs. */
 export async function loadLootIcons(list: { name: string; category: LootCategory }[]): Promise<void> {
   await Promise.all(
     list
@@ -196,6 +198,7 @@ export async function loadLootIcons(list: { name: string; category: LootCategory
   );
 }
 
+/** Loads all character pictures. */
 export async function loadCharacters(): Promise<void> {
   if (frames.size) return;
   const s = data.scale;

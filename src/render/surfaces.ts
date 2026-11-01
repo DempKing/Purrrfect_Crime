@@ -1,5 +1,4 @@
-// Floor and wall textures (art/models/tex_*, w_*, wall_*, prepared by tools/prep-art.mjs), and which each heist uses.
-// Floors repeat across the grid, so they turn with the camera; walls are papered one texture to a tile.
+// Floor and wall textures, and which ones each heist uses.
 import { Assets, type Texture } from 'pixi.js';
 import tex_marble from '../../art/sprites/tex/tex_marble.webp';
 import tex_carpet from '../../art/sprites/tex/tex_carpet.webp';
@@ -32,6 +31,7 @@ import wall_wood from '../../art/sprites/tex/wall_wood.webp';
 import wall_white from '../../art/sprites/tex/wall_white.webp';
 import wall_tile from '../../art/sprites/tex/wall_tile.webp';
 
+/** Texture files. */
 const FILES = {
   tex_marble,
   tex_carpet,
@@ -97,6 +97,7 @@ const AQUA: FloorSkin = { tex: 'tex_aqua', tiles: 2 };
 const ROOF: FloorSkin = { tex: 'ext_roof', tiles: 2 };
 const GRASS: FloorSkin = { tex: 'ext_grass', tiles: 2 };
 
+/** Shorthand for a wall texture with its top colour. */
 const W = (tex: SurfaceName, top: number): WallSkin => ({ tex, top });
 const MUSEUM = W('w_museum', 0xd8cdb4);
 const MANOR = W('w_manor', 0x6a2a2e);
@@ -113,6 +114,7 @@ const DISTRICT_LOOKS: Record<string, Look> = {
   downtown: { floor: CARPET, marble: MARBLE, wall: MARBLE_WALL },
   nightclaw: { floor: CARPET, marble: CHECKER, wall: GOTHIC },
 };
+/** Levels with their own floor or wall textures. */
 const LEVEL_LOOKS: Record<string, Partial<Look>> = {
   'l2-clocktower': { floor: WOOD, wall: GOTHIC },
   'l3-pawnbroker': { floor: WOOD, wall: W('wall_wallpaper', 0x6e1f22) },
@@ -133,6 +135,7 @@ const LEVEL_LOOKS: Record<string, Partial<Look>> = {
   'nc-lair': { floor: STONE, marble: CHECKER, wall: W('w_lair', 0x2e2838) },
 };
 
+/** The floor and wall textures for a level. */
 export function lookFor(district: string, levelId: string): Look {
   return { ...(DISTRICT_LOOKS[district] ?? DISTRICT_LOOKS['old-town']), ...LEVEL_LOOKS[levelId] };
 }
@@ -142,10 +145,12 @@ export const PLATE: FloorSkin = { tex: 'dec_plate', tiles: 1 };
 
 const textures = new Map<SurfaceName, Texture>();
 
+/** A texture (undefined until loaded). */
 export function surface(name: SurfaceName): Texture | undefined {
   return textures.get(name);
 }
 
+/** Loads all textures. */
 export async function loadSurfaces(): Promise<void> {
   if (textures.size) return;
   await Promise.all(

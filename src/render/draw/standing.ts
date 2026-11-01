@@ -39,7 +39,7 @@ import { drawGuard, drawLeo, drawNightClaw, drawRival, drawRobo, sprite, zzz } f
 
 const WALLISH: Tile[] = ['wall', 'pillar', 'stack', 'door', 'keydoor', 'vault', 'panel', 'fuse', 'switch'];
 
-/** Walls, pillars, doors and control boxes. Walls near Leo (or the rival) drop to stubs so you can see past. */
+/** Walls, pillars, doors and control boxes. Walls in front of Leo (or the rival) drop to stubs. */
 function wallItem(
   view: HeistView,
   fr: Frame,
@@ -233,7 +233,7 @@ export function characterItems(
   const items: Drawable[] = [];
   const at = (a: Actor) => project(fr.p, a.x, a.y).depth + 0.05;
 
-  // Leo rises to the rafters (or comes down) smoothly, and ducks into a crate he's hiding in.
+  // Ease Leo up to the rafters / down, and into a crate he's hiding in.
   const liftTo = fr.inRafters ? RAFTER_Z - 6 : 0;
   const climbing = Math.abs(liftTo - view.leoLift) > 1;
   view.leoLift += Math.max(-fr.dt * 170, Math.min(fr.dt * 170, liftTo - view.leoLift));

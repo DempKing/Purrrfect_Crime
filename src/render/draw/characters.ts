@@ -10,10 +10,8 @@ import { COL } from './style';
 import { mark } from './overlays';
 
 /**
- * A drawn character, animated from its three frames: breathing while it stands; striding (frames a and b in
- * turn, with a bob) to walk; leaning in and bounding to run; crouched low to sneak through the dark; flat out
- * to crawl through a vent; stretched along the arc of a pounce; swaying side to side to climb; and fidgeting
- * fast, head down, while Leo works at a lock or a case. Returns where its head is, or null until the art loads.
+ * Draws a character from its 3 frames, animated by gait: standing, walk, run, sneak, crawl, pounce, climb,
+ * and fidgeting while Leo works a lock. Returns where its head is (null until the art loads).
  */
 export function figure(
   view: HeistView,
@@ -118,7 +116,7 @@ export function figure(
   const scale = o.scale ?? 1;
   const dir = a.flip ? 1 : -1; // which way they face on screen
   const by = s.y - a.bob + dy;
-  // A shadow on the floor (or the duct, in the vents), smaller as the character leaves the ground.
+  // Shadow underneath, smaller the higher the character is.
   if (o.crawl) g.ellipse(s.x, s.y - 4, 26, 13).stroke({ width: 2, color: COL.duct, alpha: 0.9 });
   else
     g.ellipse(s.x, s.y, 18 * scale * (gait === 'crawl' ? 1.3 : 1), 8 * scale).fill({
@@ -165,8 +163,7 @@ export function actorTint(view: HeistView, a: Actor, leo = false): number {
   const l = view.light[Math.floor(a.y)]?.[Math.floor(a.x)] ?? 1;
   return l === 0 ? (leo ? 0x8c93b8 : 0x8a90aa) : l === 1 ? 0xeeeef4 : 0xffffff;
 }
-/** A baked sprite standing at (x, y) on the grid, `z` px up, turned `turn` radians (0: its front faces grid +y).
- * Returns false, drawing nothing, until the sprites have loaded. */
+/** Draws a baked 3D sprite at x,y (z px up, turned `turn` radians). False until the sprites load. */
 export function sprite(
   view: HeistView,
   g: Graphics,
@@ -186,7 +183,7 @@ export function sprite(
   g.setFillStyle({ color: 0xffffff, alpha: 1 });
   return true;
 }
-/** A Robo-Guard: a bulldog-shaped tin can on a wheel, with a red heat-scanner visor (dark when unpowered). */
+/** A Robo-Guard (visor goes dark when powered down). */
 export function drawRobo(
   view: HeistView,
   g: Graphics,
@@ -204,6 +201,7 @@ export function drawRobo(
       .stroke({ width: 2, color: 0x9aa3b5 });
   } else mark(view, g, r.x, r.top, guard.mode === 'searching' || grinning ? '!' : '', 0xff3b30, 0xffd23f);
 }
+/** Floating Zs over a sleeping character. */
 export function zzz(view: HeistView, g: Graphics, a: Actor, top?: number): void {
   const s = project(view.proj, a.x, a.y);
   for (let i = 0; i < 3; i++) {
@@ -218,6 +216,7 @@ export function zzz(view: HeistView, g: Graphics, a: Actor, top?: number): void 
       .stroke({ width: 2, color: 0xd8e4ff, alpha: 1 - t });
   }
 }
+/** Where a character's face is on screen. */
 export function faceSprite(view: HeistView, a: Actor): { x: number; y: number } {
   const d = DIRS[a.facing];
   return screenDir(view.proj, d.x, d.y);
@@ -232,7 +231,7 @@ export function drawLeo(view: HeistView, g: Graphics, a: Actor, inVent: boolean,
     hide: view.leoHide,
   });
 }
-/** A rival thief: a cat in their own colours, with a name tag, and the prize if they've got it. */
+/** A rival thief, with a name tag and the prize if they have it. */
 export function drawRival(view: HeistView, g: Graphics, a: Actor, id: RivalId, prize: boolean): void {
   const r = figure(view, g, id === 'paws' ? 'prof' : id, a, { tint: actorTint(view, a), scale: 0.97 });
   if (!r) return;
@@ -246,7 +245,7 @@ export function drawRival(view: HeistView, g: Graphics, a: Actor, id: RivalId, p
     alpha: 0.85,
   });
 }
-/** NightClaw: a tall, lean old black cat in a long coat and top hat, grey at the muzzle, with gold eyes. */
+/** NightClaw. */
 export function drawNightClaw(view: HeistView, g: Graphics, a: Actor, guard: Guard, grinning: boolean): void {
   const r = figure(view, g, 'nightclaw', a, { tint: actorTint(view, a) });
   if (!r) return;
@@ -260,7 +259,7 @@ export function drawNightClaw(view: HeistView, g: Graphics, a: Actor, guard: Gua
     0xd9b8ff,
   );
 }
-/** A guard: a bulldog (a guard dog for sniffers), the captain with a gold star. Shows ? when suspicious, ! when searching. */
+/** A guard. Shows ? when suspicious and ! when searching. */
 export function drawGuard(view: HeistView, g: Graphics, a: Actor, guard: Guard, grinning: boolean): void {
   const sniffer = guard.kind === 'sniffer';
   const r = figure(view, g, sniffer ? 'dog' : 'guard', a, {

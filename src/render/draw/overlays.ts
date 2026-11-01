@@ -7,10 +7,7 @@ import type { HeistView } from '../view';
 import { COL } from './style';
 import { diamondOutline } from './shapes';
 
-/**
- * A view cone on the floor: a fan of rays from the watcher, each stopping at the first thing that blocks
- * sight, so the cone hugs corners and doorways the way the guard's eyes do. A brighter edge outlines it.
- */
+/** A view cone: a fan of rays, each stopping at the first thing that blocks sight. */
 export function viewCone(
   view: HeistView,
   g: Graphics,
@@ -27,7 +24,7 @@ export function viewCone(
   const base = Math.atan2(d.y, d.x);
   const half = (SIGHT_HALF_ANGLE * Math.PI) / 180;
   const rays = 28;
-  // The rays only change when the watcher moves or turns, or the building changes (a door opens): cache them.
+  // Rays only change when the watcher moves/turns or a door opens, so cache them.
   const id = `${x.toFixed(2)},${y.toFixed(2)},${facing},${range},${s.turn},${s.ap},${s.smashed.length}`;
   let ends = view.coneCache.get(id);
   if (!ends) {
@@ -64,7 +61,7 @@ export function viewCone(
       .stroke({ width: 2, color, alpha: 0.55, join: 'round' });
   else g.poly(pts).stroke({ width: 1.5, color, alpha: 0.35 + Math.sin(view.time * 4) * 0.1, join: 'round' });
 }
-/** Who noticed what: a pulsing ring on the spot, a dashed line from the guard or camera, and a ring round them. */
+/** Who-noticed-what marker: a pulsing ring on the spot and a dashed line back to the guard or camera. */
 export function drawAlert(view: HeistView, g: Graphics, a: Notice): void {
   const color = a.kind === 'spotted' ? COL.warn : COL.danger;
   const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 160);
@@ -85,10 +82,7 @@ export function drawAlert(view: HeistView, g: Graphics, a: Notice): void {
   g.stroke({ width: 3, color, alpha: 0.9, cap: 'round' });
   g.ellipse(from.x, from.y, 22, 11).stroke({ width: 3, color, alpha: 0.6 + 0.4 * pulse });
 }
-/**
- * The outline of an area of tiles: only the edges between a tile in it and one outside, so neighbouring tiles
- * share one border and the area reads as a single shape. Dashed for the colour-blind palette's guard sight.
- */
+/** Outlines an area of tiles (only its outer edges). Dashed for guard sight in the colour-blind palette. */
 export function region(
   view: HeistView,
   g: Graphics,
@@ -121,7 +115,7 @@ export function region(
   }
   g.stroke({ width, color, alpha, cap: 'round', join: 'round' });
 }
-/** A mark on a tile Leo shouldn't walk to (or, with his last action point, end his turn on): a red cross (caught or alarm) or an orange ring (spotted). */
+/** Danger mark: red cross (caught or alarm) or orange ring (spotted). */
 export function riskMark(
   view: HeistView,
   g: Graphics,
@@ -157,6 +151,7 @@ export function pawPrint(view: HeistView, g: Graphics, at: Point, fresh: number)
   ])
     g.circle(c.x + dx, c.y + dy, 1.6).fill({ color: 0xe0314b, alpha: a });
 }
+/** Name of a piece of loot. */
 export function lootName(view: HeistView, li: number): string {
   return view.lvl?.def.loot[li]?.name ?? '';
 }
@@ -200,6 +195,7 @@ export function keycard(view: HeistView, g: Graphics, x: number, y: number): voi
     .stroke({ width: 1, color: 0x1b1b22 });
   g.circle(c.x - 2, c.y, 1.8).fill({ color: 0x2fb8a3 });
 }
+/** A decoy calling card on the floor. */
 export function decoyCard(view: HeistView, g: Graphics, at: Point): void {
   const c = project(view.proj, at.x + 0.5, at.y + 0.5, 2);
   g.poly([c.x - 10, c.y, c.x, c.y - 6, c.x + 10, c.y, c.x, c.y + 6])

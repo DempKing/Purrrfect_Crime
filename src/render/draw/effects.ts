@@ -45,7 +45,7 @@ export function drawEffects(
       });
     }
 
-  // Noise ripples spreading from where a sound was made (a circle on the floor is an ellipse on screen).
+  // Noise ripples spreading out from a sound.
   for (const r of ripples) {
     const sp = project(p, r.x + 0.5, r.y + 0.5);
     const R = Math.max(0.15, r.r * r.t);

@@ -7,7 +7,7 @@ import type { HeistView } from '../view';
 import { COL, WALL_H } from './style';
 import { sprite } from './characters';
 
-/** A light hanging from the ceiling: a pendant over a lamp's tile, or a small spot over a case or plinth. */
+/** A ceiling light: a pendant over a lamp, or a small spot over a case or plinth. */
 export function ceilingLight(
   view: HeistView,
   g: Graphics,
@@ -57,6 +57,7 @@ export function ceilingLight(
     g.ellipse(shade.x, shade.y + 3, 3.5, 1.5).fill({ color: 0xfff1c0 });
   }
 }
+/** A floor lamp (on or off). */
 export function drawLamp(view: HeistView, g: Graphics, x: number, y: number, on = true): void {
   const base = project(view.proj, x + 0.5, y + 0.5);
   const top = project(view.proj, x + 0.5, y + 0.5, 64);
@@ -71,7 +72,7 @@ export function drawLamp(view: HeistView, g: Graphics, x: number, y: number, on 
       alpha: 0.12,
     });
 }
-/** A laser: two beams across the gap, wall to wall (see laserAxis), dotted when they're switched off. */
+/** A laser: two beams wall to wall, dotted when switched off. */
 export function laser(view: HeistView, g: Graphics, level: Level, x: number, y: number, on: boolean): void {
   const across = laserAxis(level, x, y) === 'x';
   for (const z of [14, 30]) {
@@ -90,6 +91,7 @@ export function laser(view: HeistView, g: Graphics, level: Level, x: number, y: 
       }
   }
 }
+/** The green exit sign over the exit. */
 export function exitSign(view: HeistView, g: Graphics, x: number, y: number): void {
   const sp = project(view.proj, x + 0.5, y + 0.5, 70);
   g.roundRect(sp.x - 22, sp.y - 10, 44, 20, 4)
@@ -102,6 +104,7 @@ export function exitSign(view: HeistView, g: Graphics, x: number, y: number): vo
     .lineTo(sp.x + 2, sp.y + 6)
     .stroke({ width: 3, color: 0xffffff });
 }
+/** A security camera on its wall, pointing where it faces. */
 export function camera(view: HeistView, g: Graphics, at: Point, facing: number, off: boolean): void {
   const d = screenDir(view.proj, DIRS[facing].x, DIRS[facing].y);
   const sp = project(view.proj, at.x + 0.5, at.y + 0.5, 74);
