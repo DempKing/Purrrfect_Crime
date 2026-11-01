@@ -1,6 +1,5 @@
-// Bakes the 3D models in art/models/ into isometric sprite strips in art/sprites/: each model rendered from
-// the game's camera at eight turns, outlined in ink. Settings per model are in tools/bake/catalog.json.
-// Usage: node tools/bake.mjs [name ...]   (no names: every model)
+// Renders the 3D models in art/models/ into 8-direction sprite strips in art/sprites/.
+// Per-model settings: tools/bake/catalog.json. Usage: node tools/bake.mjs [name ...]
 import * as esbuild from 'esbuild';
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';

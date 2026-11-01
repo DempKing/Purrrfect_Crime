@@ -36,7 +36,7 @@ test('what stands on a pedestal under a light can be stolen', () => {
   assert.ok(exhibitLoot(ALL_LEVELS.find((l) => l.id === 'l19-aquarium')!).length === 0);
 });
 test('the look-ahead: a tile that looks safe now, but a guard walks into view of it on his turn', () => {
-  // Joe walks left along row 7 towards Leo; standing in his way is fine now and fatal once he moves.
+  // Joe walks towards Leo: safe now, caught after Joe's turn.
   const { level, s } = heist(
     sandbox([{ name: 'Joe', start: { x: 12, y: 7 }, route: [{ x: 3, y: 7 }] }], { ambient: 'lit' }),
   );
@@ -118,7 +118,7 @@ test('putting loot down to make room, and picking it back up', () => {
   assert.ok(doAction(level, s, 'pick-up', pick!.at));
   assert.deepEqual(s.inventory, [0]);
   assert.deepEqual(s.dropped, []);
-  // With the bag full, picking up waits for room (a stand-in: the bag holds one space, already used).
+  // A full bag blocks picking up (bag shrunk to 1 space for the test).
   s.leo = { x: 12, y: 5 };
   s.dropped = [{ li: 0, x: 12, y: 5 }];
   assert.match(actionsHere(level, s).find((a) => a.kind === 'pick-up')!.blocked!, /No room/);

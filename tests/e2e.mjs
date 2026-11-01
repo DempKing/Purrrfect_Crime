@@ -1,7 +1,5 @@
-// Plays the built game in headless Chromium, through the real UI: a new game, the tutorial with the
-// narrator, the calling card, paper and report, the narrator paying up, buying the lair, the black market,
-// the Coin Museum, spending at the lair, a gadget and undo, the checkpoint and a deliberate catch, and a
-// reload to check the save. Screenshots every stage.
+// Browser test: plays the built game in headless Chromium through the real UI (tutorial, lair, heists,
+// letters, the finale, settings) and screenshots each stage.
 // Usage: node tests/e2e.mjs [outDir]
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -77,7 +75,7 @@ async function clickTile(x, y) {
   await page.mouse.click(p.x, p.y);
   await idle();
 }
-/** The report plays out as a score screen: the first click skips to the end, the second moves on. */
+/** Closes the heist report (first click skips the animation, second continues). */
 async function closeReport() {
   await page.click('#report-ok');
   if ((await page.textContent('#report-ok').catch(() => null)) === 'Continue') await page.click('#report-ok');
@@ -87,7 +85,7 @@ async function action(kind, x, y) {
   await idle();
 }
 async function endTurnIfStill(turn) {
-  // Out of action points, the game ends the turn by itself; only press End turn when Leo has some left.
+  // The game ends the turn itself at 0 AP; only press End turn if Leo has AP left.
   const s = await page.evaluate(() => ({
     turn: window.__pc.state.turn,
     status: window.__pc.state.status,
@@ -102,7 +100,7 @@ async function endTurnIfStill(turn) {
     { timeout: 5000 },
   );
 }
-/** Reads a route from src/levels/routes.ts, so the browser plays exactly what the rules test plays. */
+/** Reads a route from src/levels/routes.ts (the same one the rules test plays). */
 function route(name) {
   const src = readFileSync(join(root, 'src', 'levels', 'routes.ts'), 'utf8');
   const from = src.indexOf('= [', src.indexOf(`${name}:`)) + 2;
@@ -219,7 +217,7 @@ const sold = await page.evaluate(() => ({
 await page.click('[data-tab="papers"]');
 await shot('15-front-pages.png');
 
-// Spend it: an attribute, a skill, two rooms (with a little Catnip slipped in, so there's enough)
+// Spend: an attribute, a skill and two rooms (adds a little Catnip so there's enough).
 await page.evaluate(() => {
   window.__pc.profile.catnip = 2000;
 });
@@ -258,7 +256,7 @@ const afterCap = await page.evaluate(() => ({
   caps: window.__pc.state.charges['bottle-cap'],
   ap: window.__pc.state.ap,
 }));
-// Step into danger (a guard's view, a camera, a plate) until Leo is caught, by a guard or the lockdown.
+// Walk into danger until Leo is caught.
 for (let i = 0; i < 40 && (await page.evaluate(() => window.__pc.state.status)) === 'playing'; i++) {
   const t = await page.evaluate(() => window.__pc.dangerTile());
   if (t) await clickTile(t.x, t.y);
@@ -315,7 +313,7 @@ const reloaded = await page.evaluate(() => ({
   skills: window.__pc.profile.skills.length,
 }));
 
-// NightClaw's letters: ten heists and 10,000 Catnip sold bring both, and open the challenge museum
+// NightClaw's letters: 10 heists and 10,000 Catnip sold bring Letters 1 and 2 and open the challenge.
 await page.evaluate(() => {
   window.__pc.profile.heists = 10;
   window.__pc.profile.soldTotal = 10000;

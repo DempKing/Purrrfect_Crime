@@ -1,5 +1,4 @@
-// Every level can be beaten flawlessly (never seen, no alarm): the solver's routes in
-// src/levels/solutions.ts are replayed here, so a change to the rules or a map can't quietly break one.
+// Every level can be beaten flawlessly: replays the solver's routes from src/levels/solutions.ts.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { blocksMove, parseLevel } from '../src/core/level';

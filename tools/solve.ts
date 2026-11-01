@@ -1,6 +1,6 @@
-// Finds a winning route through a level: best-first search over Leo's choices, simulating the guards
-// exactly. Used while designing levels; with --write the route is saved to src/levels/solutions.ts, where the
-// tests replay it. Usage: npm run solve -- <level id> [--clean] [--write] [--loot] [--max N] [--debug]
+// Level solver: best-first search over Leo's moves, simulating the guards exactly.
+// --write saves the route to src/levels/solutions.ts (the tests replay it).
+// Usage: npm run solve -- <level id> [--clean] [--write] [--loot] [--max N] [--debug]
 import { blocksMove, parseLevel, type Level, type Point, type Tile } from '../src/core/level';
 import {
   BASE_PERKS,
@@ -100,7 +100,7 @@ class Heap {
   }
 }
 
-/** Steps from every tile to the nearest goal tile, through anything Leo could ever walk, crawl or open. */
+/** Distance from every tile to the nearest goal (ignoring guards; doors count as open). */
 function distanceMap(level: Level, goals: Point[], shut: Tile | null = null): number[][] {
   const d = level.tiles.map((r) => r.map(() => Infinity));
   const q: Point[] = [];
@@ -136,7 +136,7 @@ function distanceMap(level: Level, goals: Point[], shut: Tile | null = null): nu
   return d;
 }
 
-/** How often the level itself repeats, apart from the guards: spotlights, pulsing lasers, the lighthouse and the tide. */
+/** The cycle length of the level's own moving parts (spotlights, lasers, lighthouse, tide). */
 function levelPeriod(level: Level): number {
   const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
   let p = level.def.pulsingLasers ? 2 : 1;
@@ -227,7 +227,7 @@ export function solve(
   const toCentre = distanceMap(level, around);
   const toExit = distanceMap(level, [level.exit]);
   const centreToExit = Math.min(...around.map((p) => toExit[p.y]?.[p.x] ?? Infinity));
-  // Errands: what Leo has to fetch first when a card door or a vault stands between him and the centrepiece.
+  // Errands: things Leo must fetch first (keycard, combination, fuse) when they block the centrepiece.
   const tilesOf = (t: Tile) =>
     level.tiles.flatMap((row, y) => row.flatMap((tt, x) => (tt === t ? [{ x, y }] : [])));
   const beside = (ps: Point[]) =>

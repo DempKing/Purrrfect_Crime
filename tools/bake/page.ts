@@ -1,5 +1,4 @@
-// Runs inside headless Chromium: loads one .glb and renders it from the game's isometric camera at eight
-// turns, with a dark ink outline round the silhouette. tools/bake.mjs drives it.
+// Runs in headless Chromium for tools/bake.mjs: renders one .glb from the game camera at 8 turns, outlined.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
@@ -12,7 +11,7 @@ export interface BakeOptions {
   tilesPerMetre: number;
   /** The widest the model may be, in tiles. */
   fit: number;
-  /** 'floor': stands on the tile's centre. 'wall': its back sits on the wall plane, its middle `height` px up. */
+  /** 'floor': stands on the tile centre. 'wall': hangs on the wall, its middle `height` px up. */
   mount: 'floor' | 'wall';
   height: number;
   /** Extra turn (degrees) so the model's front faces grid +y at frame 0. */
@@ -70,7 +69,7 @@ async function bake(url: string, o: BakeOptions): Promise<Baked> {
   model.updateMatrixWorld(true);
   box = new THREE.Box3().setFromObject(model);
   const c = box.getCenter(new THREE.Vector3());
-  // Floor props stand centred on the origin; wall props hang with their back on the plane z = 0 (grid y = 0).
+  // Floor props centred on the origin; wall props with their back on z = 0.
   model.position.set(
     -c.x,
     o.mount === 'wall' ? -c.y + o.height / ZPX : -box.min.y,

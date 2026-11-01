@@ -1,6 +1,5 @@
-// Prepares the drawn art in art/models/ for the game: trims each character frame, finds where its feet are,
-// scales it to the character's height in the game, and writes art/sprites/chars/ (plus chars.json). Loot
-// pictures go to art/sprites/loot/ the same way. Usage: node tools/prep-art.mjs
+// Prepares the drawn art: trims and scales character frames (marking the feet) into art/sprites/chars/,
+// and loot pictures into art/sprites/loot/. Usage: node tools/prep-art.mjs
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -31,9 +30,9 @@ const CHARACTERS = {
   nightclaw: 84,
 };
 const FRAMES = ['idle', 'a', 'b'];
-/** A pale rim round each character, in stored pixels (0: none; it made them look like cut-outs). */
+/** Pale outline width around characters (0 = none). */
 const RIM = 0;
-/** Loot pictures: drawn ones, plus a few of the 3D models' sprites (frame 1, turned 45°). Longest side in game px. */
+/** Loot picture sources (drawn, plus some 3D sprites) and their longest side in game px. */
 const LOOT = {
   bell: 'loot_bell.webp',
   bowl: 'loot_bowl.webp',
@@ -74,7 +73,7 @@ const browser = await playwright.chromium.launch({ executablePath: exe });
 const page = await browser.newPage();
 await page.setContent('<!doctype html><body></body>');
 await page.evaluate(() => {
-  /** Loads an image, returns its opaque bounds and the middle of its feet (the opaque pixels in its bottom rows). */
+  /** Loads an image; returns its opaque bounds and where its feet are. */
   window.measure = async (url) => {
     const img = new Image();
     img.src = url;
@@ -108,7 +107,7 @@ await page.evaluate(() => {
         }
     return { w: img.width, h: img.height, x0, y0, x1, y1, feet: n ? sum / n : (x0 + x1) / 2 };
   };
-  /** Crops and scales an image, in halving steps so it stays smooth. Returns a webp data URL. */
+  /** Crops and scales an image (halving steps, for smoothness) to a webp data URL. */
   window.resize = async (url, sx, sy, sw, sh, w, h, rim = 0, rimColour = 'rgba(232,222,196,0.8)') => {
     const img = new Image();
     img.src = url;
@@ -219,8 +218,8 @@ for (const p of pictures) {
   );
   loot[p.key] = { w, h };
 }
-// Loot pictures uploaded by name (art/models/loot_<name>.webp, the names listed in art/LOOT_LIST.md): picked up
-// automatically, and listed for the game in src/render/lootArt.gen.ts.
+// Loot pictures (art/models/loot_<name>.webp, names in art/LOOT_LIST.md) are found automatically
+// and listed in src/render/lootArt.gen.ts.
 const known = new Set([...Object.values(LOOT), 'loot_litter.webp']); // the litter tray isn't loot here
 const byName = readdirSync(src).filter((f) => /^loot_.+\.(webp|png)$/.test(f) && !known.has(f));
 const named = {};

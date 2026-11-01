@@ -1,13 +1,12 @@
-// The balance report: for every level, the solver's flawless route against its par, its XP and loot; then how
-// Leo's level and Catnip add up over one flawless run through the story, against what the skills and the
-// lair cost. With --apply, sets each level's par from its route. Usage: npm run balance [-- --apply]
+// Balance report: each level's solver route vs. its par, XP and loot, and how XP and Catnip add up over
+// the story vs. what skills and rooms cost. --apply sets each level's par. Usage: npm run balance [-- --apply]
 import { readFileSync, writeFileSync } from 'node:fs';
 import { ALL_LEVELS } from '../src/levels';
 import { SOLUTIONS } from '../src/levels/solutions';
 import { ATTRIBUTES, ROOMS, SKILLS } from '../src/meta/progression';
 import { DOLLARS_PER_CATNIP, fenceRate, playerLevel, xpForLevel } from '../src/meta/profile';
 
-/** Par: generous for a player who can't see the guards' whole plan. Twice the solver's turns, and at least ten more. */
+/** Par: twice the solver's turns, and at least 10 more (players can't see the guards' whole plan). */
 export function parFor(turns: number): number {
   return Math.max(turns + 10, Math.ceil(turns * 2));
 }
@@ -21,7 +20,7 @@ for (const def of ALL_LEVELS) {
   const par = parFor(turns);
   const loot = def.loot.reduce((n, l) => n + l.value, 0);
   const centre = def.loot.find((l) => def.map[l.at.y][l.at.x] === 'G');
-  // One flawless first clear with the centrepiece and the rest of the loot, at par minus a third.
+  // Assume one flawless first clear with all the loot, in 2/3 of par.
   const heistXp =
     (def.xp ?? 100) + 50 + 50 + 100 + Math.floor(loot / 200) + Math.max(0, Math.round(par / 3)) * 5;
   xp += heistXp;

@@ -80,7 +80,7 @@ test('tidal sand is dry, then under water, every few turns', () => {
   endTurn(level, s);
   assert.ok(!flooded(level, s));
   assert.throws(() => parseLevel({ ...DOCKS, tide: undefined }), /tide/);
-  // Caught on the sand when the tide comes in: washed up on the nearest dry tile, with a splash.
+  // On the sand when the tide comes in: washed to the nearest dry tile.
   s.leo = { x: 8, y: 2 };
   endTurn(level, s);
   endTurn(level, s);

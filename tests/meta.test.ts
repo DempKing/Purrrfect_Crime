@@ -310,7 +310,7 @@ test('rivals: none for the first three heists, then a roll that sticks until the
   delete p.rivals[NATURAL_HISTORY.id];
   assert.equal(rivalChance(p, 0), 0.2);
   assert.equal(rivalChance(p, 4), 0.35);
-  // Over many days, about a quarter of rolls bring a rival, never the last one met, arriving on turns 3-7.
+  // About 1 in 4 heists has a rival (never the same as last time), arriving on turns 3-7.
   let found = 0;
   for (let day = 1; day <= 400; day++) {
     p.day = day;

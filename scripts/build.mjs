@@ -1,5 +1,4 @@
-// Builds the game into dist/: one self-contained index.html (script and styles inlined), so the
-// same file works on GitHub Pages, opened from disk, or wrapped by Electron later.
+// Builds the game into dist/index.html (scripts and styles inlined) plus dist/music/.
 import * as esbuild from 'esbuild';
 import {
   copyFileSync,
@@ -31,7 +30,7 @@ const result = await esbuild.build({
   loader: { '.webp': 'dataurl' },
 });
 const js = result.outputFiles[0].text.replace(/<\/script>/g, '<\\/script>');
-// The fonts (all SIL Open Font License), inlined so the game looks the same offline and in Electron.
+// Fonts (SIL Open Font License), inlined so they work offline.
 const FONTS = [
   ['Luckiest Guy', 'luckiest-guy', [400]], // chunky cartoon headlines and buttons
   ['Nunito', 'nunito', [400, 600, 700, 800, 900]], // everything you read
@@ -47,7 +46,7 @@ const fontFaces = FONTS.flatMap(([family, pkg, weights]) =>
   }),
 ).join('\n');
 const css = fontFaces + '\n' + readFileSync(join(root, 'src/styles.css'), 'utf8');
-// Music is too big to inline: the tracks in art/music/ ship beside the page, in dist/music/, with their credits.
+// Music is too big to inline: copy art/music/ to dist/music/ with its credits.
 const music = join(root, 'art/music');
 const musicCredits = existsSync(join(music, 'credits.json'))
   ? JSON.parse(readFileSync(join(music, 'credits.json'), 'utf8'))
