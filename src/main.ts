@@ -2,7 +2,7 @@
 // and gadgets in the heist; the lair's rooms; the briefing; rival thieves; NightClaw's letters. Built on the M2 slice
 // (tutorial, narrator, paper, black market) and the M1 sandbox.
 import { Application, Container } from 'pixi.js';
-// Lets PixiJS run on pages with a strict security policy (no eval), such as claude.ai artifacts.
+// Lets PixiJS run on pages with a strict security policy (no eval).
 import 'pixi.js/unsafe-eval';
 import { parseLevel, the, type Level, type LevelDef, type Point } from './core/level';
 import {

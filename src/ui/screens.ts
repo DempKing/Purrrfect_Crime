@@ -444,7 +444,7 @@ export const CREDITS: [string, string][] = [
   ['The Guards of the city', 'who never once saw a thing'],
   ['The narrator', 'who bought the first pearl'],
   ['The Whisker Times', 'for the front pages'],
-  ['Made by', 'DempKing, with Claude'],
+  ['Made by', 'DempKing'],
   ['And you', 'for playing, flawlessly'],
 ];
 
