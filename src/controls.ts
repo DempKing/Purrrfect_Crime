@@ -1,6 +1,6 @@
 // The controls the player can remap in the settings: which keys and which controller buttons do what.
 // Keys are kept as `KeyboardEvent.key` lower-cased (' ' for Space); controller buttons by their standard-mapping index.
-// A few stay fixed so the game can always be got out of: Esc cancels and closes, 1–9 pick from the action bar,
+// A few stay fixed so the game can always be got out of: Esc cancels and closes, 1-9 pick from the action bar,
 // and the controller's D-pad and sticks move.
 
 export type KeyAction =

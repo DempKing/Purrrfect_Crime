@@ -351,7 +351,7 @@ export function formatRoute(plan: RouteStep[][]): string {
     .join('\n');
 }
 
-// --- command line -------------------------------------------------------------------------------------
+// Command line
 const args = process.argv.slice(2);
 if (args.length && !process.env.SOLVE_LIB) {
   const id = args[0];

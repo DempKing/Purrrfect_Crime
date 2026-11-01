@@ -37,14 +37,14 @@ export const KIND_SIGHT: Record<GuardKind, number> = {
 };
 /** How far a Robo-Guard's heat scanner picks Leo up, in any light. */
 export const ROBO_RANGE = 4;
-/** Steps of wet paw prints after walking through paint, and how many turns a print takes to dry. */
+/** Wet paint: steps of paw prints left, and turns a print takes to dry. */
 export const PAINT_STEPS = 4;
 export const PRINT_TURNS = 4;
-/** A sniffer smells Leo this many tiles away, through walls (not through vents or from the rafters). */
+/** How far a sniffer smells Leo, through walls (not in vents or rafters). */
 export const SCENT_RANGE = 2;
 /** A captain who gets suspicious calls guards within this many tiles. */
 export const CAPTAIN_CALL = 7;
-/** Gadgets and active skills: things Leo uses on purpose, most with a few charges per heist. */
+/** Gadgets and active skills. Most have a few charges per heist. */
 export type Ability =
   | 'bottle-cap'
   | 'decoy-card'
@@ -55,10 +55,7 @@ export type Ability =
   | 'pounce'
   | 'cat-nap'
   | 'second-wind';
-/**
- * What Leo's attributes, skills and lair bring to a heist. The defaults are a fresh Leo; the profile
- * works out the rest (see meta/progression.ts).
- */
+/** What Leo's stats, skills and lair give him in a heist (worked out in meta/progression.ts). */
 export interface Perks {
   movePerAp: number; // Agility
   crawl: number; // vent cost per tile; Agility
@@ -79,6 +76,7 @@ export interface Perks {
   masterKey: boolean; // keycard doors open without the keycard (Tech: Keycard Clone)
   charges: Partial<Record<Ability, number>>; // per heist; pounce is unlimited when owned
 }
+/** A fresh Leo with no upgrades. */
 export const BASE_PERKS: Perks = {
   movePerAp: MOVE_PER_AP,
   crawl: CRAWL,

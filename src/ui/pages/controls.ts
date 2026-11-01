@@ -18,7 +18,7 @@ import {
 import { capturePadButton } from '../gamepad';
 import { esc } from './common';
 
-// --- Controls: what every key, click and button does, and the player's own bindings -------------------------
+// Controls: what every key, click and button does, and the player's own bindings
 
 type ControlsTab = 'keys' | 'mouse' | 'pad';
 const MOUSE_CONTROLS: [string, string][] = [

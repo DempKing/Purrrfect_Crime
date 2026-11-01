@@ -14,7 +14,7 @@ import {
 import { type GuardDef, parseLevel } from '../src/core/level';
 import { heist, sandbox } from './helpers';
 
-// --- guards -----------------------------------------------------------------------------------------
+// Guards
 
 test('a sleepy guard dozes at his post: he sees nothing and doesn’t move', () => {
   const { level, s } = heist(
@@ -82,7 +82,7 @@ test('a sniffer is short-sighted but smells Leo through a wall', () => {
   assert.equal(s.status, 'caught', 'a second sniff is a catch');
   assert.equal(s.caughtWhy, 'sniffed him out');
 });
-// --- the building ------------------------------------------------------------------------------------
+// The building
 
 test('squeaky floorboards are loud', () => {
   const { level, s } = heist(sandbox([]));

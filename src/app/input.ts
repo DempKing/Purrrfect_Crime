@@ -110,7 +110,7 @@ export function bindKeyboard(): void {
       else if (e.key === 'Escape') closeLootMenu();
       if (/^[1-9]$/.test(e.key) || e.key === 'Escape') return;
     }
-    // The keys are the player's own (Settings → Controls); Esc and 1–9 are fixed.
+    // The keys are the player's own (Settings -> Controls); Esc and 1-9 are fixed.
     const k = e.key.toLowerCase();
     const a = actionForKey(settings.keys, k);
     if (a === 'bag') return toggleBag();

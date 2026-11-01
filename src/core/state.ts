@@ -3,10 +3,10 @@ import type { GuardKind, Level, Point } from './level';
 import { type Ability, AP_PER_TURN, BASE_PERKS, type Perks } from './constants';
 import { faceToward } from './sight';
 
-// ---------------------------------------------------------------------------------------------
 // Rival thieves
 
 export type RivalId = 'mittens' | 'luna' | 'sammy' | 'paws';
+/** The rival thieves: name, speed and what they say. */
 export const RIVALS: Record<
   RivalId,
   { name: string; speed: number; hello: string; beaten: string; won: string }
@@ -40,7 +40,7 @@ export const RIVALS: Record<
     won: 'Professor Paws leaves with the prize, locking up neatly behind himself.',
   },
 };
-/** Which rival is coming tonight, when, and by which way in (an index into the level's rival entrances). */
+/** Tonight's rival: who, which turn they arrive, and which entrance. */
 export interface RivalPlan {
   id: RivalId;
   arrive: number;
@@ -78,7 +78,7 @@ export const DIRS: Point[] = [
 ];
 export type Light = 0 | 1 | 2;
 // dark, dim, lit
-/** Where Leo is: on the floor, in a vent, or up in the rafters. Nobody sees him in the last two. */
+/** Where Leo is. Nobody can see him in a vent or the rafters. */
 export type Layer = 'floor' | 'vent' | 'rafter';
 export type GuardMode = 'patrol' | 'suspicious' | 'searching';
 export interface Guard {
@@ -111,8 +111,8 @@ export interface Noise {
   r: number;
 }
 /**
- * Something Leo should know about: who caught or spotted him, what set off an alarm, which loot was noticed missing.
- * `from` is where the guard or camera was, `at` the tile it was about (Leo, or the empty display).
+ * Something the player should be told about: who caught or spotted Leo, an alarm, missing loot.
+ * `from` = where the guard/camera was, `at` = the tile it's about.
  */
 export interface Notice {
   kind: 'caught' | 'spotted' | 'alarm' | 'missing';
@@ -132,7 +132,7 @@ export interface State {
   status: Status;
   caughtBy: string | null;
   caughtWhy: string | null;
-  /** What went wrong this step or turn, and where, so the player can see who noticed what (cleared by the UI). */
+  /** What went wrong this step, for the UI to show (the UI clears it). */
   notices: Notice[];
   inventory: number[]; // indexes into level.def.loot
   smashed: string[]; // cases whose glass is broken
@@ -141,14 +141,14 @@ export interface State {
   camerasOff: boolean;
   lasersOff: boolean;
   alarm: number | null; // turns to lockdown
-  /** For the stealth bonuses and the newspaper: was Leo ever glimpsed or filmed, did an alarm ever go off. */
+  /** Was Leo ever seen / did Leo ever cause an alarm (for bonuses and the newspaper). */
   seen: boolean;
   alarmRaised: boolean;
-  /** Whether the alarm ringing now is Leo's doing (if it isn't, a lockdown doesn't end the heist). */
+  /** Did Leo cause the current alarm? (A rival's lockdown doesn't end the heist.) */
   alarmByLeo: boolean;
   /** Who set off the alarm ringing now, when it wasn't Leo (a rival's name). */
   alarmBy: string | null;
-  /** Locked down by somebody else's alarm: the exits are sealed until the rival is caught or gone. */
+  /** Lockdown from a rival's alarm: exits sealed until the rival is caught or gone. */
   lockdown: boolean;
   /** Turns left on a lockdown with no rival in the building to catch. */
   lockdownTurns: number;
@@ -161,7 +161,7 @@ export interface State {
   napTurns: number; // Cat Nap: guards can't see Leo for this many of their turns
   rival: Rival | null;
   rivalLoot: number[]; // loot a rival has taken (the centrepiece, or whatever Sammy pocketed)
-  /** Loot Leo has put down to make room: lying on the floor where he left it, to pick up again. */
+  /** Loot Leo put down, lying where he left it. */
   dropped: { li: number; x: number; y: number }[];
   rivalBeaten: boolean; // Leo took the centrepiece while a rival was after it
   /** Who has the level's keycard: nobody yet, Leo, or a rival who swiped it. */
@@ -174,12 +174,15 @@ export interface State {
   noises: Noise[]; // made this turn, for drawing
   log: string[]; // what just happened, for the HUD
 }
+/** Map key for a tile, e.g. "3,4". */
 export const key = (x: number, y: number) => `${x},${y}`;
+/** Starts a heist: Leo at the start, guards on their routes, everything closed and locked. */
 export function newHeist(level: Level, perks: Perks = BASE_PERKS, rival: RivalPlan | null = null): State {
   const entrance = rival
     ? level.def.rivalEntrances?.[rival.entrance % (level.def.rivalEntrances?.length || 1)]
     : undefined;
   return {
+    // Leo and the guards at their starts.
     leo: { ...level.start },
     layer: 'floor',
     ap: AP_PER_TURN,
@@ -199,6 +202,7 @@ export function newHeist(level: Level, perks: Perks = BASE_PERKS, rival: RivalPl
       look: 0,
       noticed: [],
     })),
+    // Cameras, locks, loot and alarms all start fresh.
     cameras: level.cameras.map((c) => ({
       at: { ...c.at },
       sweep: [...c.sweep],

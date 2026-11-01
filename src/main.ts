@@ -15,7 +15,7 @@ import { loadProps } from './render/props';
 import { loadSurfaces } from './render/surfaces';
 import * as screens from './ui/screens';
 
-// --- boot -------------------------------------------------------------------------------------
+// Boot
 
 /** Starts the game: the graphics, the art, the input, then the title screen and the frame loop. */
 async function boot(): Promise<void> {

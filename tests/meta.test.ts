@@ -47,7 +47,7 @@ function play(level: Level, route: RouteStep[][], each?: (s: State) => void): St
   return s;
 }
 
-// --- the tutorial level -------------------------------------------------------------------------
+// The tutorial level
 
 test('the Corner Gallery can be beaten without ever being seen', () => {
   const s = play(corner, CORNER_GALLERY_ROUTE);
@@ -79,7 +79,7 @@ test('crossing the laser hallway on foot sets off the alarm', () => {
   assert.equal(s.alarmRaised, true);
 });
 
-// --- XP and levels ------------------------------------------------------------------------------
+// XP and levels
 
 test('levels: 150 XP to level 2, each level needs 100 more than the last, capped at 30', () => {
   assert.equal(xpForLevel(1), 0);
@@ -90,7 +90,7 @@ test('levels: 150 XP to level 2, each level needs 100 more than the last, capped
   assert.equal(playerLevel(10_000_000), 30);
 });
 
-// --- the black market -----------------------------------------------------------------------------
+// The black market
 
 const item = (over: Partial<StashItem> = {}): StashItem => ({
   id: 1,
@@ -138,7 +138,7 @@ test('selling moves the price into Catnip and the lifetime total', () => {
   assert.equal(sell(p, 7), 0);
 });
 
-// --- the opening -------------------------------------------------------------------------------------
+// The opening
 
 test('the opening: tutorial loot goes to the stash, the narrator buys it, and that buys the lair exactly', () => {
   const p = newProfile();
@@ -191,7 +191,7 @@ test('the same day and heist always print the same paper', () => {
   assert.deepEqual(a, b);
 });
 
-// --- saving ------------------------------------------------------------------------------------------
+// Saving
 
 function memoryStore() {
   const store = new Map<string, string>();
@@ -296,7 +296,7 @@ test('every paper has text in every story, whatever the day', async () => {
       }
 });
 
-// --- rivals --------------------------------------------------------------------------------------------
+// Rivals
 
 test('rivals: none for the first three heists, then a roll that sticks until the heist is played', async () => {
   const { rivalChance, rivalFor } = await import('../src/meta/profile');
@@ -386,7 +386,7 @@ test('beating a rival to it pays a bonus and makes the headline', () => {
   assert.deepEqual(p.rivalRecord.paws, { won: 1, lost: 0 });
 });
 
-// --- NightClaw's letters ----------------------------------------------------------------------------
+// NightClaw's letters
 
 test('Letter 1 comes with the first trigger reached and Letter 2 with the second, in either order', async () => {
   const { deliverLetters, hasLetter } = await import('../src/meta/letters');
@@ -432,7 +432,7 @@ test('older saves start with no letters', async () => {
   assert.deepEqual(upgradeProfile(old)!.letters, []);
 });
 
-// --- The endgame ---------------------------------------------------------------------------------------
+// The endgame
 
 test('Letter 4 comes once every centrepiece in the city has been taken flawlessly, after Letter 3', async () => {
   const { CHALLENGE_LEVELS, challengeProgress, deliverLetters, hasLetter, openMusicBox } = await import(

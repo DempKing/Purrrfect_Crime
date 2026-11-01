@@ -2,7 +2,7 @@
 import { LAIR_PRICE, type Profile } from '../../meta/profile';
 import { catnip, NARRATOR_SVG, on, show } from './common';
 
-// --- The city map: buying the lair ---------------------------------------------------------------------
+// The city map: buying the lair
 
 export function cityMap(p: Profile, onBuy: () => void): void {
   // A printed street map: blocks between the streets, the river along the bottom, district names.

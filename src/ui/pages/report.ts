@@ -7,7 +7,7 @@ import { rivalRooftop, rooftopPicture } from '../pictures';
 import { RIVALS } from '../../core/game';
 import { CARD_SVG, esc, money, on, sfx, show } from './common';
 
-// --- The calling card and the paper ------------------------------------------------------------------
+// The calling card and the paper
 
 export function callingCard(done: () => void): void {
   show(

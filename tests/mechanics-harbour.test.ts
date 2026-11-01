@@ -15,7 +15,7 @@ import {
   newHeist,
 } from '../src/core/game';
 
-// --- Harbour: crates, the lighthouse, the tide, the fish market, light switches -----------------------------
+// Harbour: crates, the lighthouse, the tide, the fish market, light switches
 
 const DOCKS: LevelDef = {
   id: 'docks',

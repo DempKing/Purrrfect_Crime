@@ -7,7 +7,6 @@ import { NOISE, VAULT_DIALS } from './constants';
 import { guardSees } from './sight';
 import { checkExposure, dogsBark, lightsNoticed, lightsOn, makeNoise } from './noticed';
 
-// ---------------------------------------------------------------------------------------------
 // Actions: picking locks, smashing glass, panels, vents
 
 export type ActionKind =
@@ -38,9 +37,11 @@ export interface Action {
   /** Why it can't be done right now, if it can't. */
   blocked?: string;
 }
+/** Next to each other, diagonals included. */
 export const near8 = (a: Point, b: Point) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) === 1;
+/** Next to each other, no diagonals. */
 const near4 = (a: Point, b: Point) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
-/** Puts a piece of loot down on Leo's tile, to make room. It takes no time; he can pick it up again later. */
+/** Puts loot down on Leo's tile to free up space. Free; he can pick it up later. */
 export function dropLoot(level: Level, s: State, li: number): boolean {
   if (s.status !== 'playing' || s.layer !== 'floor' || !s.inventory.includes(li)) return false;
   s.inventory = s.inventory.filter((i) => i !== li);
@@ -53,10 +54,12 @@ export function actionsHere(level: Level, s: State): Action[] {
   if (s.status !== 'playing') return [];
   const out: Action[] = [];
   const L = s.leo;
+  // In a vent: only climbing out (at a grate).
   if (s.layer === 'vent') {
     if (tileAt(level, L.x, L.y) === 'grate')
       out.push({ kind: 'exit-vent', at: L, label: 'Climb out of the vent', ap: 1, noise: 0 });
   } else if (s.layer === 'rafter') {
+    // In the rafters: down a ladder, or drop to the floor.
     const below = tileNow(level, s, L.x, L.y);
     if (below === 'ladder')
       out.push({ kind: 'climb-down', at: L, label: 'Climb down the ladder', ap: 1, noise: 0 });
@@ -69,11 +72,12 @@ export function actionsHere(level: Level, s: State): Action[] {
         noise: s.perks.ceilingClimb ? 0 : NOISE.drop,
       });
   } else {
+    // On the floor: vents and ladders on Leo's own tile...
     if (tileAt(level, L.x, L.y) === 'grate')
       out.push({ kind: 'enter-vent', at: L, label: 'Climb into the vent', ap: 1, noise: 0 });
     if (tileAt(level, L.x, L.y) === 'ladder')
       out.push({ kind: 'climb-up', at: L, label: 'Climb up to the rafters', ap: 1, noise: 0 });
-    // The finale: NightClaw, unaware, right beside Leo, and the prize in Leo's paws.
+    // ...tapping NightClaw (finale only)...
     const nc = level.def.finale ? s.guards.find((g) => g.kind === 'nightclaw' && near8(L, g)) : undefined;
     const prize = level.plinth ? lootAt(level, level.plinth.x, level.plinth.y) : -1;
     if (nc)
@@ -83,14 +87,14 @@ export function actionsHere(level: Level, s: State): Action[] {
         label: 'Tap NightClaw on the shoulder',
         ap: 1,
         noise: 0,
-        // Hearing a step behind him isn't enough: he hasn't turned round yet, so the tap still lands. Only a NightClaw
-        // who is hunting (an alarm, a sighting) or looking right at Leo is on his guard.
+        // Blocked without the prize, or if he's hunting or can see Leo (a heard step is fine).
         blocked: !s.inventory.includes(prize)
           ? 'Not yet: take his prized possession first.'
           : nc.mode === 'searching' || nc.meter >= 1 || guardSees(level, s, nc, L.x, L.y)
             ? 'He’s on his guard. Wait until he isn’t.'
             : undefined,
       });
+    // ...and everything on the 8 tiles around him.
     for (let y = L.y - 1; y <= L.y + 1; y++)
       for (let x = L.x - 1; x <= L.x + 1; x++) {
         const p = { x, y };
@@ -104,6 +108,7 @@ export function actionsHere(level: Level, s: State): Action[] {
           loot && inventoryUsed(level, s) + loot.space > s.perks.spaces
             ? `No room: the bag holds ${s.perks.spaces} space${s.perks.spaces === 1 ? '' : 's'}.`
             : undefined;
+        // Display case: take (if already open), or pick the lock / smash the glass.
         if (t === 'case' && loot && !taken) {
           if (s.smashed.includes(k))
             out.push({
@@ -137,6 +142,7 @@ export function actionsHere(level: Level, s: State): Action[] {
             });
           }
         }
+        // Safe: crack it over a few goes.
         if (t === 'safe' && loot && !taken) {
           const done = s.picks[k] ?? 0;
           out.push({
@@ -151,6 +157,7 @@ export function actionsHere(level: Level, s: State): Action[] {
             blocked: noRoom,
           });
         }
+        // Plinth (the centrepiece) and exhibits under lights: just take them.
         if (t === 'plinth' && loot && !taken)
           out.push({ kind: 'take', at: p, label: `Take ${loot.name}`, ap: 1, noise: 0, blocked: noRoom });
         if (t === 'lamp' && loot && !taken)
@@ -162,6 +169,7 @@ export function actionsHere(level: Level, s: State): Action[] {
             noise: 0,
             blocked: noRoom,
           });
+        // Doors (not diagonally): pick, swipe the keycard, or turn the vault dials.
         if (t === 'door' && near4(L, p))
           out.push({
             kind: 'pick-door',
@@ -208,6 +216,7 @@ export function actionsHere(level: Level, s: State): Action[] {
                 ? `The time lock holds the dials until turn ${level.def.timeLock}.`
                 : undefined,
           });
+        // Light switches, the camera panel and the fuse box.
         const sw =
           t === 'switch' ? (level.def.switches ?? []).find((w) => w.at.x === x && w.at.y === y) : undefined;
         if (sw)
@@ -257,15 +266,17 @@ export function actionsHere(level: Level, s: State): Action[] {
           blocked: full,
         });
     }
+  // Anything Leo can't afford is shown but blocked.
   for (const a of out) if (!a.blocked && s.ap < a.ap) a.blocked = 'Not enough action points.';
   return out;
 }
+/** Puts the loot at `at` in Leo's bag. */
 function take(level: Level, s: State, at: Point): void {
   const li = lootAt(level, at.x, at.y);
   s.inventory.push(li);
   const l = level.def.loot[li];
   s.log.push(l.revealed ? `Got it. It isn’t treasure at all: it’s ${l.revealed}.` : `Got ${the(l.name)}.`);
-  // Beaten to it: a rival after the centrepiece gives up.
+  // Leo got the centrepiece first: the rival gives up.
   const r = s.rival;
   if (r && r.phase !== 'gone' && level.plinth && at.x === level.plinth.x && at.y === level.plinth.y) {
     if (r.phase !== 'waiting') s.log.push(RIVALS[r.id].beaten);
@@ -277,12 +288,15 @@ function take(level: Level, s: State, at: Point): void {
 export function lootGone(s: State, li: number): boolean {
   return s.inventory.includes(li) || s.rivalLoot.includes(li) || s.dropped.some((d) => d.li === li);
 }
+/** Does one of Leo's actions at a tile. Returns false if it isn't possible. */
 export function doAction(level: Level, s: State, kind: ActionKind, at: Point): boolean {
   const a = actionsHere(level, s).find((x) => x.kind === kind && x.at.x === at.x && x.at.y === at.y);
   if (!a || a.blocked) return false;
   s.ap -= a.ap;
+  // Each action changes the state; locks and safes take several goes (counted in s.picks).
   const k = key(at.x, at.y);
   switch (kind) {
+    // Locks and keys.
     case 'pick-case':
     case 'pick-door':
       s.picks[k] = (s.picks[k] ?? 0) + 1;
@@ -301,6 +315,7 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
       s.openDoors.push(k);
       s.log.push('Beep. The light turns green and the door slides open.');
       break;
+    // Loot and NightClaw.
     case 'pick-up': {
       const i = s.dropped.findIndex((d) => d.x === at.x && d.y === at.y);
       if (i < 0) return false;
@@ -314,6 +329,7 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
       s.status = 'escaped';
       s.log.push('Tap, tap. NightClaw turns round, very slowly, and smiles.');
       break;
+    // Switches, the desk and the vault.
     case 'lights': {
       const sw = (level.def.switches ?? []).find((w) => w.at.x === at.x && w.at.y === at.y)!;
       if (lightsOn(s, sw.lamps)) {
@@ -337,6 +353,7 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
         s.log.push('Clunk. The vault door swings open.');
       } else s.log.push('The first dial clicks home.');
       break;
+    // Taking loot.
     case 'smash-case':
       s.smashed.push(k);
       makeNoise(level, s, at, NOISE.smash);
@@ -346,6 +363,7 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
     case 'take':
       take(level, s, at);
       break;
+    // Power: cameras (and the alarm), and lasers/sensors/robots.
     case 'panel':
       s.camerasOff = true;
       if (s.alarm !== null) s.log.push('Cameras off, alarm silenced.');
@@ -360,6 +378,7 @@ export function doAction(level: Level, s: State, kind: ActionKind, at: Point): b
           : 'The lasers flicker and die.',
       );
       break;
+    // Changing layer: vents and rafters. Coming back to the floor checks if Leo is seen.
     case 'enter-vent':
       s.layer = 'vent';
       s.log.push('Into the vent. Nobody can see Leo in here.');

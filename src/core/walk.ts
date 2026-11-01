@@ -6,15 +6,15 @@ import { lasersActive, sensorsActive, tileNow } from './world';
 import { breakLaser, checkExposure, dogsBark, makeNoise, pickUpCard, triggerAlarm } from './noticed';
 import { NOISE, PAINT_STEPS, PRINT_TURNS } from './constants';
 
-// ---------------------------------------------------------------------------------------------
 // Moving
 
 export interface MoveResult {
   ok: boolean;
-  /** The tiles Leo actually walked, ending where he stopped (where he was caught, if he was). */
+  /** Tiles Leo actually walked (ends where he stopped or was caught). */
   path: Point[];
   reason?: string;
 }
+/** Moves Leo to a tile this turn, if he can reach it. */
 export function moveLeo(level: Level, s: State, to: Point): MoveResult {
   if (s.status !== 'playing') return { ok: false, path: [], reason: 'The heist is over.' };
   const reach = leoReach(level, s);
@@ -24,7 +24,7 @@ export function moveLeo(level: Level, s: State, to: Point): MoveResult {
   if (cost > s.ap) return { ok: false, path: [], reason: 'Not enough action points.' };
   return walkPath(level, s, path, cost);
 }
-/** Walks a path already known to be reachable for `cost` action points (moveLeo works it out first). */
+/** Walks a path already checked by moveLeo, spending `cost` AP. */
 export function walkPath(level: Level, s: State, path: Point[], cost: number): MoveResult {
   s.ap -= cost;
   // Ghost Step: the first move of the heist that would make a sound makes none.

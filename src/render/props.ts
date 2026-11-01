@@ -1,5 +1,5 @@
 // Sprites baked from the 3D models in art/models/ (tools/bake.mjs): each a strip of eight frames, the model
-// seen from the game's camera turned 0°, 45°, … 315°. The view draws them in place of the grey-box shapes,
+// seen from the game's camera turned 0°, 45°, ... 315°. The view draws them in place of the grey-box shapes,
 // and falls back to those shapes until they've loaded.
 import { Assets, Rectangle, Texture } from 'pixi.js';
 import type { FlatName } from './flats';

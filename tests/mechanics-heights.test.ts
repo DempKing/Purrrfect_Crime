@@ -16,7 +16,7 @@ import {
   newHeist,
 } from '../src/core/game';
 
-// --- The Heights: keycards, wires over gaps, glass walls, guard dogs, vaults --------------------------------
+// The Heights: keycards, wires over gaps, glass walls, guard dogs, vaults
 
 const ROOFTOPS: LevelDef = {
   id: 'rooftops',

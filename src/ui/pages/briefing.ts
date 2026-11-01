@@ -7,7 +7,7 @@ import { portrait } from '../pictures';
 import { charImageUrl, lootPictureUrl } from '../../render/characters';
 import { esc, on, show } from './common';
 
-// --- The briefing: what the Planning Table knows -----------------------------------------------------
+// The briefing: what the Planning Table knows
 
 /** What each kind of guard is like, for the notes on the planning board. */
 const GUARD_NOTES: Record<string, string> = {

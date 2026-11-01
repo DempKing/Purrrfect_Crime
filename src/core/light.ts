@@ -3,7 +3,6 @@ import { blocksSight, type Level, type Point } from './level';
 import { key, type Light, type State } from './state';
 import { clearLine, inCone } from './sight';
 
-// ---------------------------------------------------------------------------------------------
 // Light
 
 const lightCache = new WeakMap<Level, Map<string, Light[][]>>();
@@ -57,6 +56,7 @@ export function lightMap(level: Level, lampsOff: number[] = []): Light[][] {
   cache.set(k, out);
   return out;
 }
+/** The level's light at x,y with some lamps switched off. */
 export function lightAt(level: Level, x: number, y: number, lampsOff: number[] = []): Light {
   return lightMap(level, lampsOff)[y]?.[x] ?? 0;
 }
@@ -90,7 +90,7 @@ export function beaconTiles(level: Level, s: State): Set<string> {
 export function spotlightsNow(level: Level, s: State): { at: Point; radius: number }[] {
   return level.spotlights.map((sp) => ({ at: sp.path[(s.turn - 1) % sp.path.length], radius: sp.radius }));
 }
-/** The light on a tile right now: the level's lamps and moonlight, plus any spotlight passing over it. */
+/** Light on a tile right now: lamps, moonlight and any spotlight. */
 export function lightNow(level: Level, s: State, x: number, y: number): Light {
   for (const sp of spotlightsNow(level, s))
     if (Math.hypot(x - sp.at.x, y - sp.at.y) <= sp.radius + 0.01) return 2;

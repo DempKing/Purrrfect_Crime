@@ -1,5 +1,5 @@
-// What stands under each ceiling light (a lamp on the map): something picked for the district and the tile.
-// Anything small enough to carry (on a pedestal, or a chest) is loot too: it's in the light, so it's a risk.
+// What stands under each ceiling light (an L on the map), picked by district and tile.
+// Small things (on a pedestal, or a chest) can be stolen too - but they're in the light.
 // Life-size statues, plants, grandfather clocks and fish tanks are just the furniture.
 import type { LevelDef, LootCategory, LootDef, Point } from './level';
 
@@ -8,10 +8,11 @@ export interface Exhibit {
   model?: string;
   flat?: string;
   pedestal: boolean;
-  /** If Leo can take it: its names (one picked per tile), what kind of thing it is, its worth and its size. */
+  /** Set if Leo can take it: possible names, category, value and size. */
   loot?: { names: string[]; category: LootCategory; value: number; space: number };
 }
 
+// The exhibits themselves.
 const BUST: Exhibit = {
   model: 'marble_bust_01',
   pedestal: true,
@@ -79,6 +80,7 @@ const GRANDFATHER: Exhibit = { model: 'vintage_grandfather_clock_01', pedestal: 
 const TANK: Exhibit = { flat: 'spr_tank', pedestal: false };
 const TALL_TANK: Exhibit = { flat: 'spr_tanktall', pedestal: false };
 
+/** Which exhibits each district uses. */
 const BY_DISTRICT: Record<string, Exhibit[]> = {
   'old-town': [BUST, HORSE, MANTEL, STATUE],
   'museum-mile': [BUST, STATUE, CAT_STATUE, HORSE],
@@ -87,6 +89,7 @@ const BY_DISTRICT: Record<string, Exhibit[]> = {
   downtown: [PLANT, HORSE, PLANT2, BUST],
   nightclaw: [STATUE, MANTEL, CAT_IDOL, BUST],
 };
+/** Levels with their own exhibits (overrides the district list). */
 const BY_LEVEL: Record<string, Exhibit[]> = {
   'l2-clocktower': [GRANDFATHER, MANTEL],
   'l17-shipwreck': [CHEST, TANK, CONCH],
@@ -94,7 +97,7 @@ const BY_LEVEL: Record<string, Exhibit[]> = {
   'l19-aquarium': [TANK, TALL_TANK, TALL_TANK, TANK],
 };
 
-/** A heist's district, from its id (l0–l4 Old Town, l5–l9 Museum Mile, and so on). */
+/** A heist's district, from its id (l0-l4 Old Town, l5-l9 Museum Mile, and so on). */
 export function districtOfLevel(id: string): string {
   if (id.startsWith('nc-')) return 'nightclaw';
   const n = Number(/^l(\d+)-/.exec(id)?.[1] ?? 0);
@@ -108,6 +111,7 @@ export function tileHash(x: number, y: number, salt = 0): number {
   return ((h ^ (h >>> 15)) >>> 0) / 4294967296;
 }
 
+/** The exhibit under the light at x,y (always the same one for a tile). */
 export function exhibitAt(levelId: string, x: number, y: number): Exhibit {
   const list = BY_LEVEL[levelId] ?? BY_DISTRICT[districtOfLevel(levelId)] ?? BY_DISTRICT['old-town'];
   return list[Math.floor(tileHash(x, y, 11) * list.length)];
@@ -134,7 +138,7 @@ export function exhibitLoot(def: LevelDef): LootDef[] {
   return out;
 }
 
-/** All of a heist's loot: what's in its cases, safes and on its plinth, and what stands under its lights. */
+/** All loot in a heist: cases, safes, the plinth, and exhibits under lights. */
 export function allLoot(def: LevelDef): LootDef[] {
   return [...def.loot, ...exhibitLoot(def)];
 }

@@ -30,7 +30,7 @@ import { award, changeSettings, persist, settings, sfx, sound, storage } from '.
 import { liveAlerts } from './notices';
 import { app } from './camera';
 
-// --- between heists ---------------------------------------------------------------------------
+// Between heists
 
 export function goOn(): void {
   leaveHeist();

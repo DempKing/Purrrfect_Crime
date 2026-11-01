@@ -10,7 +10,7 @@ import type { Segment } from './actors';
 
 /** Heists on offer at the lair, in order. The tutorial can be replayed like any other. */
 export const JOBS: LevelDef[] = ALL_LEVELS;
-// --- the game's changing state ----------------------------------------------------------------
+// The game's changing state
 
 /** Camera zoom: where it starts and how far it goes. */
 export const ZOOM_START = 1.9;

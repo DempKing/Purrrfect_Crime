@@ -5,7 +5,6 @@ import { camerasActive, inSmoke, roboOff, tileNow } from './world';
 import { KIND_SIGHT, ROBO_RANGE, SCENT_RANGE, SIGHT_HALF_ANGLE, SIGHT_RANGE } from './constants';
 import { lightNow } from './light';
 
-// ---------------------------------------------------------------------------------------------
 // Sight
 
 export function faceToward(from: Point, to: Point): number {
@@ -14,6 +13,7 @@ export function faceToward(from: Point, to: Point): number {
   const i = DIRS.findIndex((d) => d.x === dx && d.y === dy);
   return i < 0 ? 0 : i;
 }
+/** Is the line between two points clear of anything that blocks sight? */
 export function clearLine(
   level: Level,
   a: Point,
@@ -32,9 +32,11 @@ export function clearLine(
   }
   return true;
 }
+/** Sight range for a light level. */
 export function rangeFor(light: Light): number {
   return light === 2 ? SIGHT_RANGE.lit : light === 1 ? SIGHT_RANGE.dim : SIGHT_RANGE.dark;
 }
+/** Is x,y inside a viewer's cone (facing, half-angle and range)? */
 export function inCone(
   from: Point,
   facing: number,
@@ -52,17 +54,14 @@ export function inCone(
   const cos = (dx * f.x + dy * f.y) / (dist * Math.hypot(f.x, f.y));
   return cos >= Math.cos((halfAngle * Math.PI) / 180) - 1e-9;
 }
-/**
- * How far away Leo can be made out on x,y. Stealth shortens it and Blend makes dim light count as dark;
- * neither helps an empty display case, which is what `thing` is for.
- */
+/** How far away Leo can be seen at x,y. Stealth and Blend help Leo; `thing` is for objects (no perks). */
 function sightRange(level: Level, s: State, x: number, y: number, thing: boolean, catsEyes = false): number {
   const light = lightNow(level, s, x, y);
   const up = (l: Light): Light => (catsEyes ? (Math.min(2, l + 1) as Light) : l);
   if (thing) return rangeFor(up(light));
   return rangeFor(up(s.perks.blend && light === 1 ? 0 : light)) * s.perks.sight;
 }
-/** Whether a guard can make out Leo (or, with `thing`, an object) at x,y, given the light there. */
+/** Can this guard see Leo (or an object, with `thing`) at x,y? */
 export function guardSees(
   level: Level,
   s: State,
@@ -82,6 +81,7 @@ export function guardSees(
   if (!inCone(g, g.facing, x, y, range)) return false;
   return clearLine(level, g, { x, y }, blocksSight, s);
 }
+/** Can this camera see x,y? */
 export function cameraSees(level: Level, s: State, c: Camera, x: number, y: number): boolean {
   if (!camerasActive(s, c) || inSmoke(s, x, y)) return false;
   const facing = c.sweep[c.idx];
@@ -107,6 +107,7 @@ export function guardView(level: Level, s: State, g: Guard): Set<string> {
     }
   return out;
 }
+/** All the tiles a camera sees (for drawing its cone). */
 export function cameraView(level: Level, s: State, c: Camera, idx = c.idx): Set<string> {
   const out = new Set<string>();
   if (!camerasActive(s, c)) return out;

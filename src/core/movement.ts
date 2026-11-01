@@ -4,7 +4,6 @@ import { DIRS, key, type Layer, type State } from './state';
 import { tileNow } from './world';
 import { AP_PER_TURN, MOVE_PER_AP } from './constants';
 
-// ---------------------------------------------------------------------------------------------
 // Movement
 
 export function walkable(level: Level, s: State, layer: Layer, x: number, y: number): boolean {
@@ -13,6 +12,7 @@ export function walkable(level: Level, s: State, layer: Layer, x: number, y: num
   const t = tileNow(level, s, x, y);
   return t === 'wire' ? s.perks.tightrope : t === 'crate' || !blocksMove(t);
 }
+/** Cost of one step on a layer (Infinity if blocked). */
 function stepCost(level: Level, s: State, layer: Layer, from: Point, dx: number, dy: number): number {
   if (!walkable(level, s, layer, from.x + dx, from.y + dy)) return Infinity;
   const mult = layer === 'vent' ? s.perks.crawl : 1;
@@ -28,6 +28,7 @@ export interface Reach {
   cost: Map<string, number>;
   prev: Map<string, string>;
 }
+/** Cheapest cost to every tile within `budget` (Dijkstra), plus the way back for building paths. */
 export function reachable(
   level: Level,
   s: State,
@@ -57,6 +58,7 @@ export function reachable(
   }
   return { cost, prev };
 }
+/** The path to a tile, from a reachable() result. */
 export function pathTo(reach: Reach, to: Point): Point[] | null {
   const k = key(to.x, to.y);
   if (!reach.cost.has(k)) return null;
@@ -67,6 +69,7 @@ export function pathTo(reach: Reach, to: Point): Point[] | null {
   }
   return out;
 }
+/** Action points for a movement cost. */
 export function apCost(moveCost: number, movePerAp = MOVE_PER_AP): number {
   return moveCost <= 0 ? 0 : moveCost <= movePerAp ? 1 : 2;
 }
@@ -74,6 +77,7 @@ export function apCost(moveCost: number, movePerAp = MOVE_PER_AP): number {
 export function moveAp(s: State, moveCost: number): number {
   return apCost(moveCost, s.perks.movePerAp);
 }
+/** Tiles guards are standing on. */
 export function guardTiles(s: State): Set<string> {
   return new Set(s.guards.map((g) => key(g.x, g.y)));
 }

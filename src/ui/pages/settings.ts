@@ -4,7 +4,7 @@ import { on, show } from './common';
 import { controlsSection } from './controls';
 import { escToClose } from './title';
 
-// --- Settings ---------------------------------------------------------------------------------------------
+// Settings
 
 /** The settings panel. Every change applies at once (`onChange`); `onClose` goes back to whatever was open. */
 export function settingsScreen(st: Settings, onChange: (s: Settings) => void, onClose: () => void): void {

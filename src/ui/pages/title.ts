@@ -3,7 +3,7 @@ import { playerLevel, type Profile } from '../../meta/profile';
 import { KEY_ART } from '../pictures';
 import { on, show } from './common';
 
-// --- Title and save slots ---------------------------------------------------------------------
+// Title and save slots
 
 export interface TitleCallbacks {
   /** The game played last, if there is one. */

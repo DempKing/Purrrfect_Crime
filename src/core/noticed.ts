@@ -7,10 +7,9 @@ import { cameraSees, faceToward, guardSees } from './sight';
 import { hiddenAt, inRects, tileNow } from './world';
 import { near8 } from './actions';
 
-// ---------------------------------------------------------------------------------------------
 // Getting noticed
 
-/** Ends the heist. Returns true, so callers can say `return catchLeo(…)`. */
+/** Ends the heist. Returns true, so callers can say `return catchLeo(...)`. */
 export function catchLeo(s: State, by: string, why: string, from: Point | null = null): boolean {
   s.status = 'caught';
   s.caughtBy = by;
@@ -18,6 +17,7 @@ export function catchLeo(s: State, by: string, why: string, from: Point | null =
   note(s, { kind: 'caught', who: by, from, at: { ...s.leo }, label: `Caught by ${by}!` });
   return true;
 }
+/** Records a notice for the UI. */
 function note(s: State, n: Notice): void {
   (s.notices ??= []).push({
     ...n,
@@ -58,7 +58,7 @@ export function spotted(level: Level, s: State, g: Guard, p: Point): boolean {
   captainCalls(s, g, p);
   return false;
 }
-/** A sniffer within scent range of Leo: suspicious at first, and a catch if he's already sniffing or right there. */
+/** A sniffer smells Leo: suspicious the first time, a catch if already sniffing or very close. */
 export function smelled(s: State, g: Guard, p: Point): boolean {
   if (s.perks.vanish && !s.used.vanish) {
     s.used.vanish = true;
@@ -76,7 +76,7 @@ export function smelled(s: State, g: Guard, p: Point): boolean {
   s.log.push(`${g.name} sniffs… and smells cat.`);
   return false;
 }
-/** A sniffer smells Leo close by, unless Leo's in a vent, the rafters or a crate, or the fish market's stink covers him. */
+/** Can a sniffer smell Leo? Not in vents, rafters, crates, or on the fish market floor. */
 export const canSmell = (level: Level, s: State, g: Guard, p: Point) =>
   g.kind === 'sniffer' &&
   !g.asleep &&
@@ -104,7 +104,7 @@ function captainCalls(s: State, g: Guard, p: Point): void {
     o.look = Math.max(o.look, LOOK_TURNS);
   }
 }
-/** Sets off the alarm. Only Leo's alarms count against a flawless heist, not a rival's. */
+/** Sets off the alarm. Only Leo's alarms spoil a flawless heist. */
 export function triggerAlarm(
   s: State,
   p: Point,
@@ -144,7 +144,7 @@ export function liftLockdown(s: State, why: string): void {
   s.lockdownTurns = 0;
   s.log.push(why);
 }
-/** Is Leo seen at p right now? Handles guards (suspicion or a catch) and cameras (alarm). */
+/** Checks whether any guard or camera sees Leo at p, and reacts. */
 export function checkExposure(level: Level, s: State, p: Point): void {
   if (s.layer !== 'floor' || s.status !== 'playing' || s.napTurns > 0 || hiddenAt(level, s, p)) return;
   for (const g of s.guards) {
@@ -181,7 +181,7 @@ function hearingDistance(level: Level, s: State, from: Point, to: Point, max: nu
   }
   return Infinity;
 }
-/** A sound at p heard r tiles away. Leo's own noises are scaled by Quiet Paws; `fromLeo` false is a thrown object. */
+/** Makes a sound at p heard up to r tiles away (Leo's own sounds are scaled by Quiet Paws). */
 export function makeNoise(level: Level, s: State, p: Point, r: number, fromLeo = true): void {
   if (fromLeo) r = Math.round(r * s.perks.noise);
   // The slot machines drown out anything Leo does among them.
@@ -200,7 +200,7 @@ export function makeNoise(level: Level, s: State, p: Point, r: number, fromLeo =
     captainCalls(s, g, p);
   }
 }
-/** Where a guard stands to look at p: p itself, or the open tile beside it nearest him (for a kennel, a case, a crate). */
+/** Where a guard stands to check p: p itself, or the nearest open tile next to it. */
 function standingSpot(level: Level, s: State, p: Point, g: Point): Point {
   if (!blocksMove(tileNow(level, s, p.x, p.y))) return { ...p };
   const open = DIRS.map((d) => ({ x: p.x + d.x, y: p.y + d.y })).filter(
@@ -219,7 +219,7 @@ export function breakLaser(s: State, p: Point, why: string): void {
   }
   triggerAlarm(s, p, why);
 }
-/** The guard dogs within earshot of p: each barks (once a move, `barked` keeps track), and guards come running. */
+/** Dogs near p bark (once per move) and guards come to look. */
 export function dogsBark(level: Level, s: State, p: Point, barked: Set<string>): void {
   if (s.layer !== 'floor') return;
   for (const k of kennelsNear(level, p)) {
@@ -245,8 +245,9 @@ export function pickUpCard(level: Level, s: State, p: Point): void {
     s.log.push('Leo pockets the keycard.');
   }
 }
+/** Are any of these lamps on? */
 export const lightsOn = (s: State, lamps: number[]) => lamps.some((i) => !s.lampsOff.includes(i));
-/** The lights went out: the nearest guard on his rounds comes over to the switch to put them back on. */
+/** Lights went out: the nearest patrolling guard goes to switch them back on. */
 export function lightsNoticed(level: Level, s: State, at: Point): void {
   const front = DIRS.map((d) => ({ x: at.x + d.x, y: at.y + d.y })).filter(
     (p) => !blocksMove(tileAt(level, p.x, p.y)),

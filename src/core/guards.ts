@@ -6,12 +6,11 @@ import { GUARD_STEPS, LOOK_TURNS, SEARCH_STEPS } from './constants';
 import { faceToward, guardSees } from './sight';
 import { canSmell, catchLeo, guardFixesLights, smelled, spotted, triggerAlarm } from './noticed';
 
-// ---------------------------------------------------------------------------------------------
 // The guards' turn
 
 /** Tiles that show a theft: broken or emptied cases and an empty plinth. */
 function disturbances(level: Level, s: State): (Point & { byLeo: boolean })[] {
-  // Whatever Leo took is missing from its case, whether it's in his bag or he's put it down somewhere.
+  // Loot Leo took (in his bag or dropped) leaves its case empty.
   const leo = [...s.inventory, ...s.dropped.map((d) => d.li)].map((i) => ({
     ...level.def.loot[i].at,
     byLeo: true,
@@ -25,9 +24,11 @@ function disturbances(level: Level, s: State): (Point & { byLeo: boolean })[] {
   const rivals = s.rivalLoot.map((i) => ({ ...level.def.loot[i].at, byLeo: false }));
   return [...leo, ...smashed, ...rivals];
 }
+/** Can a guard walk on this tile? */
 function guardWalkable(level: Level, s: State, x: number, y: number): boolean {
   return !blocksMove(tileNow(level, s, x, y));
 }
+/** A guard's next step towards `target`, avoiding other guards. Null if he's there or stuck. */
 export function nextStepToward(
   level: Level,
   s: State,
@@ -36,7 +37,7 @@ export function nextStepToward(
   others: Set<string>,
 ): Point | null {
   if (g.x === target.x && g.y === target.y) return null;
-  // Cheapest walk on the floor, with diagonals costing 1.5 so guards keep to sensible lines.
+  // Cheapest path; diagonals cost 1.5 so guards walk sensible lines.
   // Guards walk through Leo's tile (and catch him there).
   const start = key(g.x, g.y);
   const goal = key(target.x, target.y);
@@ -75,7 +76,7 @@ export interface GuardStep {
   guard: number;
   to: { x: number; y: number; facing: number };
 }
-/** Where each guard will walk over the next turns if nothing changes, for drawing the footprints. */
+/** Each guard's next few steps if nothing changes (drawn as footprints). */
 export function planGuards(level: Level, s: State, turns = s.perks.previewTurns): Point[][] {
   const sim = structuredClone(s);
   sim.layer = 'vent'; // a dry run: nobody gets caught or alarmed
@@ -86,21 +87,24 @@ export function planGuards(level: Level, s: State, turns = s.perks.previewTurns)
     steps.filter((st) => st.guard === i).map((st) => ({ x: st.to.x, y: st.to.y })),
   );
 }
+/** Moves every guard for one turn. With `dry`, just works out where they'd go (no catching or noticing). */
 export function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
   const out: GuardStep[] = [];
   for (let gi = 0; gi < s.guards.length; gi++) {
     const g = s.guards[gi];
     if (g.asleep || roboOff(s, g)) continue;
-    // A sleepy guard who has settled back at his post nods off again.
+    // A sleepy guard back at his post falls asleep again.
     if (g.kind === 'sleepy' && g.mode === 'patrol' && g.x === g.route[0].x && g.y === g.route[0].y) {
       g.asleep = true;
       if (!dry) s.log.push(`${g.name} settles back in his chair and nods off.`);
       continue;
     }
+    // Walk step by step (searching guards and NightClaw go further), checking for Leo after each step.
     let sawLeo = false;
     const steps = g.mode === 'searching' || g.kind === 'nightclaw' ? SEARCH_STEPS : GUARD_STEPS;
     for (let i = 0; i < steps && s.status === 'playing'; i++) {
       const others = new Set(s.guards.filter((o) => o !== g).map((o) => key(o.x, o.y)));
+      // On patrol: walk to the next waypoint of the route.
       if (g.mode === 'patrol') {
         let target = g.route[g.target];
         if (g.x === target.x && g.y === target.y) {
@@ -109,7 +113,7 @@ export function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
         }
         const next = nextStepToward(level, s, g, target, others);
         if (!next) {
-          // A guard at his post (or stuck) still looks around him.
+          // Standing still (at his post or blocked): still looks around.
           if (!dry && i === 0) noticeThings(level, s, g);
           break;
         }
@@ -121,6 +125,7 @@ export function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
           g.facing = faceToward(g, g.route[g.target]);
         }
       } else if (g.point) {
+        // Suspicious or searching: head for the spot he's checking.
         const next = nextStepToward(level, s, g, g.point, others);
         if (next) {
           g.facing = faceToward(g, next);
@@ -131,6 +136,7 @@ export function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
       out.push({ guard: gi, to: { x: g.x, y: g.y, facing: g.facing } });
       guardFixesLights(level, s, g, dry);
       if (dry) continue;
+      // Did this step find Leo? Walked into him, saw him, or smelled him.
       if (s.layer === 'floor' && g.x === s.leo.x && g.y === s.leo.y) {
         catchLeo(s, g.name, 'by walking straight into him', g);
         break;
@@ -153,7 +159,7 @@ export function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
       noticeThings(level, s, g);
     }
     if (s.status !== 'playing') break;
-    // After looking around for long enough, a suspicious guard goes back to his rounds.
+    // Done looking around: back to the nearest waypoint of his route.
     if (g.mode !== 'patrol' && g.point && g.x === g.point.x && g.y === g.point.y) {
       g.look -= 1;
       if (g.look <= 0 && s.alarm === null) {
@@ -171,7 +177,7 @@ export function runGuards(level: Level, s: State, dry: boolean): GuardStep[] {
   }
   return out;
 }
-/** What a guard notices where he stands: empty displays (the alarm), decoy cards and paw prints (he goes to look). */
+/** What a guard notices: empty displays (alarm), decoy cards and paw prints (he goes to look). */
 function noticeThings(level: Level, s: State, g: Guard): void {
   for (const d of disturbances(level, s)) {
     const k = key(d.x, d.y);

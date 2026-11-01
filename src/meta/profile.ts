@@ -92,7 +92,7 @@ export function newProfile(): Profile {
   };
 }
 
-// --- Rivals --------------------------------------------------------------------------------------
+// Rivals
 
 const RIVAL_IDS = Object.keys(RIVALS) as RivalId[];
 
@@ -126,7 +126,7 @@ export function rivalFor(p: Profile, def: LevelDef, district: number): RivalPlan
   return plan;
 }
 
-// --- The black market ------------------------------------------------------------------------
+// The black market
 
 /** The share of an item's value the fences pay at a given player level. */
 export function fenceRate(level: number): number {
@@ -169,7 +169,7 @@ export function sell(p: Profile, id: number): number {
   return price;
 }
 
-// --- The opening -----------------------------------------------------------------------------
+// The opening
 
 /** After the tutorial the narrator buys its loot himself, to give Leo his first Catnip. */
 export function narratorBuysTutorialLoot(p: Profile, tutorialId: string): number {
@@ -186,7 +186,7 @@ export function buyLair(p: Profile): boolean {
   return true;
 }
 
-// --- After a heist ---------------------------------------------------------------------------
+// After a heist
 
 export interface XpLine {
   label: string;
@@ -346,7 +346,7 @@ export function completeHeist(p: Profile, level: Level, s: State): HeistReport {
   };
 }
 
-// --- Saving: three slots ---------------------------------------------------------------------
+// Saving: three slots
 
 export const slotKey = (slot: number) => `purrrfect-crime-slot-${slot + 1}`;
 /** Where M2 kept its one save; it moves into the first empty slot. */

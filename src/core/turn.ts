@@ -19,7 +19,7 @@ import { guardsMeetRival, runRival } from './rival';
 import { cameraSees, guardSees } from './sight';
 import { lightNow } from './light';
 
-/** A conveyor belt carries Leo a tile along at the end of his turn, if the way is clear. */
+/** A conveyor belt moves Leo 1 tile at the end of his turn, if clear. */
 function conveyor(level: Level, s: State): void {
   if (s.layer !== 'floor') return;
   const t = tileNow(level, s, s.leo.x, s.leo.y);
@@ -46,7 +46,7 @@ function washedUp(level: Level, s: State): void {
   makeNoise(level, s, best, NOISE.splash);
   checkExposure(level, s, best);
 }
-/** Ends Leo's turn: cameras sweep, guards move, the alarm counts down. Returns the guards' steps. */
+/** Ends Leo's turn: cameras turn, guards and rival move, alarm counts down. Returns the moves to animate. */
 export function endTurn(level: Level, s: State): GuardStep[] {
   if (s.status !== 'playing') return [];
   s.log = [];
@@ -70,7 +70,7 @@ export function endTurn(level: Level, s: State): GuardStep[] {
     if (s.alarm <= 0) {
       if (s.alarmByLeo) catchLeo(s, 'The police', 'Lockdown: every door sealed');
       else {
-        // Not Leo's alarm: the building seals up and the guards hunt the other thief. Leo plays on, but can't leave.
+        // A rival's alarm: lockdown, guards hunt the rival, Leo can't leave until it lifts.
         s.alarm = null;
         s.lockdown = true;
         s.lockdownTurns = 4;
@@ -102,7 +102,7 @@ export function endTurn(level: Level, s: State): GuardStep[] {
   }
   return steps;
 }
-/** What would happen if Leo stood on p (used to colour the planned path). 0 safe, 1 noticed, 2 caught or alarm. */
+/** Danger of standing on p, for colouring the path: 0 safe, 1 noticed, 2 caught or alarm. */
 export function danger(level: Level, s: State, p: Point): 0 | 1 | 2 {
   if (s.layer !== 'floor' || hiddenAt(level, s, p)) return 0;
   let worst: 0 | 1 | 2 = 0;
@@ -128,12 +128,11 @@ export function danger(level: Level, s: State, p: Point): 0 | 1 | 2 {
   }
   return worst;
 }
-/** What happens if Leo ends his turn on a tile and the guards then take theirs: the worst of it, and why. */
+/** Result of the look-ahead for one tile: the worst thing that happens, and why. */
 export type Aftermath = { kind: 'caught' | 'alarm' | 'seen'; why: string } | null;
 /**
- * Plays it forward on a copy: Leo moves to `to`, then (if that uses his last action point, `endsTurn`) the guards and cameras take their turn (they move and
- * turn, which the danger on the path alone doesn't show). Only what Leo brings on himself counts: an alarm a
- * rival sets off would ring wherever he stood.
+ * Look-ahead: on a copy of the state, moves Leo to `to` and (if that ends his turn) runs the guards' turn.
+ * Only trouble Leo causes counts - a rival's alarm would ring anyway.
  */
 export function aftermath(level: Level, s: State, to: Point, endsTurn = true): Aftermath {
   const sim = structuredClone(s);
@@ -156,7 +155,7 @@ export function aftermath(level: Level, s: State, to: Point, endsTurn = true): A
     return null;
   };
   const now = judge();
-  // A tile Leo would still have action points left on: only walking there counts, not the guards' turn after.
+  // Leo would still have AP left here, so only the walk counts.
   if (now || sim.status !== 'playing' || !endsTurn) return now;
   endTurn(level, sim);
   return judge();

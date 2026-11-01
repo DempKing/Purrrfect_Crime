@@ -44,7 +44,7 @@ export function computed() {
   }
   return game.cache;
 }
-// --- what happens when the guards move: worked out a few tiles a frame, for every tile Leo can reach -------
+// What happens when the guards move: worked out a few tiles a frame, for every tile Leo can reach
 
 /** For each reachable tile: what walking there would bring, and, if it uses his last action point, the guards' turn after. */
 export const risk = new Map<string, Aftermath>();

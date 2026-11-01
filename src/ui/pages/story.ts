@@ -16,7 +16,7 @@ export function toast(a: Achievement): void {
   setTimeout(() => t.classList.add('gone'), 4200);
   setTimeout(() => t.remove(), 5000);
 }
-// --- The narrator, between heists --------------------------------------------------------------
+// The narrator, between heists
 
 /** A sequence of lines (the narrator's, unless someone else is speaking) with a Next button; the last button runs `done`. */
 export function narratorScene(
@@ -44,7 +44,7 @@ export function narratorScene(
   });
   render();
 }
-// --- The ending -------------------------------------------------------------------------------------------
+// The ending
 
 export function legendaryCard(done: () => void): void {
   const el = show(

@@ -4,7 +4,7 @@ import type { Sfx } from '../audio';
 import type { Point } from '../core/level';
 import { game } from './game';
 
-// --- display state: where things are drawn, which lags the rules while animating -----------------
+// Display state: where things are drawn, which lags the rules while animating
 
 export const leo: Actor = { x: 0, y: 0, facing: 0, bob: 0 };
 export const rival: Actor = { x: 0, y: 0, facing: 0, bob: 0 };

@@ -35,7 +35,7 @@ import { MASTHEAD } from '../../meta/newspaper';
 import { CATEGORY_NAMES, catnip, esc, FENCE_SVG, money, on, sfx, show, tilt } from './common';
 import { SEAL_SVG } from './letters';
 
-// --- The lair -------------------------------------------------------------------------------------------
+// The lair
 
 export interface LairCallbacks {
   jobs: LevelDef[];

@@ -33,7 +33,7 @@ export const COL = {
   motion: 0xff6a6a,
   beam: 0xd9a066,
 };
-// The overlay colours, and the colour-blind friendly set (Okabe–Ito): blue and yellow for reach, vermilion
+// The overlay colours, and the colour-blind friendly set (Okabe-Ito): blue and yellow for reach, vermilion
 // for what guards see (hatched, so it doesn't rely on colour), reddish purple for cameras.
 const STANDARD = {
   reach1: COL.reach1,

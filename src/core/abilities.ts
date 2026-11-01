@@ -8,7 +8,6 @@ import { guardTiles } from './movement';
 import { breakLaser, checkExposure, dogsBark, makeNoise, pickUpCard, triggerAlarm } from './noticed';
 import { actionsHere, doAction } from './actions';
 
-// ---------------------------------------------------------------------------------------------
 // Abilities: gadgets and active skills
 
 export interface AbilityInfo {
@@ -20,6 +19,7 @@ export interface AbilityInfo {
   left: number; // charges left (UNLIMITED for pounce)
   blocked?: string;
 }
+/** Names shown on the ability buttons. */
 const ABILITY_NAMES: Record<Ability, string> = {
   'bottle-cap': 'Bottle cap',
   'decoy-card': 'Decoy card',
@@ -31,6 +31,7 @@ const ABILITY_NAMES: Record<Ability, string> = {
   'cat-nap': 'Cat nap',
   'second-wind': 'Second wind',
 };
+/** What each ability is aimed at. */
 const ABILITY_TARGET: Record<Ability, AbilityInfo['target']> = {
   'bottle-cap': 'tile',
   'decoy-card': 'tile',
@@ -71,6 +72,7 @@ export function abilities(level: Level, s: State): AbilityInfo[] {
   }
   return out;
 }
+/** Can something be thrown onto this tile? */
 const throwable = (level: Level, s: State, x: number, y: number) => {
   const t = tileNow(level, s, x, y);
   return !blocksMove(t) || t === 'case' || t === 'plinth';
@@ -96,7 +98,7 @@ export function abilityTargets(level: Level, s: State, kind: Ability): Set<strin
       if (camerasActive(s, c) && Math.hypot(c.at.x - L.x, c.at.y - L.y) <= ABILITY_RANGE.loop)
         out.add(key(c.at.x, c.at.y));
   } else if (kind === 'pounce') {
-    // Two tiles in a straight line, over anything low (a laser, a case, a lamp), onto open floor.
+    // Pounce: 2 tiles in a straight line, over anything low, onto open floor.
     const guards = guardTiles(s);
     for (const d of DIRS) {
       const mid = tileNow(level, s, L.x + d.x, L.y + d.y);
@@ -194,7 +196,7 @@ export function useAbility(level: Level, s: State, kind: Ability, at?: Point): b
   }
   return true;
 }
-// Kept for the warm-up level and the solver: take the centrepiece from next to its plinth.
+// Take the centrepiece from beside its plinth (used by the warm-up level and the solver).
 export function canSteal(level: Level, s: State): boolean {
   return (
     !!level.plinth &&
@@ -203,6 +205,7 @@ export function canSteal(level: Level, s: State): boolean {
     )
   );
 }
+/** Takes the centrepiece from the plinth (Leo must be beside it). */
 export function steal(level: Level, s: State): boolean {
   return !!level.plinth && doAction(level, s, 'take', level.plinth);
 }

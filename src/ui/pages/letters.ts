@@ -3,7 +3,7 @@ import { delivery, type Letter, LETTERS } from '../../meta/letters';
 import type { Profile } from '../../meta/profile';
 import { esc, on, show } from './common';
 
-// --- NightClaw's letters -------------------------------------------------------------------------------
+// NightClaw's letters
 
 /** NightClaw's seal: a black wax disc with three claw marks. */
 export const SEAL_SVG = `<svg viewBox="0 0 40 40" class="seal" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="#1b1b22" stroke="#4a3a52" stroke-width="2"/>

@@ -5,7 +5,7 @@ import { actionsHere, doAction, guardSees, moveLeo, newHeist } from '../src/core
 import { type GuardDef, parseLevel } from '../src/core/level';
 import { DOWNTOWN } from './helpers';
 
-// --- The finale: NightClaw ---------------------------------------------------------------------------------
+// The finale: NightClaw
 
 test('NightClaw sees through the dark, catches Leo on sight, and can be tapped on the shoulder from behind', () => {
   const guards: GuardDef[] = [

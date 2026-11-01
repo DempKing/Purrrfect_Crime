@@ -23,7 +23,7 @@ import { $, sfx } from './common';
 import { view, world } from './camera';
 import { say, updateHud } from './hud';
 
-// --- loot: click it for what Leo can do -------------------------------------------------------------
+// Loot: click it for what Leo can do
 
 /** A camera panel or power box that's still on, which Leo can walk over to and use. */
 export function boxHere(t: Point): 'panel' | 'fuse' | null {
@@ -209,7 +209,7 @@ function putDown(li: number): void {
   say(game.state.log.join(' '));
   renderBag();
 }
-// --- the bag: what Leo's carrying ----------------------------------------------------------------------------
+// The bag: what Leo's carrying
 
 export function bagOpen(): boolean {
   return !$('bag').classList.contains('hidden');

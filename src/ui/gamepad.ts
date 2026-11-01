@@ -11,10 +11,10 @@
 //   LB / RB              turn the camera
 //   LT / RT              zoom out / in
 //   right stick          pan the camera; click either stick to bring it back to Leo
-//   View / Select        the heist's buttons: actions, gadgets, Restart, Quit…
+//   View / Select        the heist's buttons: actions, gadgets, Restart, Quit...
 //   Menu / Start         settings
 //
-// Those are the defaults: the player can rebind every button but the D-pad in Settings → Controls (src/controls.ts).
+// Those are the defaults: the player can rebind every button but the D-pad in Settings -> Controls (src/controls.ts).
 
 import { actionForButton, type PadMap } from '../controls';
 
@@ -25,7 +25,7 @@ export function capturePadButton(fn: ((b: number) => void) | null): void {
 }
 
 export interface PadHooks {
-  /** The player's button bindings (Settings → Controls). */
+  /** The player's button bindings (Settings -> Controls). */
   padMap(): PadMap;
   /** The buttons to move between, or null when the controller drives the map. */
   menuRoot(): HTMLElement | null;

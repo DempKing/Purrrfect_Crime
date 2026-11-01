@@ -8,7 +8,7 @@ import * as screens from '../ui/screens';
 import { advance, TUTORIAL } from '../meta/tutorial';
 import { game } from './game';
 
-// --- the save ---------------------------------------------------------------------------------
+// The save
 
 export function storage(): Storage | null {
   try {
@@ -18,7 +18,7 @@ export function storage(): Storage | null {
   }
 }
 export const persist = () => saveSlot(storage(), game.slot, game.profile);
-// --- settings and sound ------------------------------------------------------------------------
+// Settings and sound
 
 export const sound = new Sound();
 const prefersReducedMotion =

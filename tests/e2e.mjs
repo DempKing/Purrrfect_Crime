@@ -36,7 +36,7 @@ await page.waitForTimeout(400);
 const shot = (name) => page.screenshot({ path: join(out, name) });
 await shot('01-title.png');
 
-// --- Settings: open from the title, change them, and they apply at once and are remembered -----------------
+// Settings: open from the title, change them, and they apply at once and are remembered
 await page.click('#title-settings');
 await page.waitForSelector('.settings');
 await page.click('[data-toggle="largeText"]');
@@ -134,7 +134,7 @@ async function playRoute(steps, shots = {}, each = async () => {}) {
   }
 }
 
-// --- The tutorial ---------------------------------------------------------------------------------
+// The tutorial
 await shot('02-tutorial-start.png');
 const tips = new Set([await page.evaluate(() => window.__pc.tutorialStep)]);
 const noteTip = async () => {
@@ -171,7 +171,7 @@ await page.waitForTimeout(3500);
 await shot('08-report.png');
 await closeReport();
 
-// --- The narrator pays, and Leo buys the lair -------------------------------------------------------
+// The narrator pays, and Leo buys the lair
 await shot('09-narrator.png');
 for (let i = 0; i < 4; i++) await page.click('#next');
 await page.waitForSelector('#lair-building');
@@ -187,7 +187,7 @@ const afterLair = await page.evaluate(() => ({
   stash: window.__pc.profile.stash.length,
 }));
 
-// --- The Coin Museum, the first heist on offer --------------------------------------------------------------
+// The Coin Museum, the first heist on offer
 await page.click('[data-job="1"]');
 await page.waitForSelector('.board');
 await shot('11b-briefing-no-table.png');
@@ -219,7 +219,7 @@ const sold = await page.evaluate(() => ({
 await page.click('[data-tab="papers"]');
 await shot('15-front-pages.png');
 
-// --- Spend it: an attribute, a skill, two rooms (with a little Catnip slipped in, so there's enough) ------
+// Spend it: an attribute, a skill, two rooms (with a little Catnip slipped in, so there's enough)
 await page.evaluate(() => {
   window.__pc.profile.catnip = 2000;
 });
@@ -238,7 +238,7 @@ const spent = await page.evaluate(() => ({
   rooms: window.__pc.profile.rooms,
 }));
 
-// --- Replay with the new kit: a bottle cap, then get caught on purpose ---------------------------------------
+// Replay with the new kit: a bottle cap, then get caught on purpose
 await page.click('[data-tab="heists"]');
 await page.click('[data-job="1"]');
 await page.waitForSelector('.board .plan');
@@ -275,7 +275,7 @@ await shot('20-caught.png');
 await page.click('#quit2');
 await page.waitForSelector('.lair');
 
-// --- A rival: Luna Luck is after the Double Doubloon tonight -----------------------------------------------
+// A rival: Luna Luck is after the Double Doubloon tonight
 await page.evaluate(() => {
   window.__pc.profile.rivals['l1-coin-museum'] = { id: 'luna', arrive: 2, entrance: 0 };
   window.__pc.profile.rooms.planning = 2;
@@ -296,7 +296,7 @@ await shot('22-rival.png');
 await page.click(race.status === 'playing' ? '#quit' : '#quit2');
 await page.waitForSelector('.lair');
 
-// --- Save & quit, then continue from the title ----------------------------------------------------------
+// Save & quit, then continue from the title
 await page.click('#lair-quit');
 await page.waitForSelector('#continue');
 await shot('22-title-slots.png');
@@ -315,7 +315,7 @@ const reloaded = await page.evaluate(() => ({
   skills: window.__pc.profile.skills.length,
 }));
 
-// --- NightClaw's letters: ten heists and 10,000 Catnip sold bring both, and open the challenge museum -----
+// NightClaw's letters: ten heists and 10,000 Catnip sold bring both, and open the challenge museum
 await page.evaluate(() => {
   window.__pc.profile.heists = 10;
   window.__pc.profile.soldTotal = 10000;
@@ -335,7 +335,7 @@ const challenge = await page.evaluate(() =>
 );
 await shot('24-challenge-heist.png');
 
-// --- The endgame: the challenge done, Letter 4, NightClaw's Lair, the ending ---------------------------------
+// The endgame: the challenge done, Letter 4, NightClaw's Lair, the ending
 await page.evaluate(() => {
   const p = window.__pc.profile;
   for (const l of window.__pc.levels)
@@ -378,7 +378,7 @@ const legendary = await page.evaluate(() => ({
 }));
 await shot('30-legendary-lair.png');
 
-// --- Phone layout ----------------------------------------------------------------------------------------
+// Phone layout
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(300);
 await shot('31-phone-lair.png');

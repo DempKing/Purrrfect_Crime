@@ -35,7 +35,7 @@ function quiet(level = night): State {
   return s;
 }
 
-// --- the warm-up level ------------------------------------------------------------------------
+// The warm-up level
 
 test('levels parse: start, exit, plinth, vents line up with grates', () => {
   assert.deepEqual(grey.start, { x: 1, y: 1 });
@@ -102,7 +102,7 @@ test('the warm-up level can be beaten, but not trivially', () => {
   assert.ok(sol.turns >= 4, `too easy: ${sol.turns} turns`);
 });
 
-// --- light and suspicion ----------------------------------------------------------------------
+// Light and suspicion
 
 test('lamps light the floor; shadows stay dark', () => {
   assert.equal(lightAt(night, 9, 4), 2, 'next to a lamp');
@@ -132,7 +132,7 @@ test('a glimpse in dim light makes a guard suspicious; a second look is a catch'
   assert.equal(s.status, 'caught');
 });
 
-// --- noise ------------------------------------------------------------------------------------
+// Noise
 
 test('marble is noisy and brings a guard over to look', () => {
   const s = quiet();
@@ -157,7 +157,7 @@ test('a dash makes noise; walking on carpet does not', () => {
   assert.ok(t.noises.some((n) => n.r === 4));
 });
 
-// --- security ---------------------------------------------------------------------------------
+// Security
 
 test('lasers trip the alarm until the fuse box is cut', () => {
   const s = quiet();
@@ -196,7 +196,7 @@ test('cameras raise the alarm when they see Leo', () => {
   assert.ok(s.alarm !== null);
 });
 
-// --- locks, glass, vents, inventory ----------------------------------------------------------
+// Locks, glass, vents, inventory
 
 test('a case takes two quiet picks, or one loud smash', () => {
   const s = quiet();

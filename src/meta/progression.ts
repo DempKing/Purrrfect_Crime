@@ -4,7 +4,7 @@
 import { BASE_PERKS, type Ability, type Perks } from '../core/game';
 import type { Profile } from './profile';
 
-// --- XP and levels ---------------------------------------------------------------------------
+// XP and levels
 
 export const LEVEL_CAP = 30;
 
@@ -26,7 +26,7 @@ export function playerLevel(xp: number): number {
   return l;
 }
 
-// --- Attributes ------------------------------------------------------------------------------
+// Attributes
 
 export type Attribute = 'agility' | 'stealth' | 'quietPaws' | 'dexterity' | 'pockets' | 'perception';
 
@@ -114,7 +114,7 @@ export function raise(p: Profile, id: Attribute): boolean {
   return true;
 }
 
-// --- Skills ----------------------------------------------------------------------------------
+// Skills
 
 export type Tree = 'shadow' | 'tech' | 'acrobat';
 export type SkillId =
@@ -306,7 +306,7 @@ export function learn(p: Profile, id: SkillId): boolean {
   return true;
 }
 
-// --- The lair's rooms ------------------------------------------------------------------------
+// The lair's rooms
 
 export type Room = 'planning' | 'workshop' | 'fence' | 'gym' | 'trophy' | 'mailbox';
 
@@ -412,7 +412,7 @@ export function lairCondition(p: Profile): number {
   return Object.values(p.rooms).reduce((n, t) => n + t, 0) / max;
 }
 
-// --- Into a heist ------------------------------------------------------------------------------
+// Into a heist
 
 /** What Leo's attributes, skills and lair bring to a heist. */
 export function perksFor(p: Profile): Perks {

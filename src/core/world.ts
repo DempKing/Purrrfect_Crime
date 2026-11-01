@@ -2,7 +2,6 @@
 import { type GuardKind, type Level, type Point, type Tile, tileAt } from './level';
 import { type Camera, key, type State } from './state';
 
-// ---------------------------------------------------------------------------------------------
 // The world as it is now (doors opened, loot taken)
 
 export function tileNow(level: Level, s: State, x: number, y: number): Tile {
@@ -22,21 +21,26 @@ export function tideTurnsLeft(level: Level, s: State): number {
   const period = level.def.tide?.period ?? 1;
   return period - ((s.turn - 1) % period);
 }
+/** Is p inside any of these rectangles? */
 export const inRects = (rects: { x: number; y: number; w: number; h: number }[] | undefined, p: Point) =>
   (rects ?? []).some((m) => p.x >= m.x && p.x < m.x + m.w && p.y >= m.y && p.y < m.y + m.h);
 /** Leo, curled up in a crate: nobody sees him, smells him or bumps into him. */
 export function hiddenAt(level: Level, s: State, p: Point): boolean {
   return s.layer === 'floor' && tileAt(level, p.x, p.y) === 'crate';
 }
+/** Index of the loot at x,y, or -1. */
 export function lootAt(level: Level, x: number, y: number): number {
   return level.def.loot.findIndex((l) => l.at.x === x && l.at.y === y);
 }
+/** Space used in Leo's bag. */
 export function inventoryUsed(level: Level, s: State): number {
   return s.inventory.reduce((n, i) => n + level.def.loot[i].space, 0);
 }
+/** Total value in Leo's bag. */
 export function inventoryValue(level: Level, s: State): number {
   return s.inventory.reduce((v, i) => v + level.def.loot[i].value, 0);
 }
+/** Are the lasers on? */
 export function lasersActive(level: Level, s: State): boolean {
   return !s.lasersOff && s.lasersOffTurns <= 0 && (!level.def.pulsingLasers || s.turn % 2 === 1);
 }
@@ -55,9 +59,11 @@ export function motionTrip(level: Level, s: State, path: Point[]): number {
 export function roboOff(s: State, g: { kind?: GuardKind }): boolean {
   return g.kind === 'robo' && !sensorsActive(s);
 }
+/** Is this camera working (not switched off at the panel or knocked out for a few turns)? */
 export function camerasActive(s: State, c: Camera): boolean {
   return !s.camerasOff && c.offTurns <= 0;
 }
+/** Is x,y inside a smoke cloud? */
 export function inSmoke(s: State, x: number, y: number): boolean {
   return s.smoke.some((c) => Math.abs(c.x - x) <= 1 && Math.abs(c.y - y) <= 1);
 }

@@ -3,6 +3,7 @@
 import { moveAp, canSteal, endTurn, leoReach, moveLeo, newHeist, steal, type State } from './game';
 import type { Level, Point } from './level';
 
+/** A string that identifies a state, to skip repeats. */
 function stateKey(s: State): string {
   return `${s.leo.x},${s.leo.y}|${s.inventory.join(',')}|${s.guards.map((g) => `${g.x},${g.y},${g.facing},${g.target}`).join(';')}`;
 }
@@ -12,7 +13,7 @@ export interface Solution {
   plan: string[]; // human-readable, one line per turn
 }
 
-/** Breadth-first over whole turns. Each turn Leo may move, steal and move, or move and steal. */
+/** Breadth-first search over whole turns (move, steal-and-move, or move-and-steal). */
 export function solve(level: Level, maxTurns = 60): Solution | null {
   const start = newHeist(level);
   const seen = new Set([stateKey(start)]);
@@ -37,6 +38,7 @@ export function solve(level: Level, maxTurns = 60): Solution | null {
   return null;
 }
 
+/** Every place Leo can move to this turn. */
 function moves(level: Level, s: State): { s: State; to: Point }[] {
   const out: { s: State; to: Point }[] = [{ s: structuredClone(s), to: s.leo }];
   const reach = leoReach(level, s);
@@ -50,6 +52,7 @@ function moves(level: Level, s: State): { s: State; to: Point }[] {
   return out;
 }
 
+/** Every way Leo can spend one turn. */
 function turnOptions(level: Level, s: State): { after: State; what: string }[] {
   const out: { after: State; what: string }[] = [];
   for (const m of moves(level, s)) {

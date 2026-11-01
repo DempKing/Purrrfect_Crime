@@ -15,7 +15,7 @@ import {
 import { type GuardDef, parseLevel } from '../src/core/level';
 import { DOWNTOWN } from './helpers';
 
-// --- Downtown: Robo-Guards, slot machines, conveyor belts, wet paint, the time lock ---------------------------
+// Downtown: Robo-Guards, slot machines, conveyor belts, wet paint, the time lock
 
 test('a Robo-Guard sees Leo’s heat 4 tiles off in the dark, hears nothing, and powers down at the fuse box', () => {
   const guards: GuardDef[] = [

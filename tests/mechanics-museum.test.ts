@@ -15,7 +15,7 @@ import {
 import { type GuardDef, parseLevel } from '../src/core/level';
 import { HALL, plan } from './helpers';
 
-// --- Museum Mile: pressure plates, motion sensors, rivals ------------------------------------------------
+// Museum Mile: pressure plates, motion sensors, rivals
 
 test('a pressure plate sets off the alarm; pouncing over it doesn’t', () => {
   const level = parseLevel(HALL);

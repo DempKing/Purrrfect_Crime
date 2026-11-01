@@ -40,7 +40,7 @@ export type Sfx =
 export type Tension = 0 | 1 | 2 | 3;
 
 const BPM = { calm: 92, chase: 150 };
-// A ii–V–I–vi loop in D minor-ish, as walking-bass roots and chord tones (MIDI note numbers).
+// A ii-V-I-vi loop in D minor-ish, as walking-bass roots and chord tones (MIDI note numbers).
 const BARS = [
   { bass: [38, 41, 45, 43], chord: [62, 65, 69, 72] }, // Dm7
   { bass: [43, 47, 50, 49], chord: [59, 62, 65, 69] }, // G7
@@ -245,7 +245,7 @@ export class Sound {
     this.ctx = null;
   }
 
-  // --- building blocks ----------------------------------------------------------------------------
+  // Building blocks
 
   private tone(
     bus: GainNode,
@@ -333,7 +333,7 @@ export class Sound {
     return x * (1 + (Math.random() - 0.5) * 2 * amount);
   }
 
-  // --- the music ---------------------------------------------------------------------------------
+  // The music
 
   /** Schedules the next few eighth notes, a little ahead of time. */
   private schedule(): void {
@@ -378,7 +378,7 @@ export class Sound {
     }
   }
 
-  // --- effects -------------------------------------------------------------------------------------
+  // Effects
 
   play(name: Sfx, delay = 0): void {
     const ctx = this.ctx;

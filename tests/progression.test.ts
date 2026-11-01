@@ -83,7 +83,7 @@ test('levels reject guards walking through walls', () => {
   );
 });
 
-// --- attributes, as perks ---------------------------------------------------------------------------
+// Attributes, as perks
 
 test('Agility: more tiles per action point, and cheaper crawling', () => {
   const s = quiet(night, { movePerAp: 7 });
@@ -145,7 +145,7 @@ test('Perception: footprints for more turns ahead', () => {
   assert.ok(three[0].length > one[0].length * 2);
 });
 
-// --- skills and gadgets ---------------------------------------------------------------------------
+// Skills and gadgets
 
 test('Ghost Step silences the first noisy move only', () => {
   const s = quiet(night, { ghostStep: true });
@@ -276,7 +276,7 @@ test('Cat Nap: two guard turns where nobody notices Leo', () => {
   assert.equal(s.ap, 2, 'awake');
 });
 
-// --- the profile side -------------------------------------------------------------------------------
+// The profile side
 
 function richProfile(level: number): Profile {
   const p = newProfile();

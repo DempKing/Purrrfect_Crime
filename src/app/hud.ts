@@ -29,7 +29,7 @@ import { view, world } from './camera';
 import { clickAction } from './clicks';
 import { computed } from './preview';
 
-// --- HUD --------------------------------------------------------------------------------------
+// HUD
 
 export function say(text: string): void {
   $('message').textContent = text;

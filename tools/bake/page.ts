@@ -22,7 +22,7 @@ export interface BakeOptions {
 }
 
 export interface Baked {
-  strip: string; // a webp data URL: eight frames side by side, frame k is the view turned k × 45°
+  strip: string; // a webp data URL: eight frames side by side, frame k is the view turned k x 45°
   w: number;
   h: number;
   ax: number; // the anchor (tile centre on the floor, or the wall point) inside each frame, in stored pixels
@@ -139,7 +139,7 @@ async function bake(url: string, o: BakeOptions): Promise<Baked> {
   const ictx = ink.getContext('2d')!;
   const ow = o.outline * o.scale;
   for (let i = 0; i < 8; i++) {
-    pivot.rotation.y = -(i * Math.PI) / 4; // the game's turn by i × 45°
+    pivot.rotation.y = -(i * Math.PI) / 4; // the game's turn by i x 45°
     renderer.render(scene, cam);
     // The ink: the silhouette, filled dark and smeared outward in a ring, under the picture.
     ictx.clearRect(0, 0, w, h);
