@@ -171,3 +171,17 @@ test('maps reject a ladder without rafters above it, and loot outside cases, saf
     /loot/,
   );
 });
+
+test('lock picking minigame: a slipped pick spends the go and makes noise, but sets no pin', () => {
+  const { level, s } = heist(sandbox([{ name: 'Rex', start: { x: 8, y: 2 }, route: [{ x: 9, y: 2 }] }]));
+  s.leo = { x: 13, y: 4 }; // beside the safe at 13,5
+  const ap = s.ap;
+  assert.ok(doAction(level, s, 'crack-safe', { x: 13, y: 5 }, { slipped: true }));
+  assert.equal(s.ap, ap - 1, 'the go is spent');
+  assert.equal(s.picks['13,5'] ?? 0, 0, 'no pin set');
+  assert.ok(s.noises.length > 0, 'the lock rattled');
+  assert.ok(s.log.some((l) => /CLANK/.test(l)));
+  // A clean go still counts.
+  assert.ok(doAction(level, s, 'crack-safe', { x: 13, y: 5 }));
+  assert.equal(s.picks['13,5'], 1);
+});

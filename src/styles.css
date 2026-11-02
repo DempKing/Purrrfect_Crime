@@ -4431,3 +4431,40 @@ body.pad :focus {
 .controls-list tr.fixed th kbd {
   opacity: 0.75;
 }
+
+/* The lock picking minigame. */
+.overlay.lockpick {
+  z-index: 60;
+}
+.lockpick-card {
+  width: min(440px, 100%);
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  text-align: center;
+}
+.lockpick-card h2 {
+  font-family: var(--display);
+  margin: 0;
+}
+.lockpick-card canvas {
+  width: min(340px, 72vw);
+  aspect-ratio: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.lockpick-status {
+  font-family: var(--display);
+  font-size: 1.4rem;
+  margin: 0;
+  min-height: 1.5em;
+}
+.lockpick-status.ok {
+  color: #2f9e5c;
+}
+.lockpick-status.bad {
+  color: var(--red);
+}
+.lockpick-card.shake {
+  animation: shake 0.35s;
+}

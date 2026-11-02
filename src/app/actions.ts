@@ -5,6 +5,9 @@ import {
   type Action,
   doAction,
   faceToward,
+  key,
+  LOCK_SLIP_NOISE,
+  VAULT_DIALS,
   tileNow,
   useAbility,
 } from '../core/game';
@@ -13,17 +16,61 @@ import type { Point } from '../core/level';
 import { game } from './game';
 import { say, updateHud } from './hud';
 import { confirmLeave, floatText, leavingWithoutTap, shake } from './moves';
-import { anim, sfx } from './common';
+import { anim, settings, sfx } from './common';
+import { LOCK_FEEL, type LockKind, playLockpick } from '../ui/lockpick';
 import { leo, play } from './actors';
 import { afterLeoActs } from './notices';
 
-/** Runs one of Leo's actions, with its sound and effects. */
+/** How many goes each kind of lock takes (one pin per go). */
+function pinsNeeded(kind: LockKind): number {
+  const p = game.state.perks;
+  return kind === 'pick-door'
+    ? p.doorPicks
+    : kind === 'pick-case'
+      ? p.casePicks
+      : kind === 'crack-safe'
+        ? p.safeCracks
+        : VAULT_DIALS;
+}
+
+/** Runs one of Leo's actions, with its sound and effects. Locks go through the lock picking minigame first. */
 export function runAction(a: Action): void {
   if (game.busy || game.state.status !== 'playing') return;
   if (a.blocked) return say(a.blocked);
+  if (a.kind in LOCK_FEEL && settings.lockpickGame) {
+    const kind = a.kind as LockKind;
+    game.busy = true; // nothing else happens while the lock is open
+    void playLockpick({
+      kind,
+      pinsDone: game.state.picks[key(a.at.x, a.at.y)] ?? 0,
+      pinsNeeded: pinsNeeded(kind),
+      speedMult: game.state.perks.lockSpeed,
+      noiseTiles: Math.round(LOCK_SLIP_NOISE[kind] * game.state.perks.noise),
+      confirmKeys: settings.keys.confirm,
+      confirmButtons: settings.pad.confirm,
+      cancelButtons: settings.pad.cancel,
+      reduceMotion: settings.reduceMotion,
+      sound: (n) => sfx(n === 'pin' ? 'pick' : n === 'slip' ? 'clank' : 'tick'),
+    }).then((res) => {
+      game.busy = false;
+      if (res !== 'cancel') performAction(a, res === 'slip');
+      else updateHud();
+    });
+    return;
+  }
+  performAction(a, false);
+}
+
+/** Does the action and shows what came of it. `slipped`: the lock picking minigame was missed. */
+function performAction(a: Action, slipped: boolean): void {
   game.state.log = [];
   const invBefore = [...game.state.inventory];
-  if (!doAction(game.level, game.state, a.kind, a.at)) return say('Leo can’t do that right now.');
+  if (!doAction(game.level, game.state, a.kind, a.at, { slipped }))
+    return say('Leo can’t do that right now.');
+  if (slipped) {
+    floatText(a.at, 'CLANK!', 'red');
+    shake();
+  }
   // Show the payoff where it happened: loot value, CRASH, click...
   for (const li of game.state.inventory.filter((i) => !invBefore.includes(i))) {
     const l = game.level.def.loot[li];
@@ -35,6 +82,7 @@ export function runAction(a: Action): void {
     floatText(a.at, 'CRASH!', 'red');
     shake();
   } else if (
+    !slipped &&
     (a.kind === 'pick-case' || a.kind === 'pick-door' || a.kind === 'crack-safe') &&
     game.state.inventory.length === invBefore.length
   )
@@ -65,7 +113,7 @@ export function runAction(a: Action): void {
     (a.kind === 'pick-door' && tileNow(game.level, game.state, a.at.x, a.at.y) !== 'door');
   if (opened && (a.kind === 'pick-door' || a.kind === 'pick-case')) snd = 'unlock';
   if (opened && a.kind === 'crack-safe') snd = 'safe-open';
-  if (snd) sfx(snd);
+  if (snd && !slipped) sfx(snd);
   if (
     a.kind !== 'enter-vent' &&
     a.kind !== 'exit-vent' &&

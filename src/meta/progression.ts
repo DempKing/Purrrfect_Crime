@@ -456,6 +456,7 @@ export function perksFor(p: Profile): Perks {
     safeCracks: BASE_PERKS.safeCracks - (a.dexterity >= 1 ? 1 : 0),
     doorPicks: a.dexterity >= 2 || has('keycard-clone') ? 1 : BASE_PERKS.doorPicks,
     silentPicks: a.dexterity >= 3,
+    lockSpeed: Math.round((1 - 0.1 * a.dexterity) * 100) / 100,
     spaces: BASE_PERKS.spaces + a.pockets,
     previewTurns: 1 + a.perception + (p.rooms.planning >= 3 ? 1 : 0),
     ghostStep: has('ghost-step'),

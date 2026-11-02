@@ -3,7 +3,7 @@ import { blocksMove, type Level, type Point, the, tileAt } from './level';
 import { key, RIVALS, type State } from './state';
 import { inventoryUsed, lootAt, tileNow } from './world';
 import { guardTiles } from './movement';
-import { NOISE, VAULT_DIALS } from './constants';
+import { LOCK_SLIP_NOISE, NOISE, VAULT_DIALS, type LockAction } from './constants';
 import { guardSees } from './sight';
 import { checkExposure, dogsBark, lightsNoticed, lightsOn, makeNoise } from './noticed';
 
@@ -288,11 +288,26 @@ function take(level: Level, s: State, at: Point): void {
 export function lootGone(s: State, li: number): boolean {
   return s.inventory.includes(li) || s.rivalLoot.includes(li) || s.dropped.some((d) => d.li === li);
 }
-/** Does one of Leo's actions at a tile. Returns false if it isn't possible. */
-export function doAction(level: Level, s: State, kind: ActionKind, at: Point): boolean {
+/**
+ * Does one of Leo's actions at a tile. Returns false if it isn't possible.
+ * `slipped`: the lock picking minigame was missed. The go is spent and the lock rattles, but no pin sets.
+ */
+export function doAction(
+  level: Level,
+  s: State,
+  kind: ActionKind,
+  at: Point,
+  opts: { slipped?: boolean } = {},
+): boolean {
   const a = actionsHere(level, s).find((x) => x.kind === kind && x.at.x === at.x && x.at.y === at.y);
   if (!a || a.blocked) return false;
   s.ap -= a.ap;
+  // A missed lock picking minigame: the go is spent and the lock rattles loudly.
+  if (opts.slipped && kind in LOCK_SLIP_NOISE) {
+    makeNoise(level, s, s.leo, LOCK_SLIP_NOISE[kind as LockAction]);
+    s.log.push(kind === 'turn-dials' ? 'CLANK! The dial slips.' : 'CLANK! The pick slips.');
+    return true;
+  }
   // Each action changes the state; locks and safes take several goes (counted in s.picks).
   const k = key(at.x, at.y);
   switch (kind) {

@@ -16,6 +16,8 @@ export interface Settings {
   palette: Palette;
   /** The narrator's tips in the tutorial. */
   hints: boolean;
+  /** Locks are opened with the lock picking minigame (off: every go works). */
+  lockpickGame: boolean;
   /** The player's own key and controller-button bindings. */
   keys: KeyMap;
   pad: PadMap;
@@ -34,6 +36,7 @@ export function defaultSettings(reduceMotion = false): Settings {
     largeText: false,
     palette: 'standard',
     hints: true,
+    lockpickGame: true,
     keys: defaultKeys(),
     pad: defaultPad(),
   };
@@ -67,6 +70,7 @@ export function loadSettings(
       palette:
         s.palette === 'colorblind' || (s.palette as string) === 'colourblind' ? 'colorblind' : 'standard',
       hints: typeof s.hints === 'boolean' ? s.hints : d.hints,
+      lockpickGame: typeof s.lockpickGame === 'boolean' ? s.lockpickGame : d.lockpickGame,
       keys: cleanKeys(s.keys),
       pad: cleanPad(s.pad),
     };

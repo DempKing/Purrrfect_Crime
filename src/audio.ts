@@ -22,6 +22,7 @@ export type Sfx =
   | 'dials'
   | 'click'
   | 'clink'
+  | 'clank'
   | 'bark'
   | 'splash'
   | 'alarm'
@@ -474,6 +475,13 @@ export class Sound {
         // A safe dial spinning: ratcheting ticks that ring a little inside the box.
         for (let k = 0; k < 6; k++) this.metal(b, t + k * 0.05, this.vary(1700, 0.04), 0.06, 0.04, [1, 3.1]);
         return this.thud(b, t + 0.32, 200, 0.12, 0.08);
+      case 'clank':
+        // A pick slipping in a lock: a heavy metal clank and a rattle.
+        this.thud(b, t, 110, 0.45, 0.18);
+        this.metal(b, t, 820, 0.35, 0.22, [1, 2.3, 3.6]);
+        this.metal(b, t + 0.07, 1350, 0.18, 0.1);
+        this.metal(b, t + 0.13, 1150, 0.12, 0.07);
+        return;
       case 'click':
         // A switch or a lever: a crisp mechanical snap.
         this.metal(b, t, 2200, 0.04, 0.06, [1, 2.7]);

@@ -1,4 +1,6 @@
 // window.__pc: lets the browser tests read the state, find tiles on screen and start levels.
+import { updateHud } from './hud';
+import { lockpickTest } from '../ui/lockpick';
 import { danger, key, leoReach, lootAt, moveAp } from '../core/game';
 import { TUTORIAL } from '../meta/tutorial';
 import { project } from '../render/iso';
@@ -36,6 +38,7 @@ export function installTestHook(): void {
     refresh: () => {
       game.version++;
       syncActors();
+      updateHud();
     },
     lootIndexAt: (x: number, y: number) => lootAt(game.level, x, y),
     /** Clicks a tile, as the mouse would (without having to find it on screen). */
@@ -50,6 +53,10 @@ export function installTestHook(): void {
       return game.targeting;
     },
     screenOf: (x: number, y: number) => world.toGlobal(project(view.proj, x + 0.5, y + 0.5)),
+    /** Lock picking minigame result to use without playing it ('hit', 'slip'), or null to play it. */
+    set autoPick(v: 'hit' | 'slip' | null) {
+      lockpickTest.auto = v;
+    },
     set slowMotion(k: number) {
       game.slowMotion = k;
     },

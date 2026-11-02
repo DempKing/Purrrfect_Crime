@@ -18,6 +18,9 @@ export const LOOK_TURNS = 2;
 export const ALARM_TURNS = 5;
 export const INVENTORY_SPACES = 6;
 export const NOISE = { marble: 2, dash: 4, pick: 1, smash: 6, squeaky: 4, drop: 3, bark: 5, splash: 4 };
+/** Lock picking minigame: how far away a slipped pick is heard (tiles), by kind of lock. */
+export const LOCK_SLIP_NOISE = { 'pick-door': 3, 'pick-case': 4, 'crack-safe': 4, 'turn-dials': 5 } as const;
+export type LockAction = keyof typeof LOCK_SLIP_NOISE;
 /** Picks needed to open a lock. */
 export const LOCK_PICKS = 2;
 /** Goes needed to crack a safe (quiet, but slow). */
@@ -66,6 +69,7 @@ export interface Perks {
   safeCracks: number; // goes needed to crack a safe; Dexterity
   doorPicks: number; // and a door; Dexterity, Tech: Keycard Clone
   silentPicks: boolean; // Dexterity 5
+  lockSpeed: number; // how fast the lock picking dial spins, as a share of normal; Dexterity
   spaces: number; // inventory; Pockets
   previewTurns: number; // guard footprints shown this many turns ahead; Perception, Planning Table
   ghostStep: boolean; // the first noisy move of a heist makes none (Shadow)
@@ -87,6 +91,7 @@ export const BASE_PERKS: Perks = {
   safeCracks: SAFE_CRACKS,
   doorPicks: LOCK_PICKS,
   silentPicks: false,
+  lockSpeed: 1,
   spaces: INVENTORY_SPACES,
   previewTurns: 1,
   ghostStep: false,

@@ -30,6 +30,8 @@ page.on(
 ); // music files are optional
 await page.goto(pathToFileURL(join(root, 'dist', 'index.html')).href);
 await page.waitForFunction(() => window.__pc);
+// Locks open without playing the lock picking minigame (it has its own check in tests/lockpick-e2e.mjs).
+await page.evaluate(() => (window.__pc.autoPick = 'hit'));
 await page.waitForTimeout(400);
 const shot = (name) => page.screenshot({ path: join(out, name) });
 await shot('01-title.png');
@@ -304,6 +306,8 @@ await shot('22b-load.png');
 await page.keyboard.press('Escape');
 await page.reload();
 await page.waitForFunction(() => window.__pc);
+// Locks open without playing the lock picking minigame (it has its own check in tests/lockpick-e2e.mjs).
+await page.evaluate(() => (window.__pc.autoPick = 'hit'));
 await page.click('#continue');
 await page.waitForSelector('.lair');
 const reloaded = await page.evaluate(() => ({

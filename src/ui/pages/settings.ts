@@ -31,6 +31,7 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
         ['instant', 'Instant'],
       ])}
       ${toggle('hints', 'Tutorial tips', 'The narrator’s tips during the first heist.')}
+      ${toggle('lockpickGame', 'Lock picking minigame', 'Stop a spinning pick to open locks. Off: every go works.')}
       <h2 class="section">Accessibility</h2>
       ${toggle('largeText', 'Larger text', 'Bigger text in the HUD and on every screen.')}
       ${toggle('reduceMotion', 'Reduce motion', 'No spinning newspapers or rolling credits; quicker animations.')}
