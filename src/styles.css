@@ -610,10 +610,14 @@ body.meta #alarm {
 }
 .screen.overlay {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px));
   background: var(--halftone), rgba(9, 10, 18, 0.78);
+}
+/* Centered with auto margins, so a sheet taller than the window scrolls from its top instead of being cut off. */
+.screen.overlay > * {
+  margin-block: auto;
 }
 .screen.overlay.dark {
   background: var(--halftone), rgba(5, 5, 10, 0.92);
@@ -1915,10 +1919,12 @@ table.stash .hand {
 }
 .setting input[type='range'] {
   flex: 1;
+  min-width: 0;
   max-width: 260px;
   accent-color: var(--red);
 }
 .setting output {
+  flex: none;
   width: 3.5em;
   text-align: right;
   font-variant-numeric: tabular-nums;

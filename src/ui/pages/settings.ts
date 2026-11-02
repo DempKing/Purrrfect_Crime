@@ -1,6 +1,6 @@
 // The settings screen: sound, speed, accessibility and controls.
 import type { Settings } from '../../settings';
-import { on, show } from './common';
+import { on, sfx, show } from './common';
 import { controlsSection } from './controls';
 import { escToClose } from './title';
 
@@ -55,6 +55,10 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
       change({ [i.dataset.range!]: Number(i.value) / 100 } as Partial<Settings>);
     }),
   );
+  // A sample click when the volume or effects slider is let go, to hear the new level.
+  el.querySelectorAll<HTMLInputElement>('[data-range="master"], [data-range="sfx"]').forEach((i) =>
+    i.addEventListener('change', () => sfx('click')),
+  );
   el.querySelectorAll<HTMLInputElement>('[data-toggle]').forEach((i) =>
     i.addEventListener('change', () => change({ [i.dataset.toggle!]: i.checked } as Partial<Settings>)),
   );
@@ -69,5 +73,6 @@ export function settingsScreen(st: Settings, onChange: (s: Settings) => void, on
   controlsSection(el.querySelector<HTMLElement>('.controls')!, st, change);
   on(el, '#settings-ok', onClose);
   escToClose(el, onClose);
-  el.querySelector<HTMLElement>('#settings-ok')?.focus();
+  // Start at the top (Sound), not scrolled down to the Done button.
+  el.querySelector<HTMLElement>('[data-range="master"]')?.focus();
 }
