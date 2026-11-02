@@ -5,7 +5,6 @@
 import { capturePadButton } from './gamepad';
 
 export interface IntroHooks {
-  leo: { idle: string; a: string; b: string }; // the suited Leo drawings
   sound: (name: 'click' | 'whoosh' | 'door' | 'creak' | 'pounce') => void;
 }
 
@@ -13,6 +12,12 @@ const W = 1280;
 const H = 720;
 const FLOOR_Y = 440; // where the back wall meets the floor
 const END = 30.6; // seconds, when the screen is fully black
+// Leo's colors.
+const FUR = '#16141c';
+const WHITE = '#eceaf2';
+const JACKET = '#2b2638'; // a touch lighter than his fur, so the tailcoat shows
+const LAPEL = '#463e5c';
+const GOLD = '#e2b13c';
 
 // The script, in seconds.
 const T = {
@@ -86,10 +91,6 @@ export function playIntro(hooks: IntroHooks, atBlack: () => void): Promise<void>
   const news = box.querySelector<HTMLElement>('.intro-news')!;
   const caption = box.querySelector<HTMLElement>('.intro-caption')!;
   const status = box.querySelector<HTMLElement>('[role=status]')!;
-
-  // The suited Leo drawings (already loaded for the game, so these come from the cache).
-  const img = (src: string) => Object.assign(new Image(), { src });
-  const suit = { idle: img(hooks.leo.idle), a: img(hooks.leo.a), b: img(hooks.leo.b) };
 
   // One-off sounds, each played once when its moment passes.
   const cues: [number, Parameters<IntroHooks['sound']>[0]][] = [
@@ -569,7 +570,7 @@ export function playIntro(hooks: IntroHooks, atBlack: () => void): Promise<void>
     // Looking right toward the hallway, then left at the window.
     const look = t < T.lookWindow ? 1 : lerp(1, -1, ease(ramp(t, T.lookWindow, T.lookWindow + 0.3)));
     const twitch = t > T.earTwitch && t < T.earTwitch + 0.25 ? Math.sin((t - T.earTwitch) * 60) * 0.2 : 0;
-    const black = '#16141c';
+    const black = FUR;
 
     // Shadow, tail, body.
     ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
@@ -583,7 +584,7 @@ export function playIntro(hooks: IntroHooks, atBlack: () => void): Promise<void>
     ctx.moveTo(cx - 66, cy + 6);
     ctx.quadraticCurveTo(cx - 40, cy + 44, cx + 22, cy + 34);
     ctx.stroke();
-    ctx.strokeStyle = '#eceaf2';
+    ctx.strokeStyle = WHITE;
     ctx.beginPath();
     ctx.moveTo(cx + 14, cy + 35);
     ctx.lineTo(cx + 30, cy + 32);
@@ -599,7 +600,7 @@ export function playIntro(hooks: IntroHooks, atBlack: () => void): Promise<void>
     ctx.ellipse(cx, cy, 78, 34 + breath * 1.5, 0, Math.PI * 1.05, Math.PI * 1.85);
     ctx.stroke();
     // White front paws.
-    ctx.fillStyle = '#eceaf2';
+    ctx.fillStyle = WHITE;
     ctx.beginPath();
     ctx.ellipse(cx + 58, cy + 30, 12, 7, 0, 0, Math.PI * 2);
     ctx.ellipse(cx + 80, cy + 27, 12, 7, 0, 0, Math.PI * 2);
@@ -612,69 +613,11 @@ export function playIntro(hooks: IntroHooks, atBlack: () => void): Promise<void>
     ctx.beginPath();
     ctx.ellipse(hx - 14, hy + 12, 24, 22, 0, 0, Math.PI * 2); // neck
     ctx.fill();
-    ctx.fillStyle = '#eceaf2';
+    ctx.fillStyle = WHITE;
     ctx.beginPath();
     ctx.ellipse(hx - 4, hy + 24, 16, 12, 0, 0, Math.PI * 2); // white chest
     ctx.fill();
-    ctx.fillStyle = black;
-    ctx.beginPath();
-    ctx.arc(hx, hy, 28, 0, Math.PI * 2);
-    ctx.fill();
-    // Ears (the right one twitches).
-    for (const [ex, rot] of [
-      [-14, 0],
-      [14, twitch],
-    ]) {
-      ctx.save();
-      ctx.translate(hx + ex, hy - 16);
-      ctx.rotate(rot + ex * 0.012);
-      ctx.fillStyle = black;
-      ctx.beginPath();
-      ctx.moveTo(-12, 4);
-      ctx.lineTo(0, -26);
-      ctx.lineTo(12, 4);
-      ctx.fill();
-      ctx.fillStyle = '#c07a8a';
-      ctx.beginPath();
-      ctx.moveTo(-6, 0);
-      ctx.lineTo(0, -16);
-      ctx.lineTo(6, 0);
-      ctx.fill();
-      ctx.restore();
-    }
-    // White muzzle and pink nose.
-    ctx.fillStyle = '#eceaf2';
-    ctx.beginPath();
-    ctx.ellipse(hx, hy + 12, 15, 10, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#d98a9a';
-    ctx.beginPath();
-    ctx.moveTo(hx - 4, hy + 5);
-    ctx.lineTo(hx + 4, hy + 5);
-    ctx.lineTo(hx, hy + 10);
-    ctx.fill();
-    // Eyes: sleepy arcs, opening into gold.
-    for (const [ex, open] of [
-      [-11, eyeL],
-      [11, eyeR],
-    ]) {
-      if (open < 0.1) {
-        ctx.strokeStyle = '#8a8798';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.arc(hx + ex, hy - 4, 6, 0.1 * Math.PI, 0.9 * Math.PI);
-        ctx.stroke();
-      } else {
-        ctx.fillStyle = '#f2c53d';
-        ctx.beginPath();
-        ctx.ellipse(hx + ex, hy - 3, 7, 6 * open, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#111';
-        ctx.beginPath();
-        ctx.ellipse(hx + ex + look * 3, hy - 3, 2, 5 * open, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
+    drawHead(hx, hy, { eyeL, eyeR, look, twitch, turn: 0, monocle: 0 });
 
     // Zzz while he's asleep.
     if (t < T.earTwitch) {
@@ -689,33 +632,29 @@ export function playIntro(hooks: IntroHooks, atBlack: () => void): Promise<void>
     }
   }
 
-  /** Leo in his tuxedo: a moment to straighten up, a sneak to the window, a hop onto the sill and out. */
+  /** Leo in his tuxedo: sits up proudly, sneaks to the window, leaps onto the sill and out. */
   function drawSuitedLeo(startX: number) {
     const walk = ramp(t, T.sneak, T.atWindow);
     const hop = ramp(t, T.hop, T.out);
     const out = ramp(t, T.out, T.out + 0.4);
     if (out >= 1) return;
-    const walking = walk > 0 && walk < 1;
-    const pic = walking ? (Math.floor(t / 0.2) % 2 ? suit.a : suit.b) : t < T.sneak ? suit.idle : suit.a;
-    if (!pic.complete || !pic.naturalWidth) return;
 
     // Feet position and size: the floor, then an arc up to the sill (farther away, so smaller).
     let fx = lerp(startX, 236, walk);
-    let fy = 650 - (walking ? Math.abs(Math.sin(t * 15)) * 4 : 0);
-    let h = 250;
+    let fy = 650;
+    let size = 1;
     if (hop > 0) {
       fx = lerp(236, 214, hop);
       fy = lerp(650, 332, ease(hop)) - Math.sin(hop * Math.PI) * 90;
-      h = lerp(250, 200, hop);
+      size = lerp(1, 0.8, hop);
     }
     // Stepping out: back through the open half of the window, getting smaller.
     if (out > 0) {
       fy = lerp(332, 300, out);
-      h = lerp(200, 140, out);
+      size = lerp(0.8, 0.56, out);
     }
     const appear = ramp(t, T.puff + 0.2, T.puff + 0.5); // a little pop in the puff
-    const scale = appear < 1 ? 0.8 + Math.sin(appear * Math.PI) * 0.25 + appear * 0.2 : 1;
-    const w = (h * pic.naturalWidth) / pic.naturalHeight;
+    if (appear < 1) size *= 0.8 + Math.sin(appear * Math.PI) * 0.25 + appear * 0.2;
 
     ctx.save();
     if (out > 0) {
@@ -728,11 +667,301 @@ export function playIntro(hooks: IntroHooks, atBlack: () => void): Promise<void>
     if (hop === 0) {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
       ctx.beginPath();
-      ctx.ellipse(fx, fy + 4, w * 0.35, 10, 0, 0, Math.PI * 2);
+      ctx.ellipse(fx, fy + 2, 70, 12, 0, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.drawImage(pic, fx - (w * scale) / 2, fy - h * scale, w * scale, h * scale);
+    ctx.translate(fx, fy);
+    ctx.scale(size, size);
+    if (t < T.sneak) drawSuitSitting();
+    else drawSuitSide(walk > 0 && walk < 1 ? (t - T.sneak) * 9 : 0, hop > 0 && hop < 1 ? hop : 0);
     ctx.restore();
+  }
+
+  /** Suited Leo sitting up, facing the camera, with a gleam off his monocle. (Origin: between his feet.) */
+  function drawSuitSitting() {
+    // The tail curls round his right side.
+    tail(28, -10, 72, -4, 64, -50);
+    // Haunches, then the jacket over his body.
+    ctx.fillStyle = FUR;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(side * 30, -18, 22, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = JACKET;
+    ctx.beginPath();
+    ctx.moveTo(-36, -6);
+    ctx.quadraticCurveTo(-42, -72, -18, -94);
+    ctx.lineTo(18, -94);
+    ctx.quadraticCurveTo(42, -72, 36, -6);
+    ctx.closePath();
+    ctx.fill();
+    rim(() => {
+      ctx.moveTo(-36, -10);
+      ctx.quadraticCurveTo(-42, -72, -18, -94);
+    });
+    // Shirt front, lapels, studs and a gold button.
+    ctx.fillStyle = WHITE;
+    ctx.beginPath();
+    ctx.moveTo(-16, -94);
+    ctx.lineTo(16, -94);
+    ctx.lineTo(0, -38);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = LAPEL;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(-18, -92);
+    ctx.lineTo(-1, -38);
+    ctx.moveTo(18, -92);
+    ctx.lineTo(1, -38);
+    ctx.stroke();
+    ctx.fillStyle = FUR;
+    for (const y of [-74, -60]) {
+      ctx.beginPath();
+      ctx.arc(0, y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = GOLD;
+    ctx.beginPath();
+    ctx.arc(0, -28, 4, 0, Math.PI * 2);
+    ctx.fill();
+    // White front paws.
+    ctx.fillStyle = WHITE;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(side * 12, -5, 11, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Head (looking pleased with himself) and the bow tie under it.
+    const glint = ramp(t, T.puff + 0.6, T.puff + 1.1);
+    drawHead(0, -122, {
+      eyeL: 1,
+      eyeR: 1,
+      look: 0,
+      twitch: 0,
+      turn: 0,
+      monocle: glint > 0 && glint < 1 ? glint : 0.001,
+    });
+    bowTie(0, -92);
+  }
+
+  /**
+   * Suited Leo side on, facing left toward the window. `step` drives the sneaking walk (0 = standing);
+   * `leap` (0..1 through the jump) stretches him out. (Origin: under his middle, on the ground.)
+   */
+  function drawSuitSide(step: number, leap: number) {
+    const bodyY = leap ? -46 : -40 - Math.abs(Math.sin(step)) * 2; // low and sneaky
+    ctx.save();
+    if (leap) ctx.rotate(lerp(-0.35, 0.25, leap)); // nose up on the way up, down on the way to the sill
+    // A leg from the body to the floor, with a white paw. Far legs are darker.
+    const leg = (hipX: number, off: number, far: boolean) => {
+      let footX = hipX + Math.sin(step + off) * 12;
+      let footY = -Math.max(0, Math.cos(step + off)) * (step ? 8 : 0);
+      if (leap) {
+        footX = hipX + (hipX < 0 ? -28 : 30);
+        footY = -6;
+      }
+      ctx.strokeStyle = far ? '#0c0b10' : FUR;
+      ctx.lineWidth = 11;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(hipX, bodyY + 6);
+      ctx.lineTo(footX, footY - 4);
+      ctx.stroke();
+      ctx.fillStyle = far ? '#a9a6b4' : WHITE;
+      ctx.beginPath();
+      ctx.ellipse(footX - 2, footY - 3, 9, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    };
+    // The tail streams out behind, held low while sneaking.
+    tail(46, bodyY - 2, 92, bodyY - 6, 100, bodyY - (leap ? 20 : 48));
+    leg(-30, Math.PI, true);
+    leg(34, 0, true);
+    // Body, then the tailcoat with its tails swinging.
+    ctx.fillStyle = FUR;
+    ctx.beginPath();
+    ctx.ellipse(0, bodyY, 54, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    const swing = Math.sin(step * 2) * 4 + leap * 8;
+    ctx.fillStyle = JACKET;
+    ctx.beginPath();
+    ctx.ellipse(-6, bodyY - 2, 48, 21, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(26, bodyY + 4);
+    ctx.lineTo(70, bodyY + 18 + swing);
+    ctx.lineTo(60, bodyY + 22 + swing);
+    ctx.lineTo(30, bodyY + 16);
+    ctx.closePath();
+    ctx.fill();
+    rim(() => ctx.ellipse(-6, bodyY - 2, 46, 19, 0, Math.PI * 1.1, Math.PI * 1.9));
+    ctx.strokeStyle = LAPEL;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-44, bodyY - 14);
+    ctx.quadraticCurveTo(-30, bodyY, -26, bodyY + 14);
+    ctx.stroke();
+    ctx.fillStyle = WHITE;
+    ctx.beginPath();
+    ctx.ellipse(-48, bodyY - 2, 9, 14, 0, 0, Math.PI * 2); // shirt front
+    ctx.fill();
+    ctx.fillStyle = GOLD;
+    for (const bx of [-20, -8]) {
+      ctx.beginPath();
+      ctx.arc(bx, bodyY + 12, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    leg(-30, 0, false);
+    leg(34, Math.PI, false);
+    // Head turned toward the window, bow tie under the chin.
+    drawHead(-54, bodyY - 34, { eyeL: 1, eyeR: 1, look: -1, twitch: 0, turn: -1, monocle: 0.001 });
+    bowTie(-50, bodyY - 8);
+    ctx.restore();
+  }
+
+  /**
+   * Leo's head, the same in every pose: black, white muzzle, pink ears and nose, gold eyes (or sleepy arcs).
+   * `turn` -1 shifts the face left; `monocle` > 0 adds his gold monocle (0..1 also plays a gleam).
+   */
+  function drawHead(
+    hx: number,
+    hy: number,
+    o: { eyeL: number; eyeR: number; look: number; twitch: number; turn: number; monocle: number },
+  ) {
+    const dx = o.turn * 7;
+    ctx.fillStyle = FUR;
+    ctx.beginPath();
+    ctx.arc(hx, hy, 28, 0, Math.PI * 2);
+    ctx.fill();
+    // Ears (the right one can twitch).
+    for (const [ex, rot] of [
+      [-14, 0],
+      [14, o.twitch],
+    ]) {
+      ctx.save();
+      ctx.translate(hx + ex + dx * 0.3, hy - 16);
+      ctx.rotate(rot + ex * 0.012);
+      ctx.fillStyle = FUR;
+      ctx.beginPath();
+      ctx.moveTo(-12, 4);
+      ctx.lineTo(0, -26);
+      ctx.lineTo(12, 4);
+      ctx.fill();
+      ctx.fillStyle = '#c07a8a';
+      ctx.beginPath();
+      ctx.moveTo(-6, 0);
+      ctx.lineTo(0, -16);
+      ctx.lineTo(6, 0);
+      ctx.fill();
+      ctx.restore();
+    }
+    // White muzzle and pink nose.
+    ctx.fillStyle = WHITE;
+    ctx.beginPath();
+    ctx.ellipse(hx + dx, hy + 12, 15, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#d98a9a';
+    ctx.beginPath();
+    ctx.moveTo(hx + dx - 4, hy + 5);
+    ctx.lineTo(hx + dx + 4, hy + 5);
+    ctx.lineTo(hx + dx, hy + 10);
+    ctx.fill();
+    // Eyes: sleepy arcs, opening into gold.
+    for (const [ex, open] of [
+      [-11, o.eyeL],
+      [11, o.eyeR],
+    ]) {
+      const x = hx + dx + ex;
+      if (open < 0.1) {
+        ctx.strokeStyle = '#8a8798';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(x, hy - 4, 6, 0.1 * Math.PI, 0.9 * Math.PI);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = '#f2c53d';
+        ctx.beginPath();
+        ctx.ellipse(x, hy - 3, 7, 6 * open, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#111';
+        ctx.beginPath();
+        ctx.ellipse(x + o.look * 3, hy - 3, 2, 5 * open, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    if (o.monocle <= 0) return;
+    // The monocle over his right eye, with its little gold chain.
+    const mx = hx + dx + 11;
+    ctx.strokeStyle = GOLD;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(mx, hy - 3, 10, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(mx + 6, hy + 5);
+    ctx.quadraticCurveTo(mx + 14, hy + 22, mx + 4, hy + 32);
+    ctx.stroke();
+    // The gleam: a four-pointed star that grows and fades.
+    if (o.monocle < 1 && o.monocle > 0.01) {
+      const g = Math.sin(o.monocle * Math.PI) * 12;
+      ctx.fillStyle = '#fff8d6';
+      ctx.beginPath();
+      ctx.moveTo(mx + 6, hy - 10 - g);
+      ctx.lineTo(mx + 8, hy - 10);
+      ctx.lineTo(mx + 6 + g, hy - 8);
+      ctx.lineTo(mx + 8, hy - 6);
+      ctx.lineTo(mx + 6, hy - 6 + g);
+      ctx.lineTo(mx + 4, hy - 6);
+      ctx.lineTo(mx + 6 - g, hy - 8);
+      ctx.lineTo(mx + 4, hy - 10);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  /** His red bow tie, centered on (x, y). */
+  function bowTie(x: number, y: number) {
+    ctx.fillStyle = '#d8262f';
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - 15, y - 8);
+    ctx.lineTo(x - 15, y + 8);
+    ctx.closePath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 15, y - 8);
+    ctx.lineTo(x + 15, y + 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#a81b22';
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  /** A thick black tail along a curve, with a white tip. */
+  function tail(x0: number, y0: number, cx: number, cy: number, x1: number, y1: number) {
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = FUR;
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.quadraticCurveTo(cx, cy, x1, y1);
+    ctx.stroke();
+    ctx.fillStyle = WHITE;
+    ctx.beginPath();
+    ctx.arc(x1, y1, 7, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  /** A soft line of TV and moon light along an edge, so black on black still reads. */
+  function rim(path: () => void) {
+    ctx.strokeStyle = 'rgba(150, 170, 230, 0.35)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    path();
+    ctx.stroke();
   }
 
   /** A filled rounded rectangle. */

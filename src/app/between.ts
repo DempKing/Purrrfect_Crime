@@ -15,7 +15,7 @@ import {
 import * as screens from '../ui/screens';
 import { type LevelDef, parseLevel } from '../core/level';
 import { loadProps } from '../render/props';
-import { charImageUrl, loadCharacters, loadLootIcons } from '../render/characters';
+import { loadCharacters, loadLootIcons } from '../render/characters';
 import { playIntro } from '../ui/intro';
 import { loadSurfaces } from '../render/surfaces';
 import { loadFlats } from '../render/flats';
@@ -243,13 +243,7 @@ export function showTitle(): void {
       persist();
       // The opening cinematic, then the tutorial fades in.
       screens.hideScreens();
-      playIntro(
-        {
-          leo: { idle: charImageUrl('leo'), a: charImageUrl('leo', 'a'), b: charImageUrl('leo', 'b') },
-          sound: (n) => sound.play(n),
-        },
-        () => startHeist(CORNER_GALLERY),
-      );
+      playIntro({ sound: (n) => sound.play(n) }, () => startHeist(CORNER_GALLERY));
     },
     onDelete: (i) => {
       deleteSlot(storage(), i);
