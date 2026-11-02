@@ -24,10 +24,7 @@ const browser = await playwright.chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1440, height: 860 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e.stack ?? e)));
-page.on(
-  'console',
-  (m) => m.type() === 'error' && !(m.location()?.url ?? '').includes('/music/') && errors.push(m.text()),
-); // music files are optional
+page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 await page.goto(pathToFileURL(join(root, 'dist', 'index.html')).href);
 await page.waitForFunction(() => window.__pc);
 // Locks open without playing the lock picking minigame (it has its own check in tests/lockpick-e2e.mjs).

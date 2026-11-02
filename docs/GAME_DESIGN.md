@@ -682,9 +682,10 @@ with notes in a marker hand (Patrick Hand). Results are stickers, not rubber sta
 - **Sound effects** are synthesised in layers: struck-metal partials for locks, latches and bottle caps,
   hollow resonant booms for the vents, wood and hinges for doors, a short room reverb on everything, and a
   separate sound for a lock giving way, a safe door swinging, a vent hatch and the menu buttons.
-- **Music:** a track per screen (title, lair, black market, planning board, heist, suspicious, alarm,
-  report, NightClaw), crossfading as you move between them; see `art/music/README.md`. Without a file,
-  heists fall back to the synthesised band.
+- **Music:** all our own, made live with Web Audio (no files): a spy theme on the title screen, the intro's TV
+  news theme and cozy room, a laid-back lair theme on every screen between heists, a heist theme and
+  NightClaw's theme that add layers as guards get suspicious and the alarm goes off, and a swinging report
+  theme. The pieces crossfade as you move between screens.
 - **Fonts** (bundled through Fontsource): Luckiest Guy (Apache 2.0), Nunito, Patrick Hand,
   UnifrakturMaguntia (newspaper masthead) (all SIL Open Font License) and Homemade Apple (NightClaw's letters,
   Apache 2.0).

@@ -75,9 +75,11 @@ tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 
 ## Fonts and music
 
-Fonts: Luckiest Guy, Nunito, Patrick Hand, UnifrakturMaguntia and Homemade Apple, all under the SIL Open
-Font License 1.1, bundled from Fontsource. Music: see [art/music/README.md](art/music/README.md); each track's
-credit is listed in `art/music/credits.json` and shown in the end credits.
+Fonts: Nunito, Patrick Hand and UnifrakturMaguntia (SIL Open Font License 1.1), and Luckiest Guy and Homemade
+Apple (Apache License 2.0), bundled from Fontsource. Music: all our own, made live in the game with Web Audio
+(no audio files): `src/menuTheme.ts` (title), `src/introSounds.ts` (the intro), `src/lairTheme.ts` (every screen
+between heists), `src/heistMusic.ts` and `src/finaleTheme.ts` (heists, following the tension) and
+`src/reportTheme.ts` (the heist report).
 
 ## Platforms
 

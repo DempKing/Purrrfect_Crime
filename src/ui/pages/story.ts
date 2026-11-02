@@ -58,7 +58,7 @@ export function legendaryCard(done: () => void): void {
 }
 /** One credit: what (or who) on the left, who (or a quip) across from it, and an optional small note. */
 type Credit = [left: string, right: string, note?: string];
-/** The credits, in blocks with a heading. The licensed music is added to the music block from art/music/credits.json. */
+/** The credits, in blocks with a heading. */
 export const CREDITS: { heading: string; rows: Credit[] }[] = [
   {
     heading: 'Starring',
@@ -92,12 +92,9 @@ export const CREDITS: { heading: string; rows: Credit[] }[] = [
     heading: 'Made by',
     rows: [
       ['Game', 'Demp'],
-      ['Sound effects', 'Demp', 'Made live in the game'],
+      ['Music', 'Demp', 'The title, intro, lair, heist, NightClaw and report themes'],
+      ['Sound effects', 'Demp'],
     ],
-  },
-  {
-    heading: 'Music',
-    rows: [['Original music', 'Demp', 'Title theme · intro music · lair theme · made live in the game']],
   },
   {
     heading: 'Art and type',
@@ -113,44 +110,20 @@ export const CREDITS: { heading: string; rows: Credit[] }[] = [
   },
   { heading: 'And', rows: [['You', 'For playing, flawlessly']] },
 ];
-/** The licensed music's credits, from art/music/credits.json (the build puts them on the page). */
-function musicCredits(): Credit[] {
-  const list =
-    (window as unknown as { MUSIC_CREDITS?: { track: string; artist: string; license: string }[] })
-      .MUSIC_CREDITS ?? [];
-  // One row per artist: their name (without the web address), their tracks, and the license.
-  return [...new Set(list.map((m) => m.artist))].map((artist) => {
-    const mine = list.filter((m) => m.artist === artist);
-    const where = /\((.+)\)/.exec(artist)?.[1];
-    const license = /Attribution 4\.0/.test(mine[0].license)
-      ? 'Creative Commons Attribution 4.0 · faded in and out for looping'
-      : mine[0].license;
-    return [
-      'Licensed music',
-      artist.replace(/\s*\(.*\)/, ''),
-      `${mine.map((m) => `“${m.track}”`).join(' · ')} · ${license}${where ? ` · ${where}` : ''}`,
-    ];
-  });
-}
 /** The credits (with a Back button when opened from the title menu). */
 export function credits(done: () => void, fromMenu = false): void {
-  const blocks = CREDITS.map((b) =>
-    b.heading === 'Music' ? { ...b, rows: [...b.rows, ...musicCredits()] } : b,
-  ).filter((b) => b.rows.length);
   const el = show(
     `<div class="credits${fromMenu ? ' rolling' : ''}"><div class="roll">
       <h1>Purrrfect Crime</h1>
-      ${blocks
-        .map(
-          (b) =>
-            `<section class="credit-block"><h2>${esc(b.heading)}</h2><dl>${b.rows
-              .map(
-                ([left, right, note]) =>
-                  `<dt>${esc(left)}</dt><dd><b>${esc(right)}</b>${note ? `<span class="credit-note">${esc(note)}</span>` : ''}</dd>`,
-              )
-              .join('')}</dl></section>`,
-        )
-        .join('')}
+      ${CREDITS.map(
+        (b) =>
+          `<section class="credit-block"><h2>${esc(b.heading)}</h2><dl>${b.rows
+            .map(
+              ([left, right, note]) =>
+                `<dt>${esc(left)}</dt><dd><b>${esc(right)}</b>${note ? `<span class="credit-note">${esc(note)}</span>` : ''}</dd>`,
+            )
+            .join('')}</dl></section>`,
+      ).join('')}
       ${fromMenu ? '' : '<p class="small">Free play continues: every heist is still there to replay, and the fences are still buying.</p>'}
       ${fromMenu ? '<p class="credit-end">Thanks for playing.</p>' : '<div class="row-buttons"><button id="credits-ok" class="primary">Read the morning paper</button></div>'}
     </div></div>${fromMenu ? '<button id="credits-ok" class="corner-btn right">Back (Esc)</button>' : ''}`,

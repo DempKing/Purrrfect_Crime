@@ -1,8 +1,12 @@
-// Sound: music tracks (with a synthesised jazz loop as fallback) and synthesised sound effects (Web Audio).
-// The music gets more intense with suspicion and alarms. Silent until the first click or key press.
+// Sound: our own music and the sound effects, all made live with Web Audio (no audio files).
+// The pieces are in src/*Theme.ts and src/heistMusic.ts; in a heist the music follows the tension.
+// Silent until the first click or key press.
 
+import { playFinaleTheme } from './finaleTheme';
+import { type Adaptive, type Intensity, playHeistTheme } from './heistMusic';
 import { playLairTheme } from './lairTheme';
 import { playMenuTheme } from './menuTheme';
+import { playReportTheme } from './reportTheme';
 import type { Playing } from './synth';
 
 export type Sfx =
@@ -42,18 +46,10 @@ export type Sfx =
 /** Music intensity: 0 silent, 1 sneaky, 2 suspicious, 3 chase (alarm). */
 export type Tension = 0 | 1 | 2 | 3;
 
-const BPM = { calm: 92, chase: 150 };
-// The fallback jazz loop's chords (MIDI note numbers).
-const BARS = [
-  { bass: [38, 41, 45, 43], chord: [62, 65, 69, 72] }, // Dm7
-  { bass: [43, 47, 50, 49], chord: [59, 62, 65, 69] }, // G7
-  { bass: [36, 40, 43, 45], chord: [60, 64, 67, 71] }, // Cmaj7
-  { bass: [45, 44, 43, 40], chord: [57, 60, 64, 67] }, // Am7
-];
 /** MIDI note number to frequency in Hz. */
 const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 
-/** Music scenes; each plays art/music/<scene>.mp3 if present. */
+/** Music scenes: where the player is, which picks the piece that plays (MUSIC below). */
 export type MusicScene =
   | 'title'
   | 'intro'
@@ -65,29 +61,29 @@ export type MusicScene =
   | 'chase'
   | 'report'
   | 'finale';
-/** If a scene's track is missing, the next one along that has one. */
-const MUSIC_FALLBACK: Record<MusicScene, MusicScene[]> = {
-  title: [], // no file: the menu theme is made live (LIVE_MUSIC below)
-  intro: [], // no file: the intro makes its own music (introSounds.ts)
-  lair: [], // no file: the lair theme is made live (LIVE_MUSIC below), here and on every screen between heists
-  market: [],
-  planning: [],
-  heist: ['heist'],
-  alert: ['alert', 'heist'],
-  chase: ['chase', 'alert', 'heist'],
-  report: ['report'],
-  finale: ['finale', 'heist'],
-};
-/** Scenes whose music is our own, made live rather than played from a file. Scenes sharing a piece share it
- * without restarting: the lair theme carries on from the lair to the black market to the planning board. */
-type LivePiece = (ctx: AudioContext, out: AudioNode, now: number) => Playing;
-const menuTheme: LivePiece = (ctx, out, now) => playMenuTheme(ctx, out, now + 0.05);
-const lairTheme: LivePiece = (ctx, out, now) => playLairTheme(ctx, out, now + 0.05);
-const LIVE_MUSIC: Partial<Record<MusicScene, LivePiece>> = {
+/** One of our pieces: starts at `now`; the heist pieces start at a tension level and can follow it. */
+type Piece = (ctx: AudioContext, out: AudioNode, now: number, level: Intensity) => Playing | Adaptive;
+const menuTheme: Piece = (ctx, out, now) => playMenuTheme(ctx, out, now + 0.05);
+const lairTheme: Piece = (ctx, out, now) => playLairTheme(ctx, out, now + 0.05);
+const reportTheme: Piece = (ctx, out, now) => playReportTheme(ctx, out, now + 0.05);
+const heistTheme: Piece = (ctx, out, now, level) => playHeistTheme(ctx, out, now + 0.05, level);
+const finaleTheme: Piece = (ctx, out, now, level) => playFinaleTheme(ctx, out, now + 0.05, level);
+/**
+ * Which piece each scene plays. Scenes that share a piece share it without restarting: the lair theme carries
+ * on from the lair to the black market to the planning board, and the heist theme just changes its level
+ * when a guard gets suspicious or the alarm goes off.
+ */
+const MUSIC: Record<MusicScene, Piece | null> = {
   title: menuTheme,
+  intro: null, // the intro plays its own music (introSounds.ts)
   lair: lairTheme,
   market: lairTheme,
   planning: lairTheme,
+  heist: heistTheme,
+  alert: heistTheme,
+  chase: heistTheme,
+  report: reportTheme,
+  finale: finaleTheme, // NightClaw's places, at every level of tension
 };
 const HEIST_SCENES: MusicScene[] = ['heist', 'alert', 'chase', 'finale'];
 
@@ -140,16 +136,10 @@ export class Sound {
   private sfxBus: GainNode | null = null;
   private noise: AudioBuffer | null = null;
   private tension: Tension = 0;
-  private beat = 0; // eighth notes since the music started
-  private nextAt = 0;
-  private timer = 0;
   private levels = { master: 0.8, music: 0.6, sfx: 0.8 };
   private scene: MusicScene | null = null;
   private finale = false;
-  private tracks = new Map<MusicScene, { el: HTMLAudioElement; ok: boolean | null; vol: number }>();
-  private playing: MusicScene | null = null;
-  private fadeTimer = 0;
-  private live: { scene: MusicScene; piece: LivePiece; playing: Playing } | null = null; // live music playing now
+  private live: { scene: MusicScene; piece: Piece; playing: Playing | Adaptive } | null = null; // the piece playing now
 
   /**
    * Plays something made live (like the intro's music) on the music or effects volume.
@@ -157,7 +147,7 @@ export class Sound {
    */
   synth<T>(bus: 'music' | 'sfx', play: (ctx: AudioContext, out: AudioNode, now: number) => T): T | null {
     if (!this.ctx || !this.musicBus || !this.sfxBus) return null;
-    // The music bus is set for the quieter fallback band; lift live music to match the music files.
+    // The music bus sits at half the music volume; lift the music to a comfortable level over it.
     const out = this.ctx.createGain();
     out.gain.value = bus === 'music' ? 4 : 1;
     out.connect(bus === 'music' ? this.musicBus : this.sfxBus);
@@ -202,9 +192,7 @@ export class Sound {
       const d = this.noise.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       this.applyLevels();
-      this.pickTrack();
-      this.nextAt = ctx.currentTime + 0.1;
-      this.timer = window.setInterval(() => this.schedule(), 25);
+      this.pickMusic();
     } catch {
       this.ctx = null;
     }
@@ -218,7 +206,6 @@ export class Sound {
 
   /** Applies the volumes to the audio graph. */
   private applyLevels(): void {
-    for (const t of this.tracks.values()) t.el.volume = this.trackVolume(t.vol);
     if (!this.ctx || !this.master || !this.musicBus || !this.sfxBus) return;
     const t = this.ctx.currentTime;
     this.master.gain.setTargetAtTime(this.levels.master, t, 0.05);
@@ -226,15 +213,15 @@ export class Sound {
     this.sfxBus.gain.setTargetAtTime(this.levels.sfx, t, 0.05);
   }
 
-  /** In a heist: calm, suspicious, chase. Picks the heist's music to match. */
+  /** In a heist: sneaking, suspicious, chase. The heist music follows along. */
   setTension(t: Tension): void {
     this.tension = t;
-    if (t > 0) this.setScene(this.finale && t < 3 ? 'finale' : t >= 3 ? 'chase' : t >= 2 ? 'alert' : 'heist');
+    if (t > 0) this.setScene(this.finale ? 'finale' : t >= 3 ? 'chase' : t >= 2 ? 'alert' : 'heist', true);
   }
 
-  /** The music file playing now, if any (for the tests). */
+  /** The scene whose music is playing (for the tests). */
   get nowPlaying(): MusicScene | null {
-    return this.live?.scene ?? this.playing;
+    return this.live?.scene ?? null;
   }
 
   /** NightClaw's places get their own heist music. */
@@ -242,98 +229,36 @@ export class Sound {
     this.finale = on;
   }
 
-  /** Crossfades to a scene's music (once audio is unlocked). */
-  setScene(scene: MusicScene): void {
-    if (scene === this.scene) return;
+  /** Moves the music to a scene (once audio is unlocked). `again` re-applies it, for a change of tension. */
+  setScene(scene: MusicScene, again = false): void {
+    if (scene === this.scene && !again) return;
     this.scene = scene;
     if (!HEIST_SCENES.includes(scene)) this.tension = 0;
-    this.pickTrack();
+    this.pickMusic();
   }
 
-  /** The audio element for a scene's music file (created once). */
-  private track(scene: MusicScene) {
-    let t = this.tracks.get(scene);
-    if (!t) {
-      const el = new Audio();
-      el.loop = true;
-      el.preload = 'auto';
-      const entry = { el, ok: null as boolean | null, vol: 0 };
-      el.addEventListener(
-        'canplaythrough',
-        () => {
-          if (entry.ok === null) {
-            entry.ok = true;
-            this.pickTrack();
-          }
-        },
-        { once: true },
-      );
-      el.addEventListener(
-        'error',
-        () => {
-          entry.ok = false;
-          this.pickTrack();
-        },
-        { once: true },
-      );
-      el.src = `music/${scene}.mp3`;
-      t = entry;
-      this.tracks.set(scene, t);
-    }
-    return t;
-  }
-
-  /** The first available track for a scene. */
-  private pickTrack(): void {
+  /** Starts the scene's piece (fading out the last one), or keeps it going if the scene shares it. */
+  private pickMusic(): void {
     if (!this.ctx || !this.scene) return;
-    // Live music: fade out the old piece when the scene wants a different one; start this scene's piece.
-    const piece = LIVE_MUSIC[this.scene];
+    const piece = MUSIC[this.scene];
+    const level: Intensity = this.tension >= 3 ? 3 : this.tension === 2 ? 2 : 1;
     if (this.live && this.live.piece !== piece) {
       this.live.playing.stop(1.5);
       this.live = null;
     }
-    if (piece) {
-      if (this.live) this.live.scene = this.scene;
-      else {
-        const playing = this.synth('music', piece);
-        if (playing) this.live = { scene: this.scene, piece, playing };
-      }
-      return this.fadeTo(null);
+    if (!piece) return;
+    if (this.live) {
+      this.live.scene = this.scene;
+      if ('setIntensity' in this.live.playing) this.live.playing.setIntensity(level);
+    } else {
+      const playing = this.synth('music', (ctx, out, now) => piece(ctx, out, now, level));
+      if (playing) this.live = { scene: this.scene, piece, playing };
     }
-    for (const s of MUSIC_FALLBACK[this.scene]) {
-      const t = this.track(s);
-      if (t.ok === null) return;
-      if (t.ok) return this.fadeTo(s);
-    }
-    this.fadeTo(null); // no file: the synthesised music in a heist, quiet elsewhere
-  }
-
-  /** Music file volume for a 0..1 level. */
-  private trackVolume(v: number): number {
-    return Math.max(0, Math.min(1, v * this.levels.master * this.levels.music));
-  }
-
-  /** Fades the playing track out and another in, over a second or so. */
-  private fadeTo(scene: MusicScene | null): void {
-    this.playing = scene;
-    window.clearInterval(this.fadeTimer);
-    this.fadeTimer = window.setInterval(() => {
-      let busy = false;
-      for (const [s, t] of this.tracks) {
-        const want = s === this.playing ? 1 : 0;
-        if (want && t.el.paused) void t.el.play().catch(() => {});
-        t.vol += Math.max(-0.05, Math.min(0.05, want - t.vol));
-        t.el.volume = this.trackVolume(t.vol);
-        if (!want && t.vol <= 0 && !t.el.paused) t.el.pause();
-        if (t.vol !== want) busy = true;
-      }
-      if (!busy) window.clearInterval(this.fadeTimer);
-    }, 50);
   }
 
   /** Stops all music. */
   stop(): void {
-    window.clearInterval(this.timer);
+    this.live = null;
     void this.ctx?.close();
     this.ctx = null;
   }
@@ -425,52 +350,6 @@ export class Sound {
   /** A little random variation, so repeated sounds aren't identical. */
   private vary(x: number, amount = 0.08): number {
     return x * (1 + (Math.random() - 0.5) * 2 * amount);
-  }
-
-  // The music
-
-  /** Schedules the next few eighth notes, a little ahead of time. */
-  private schedule(): void {
-    const ctx = this.ctx;
-    if (!ctx || !this.musicBus) return;
-    while (this.nextAt < ctx.currentTime + 0.12) {
-      // The synthesised band plays in heists that have no music file.
-      if (this.tension > 0 && !this.playing && this.scene && HEIST_SCENES.includes(this.scene))
-        this.playEighth(this.nextAt, this.beat);
-      const chase = this.tension === 3;
-      const eighth = 60 / (chase ? BPM.chase : BPM.calm) / 2;
-      // Swing: long-short eighths.
-      this.nextAt += this.beat % 2 === 0 ? eighth * 1.3 : eighth * 0.7;
-      this.beat = (this.beat + 1) % 32;
-    }
-  }
-
-  /** One eighth note of the fallback jazz loop. */
-  private playEighth(at: number, beat: number): void {
-    const bus = this.musicBus!;
-    const bar = BARS[Math.floor(beat / 8) % BARS.length];
-    const quarter = Math.floor((beat % 8) / 2);
-    const onBeat = beat % 2 === 0;
-    const chase = this.tension === 3;
-    // Walking bass on every quarter note.
-    if (onBeat)
-      this.tone(bus, 'triangle', midi(bar.bass[quarter]), at, chase ? 0.18 : 0.32, 0.5, undefined, 0.01);
-    // The ride cymbal: ding, ding-a ding.
-    if (onBeat || quarter % 2 === 1)
-      this.hiss(bus, at, onBeat ? 0.12 : 0.06, onBeat ? 0.05 : 0.035, 'highpass', 7000);
-    // Brushes on 2 and 4.
-    if (onBeat && quarter % 2 === 1)
-      this.hiss(bus, at, 0.18, chase ? 0.14 : 0.08, 'bandpass', 2500, 1200, 0.7);
-    if (this.tension >= 2 && onBeat && quarter === 0) {
-      // Vibraphone: a soft chord at the top of each bar.
-      for (const n of bar.chord) this.tone(bus, 'sine', midi(n), at, 1.1, 0.06, undefined, 0.01);
-    }
-    if (chase) {
-      // Big-band stabs and a kick on every beat.
-      if (onBeat) this.tone(bus, 'sine', 90, at, 0.12, 0.6, 45);
-      if (beat % 8 === 0 || beat % 8 === 5)
-        for (const n of bar.chord) this.tone(bus, 'sawtooth', midi(n), at, 0.16, 0.05);
-    }
   }
 
   // Effects

@@ -1,14 +1,6 @@
-// Builds the game into dist/index.html (scripts and styles inlined) plus dist/music/.
+// Builds the game into dist/index.html (scripts and styles inlined).
 import * as esbuild from 'esbuild';
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -46,21 +38,8 @@ const fontFaces = FONTS.flatMap(([family, pkg, weights]) =>
   }),
 ).join('\n');
 const css = fontFaces + '\n' + readFileSync(join(root, 'src/styles.css'), 'utf8');
-// Music is too big to inline: copy art/music/ to dist/music/ with its credits.
-const music = join(root, 'art/music');
-const musicCredits = existsSync(join(music, 'credits.json'))
-  ? JSON.parse(readFileSync(join(music, 'credits.json'), 'utf8'))
-  : [];
-if (existsSync(music)) {
-  const tracks = readdirSync(music).filter((f) => /\.(mp3|ogg)$/.test(f));
-  if (tracks.length) mkdirSync(join(out, 'music'), { recursive: true });
-  for (const f of tracks) copyFileSync(join(music, f), join(out, 'music', f));
-}
 const html = readFileSync(join(root, 'index.html'), 'utf8')
   .replace('<!-- STYLES -->', () => `<style>\n${css}\n</style>`)
-  .replace(
-    '<!-- SCRIPT -->',
-    () => `<script>window.MUSIC_CREDITS=${JSON.stringify(musicCredits)};</script><script>${js}</script>`,
-  );
+  .replace('<!-- SCRIPT -->', () => `<script>${js}</script>`);
 writeFileSync(join(out, 'index.html'), html);
 console.log(`Built dist/index.html (${Math.round(html.length / 1024)} KB)`);
