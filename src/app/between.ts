@@ -243,6 +243,7 @@ export function showTitle(): void {
       persist();
       // The opening cinematic, then the tutorial fades in.
       screens.hideScreens();
+      sound.setScene('intro');
       playIntro({ sound: (n) => sound.play(n) }, () => startHeist(CORNER_GALLERY));
     },
     onDelete: (i) => {

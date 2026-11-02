@@ -52,6 +52,7 @@ const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 /** Music scenes; each plays art/music/<scene>.mp3 if present. */
 export type MusicScene =
   | 'title'
+  | 'intro'
   | 'lair'
   | 'market'
   | 'planning'
@@ -63,6 +64,7 @@ export type MusicScene =
 /** If a scene's track is missing, the next one along that has one. */
 const MUSIC_FALLBACK: Record<MusicScene, MusicScene[]> = {
   title: ['title', 'lair'],
+  intro: ['intro'],
   lair: ['lair', 'title'],
   market: ['market', 'lair', 'title'],
   planning: ['planning', 'lair', 'title'],
