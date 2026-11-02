@@ -64,7 +64,14 @@ const menuBeforeSaves = await page.evaluate(() => ({
   loadDisabled: document.querySelector('#load').disabled,
 }));
 await page.click('#new-game');
-await page.waitForTimeout(900);
+// The opening cinematic plays first; Esc skips it and the tutorial fades in.
+await page.waitForSelector('.intro');
+await page.waitForTimeout(13000);
+await shot('01d-intro.png');
+const introNews = await page.evaluate(() => document.querySelector('.intro-caption')?.textContent ?? '');
+await page.keyboard.press('Escape');
+await page.waitForSelector('.intro', { state: 'detached' });
+await page.waitForTimeout(400);
 
 const idle = () =>
   page
@@ -407,6 +414,7 @@ const keyboard = { moved: before.x !== after.x || before.y !== after.y, msg: key
 const earned = await page.evaluate(() => window.__pc.profile.achievements);
 
 const results = {
+  introNews,
   tutorialEnd,
   tips: [...tips],
   afterLair,
@@ -432,6 +440,7 @@ console.log(JSON.stringify(results, null, 1));
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors');
 await browser.close();
 const ok =
+  /NightClaw|Music Box/.test(introNews) &&
   tutorialEnd === 'escaped' &&
   tips.has('done') &&
   afterLair.lair &&

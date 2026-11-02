@@ -15,7 +15,8 @@ import {
 import * as screens from '../ui/screens';
 import { type LevelDef, parseLevel } from '../core/level';
 import { loadProps } from '../render/props';
-import { loadCharacters, loadLootIcons } from '../render/characters';
+import { charImageUrl, loadCharacters, loadLootIcons } from '../render/characters';
+import { playIntro } from '../ui/intro';
 import { loadSurfaces } from '../render/surfaces';
 import { loadFlats } from '../render/flats';
 import { newHeist } from '../core/game';
@@ -240,7 +241,15 @@ export function showTitle(): void {
       game.slot = i;
       game.profile = newProfile();
       persist();
-      startHeist(CORNER_GALLERY);
+      // The opening cinematic, then the tutorial fades in.
+      screens.hideScreens();
+      playIntro(
+        {
+          leo: { idle: charImageUrl('leo'), a: charImageUrl('leo', 'a'), b: charImageUrl('leo', 'b') },
+          sound: (n) => sound.play(n),
+        },
+        () => startHeist(CORNER_GALLERY),
+      );
     },
     onDelete: (i) => {
       deleteSlot(storage(), i);

@@ -16,7 +16,9 @@ page.on('pageerror', (e) => errors.push(String(e)));
 await page.goto(pathToFileURL(join(root, 'dist', 'index.html')).href);
 await page.waitForFunction(() => window.__pc);
 await page.click('#new-game');
-await page.waitForTimeout(500);
+await page.waitForSelector('.intro');
+await page.keyboard.press('Escape'); // skip the opening cinematic
+await page.waitForSelector('.intro', { state: 'detached' });
 await page.evaluate(() => window.__pc.startHeist('l1-coin-museum'));
 await page.waitForTimeout(1200);
 
