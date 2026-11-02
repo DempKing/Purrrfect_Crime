@@ -30,7 +30,7 @@ const result = await esbuild.build({
   loader: { '.webp': 'dataurl' },
 });
 const js = result.outputFiles[0].text.replace(/<\/script>/g, '<\\/script>');
-// Fonts (SIL Open Font License), inlined so they work offline.
+// Fonts (SIL Open Font License, or Apache 2.0 for Luckiest Guy and Homemade Apple), inlined so they work offline.
 const FONTS = [
   ['Luckiest Guy', 'luckiest-guy', [400]], // chunky cartoon headlines and buttons
   ['Nunito', 'nunito', [400, 600, 700, 800, 900]], // everything you read

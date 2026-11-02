@@ -685,8 +685,9 @@ with notes in a marker hand (Patrick Hand). Results are stickers, not rubber sta
 - **Music:** a track per screen (title, lair, black market, planning board, heist, suspicious, alarm,
   report, NightClaw), crossfading as you move between them; see `art/music/README.md`. Without a file,
   heists fall back to the synthesised band.
-- **Fonts** (SIL Open Font License, bundled through Fontsource): Luckiest Guy, Nunito, Patrick Hand,
-  UnifrakturMaguntia (newspaper masthead) and Homemade Apple (NightClaw's letters).
+- **Fonts** (bundled through Fontsource): Luckiest Guy (Apache 2.0), Nunito, Patrick Hand,
+  UnifrakturMaguntia (newspaper masthead) (all SIL Open Font License) and Homemade Apple (NightClaw's letters,
+  Apache 2.0).
 
 ## 13. Tech plan
 
