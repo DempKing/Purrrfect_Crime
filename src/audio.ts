@@ -64,7 +64,7 @@ export type MusicScene =
 /** If a scene's track is missing, the next one along that has one. */
 const MUSIC_FALLBACK: Record<MusicScene, MusicScene[]> = {
   title: ['title', 'lair'],
-  intro: ['intro'],
+  intro: [], // no file: the intro makes its own music (introSounds.ts)
   lair: ['lair', 'title'],
   market: ['market', 'lair', 'title'],
   planning: ['planning', 'lair', 'title'],
@@ -75,6 +75,48 @@ const MUSIC_FALLBACK: Record<MusicScene, MusicScene[]> = {
   finale: ['finale', 'heist'],
 };
 const HEIST_SCENES: MusicScene[] = ['heist', 'alert', 'chase', 'finale'];
+
+/**
+ * iPhone and iPad mute Web Audio (all the effects and live music) when the ring/silent switch is on silent.
+ * Asking for media playback, or playing a silent media element, lets the game be heard like a video.
+ */
+let unmuted = false;
+function unmuteIOS(): void {
+  if (unmuted) return;
+  unmuted = true;
+  try {
+    const nav = navigator as Navigator & { audioSession?: { type: string } };
+    if (nav.audioSession) nav.audioSession.type = 'playback';
+  } catch {
+    // Not supported: the silent clip below does the job.
+  }
+  // A tenth of a second of silence (8 kHz, 8-bit WAV), looping quietly in the background.
+  const samples = 800;
+  const bytes = new Uint8Array(44 + samples);
+  const view = new DataView(bytes.buffer);
+  const text = (at: number, s: string) => [...s].forEach((c, i) => view.setUint8(at + i, c.charCodeAt(0)));
+  text(0, 'RIFF');
+  view.setUint32(4, 36 + samples, true);
+  text(8, 'WAVEfmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, 8000, true);
+  view.setUint32(28, 8000, true);
+  view.setUint16(32, 1, true);
+  view.setUint16(34, 8, true);
+  text(36, 'data');
+  view.setUint32(40, samples, true);
+  bytes.fill(128, 44); // 8-bit silence is the middle value
+  try {
+    const el = new Audio(URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' })));
+    el.loop = true;
+    el.setAttribute('playsinline', '');
+    void el.play().catch(() => {});
+  } catch {
+    // No media playback here (tests, old browsers): nothing to unmute.
+  }
+}
 
 export class Sound {
   private ctx: AudioContext | null = null;
@@ -93,8 +135,22 @@ export class Sound {
   private playing: MusicScene | null = null;
   private fadeTimer = 0;
 
+  /**
+   * Plays something made live (like the intro's music) on the music or effects volume.
+   * Does nothing (returns null) until the first click or key press has started the sound.
+   */
+  synth<T>(bus: 'music' | 'sfx', play: (ctx: AudioContext, out: AudioNode, now: number) => T): T | null {
+    if (!this.ctx || !this.musicBus || !this.sfxBus) return null;
+    // The music bus is set for the quieter fallback band; lift live music to match the music files.
+    const out = this.ctx.createGain();
+    out.gain.value = bus === 'music' ? 4 : 1;
+    out.connect(bus === 'music' ? this.musicBus : this.sfxBus);
+    return play(this.ctx, out, this.ctx.currentTime);
+  }
+
   /** Starts the audio context; call from a user gesture. Safe to call again. */
   unlock(): void {
+    unmuteIOS();
     if (this.ctx) {
       if (this.ctx.state === 'suspended') void this.ctx.resume();
       return;

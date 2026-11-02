@@ -5,7 +5,9 @@
 import { capturePadButton } from './gamepad';
 
 export interface IntroHooks {
-  sound: (name: 'click' | 'whoosh' | 'door' | 'creak' | 'pounce') => void;
+  sound: (name: 'whoosh' | 'door' | 'creak' | 'pounce') => void;
+  /** The music's moments: the news comes on, the TV goes off, the fade to black, or the intro ends early. */
+  music: (moment: 'news' | 'tv-off' | 'fade' | 'end') => void;
 }
 
 const W = 1280;
@@ -92,13 +94,15 @@ export function playIntro(hooks: IntroHooks, atBlack: () => void): Promise<void>
   const caption = box.querySelector<HTMLElement>('.intro-caption')!;
   const status = box.querySelector<HTMLElement>('[role=status]')!;
 
-  // One-off sounds, each played once when its moment passes.
-  const cues: [number, Parameters<IntroHooks['sound']>[0]][] = [
-    [T.tvOff, 'click'],
-    [T.doorShut, 'door'],
-    [T.puff, 'whoosh'],
-    [T.atWindow, 'creak'],
-    [T.hop, 'pounce'],
+  // Music and one-off sounds, each played once when its moment passes.
+  const cues: [number, () => void][] = [
+    [NEWS[0].at, () => hooks.music('news')],
+    [T.tvOff, () => hooks.music('tv-off')],
+    [T.doorShut, () => hooks.sound('door')],
+    [T.puff, () => hooks.sound('whoosh')],
+    [T.atWindow, () => hooks.sound('creak')],
+    [T.hop, () => hooks.sound('pounce')],
+    [T.fade, () => hooks.music('fade')],
   ];
   let cueIdx = 0;
 
@@ -111,6 +115,7 @@ export function playIntro(hooks: IntroHooks, atBlack: () => void): Promise<void>
     const finish = () => {
       if (ended) return;
       ended = true;
+      if (t < T.fade) hooks.music('end'); // skipped: stop whatever is playing
       capturePadButton(null);
       removeEventListener('keydown', onKey, true);
       box.classList.add('black');
@@ -144,7 +149,7 @@ export function playIntro(hooks: IntroHooks, atBlack: () => void): Promise<void>
     const frame = (now: number) => {
       if (ended) return;
       t = (now - start) / 1000;
-      while (cueIdx < cues.length && t >= cues[cueIdx][0]) hooks.sound(cues[cueIdx++][1]);
+      while (cueIdx < cues.length && t >= cues[cueIdx][0]) cues[cueIdx++][1]();
       draw();
       words();
       if (t >= END) return finish();

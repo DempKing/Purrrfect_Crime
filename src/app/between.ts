@@ -17,6 +17,7 @@ import { type LevelDef, parseLevel } from '../core/level';
 import { loadProps } from '../render/props';
 import { loadCharacters, loadLootIcons } from '../render/characters';
 import { playIntro } from '../ui/intro';
+import { type Playing, playCozyRoom, playNewsTheme, playTvOff } from '../introSounds';
 import { loadSurfaces } from '../render/surfaces';
 import { loadFlats } from '../render/flats';
 import { newHeist } from '../core/game';
@@ -32,6 +33,25 @@ import { liveAlerts } from './notices';
 import { app } from './camera';
 
 // Between heists
+
+/** The intro's own music: the TV news theme, cut by the TV clicking off, then the cozy room. */
+function introMusic(): (moment: 'news' | 'tv-off' | 'fade' | 'end') => void {
+  let news: Playing | null = null;
+  let cozy: Playing | null = null;
+  return (moment) => {
+    if (moment === 'news') news = sound.synth('music', (c, out, now) => playNewsTheme(c, out, now + 0.02));
+    if (moment === 'tv-off') {
+      news?.stop(0.02);
+      sound.synth('sfx', (c, out, now) => playTvOff(c, out, now));
+      cozy = sound.synth('music', (c, out, now) => playCozyRoom(c, out, now + 0.4));
+    }
+    if (moment === 'fade') cozy?.stop(1.2);
+    if (moment === 'end') {
+      news?.stop(0.15);
+      cozy?.stop(0.6);
+    }
+  };
+}
 
 export function goOn(): void {
   leaveHeist();
@@ -244,7 +264,7 @@ export function showTitle(): void {
       // The opening cinematic, then the tutorial fades in.
       screens.hideScreens();
       sound.setScene('intro');
-      playIntro({ sound: (n) => sound.play(n) }, () => startHeist(CORNER_GALLERY));
+      playIntro({ sound: (n) => sound.play(n), music: introMusic() }, () => startHeist(CORNER_GALLERY));
     },
     onDelete: (i) => {
       deleteSlot(storage(), i);
