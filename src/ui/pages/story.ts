@@ -91,13 +91,13 @@ export const CREDITS: { heading: string; rows: Credit[] }[] = [
   {
     heading: 'Made by',
     rows: [
-      ['Game', 'DempKing'],
-      ['Sound effects', 'DempKing', 'Made live in the game'],
+      ['Game', 'Demp'],
+      ['Sound effects', 'Demp', 'Made live in the game'],
     ],
   },
   {
     heading: 'Music',
-    rows: [['Original music', 'DempKing', 'Title theme · intro music · made live in the game']],
+    rows: [['Original music', 'Demp', 'Title theme · intro music · lair theme · made live in the game']],
   },
   {
     heading: 'Art and type',

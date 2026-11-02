@@ -1,6 +1,7 @@
 // Sound: music tracks (with a synthesised jazz loop as fallback) and synthesised sound effects (Web Audio).
 // The music gets more intense with suspicion and alarms. Silent until the first click or key press.
 
+import { playLairTheme } from './lairTheme';
 import { playMenuTheme } from './menuTheme';
 import type { Playing } from './synth';
 
@@ -68,18 +69,25 @@ export type MusicScene =
 const MUSIC_FALLBACK: Record<MusicScene, MusicScene[]> = {
   title: [], // no file: the menu theme is made live (LIVE_MUSIC below)
   intro: [], // no file: the intro makes its own music (introSounds.ts)
-  lair: ['lair'],
-  market: ['market', 'lair'],
-  planning: ['planning', 'lair'],
+  lair: [], // no file: the lair theme is made live (LIVE_MUSIC below), here and on every screen between heists
+  market: [],
+  planning: [],
   heist: ['heist'],
   alert: ['alert', 'heist'],
   chase: ['chase', 'alert', 'heist'],
-  report: ['report', 'lair'],
+  report: ['report'],
   finale: ['finale', 'heist'],
 };
-/** Scenes whose music is our own, made live rather than played from a file. */
-const LIVE_MUSIC: Partial<Record<MusicScene, (ctx: AudioContext, out: AudioNode, now: number) => Playing>> = {
-  title: (ctx, out, now) => playMenuTheme(ctx, out, now + 0.05),
+/** Scenes whose music is our own, made live rather than played from a file. Scenes sharing a piece share it
+ * without restarting: the lair theme carries on from the lair to the black market to the planning board. */
+type LivePiece = (ctx: AudioContext, out: AudioNode, now: number) => Playing;
+const menuTheme: LivePiece = (ctx, out, now) => playMenuTheme(ctx, out, now + 0.05);
+const lairTheme: LivePiece = (ctx, out, now) => playLairTheme(ctx, out, now + 0.05);
+const LIVE_MUSIC: Partial<Record<MusicScene, LivePiece>> = {
+  title: menuTheme,
+  lair: lairTheme,
+  market: lairTheme,
+  planning: lairTheme,
 };
 const HEIST_SCENES: MusicScene[] = ['heist', 'alert', 'chase', 'finale'];
 
@@ -141,7 +149,7 @@ export class Sound {
   private tracks = new Map<MusicScene, { el: HTMLAudioElement; ok: boolean | null; vol: number }>();
   private playing: MusicScene | null = null;
   private fadeTimer = 0;
-  private live: { scene: MusicScene; playing: Playing } | null = null; // live music playing now
+  private live: { scene: MusicScene; piece: LivePiece; playing: Playing } | null = null; // live music playing now
 
   /**
    * Plays something made live (like the intro's music) on the music or effects volume.
@@ -278,16 +286,17 @@ export class Sound {
   /** The first available track for a scene. */
   private pickTrack(): void {
     if (!this.ctx || !this.scene) return;
-    // Live music: fade out the old piece when the scene changes; start this scene's own piece if it has one.
-    if (this.live && this.live.scene !== this.scene) {
+    // Live music: fade out the old piece when the scene wants a different one; start this scene's piece.
+    const piece = LIVE_MUSIC[this.scene];
+    if (this.live && this.live.piece !== piece) {
       this.live.playing.stop(1.5);
       this.live = null;
     }
-    const piece = LIVE_MUSIC[this.scene];
     if (piece) {
-      if (!this.live) {
+      if (this.live) this.live.scene = this.scene;
+      else {
         const playing = this.synth('music', piece);
-        if (playing) this.live = { scene: this.scene, playing };
+        if (playing) this.live = { scene: this.scene, piece, playing };
       }
       return this.fadeTo(null);
     }

@@ -192,6 +192,7 @@ const afterLair = await page.evaluate(() => ({
   catnip: window.__pc.profile.catnip,
   lair: window.__pc.profile.lairOwned,
   stash: window.__pc.profile.stash.length,
+  music: window.__pc.music,
 }));
 
 // The Coin Museum, the first heist on offer
@@ -444,6 +445,7 @@ const ok =
   tutorialEnd === 'escaped' &&
   tips.has('done') &&
   afterLair.lair &&
+  afterLair.music === 'lair' &&
   afterLair.catnip === 0 &&
   afterLair.stash === 0 &&
   coinEnd.status === 'escaped' &&
