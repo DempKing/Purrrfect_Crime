@@ -1,6 +1,9 @@
 // Sound: music tracks (with a synthesised jazz loop as fallback) and synthesised sound effects (Web Audio).
 // The music gets more intense with suspicion and alarms. Silent until the first click or key press.
 
+import { playMenuTheme } from './menuTheme';
+import type { Playing } from './synth';
+
 export type Sfx =
   | 'tick'
   | 'unlock'
@@ -63,16 +66,20 @@ export type MusicScene =
   | 'finale';
 /** If a scene's track is missing, the next one along that has one. */
 const MUSIC_FALLBACK: Record<MusicScene, MusicScene[]> = {
-  title: ['title', 'lair'],
+  title: [], // no file: the menu theme is made live (LIVE_MUSIC below)
   intro: [], // no file: the intro makes its own music (introSounds.ts)
-  lair: ['lair', 'title'],
-  market: ['market', 'lair', 'title'],
-  planning: ['planning', 'lair', 'title'],
+  lair: ['lair'],
+  market: ['market', 'lair'],
+  planning: ['planning', 'lair'],
   heist: ['heist'],
   alert: ['alert', 'heist'],
   chase: ['chase', 'alert', 'heist'],
-  report: ['report', 'lair', 'title'],
+  report: ['report', 'lair'],
   finale: ['finale', 'heist'],
+};
+/** Scenes whose music is our own, made live rather than played from a file. */
+const LIVE_MUSIC: Partial<Record<MusicScene, (ctx: AudioContext, out: AudioNode, now: number) => Playing>> = {
+  title: (ctx, out, now) => playMenuTheme(ctx, out, now + 0.05),
 };
 const HEIST_SCENES: MusicScene[] = ['heist', 'alert', 'chase', 'finale'];
 
@@ -134,6 +141,7 @@ export class Sound {
   private tracks = new Map<MusicScene, { el: HTMLAudioElement; ok: boolean | null; vol: number }>();
   private playing: MusicScene | null = null;
   private fadeTimer = 0;
+  private live: { scene: MusicScene; playing: Playing } | null = null; // live music playing now
 
   /**
    * Plays something made live (like the intro's music) on the music or effects volume.
@@ -218,7 +226,7 @@ export class Sound {
 
   /** The music file playing now, if any (for the tests). */
   get nowPlaying(): MusicScene | null {
-    return this.playing;
+    return this.live?.scene ?? this.playing;
   }
 
   /** NightClaw's places get their own heist music. */
@@ -270,6 +278,19 @@ export class Sound {
   /** The first available track for a scene. */
   private pickTrack(): void {
     if (!this.ctx || !this.scene) return;
+    // Live music: fade out the old piece when the scene changes; start this scene's own piece if it has one.
+    if (this.live && this.live.scene !== this.scene) {
+      this.live.playing.stop(1.5);
+      this.live = null;
+    }
+    const piece = LIVE_MUSIC[this.scene];
+    if (piece) {
+      if (!this.live) {
+        const playing = this.synth('music', piece);
+        if (playing) this.live = { scene: this.scene, playing };
+      }
+      return this.fadeTo(null);
+    }
     for (const s of MUSIC_FALLBACK[this.scene]) {
       const t = this.track(s);
       if (t.ok === null) return;

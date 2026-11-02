@@ -60,7 +60,7 @@ export function playMenuTheme(ctx: BaseAudioContext, dest: AudioNode, startAt: n
   glue.threshold.value = -20;
   glue.ratio.value = 3;
   const mix = ctx.createGain();
-  mix.gain.value = 0.42;
+  mix.gain.value = 0.62;
   // Clear out rumble below what small speakers can play.
   const clean = ctx.createBiquadFilter();
   clean.type = 'highpass';
@@ -83,7 +83,7 @@ export function playMenuTheme(ctx: BaseAudioContext, dest: AudioNode, startAt: n
   for (let i = 0; i < curve.length; i++) curve[i] = Math.tanh(((i / (curve.length - 1)) * 2 - 1) * 2.5);
   bite.curve = curve;
   const guitarBus = ctx.createGain();
-  guitarBus.gain.value = 0.5;
+  guitarBus.gain.value = 0.12;
   bite.connect(guitarBus);
   guitarBus.connect(mix);
   guitarBus.connect(spring);
@@ -201,7 +201,7 @@ export function playMenuTheme(ctx: BaseAudioContext, dest: AudioNode, startAt: n
     hit(ctx, mix, hiss, at, { type: 'bandpass', freq: 7200, q: 2.5, dur: 0.45, vol, pan: -0.25 });
   /** Bongos: a high and a low drum. */
   const bongo = (at: number, high: boolean) =>
-    boom(ctx, mix, at, high ? 380 : 250, high ? 300 : 190, 0.12, 0.22);
+    boom(ctx, mix, at, high ? 380 : 250, high ? 300 : 190, 0.12, 0.14);
 
   const stopSeq = sequencer(ctx, STEP, startAt, (i, at) => {
     const bar = Math.floor(i / 16);

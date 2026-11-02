@@ -6,7 +6,6 @@ in line, and in a heist to the synthesised band.
 
 | File | When it plays | Track |
 | --- | --- | --- |
-| `title.mp3` | Title screen | "Unknown", Tanner Helland |
 | `lair.mp3` | The lair, the city map | "Familiar Roads", Tanner Helland |
 | `market.mp3` | The black market | "Honky-Tonk Villain", Tanner Helland |
 | `planning.mp3` | The planning board before a heist | "Syntheticity", Tanner Helland |
@@ -18,10 +17,11 @@ in line, and in a heist to the synthesised band.
 
 These come from https://github.com/tannerhelland/free-music, under **Creative Commons Attribution 4.0**: free
 for commercial games, with a credit (in `credits.json`, shown in the end credits). They were re-encoded at
-112 kbps with a short fade in and out so the loop point is gentle. The title track was also
-loudness-normalized (about -16 LUFS).
+112 kbps with a short fade in and out so the loop point is gentle.
 
-The opening cinematic's music is our own, made live in the game by `src/introSounds.ts` (no file needed).
+The title screen and the opening cinematic have our own music, made live in the game (no files needed):
+`src/menuTheme.ts` (the spy theme on the title screen) and `src/introSounds.ts` (the TV news theme and the
+cozy room in the intro).
 
 Other good sources: Kevin MacLeod at https://incompetech.com (CC BY 4.0).
 
