@@ -28,7 +28,7 @@ market, Leo's skills, the planning board, and NightClaw's first letter.
 
 The capsules show the logo large enough to read at their smallest size, and none of them carry taglines
 or review quotes. The library hero has no text, because Steam lays the library logo over it. The icons
-are Leo's face, monocle and all.
+are Leo's red bow tie (the one on his calling card) in front of a full moon.
 
 ## Making them again
 

@@ -62,8 +62,29 @@ function logo(w, h, { x, y, size, oneLine = false, glow = true }) {
 const shade = (dir, amount = 0.75, reach = 45) =>
   `<div class="shade" style="background:linear-gradient(${dir}, rgba(14,8,40,${amount}), transparent ${reach}%)"></div>`;
 
-// Where the cast sits in the painting (fractions): Leo far left, Luna in the middle, Prof on the right.
-const LEO_FACE = { cx: 0.172, cy: 0.27, cw: 0.15 };
+/**
+ * The game icon: Leo's red bow tie (the one on his calling card) in front of a full moon, on the night sky.
+ * Drawn as vector art, so it stays crisp from 16 to 256 pixels.
+ */
+const BOW_TIE = `<svg viewBox="0 0 100 100" width="100%" height="100%" style="position:absolute;inset:0">
+  <defs>
+    <radialGradient id="sky" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#3a2a8a"/><stop offset="1" stop-color="#140d33"/></radialGradient>
+    <radialGradient id="moon" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fffbe8"/><stop offset="1" stop-color="#e9dfb8"/></radialGradient>
+    <linearGradient id="wing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff5a5f"/><stop offset=".55" stop-color="#e0263a"/><stop offset="1" stop-color="#a8162a"/></linearGradient>
+  </defs>
+  <rect width="100" height="100" fill="url(#sky)"/>
+  <circle cx="50" cy="50" r="37" fill="#ffd23f" opacity=".18"/>
+  <circle cx="50" cy="50" r="32" fill="url(#moon)"/>
+  <circle cx="38" cy="40" r="4.5" fill="#d9cfa6" opacity=".7"/><circle cx="60" cy="62" r="6" fill="#d9cfa6" opacity=".6"/><circle cx="63" cy="38" r="2.6" fill="#d9cfa6" opacity=".7"/>
+  <g stroke="#1c1233" stroke-width="4.2" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M47 50 L15 31 Q9 28 9 35 L9 65 Q9 72 15 69 Z" fill="url(#wing)"/>
+    <path d="M53 50 L85 31 Q91 28 91 35 L91 65 Q91 72 85 69 Z" fill="url(#wing)"/>
+    <path d="M44 50 L22 41 M44 50 L22 59 M56 50 L78 41 M56 50 L78 59" fill="none" stroke="#8e1022" stroke-width="2.4"/>
+    <rect x="40.5" y="39.5" width="19" height="21" rx="5.5" fill="#c41d31"/>
+  </g>
+  <path d="M15 36 L33 45" stroke="#ffb3b0" stroke-width="2.6" stroke-linecap="round" opacity=".85"/>
+  <path d="M44 44 q6 -2 12 0" stroke="#ff8a8f" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+</svg>`;
 
 const ART = [
   {
@@ -162,14 +183,14 @@ const ART = [
       shade('to top', 0.85, 50) +
       logo(w, h, { x: 0.5, y: 0.84, size: 0.15, oneLine: true }),
   },
-  // Icons: Leo's face, monocle and all.
-  { file: 'community/community_icon.jpg', w: 184, h: 184, body: (w, h) => crop(w, h, LEO_FACE) },
+  // Icons: Leo's bow tie.
+  { file: 'community/community_icon.jpg', w: 184, h: 184, body: () => BOW_TIE },
   ...[16, 24, 32, 48, 64, 96, 128, 256].map((n) => ({
     file: `community/icons/icon_${n}.png`,
     w: n,
     h: n,
     round: true,
-    body: (w, h) => crop(w, h, LEO_FACE),
+    body: () => BOW_TIE,
   })),
 ];
 
