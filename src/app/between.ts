@@ -172,7 +172,7 @@ function levelPhoto(def: LevelDef): Promise<string> {
   return shot;
 }
 /** The lair screen, with all its buttons wired up. */
-function showLair(tab: screens.LairTab = 'heists'): void {
+export function showLair(tab: screens.LairTab = 'heists'): void {
   sound.setScene(tab === 'market' ? 'market' : 'lair');
   leaveHeist();
   // NightClaw's letters wait at the door until they've been read.

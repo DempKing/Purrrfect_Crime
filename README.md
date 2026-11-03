@@ -72,6 +72,7 @@ tests/         unit tests (npm test) and the browser playthrough (tests/e2e.mjs)
 | [docs/BALANCE.md](docs/BALANCE.md)               | The balance report: each level's flawless route, par, XP and loot                                                                                                                                                         |
 | [docs/ORIGINAL_BRIEF.md](docs/ORIGINAL_BRIEF.md) | The original pitch and decisions, word for word                                                                                                                                                                           |
 | [art/README.md](art/README.md)                   | Where generated sprites go and how to upload them                                                                                                                                                                         |
+| [steam-images/README.md](steam-images/README.md) | The Steam store, library, community and event images and screenshots, and which Steamworks slot each goes in                                                                                                              |
 
 ## Fonts and music
 

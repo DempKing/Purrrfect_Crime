@@ -1,4 +1,5 @@
-// window.__pc: lets the browser tests read the state, find tiles on screen and start levels.
+// window.__pc: lets the browser tests (and the Steam screenshot script) read the state, find tiles on screen,
+// start levels and open the lair.
 import { updateHud } from './hud';
 import { lockpickTest } from '../ui/lockpick';
 import { danger, key, leoReach, lootAt, moveAp } from '../core/game';
@@ -11,6 +12,8 @@ import { sound } from './common';
 import { game, JOBS } from './game';
 import { risk } from './preview';
 import { startHeist } from './turn';
+import { showLair } from './between';
+import type { LairTab } from '../ui/screens';
 
 /** Puts the test hook on window.__pc. */
 export function installTestHook(): void {
@@ -31,6 +34,8 @@ export function installTestHook(): void {
       return game.tutorial ? (TUTORIAL[game.tutorial.step]?.id ?? 'done') : null;
     },
     startHeist: (id: string) => startHeist(JOBS.find((j) => j.id === id)!),
+    /** Opens the lair on a tab (for screenshots: set up the profile first). */
+    lair: (tab: LairTab = 'heists') => showLair(tab),
     levels: JOBS.map((j) => ({ id: j.id, challenge: !!j.challenge, finale: !!j.finale })),
     /** What ending the turn on a tile would bring (once worked out), for the tests. */
     riskAt: (x: number, y: number) => risk.get(key(x, y)),
