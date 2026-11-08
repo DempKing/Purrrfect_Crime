@@ -1,20 +1,22 @@
-# Graph Report - purrrfect_crime  (2026-11-08)
+# Graph Report - Purrrfect_Crime  (2026-11-08)
 
 ## Corpus Check
-- cluster-only mode — file stats not available
+- 132 files · ~150,261 words
+- Verdict: corpus is large enough that graph structure adds value.
+- Unclassified: 131 file(s) not represented in the graph (top: .glb 120, .woff2 5, (none) 3)
 
 ## Summary
-- 1734 nodes · 5181 edges · 92 communities (89 shown, 3 thin omitted)
+- 1758 nodes · 5204 edges · 91 communities (88 shown, 3 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 43 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `21c8c18a`
+- Built from commit: `81fddb87`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- Heist Rules: Sight, Turns & Rivals
+- abilities.ts
 - Heist App: HUD, Turns & Loot
 - Music & Sound
 - Controls, Gamepad & Settings
@@ -30,26 +32,26 @@
 - Loot Icons
 - Heist View & Projection
 - Floor Marks & Overlays
-- 3D Prop Sprites
+- walls.ts
 - Portraits & Key Art
 - Intro Cinematic
-- Achievements & Balance
-- Flat Wall Art
+- noticed.ts
+- key
 - Museum Exhibits
 - Browser Playthrough Test
 - Character Drawing
 - Art Preparation Tool
-- Lights & Lasers
-- Level Solver
-- NightClaw's Letters
+- steps
+- State
+- meta/letters.ts
 - TypeScript Config
 - Sprite Manifest
 - Package Info
-- Heist Briefing
+- light.ts
 - Dev Dependencies
 - npm Scripts
 - Steam Art Script
-- Heist Report
+- report.ts
 - 3D Model Baker Page
 - 3D Model Baker
 - Prop sprite: classic_laptop
@@ -102,7 +104,6 @@
 - Lock Picking Test
 - eslint.config.mjs
 - .prettierrc.json
-- loadLootIcons
 - eslint@9.14.0
 - @fontsource/patrick-hand@5.3.0
 - assets.d.ts
@@ -112,24 +113,24 @@
 2. `$` - 72 edges
 3. `key()` - 68 edges
 4. `tileNow()` - 47 edges
-5. `d` - 45 edges
-6. `h` - 45 edges
-7. `w` - 45 edges
+5. `w` - 45 edges
+6. `d` - 45 edges
+7. `h` - 45 edges
 8. `Point` - 38 edges
 9. `State` - 37 edges
 10. `actionsHere()` - 35 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Node` --references--> `RouteStep`  [EXTRACTED]
-  tools/solve.ts → src/levels/routes.ts
-- `play()` --calls--> `endTurn()`  [EXTRACTED]
-  tests/meta.test.ts → src/core/turn.ts
-- `play()` --calls--> `endTurn()`  [EXTRACTED]
-  tests/progression.test.ts → src/core/turn.ts
 - `solve()` --calls--> `actionsHere()`  [EXTRACTED]
   tools/solve.ts → src/core/actions.ts
 - `solve()` --calls--> `doAction()`  [EXTRACTED]
   tools/solve.ts → src/core/actions.ts
+- `distanceMap()` --calls--> `blocksMove()`  [EXTRACTED]
+  tools/solve.ts → src/core/level.ts
+- `solve()` --calls--> `blocksMove()`  [EXTRACTED]
+  tools/solve.ts → src/core/level.ts
+- `solve()` --calls--> `moveAp()`  [EXTRACTED]
+  tools/solve.ts → src/core/movement.ts
 
 ## Import Cycles
 - 2-file cycle: `src/app/between.ts -> src/app/turn.ts -> src/app/between.ts`
@@ -153,15 +154,15 @@
 - 3-file cycle: `src/app/hud.ts -> src/app/turn.ts -> src/app/restart.ts -> src/app/hud.ts`
 - 3-file cycle: `src/app/actions.ts -> src/app/hud.ts -> src/app/clicks.ts -> src/app/actions.ts`
 
-## Communities (92 total, 3 thin omitted)
+## Communities (91 total, 3 thin omitted)
 
-### Community 0 - "Heist Rules: Sight, Turns & Rivals"
-Cohesion: 0.05
-Nodes (141): ABILITY_NAMES, ABILITY_RANGE, ABILITY_TARGET, AbilityInfo, abilityTargets(), blocksThrow(), BOTTLE_CAP_NOISE, throwable() (+133 more)
+### Community 0 - "abilities.ts"
+Cohesion: 0.07
+Nodes (47): ABILITY_NAMES, ABILITY_RANGE, ABILITY_TARGET, AbilityInfo, BOTTLE_CAP_NOISE, Ability, AP_PER_TURN, CRAWL (+39 more)
 
 ### Community 1 - "Heist App: HUD, Turns & Loot"
 Cohesion: 0.07
-Nodes (129): cancelTargeting(), performAction(), pinsNeeded(), runAbility(), runAction(), startAbility(), leo, play() (+121 more)
+Nodes (130): cancelTargeting(), performAction(), pinsNeeded(), runAbility(), runAction(), startAbility(), leo, play() (+122 more)
 
 ### Community 2 - "Music & Sound"
 Cohesion: 0.06
@@ -169,7 +170,7 @@ Nodes (69): introMusic(), finaleTheme(), HEIST_SCENES, heistTheme(), lairTheme()
 
 ### Community 3 - "Controls, Gamepad & Settings"
 Cohesion: 0.06
-Nodes (46): actionForButton(), actionForKey(), cleanKeys(), cleanPad(), defaultKeys(), defaultPad(), KEY_ACTIONS, KEY_NAMES (+38 more)
+Nodes (45): actionForButton(), actionForKey(), cleanKeys(), cleanPad(), defaultKeys(), defaultPad(), KEY_ACTIONS, KEY_NAMES (+37 more)
 
 ### Community 4 - "Character & Loot Art"
 Cohesion: 0.03
@@ -181,47 +182,47 @@ Nodes (25): AQUA, CARPET, CHECKER, COBBLE, CONCRETE, CREAK, DISTRICT_LOOKS, FILE
 
 ### Community 6 - "Walls, Furniture & Props Drawing"
 Cohesion: 0.16
-Nodes (40): exhibitAt(), tileHash(), lootPicture(), sprite(), crate(), crateStack(), desk(), displayCase() (+32 more)
+Nodes (38): tileHash(), lootPicture(), sprite(), crate(), crateStack(), desk(), displayCase(), drawBeam() (+30 more)
 
 ### Community 7 - "Lair & Progression"
-Cohesion: 0.11
-Nodes (39): Perks, collectorWants(), demand(), newProfile(), priceOf(), Profile, sell(), Attribute (+31 more)
+Cohesion: 0.10
+Nodes (37): challengeProgress(), collectorWants(), demand(), DOLLARS_PER_CATNIP, fenceRate(), priceOf(), attributeCost(), AttributeInfo (+29 more)
 
 ### Community 8 - "Profile, Saves & Newspaper"
-Cohesion: 0.09
-Nodes (33): LootCategory, CORNER_GALLERY_ROUTE, NIGHT_GALLERY_ROUTE, RouteStep, SOLUTIONS, openMusicBox(), finalePaper(), HeistFacts (+25 more)
+Cohesion: 0.11
+Nodes (28): LootCategory, CORNER_GALLERY_ROUTE, openMusicBox(), finalePaper(), buyLair(), CATEGORIES, completeHeist(), deleteSlot() (+20 more)
 
 ### Community 9 - "Heist Actions & Level Parsing"
-Cohesion: 0.16
-Nodes (28): actionsHere(), doAction(), dropLoot(), near4(), take(), BASE_PERKS, GuardDef, parseLevel() (+20 more)
+Cohesion: 0.11
+Nodes (45): canSteal(), steal(), doAction(), ALARM_TURNS, BASE_PERKS, planGuards(), CameraDef, GuardDef (+37 more)
 
 ### Community 10 - "Web Deploy Workflow"
 Cohesion: 0.06
 Nodes (37): outputs, runs-on, steps, concurrency, cancel-in-progress, group, environment, if (+29 more)
 
 ### Community 11 - "Levels & Districts"
-Cohesion: 0.11
+Cohesion: 0.10
 Nodes (29): LevelDef, CASINO, GRAND_BANK, MINT, MISCHIEF, TREASURY, AQUARIUM, CUSTOMS_WAREHOUSE (+21 more)
 
 ### Community 12 - "Menus & Story Screens"
-Cohesion: 0.13
-Nodes (29): cityMap(), CARD_SVG, CATEGORY_NAMES, catnip(), esc(), FENCE_SVG, hideScreens(), money() (+21 more)
+Cohesion: 0.12
+Nodes (34): allLoot(), laserAxis(), LAIR_PRICE, charImageUrl(), briefing(), GUARD_NOTES, cityMap(), CARD_SVG (+26 more)
 
 ### Community 13 - "Loot Icons"
-Cohesion: 0.18
-Nodes (29): bell(), bone(), book(), box(), coins(), crown(), cushion(), egg() (+21 more)
+Cohesion: 0.16
+Nodes (31): bell(), bone(), book(), box(), coins(), crown(), cushion(), egg() (+23 more)
 
 ### Community 14 - "Heist View & Projection"
-Cohesion: 0.16
-Nodes (21): spotlightsNow(), drawEffects(), drawLootHops(), drawSpotlights(), drawViewCones(), ceilingLight(), cameraItems(), droppedLoot() (+13 more)
+Cohesion: 0.13
+Nodes (27): pixi.js, beaconFacing(), spotlightsNow(), Notice, drawEffects(), drawLootHops(), drawSpotlights(), drawViewCones() (+19 more)
 
 ### Community 15 - "Floor Marks & Overlays"
-Cohesion: 0.23
-Nodes (25): drawCachedTile(), drawFloor(), drawFloorMarks(), drawLayerPlan(), floorColor(), belt(), paint(), decoyCard() (+17 more)
+Cohesion: 0.18
+Nodes (29): drawCachedTile(), drawFloor(), drawFloorMarks(), drawLayerPlan(), floorColor(), belt(), paint(), decoyCard() (+21 more)
 
-### Community 16 - "3D Prop Sprites"
-Cohesion: 0.07
-Nodes (5): FILES, LIT_ON_WALL, props, WALL_DECOR, WallPiece
+### Community 16 - "walls.ts"
+Cohesion: 0.04
+Nodes (18): NEIGHBORS, clockFace(), onWall(), FILES, FlatName, STANDING_FLATS, textures, WALL_FLATS (+10 more)
 
 ### Community 17 - "Portraits & Key Art"
 Cohesion: 0.07
@@ -231,41 +232,41 @@ Nodes (4): ABILITY_ICONS, KEY_ART, PORTRAITS, RIVAL_ROOFTOP
 Cohesion: 0.20
 Nodes (25): W(), clamp01(), ease(), IntroHooks, lerp(), NEWS, playIntro(), bowTie() (+17 more)
 
-### Community 19 - "Achievements & Balance"
-Cohesion: 0.10
-Nodes (15): RivalId, RIVALS, Achievement, ACHIEVEMENTS, Paper, DOLLARS_PER_CATNIP, HeistReport, LevelRecord (+7 more)
+### Community 19 - "noticed.ts"
+Cohesion: 0.14
+Nodes (40): useAbility(), near8(), BARK_RANGE, CAPTAIN_CALL, GUARD_STEPS, NOISE, SEARCH_STEPS, disturbances() (+32 more)
 
-### Community 20 - "Flat Wall Art"
-Cohesion: 0.10
-Nodes (5): FILES, FlatName, STANDING_FLATS, textures, WALL_FLATS
+### Community 20 - "key"
+Cohesion: 0.17
+Nodes (33): abilityTargets(), blocksThrow(), throwable(), actionsHere(), lootGone(), near4(), take(), GuardStep (+25 more)
 
 ### Community 21 - "Museum Exhibits"
-Cohesion: 0.10
-Nodes (19): BUST, BY_DISTRICT, BY_LEVEL, CAT_IDOL, CAT_STATUE, CHEST, CONCH, districtOfLevel() (+11 more)
+Cohesion: 0.09
+Nodes (22): BUST, BY_DISTRICT, BY_LEVEL, CAT_IDOL, CAT_STATUE, CHEST, CONCH, districtOfLevel() (+14 more)
 
 ### Community 22 - "Browser Playthrough Test"
 Cohesion: 0.15
 Nodes (14): action(), clickTile(), COIN, endTurnIfStill(), errors, idle(), keyboard, letterTitles (+6 more)
 
 ### Community 23 - "Character Drawing"
-Cohesion: 0.28
-Nodes (16): charFrame(), actorTint(), drawGuard(), drawLeo(), drawNightClaw(), drawRival(), drawRobo(), faceSprite() (+8 more)
+Cohesion: 0.37
+Nodes (13): charFrame(), actorTint(), drawGuard(), drawLeo(), drawNightClaw(), drawRival(), drawRobo(), faceSprite() (+5 more)
 
 ### Community 24 - "Art Preparation Tool"
 Cohesion: 0.12
 Nodes (13): byName, CHARACTERS, chars, FRAMES, known, LOOT, MODEL_LOOT, named (+5 more)
 
-### Community 25 - "Lights & Lasers"
-Cohesion: 0.15
-Nodes (13): pixi.js, beaconFacing(), beacon(), drawLamp(), exitSign(), laser(), COLORBLIND, hatchVision (+5 more)
+### Community 25 - "steps"
+Cohesion: 0.08
+Nodes (23): concurrency, cancel-in-progress, group, GRAPHIFY_BACKEND, GRAPHIFY_FORCE, runs-on, steps, jobs (+15 more)
 
-### Community 26 - "Level Solver"
-Cohesion: 0.23
-Nodes (12): canSteal(), steal(), apCost(), moves(), Solution, solve(), stateKey(), turnOptions() (+4 more)
+### Community 26 - "State"
+Cohesion: 0.17
+Nodes (14): ActionKind, Perks, pathTo(), State, args, distanceMap(), formatRoute(), Heap (+6 more)
 
-### Community 27 - "NightClaw's Letters"
-Cohesion: 0.19
-Nodes (13): CHALLENGE_ITEM, CHALLENGE_PLACE, challengeDone(), challengeProgress(), deliverLetters(), delivery(), hasLetter(), Letter (+5 more)
+### Community 27 - "meta/letters.ts"
+Cohesion: 0.10
+Nodes (25): RivalId, RIVALS, Achievement, ACHIEVEMENTS, CHALLENGE_ITEM, CHALLENGE_PLACE, challengeDone(), deliverLetters() (+17 more)
 
 ### Community 28 - "TypeScript Config"
 Cohesion: 0.13
@@ -279,9 +280,9 @@ Nodes (13): croissant, ax, ay, h, mount, scale, size, w (+5 more)
 Cohesion: 0.15
 Nodes (12): description, @fontsource/nunito@5.3.0, @types/three@0.170.0, typescript@5.9.3, license, name, private, productName (+4 more)
 
-### Community 31 - "Heist Briefing"
-Cohesion: 0.22
-Nodes (11): allLoot(), exhibitLoot(), CameraDef, LampDef, laserAxis(), LEGEND, LootDef, SpotlightDef (+3 more)
+### Community 31 - "light.ts"
+Cohesion: 0.39
+Nodes (8): beaconCache, beaconTiles(), lightAt(), lightCache, lightMap(), lightNow(), clearLine(), inCone()
 
 ### Community 32 - "Dev Dependencies"
 Cohesion: 0.17
@@ -295,9 +296,9 @@ Nodes (12): scripts, balance, build, dev, format, format:check, lint, solve (+4 
 Cohesion: 0.17
 Nodes (6): ART, { chromium }, KEYART, out, root, sizes
 
-### Community 35 - "Heist Report"
-Cohesion: 0.32
-Nodes (11): fenceRate(), playerLevel(), xpForLevel(), lootPictureUrl(), sfx(), heistReport(), lootPic(), photoSvg() (+3 more)
+### Community 35 - "report.ts"
+Cohesion: 0.16
+Nodes (19): the(), HeistFacts, MASTHEAD, money(), Photo, pick(), Story, writePaper() (+11 more)
 
 ### Community 36 - "3D Model Baker Page"
 Cohesion: 0.18
@@ -507,27 +508,23 @@ Nodes (6): @eslint/js@9.14.0, globals@15.12.0, typescript-eslint@8.13.0, @eslint
 Cohesion: 0.50
 Nodes (3): printWidth, singleQuote, trailingComma
 
-### Community 88 - "loadLootIcons"
-Cohesion: 0.67
-Nodes (3): loadLootIcons(), lootIconUrl(), lootSlug()
-
 ## Knowledge Gaps
 - **3 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `pixi.js` connect `Lights & Lasers` to `Dev Dependencies`, `Heist App: HUD, Turns & Loot`, `Character & Loot Art`, `Floor & Wall Textures`, `Walls, Furniture & Props Drawing`, `Heist View & Projection`, `Floor Marks & Overlays`, `3D Prop Sprites`, `Flat Wall Art`, `Character Drawing`, `Package Info`?**
-  _High betweenness centrality (0.087) - this node is a cross-community bridge._
-- **Should `Heist Rules: Sight, Turns & Rivals` be split into smaller, more focused modules?**
-  _Cohesion score 0.05111058036780511 - nodes in this community are weakly interconnected._
-- **Why does `$` connect `Heist App: HUD, Turns & Loot` to `Music & Sound`, `Controls, Gamepad & Settings`, `Profile, Saves & Newspaper`, `Heist View & Projection`, `Achievements & Balance`?**
-  _High betweenness centrality (0.042) - this node is a cross-community bridge._
+- **Why does `pixi.js` connect `Heist View & Projection` to `Dev Dependencies`, `Heist App: HUD, Turns & Loot`, `Character & Loot Art`, `Floor & Wall Textures`, `Walls, Furniture & Props Drawing`, `Floor Marks & Overlays`, `walls.ts`, `Character Drawing`, `Package Info`?**
+  _High betweenness centrality (0.112) - this node is a cross-community bridge._
+- **Should `abilities.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.07088989441930618 - nodes in this community are weakly interconnected._
+- **Why does `Playing` connect `Music & Sound` to `Heist App: HUD, Turns & Loot`?**
+  _High betweenness centrality (0.037) - this node is a cross-community bridge._
 - **Should `Heist App: HUD, Turns & Loot` be split into smaller, more focused modules?**
-  _Cohesion score 0.06979783896828164 - nodes in this community are weakly interconnected._
-- **Why does `three` connect `3D Model Baker Page` to `Package Info`?**
-  _High betweenness centrality (0.034) - this node is a cross-community bridge._
+  _Cohesion score 0.06841524488583312 - nodes in this community are weakly interconnected._
+- **Why does `$` connect `Heist App: HUD, Turns & Loot` to `Music & Sound`, `Controls, Gamepad & Settings`, `Profile, Saves & Newspaper`, `Heist View & Projection`, `meta/letters.ts`?**
+  _High betweenness centrality (0.028) - this node is a cross-community bridge._
 - **Should `Music & Sound` be split into smaller, more focused modules?**
   _Cohesion score 0.05711086226203808 - nodes in this community are weakly interconnected._
 - **Should `Controls, Gamepad & Settings` be split into smaller, more focused modules?**
-  _Cohesion score 0.06277665995975855 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06418219461697723 - nodes in this community are weakly interconnected._
