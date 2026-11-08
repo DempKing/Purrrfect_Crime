@@ -1,0 +1,6 @@
+# Keep the big generated graph files out of code searches (ripgrep and Claude's search read this file).
+# Ask the graph with `graphify query` instead; GRAPH_REPORT.md stays searchable.
+graphify-out/graph.json
+graphify-out/graph.html
+graphify-out/manifest.json
+graphify-out/.graphify_analysis.json

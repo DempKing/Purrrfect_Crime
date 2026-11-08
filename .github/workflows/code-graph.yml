@@ -1,0 +1,39 @@
+# Rebuilds the code graph in graphify-out/ after each push to main and commits it.
+# Reads the code only (no AI service, no keys needed). Commits made by this workflow don't start other workflows.
+name: Code graph
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['graphify-out/**']
+  workflow_dispatch:
+
+concurrency:
+  group: code-graph
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  graph:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install graphify
+        run: pip install 'graphifyy[leiden,sql]==0.9.103'
+      - name: Rebuild the graph
+        env:
+          GRAPHIFY_BACKEND: none
+          GRAPHIFY_FORCE: '1'
+        run: graphify update .
+      - name: Commit the graph
+        run: |
+          git add graphify-out
+          if git diff --cached --quiet; then echo "Graph unchanged"; exit 0; fi
+          git -c user.name=Demp -c user.email=rickydempsey11@icloud.com commit -m "Update code graph"
+          git pull --rebase origin main
+          git push origin HEAD:main
