@@ -5,3 +5,4 @@ node_modules
 art
 package-lock.json
 src/levels/solutions.ts
+graphify-out/
